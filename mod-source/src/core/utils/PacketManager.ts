@@ -176,6 +176,10 @@ export default class PacketManager {
         if (type === PacketMap.CLIENT_TO_SERVER.SEND_CHAT) {
             let chatInput = data[0] as string;
 
+            // Server commands (moomodding.io: /fight, /bot, /var, /clear, /help) must reach the server
+            // exactly as typed, so skip the filter rewrites below.
+            if (typeof chatInput === "string" && chatInput.startsWith("/")) return true;
+
             for (const profanity of profanityList) {
                 if (chatInput.indexOf(profanity) > -1) {
                     const tmp = profanity[0] + String.fromCharCode(0) + profanity.slice(1);
