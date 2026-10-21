@@ -1,4 +1,4 @@
-import Endpoints, { LOCAL_SERVER_HOST } from "@constants/Endpoints";
+import { LOCAL_SERVER_HOST } from "@constants/Endpoints";
 import GameObject from "@constants/GameObject";
 import Player from "@constants/Player";
 import PlayerManager from "@core/logic/players/PlayerManager";
@@ -13,7 +13,7 @@ import { PlacementType } from "@placing/utils/Placer";
 import TaskScheduler from "@services/event-timer/TaskScheduler";
 import { resetScreenSize } from "@ui/Hook";
 import { loadingCirclePage, mainMenu, respawnPage } from "@ui/Loader";
-import ServerBrowser, { serverBrowserPage } from "@ui/ServerBrowser";
+import ServerBrowser, { GameServer, serverBrowserPage } from "@ui/ServerBrowser";
 import ScriptConfig from "@utils/config/ScriptConfig";
 import getElem from "@utils/dom/getElem";
 
@@ -67,7 +67,8 @@ export default class Client {
     static mode: "replay" | "normal" = "normal";
     static upgradesObtained = new Set<number>();
 
-    static async connect(key?: string, region?: string, name?: string) {
+    /** Connects to `server`, else the server picked in the browser, else the local dev server. */
+    static async connect(server?: GameServer) {
         loadingCirclePage.style.display = "none";
         serverBrowserPage.style.display = "none";
         respawnPage.style.display = "flex";
@@ -80,18 +81,12 @@ export default class Client {
             return;
         }
 
-        const selection = ServerBrowser.selectedOption;
-        const wsAddress = key && region ?
-            Endpoints.gameHost(key, region) :
-            typeof selection === "undefined" ?
-                LOCAL_SERVER_HOST :
-                Endpoints.gameHost(selection.key, selection.region);
+        const selection = server ?? ServerBrowser.selectedOption;
+        const wsAddress = selection?.host ?? LOCAL_SERVER_HOST;
 
-        if (selection?.region) {
-            localStorage.setItem("falcon-recent-server", `${selection.key}:${selection.region}:${selection.name}`);
-        }
+        if (selection) ServerBrowser.saveRecent(selection);
 
-        gameInformationMetadata.innerText = `region: ${region ?? selection?.region ?? "local"} | NAME: ${name ?? selection?.name ?? "n/a"}`;
+        gameInformationMetadata.innerText = `region: ${selection?.region ?? "local"} | NAME: ${selection?.name ?? "n/a"}`;
         PacketTracker.init();
         TaskScheduler.init();
         CaptchaManager.renderChallenge(wsAddress);

@@ -38,21 +38,25 @@ export default class Socket extends WebSocket {
     } = {};
 
     private manager = new PacketManager();
-    private socketProtocol: MooMooProtocol;
+    /** null on servers that use plain msgpack without mixKey encryption (moomodding.io v1.8.2). */
+    private socketProtocol: MooMooProtocol | null;
 
     isPrivateServer = false;
+    /** Send plain msgpack instead of signed, encrypted packets. */
+    private plainPackets = false;
 
     private hasOpened = false;
     private handshakeDone = false;
     private errorShown = false;
     private handshakeTimer: number | undefined;
 
-    constructor(url: string, socketProtocol: MooMooProtocol) {
+    constructor(url: string, socketProtocol: MooMooProtocol | null) {
         super(url);
 
         this.socketProtocol = socketProtocol;
         this.binaryType = "arraybuffer";
         this.isPrivateServer = url.includes("localhost");
+        this.plainPackets = this.isPrivateServer || socketProtocol === null;
 
         this.onopen = (ev) => this.onOpen(ev);
         this.onmessage = (ev) => this.onMessage(ev);
@@ -136,7 +140,8 @@ export default class Socket extends WebSocket {
 
         if (parsed[0] === "io-init") {
             const [id, seed, salt] = parsed[1] as MOOMOO_SERVER_TO_CLIENT_MAP["io-init"];
-            this.manager.init(id, seed, salt, this.socketProtocol);
+            // Plain servers send io-init with only an id; there is no cipher table to set up.
+            if (this.socketProtocol) this.manager.init(id, seed, salt, this.socketProtocol);
             this.handshakeDone = true;
             this.clearHandshakeTimer();
             return;
@@ -196,7 +201,7 @@ export default class Socket extends WebSocket {
     }
 
     private sendActualMsg(type: any) {
-        if (this.isPrivateServer) {
+        if (this.plainPackets) {
             const binary = CustomEncoder.encode(type, type, this.DATA_BUFFER);
             PacketTracker.add();
             this.send(binary);

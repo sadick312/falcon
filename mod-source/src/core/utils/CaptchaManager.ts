@@ -68,6 +68,13 @@ export default class CaptchaManager {
     }
 
     static async renderChallenge(wsAddress: string) {
+        // moomodding.io: no captcha, join request or protocol module. Connect with the site's token and send plain msgpack.
+        if (Endpoints.handshake === "static") {
+            Client.socket = new Socket(Endpoints.socketUrl(wsAddress), null);
+            SocketListener.hookEvents(Client.socket);
+            return;
+        }
+
         let step: "protocol" | "captcha" | "join" = "protocol";
 
         try {

@@ -12,6 +12,7 @@ const serverBrowser = getElem<"div">("server-browser");
 const serverBrowserLoadingText = getElem<"div">("server-browser-loading-text");
 const cancelServerBrowser = getElem<"button">("cancel-server-browser-btn");
 
+/** Entry from api-sandbox2.moomoo.io/servers. */
 interface MooMooPublicServer {
     key: string;
     name: string;
@@ -23,22 +24,77 @@ interface MooMooPublicServer {
     version: string;
 }
 
-const regionDescriptions = {
+/** Entry from sandbox.moomodding.io/servers. `key` looks like "1:1" and `ip` is the websocket host. */
+interface MooModdingServer {
+    key: string;
+    region: string;
+    name: string;
+    display_name: string;
+    ip: string;
+    port: number;
+    playerCount: number;
+    playerCapacity: number;
+}
+
+/** Server list entry in one shape for both sites. */
+export interface GameServer {
+    key: string;
+    region: string;
+    name: string;
+    label: string;
+    playerCount: number;
+    capacity: number;
+    /** Websocket host, e.g. "s1.moomodding.io" or "{key}.{region}.moomoo.io". */
+    host: string;
+}
+
+const regionDescriptions: Record<string, string[]> = {
     eu: ["frank", "skibidi", "most active server somehow"],
     na: ["we eat shit", "miami tryhards", "wtf", "A server located in usa miami florida, home to the world's most zero-latency humans alive."],
     sea: ["no one plays here"]
 };
 
-export default class ServerBrowser {
-    private static cache?: { at: number; data: MooMooPublicServer[] };
-    private static inflight?: Promise<MooMooPublicServer[]>;
+const RECENT_SERVER_KEY = "falcon-recent-server";
 
-    private static isServer(entry: any): entry is MooMooPublicServer {
+export default class ServerBrowser {
+    private static cache?: { at: number; data: GameServer[] };
+    private static inflight?: Promise<GameServer[]>;
+
+    private static isServer(entry: any): entry is MooMooPublicServer | MooModdingServer {
         return !!entry
             && typeof entry.key === "string"
             && typeof entry.region === "string"
             && typeof entry.name === "string"
-            && typeof entry.playerCount === "number";
+            && typeof entry.playerCount === "number"
+            && (Endpoints.serverListFormat !== "moomodding" || typeof entry.ip === "string");
+    }
+
+    private static normalize(entry: MooMooPublicServer | MooModdingServer): GameServer {
+        if (Endpoints.serverListFormat === "moomodding") {
+            const server = entry as MooModdingServer;
+            const port = typeof server.port === "number" && server.port !== 443 ? `:${server.port}` : "";
+
+            return {
+                key: server.key,
+                region: server.region,
+                name: server.name,
+                label: server.display_name || `${server.region}:${server.name}`,
+                playerCount: server.playerCount,
+                capacity: typeof server.playerCapacity === "number" ? server.playerCapacity : 0,
+                host: `${server.ip}${port}`
+            };
+        }
+
+        const server = entry as MooMooPublicServer;
+        return {
+            key: server.key,
+            region: server.region,
+            name: server.name,
+            label: `${server.regionName} ${server.name}`,
+            playerCount: server.playerCount,
+            capacity: 40,
+            host: Endpoints.gameHost(server.key, server.region)
+        };
     }
 
     private static async fetchList() {
@@ -57,11 +113,11 @@ export default class ServerBrowser {
             throw new NetworkError("server-list", "Server list entries have an unexpected shape. The API may have changed.");
         }
 
-        return servers;
+        return servers.map((entry) => this.normalize(entry));
     }
 
     /** Cached for SERVER_LIST_TTL_MS; concurrent callers share one request. Throws NetworkError on failure. */
-    static async getData(force = false): Promise<MooMooPublicServer[]> {
+    static async getData(force = false): Promise<GameServer[]> {
         if (!force && this.cache && Date.now() - this.cache.at < SERVER_LIST_TTL_MS) return this.cache.data;
         if (this.inflight) return this.inflight;
 
@@ -79,10 +135,21 @@ export default class ServerBrowser {
         return err instanceof Error ? err.message : String(err);
     }
 
-    static selectedOption: MooMooPublicServer | undefined;
+    static selectedOption: GameServer | undefined;
     static selectionIndex = -1;
 
-    private static appendOption(serverData: MooMooPublicServer, index: number) {
+    private static select(index: number, serverData: GameServer) {
+        if (this.selectionIndex >= 0) {
+            getElem(`server-option-button-${this.selectionIndex}`).classList.remove("active");
+        }
+
+        this.selectionIndex = index;
+        this.selectedOption = serverData;
+        connectToServerBtn.classList.remove("disabled");
+        getElem(`server-option-button-${index}`).classList.add("active");
+    }
+
+    private static appendOption(serverData: GameServer, index: number) {
         const button = document.createElement("button");
         button.id = `server-option-button-${index}`;
         button.classList.add("server-browser-option");
@@ -95,16 +162,18 @@ export default class ServerBrowser {
 
         const regionName = document.createElement("div");
         regionName.style = `color: var(--generic-white); font-size: 19px;`;
-        regionName.innerText = `${serverData.regionName} ${serverData.name}`;
+        regionName.innerText = serverData.label;
 
         const regionDescription = document.createElement("div");
-        const descriptions = regionDescriptions[serverData.region];
+        const descriptions = regionDescriptions[serverData.region] ?? [serverData.host];
         regionDescription.style = `text-align: left; max-width: 500px; color: var(--generic-white-2); font-size: 12px;`;
         regionDescription.innerText = descriptions[Math.floor(descriptions.length * Math.random())];
 
         const playerCountLabel = document.createElement("div");
         playerCountLabel.classList.add("server-browser-option-player-count");
-        playerCountLabel.innerHTML = `<span>${serverData.playerCount}</span>/40`;
+        const playerCount = document.createElement("span");
+        playerCount.innerText = String(serverData.playerCount);
+        playerCountLabel.append(playerCount, `/${serverData.capacity}`);
 
         labelHolder.append(regionName, regionDescription);
         button.append(icon, labelHolder, playerCountLabel);
@@ -117,14 +186,7 @@ export default class ServerBrowser {
                 return;
             }
 
-            if (this.selectionIndex >= 0) {
-                getElem(`server-option-button-${this.selectionIndex}`).classList.remove("active");
-            }
-
-            this.selectionIndex = index;
-            this.selectedOption = serverData;
-            connectToServerBtn.classList.remove("disabled");
-            getElem(`server-option-button-${index}`).classList.add("active");
+            this.select(index, serverData);
         };
 
         serverBrowser.appendChild(button);
@@ -141,7 +203,7 @@ export default class ServerBrowser {
             i--;
         }
 
-        let data: MooMooPublicServer[];
+        let data: GameServer[];
         try {
             data = [...await this.getData(force)];
         } catch (err) {
@@ -157,6 +219,11 @@ export default class ServerBrowser {
             this.appendOption(data[i], i);
         }
 
+        // Preselect the server the page was opened with (sandbox.moomodding.io/?server=1:1).
+        const requested = Endpoints.requestedServerKey();
+        const requestedIndex = requested ? data.findIndex(e => e.key === requested) : -1;
+        if (requestedIndex >= 0) this.select(requestedIndex, data[requestedIndex]);
+
         serverBrowserLoadingText.style.display = "none";
         refreshServersBtn.classList.remove("disabled");
     }
@@ -171,17 +238,33 @@ export default class ServerBrowser {
         }
     }
 
-    /** true / false when known, undefined when the list couldn't be fetched. */
-    static async doesExist(serverKey: string): Promise<boolean | undefined> {
-        const [key, region] = serverKey.split(":");
-
+    /** The server, null when it no longer exists, undefined when the list couldn't be fetched. */
+    static async find(key: string, region: string): Promise<GameServer | null | undefined> {
         try {
             const data = await this.getData();
-            return data.some(e => e.key === key && e.region === region);
+            return data.find(e => e.key === key && e.region === region) ?? null;
         } catch (err) {
             showConnectionNotice("server-list", this.errorMessage(err));
             return undefined;
         }
+    }
+
+    static saveRecent(server: GameServer) {
+        localStorage.setItem(RECENT_SERVER_KEY, JSON.stringify({ mode: Endpoints.mode, key: server.key, region: server.region }));
+    }
+
+    /** Last server joined on this site, or null. Ignores entries saved on the other site or in the old "key:region:name" format. */
+    static getRecent(): { key: string; region: string } | null {
+        try {
+            const saved = JSON.parse(localStorage.getItem(RECENT_SERVER_KEY) ?? "null");
+            if (saved?.mode === Endpoints.mode && typeof saved.key === "string" && typeof saved.region === "string") {
+                return { key: saved.key, region: saved.region };
+            }
+        } catch {
+            // old format or corrupt value
+        }
+
+        return null;
     }
 
     static async start() {
