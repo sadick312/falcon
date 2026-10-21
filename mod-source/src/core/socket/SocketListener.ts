@@ -32,7 +32,6 @@ import RendererSystem from "@rendering/RendererSystem";
 import { IncomingServerPackets } from "@root/utils/socket/PacketLogging";
 import PacketMap, { MOOMOO_SERVER_TO_CLIENT_MAP } from "@root/utils/socket/PacketMap";
 import PacketRecorder from "@services/packet-recorder/PacketRecorder";
-import WebhookSender from "@services/webhook-sender/WebhookSender";
 import { enterGameBtn } from "@ui/Hook";
 import { gameUI, loadingCirclePage, respawnPage } from "@ui/Loader";
 import ScriptConfig from "@utils/config/ScriptConfig";
@@ -113,10 +112,7 @@ export default class SocketListener {
             link.remove();
 
             URL.revokeObjectURL(url);
-            if (!Menu.getValue("improvementLogging") || ScriptConfig.IS_DEVELOPMENT_MODE || manual) return;
         }
-
-        WebhookSender.send(fileName, buffer as any);
     }
 
     private static pingTimer: number | undefined;
