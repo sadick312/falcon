@@ -11,8 +11,7 @@
     },
     "devDependencies": {
         "@types/cloudflare-turnstile": "^0.2.2",
-        "@types/emojione": "^2.2.9",
-        "@types/msgpack-lite": "^0.1.12"
+        "@types/emojione": "^2.2.9"
     },
     "dependencies": {
         "@msgpack/msgpack": "^3.1.3",

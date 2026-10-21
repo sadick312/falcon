@@ -101,10 +101,6 @@ gameCanvas.addEventListener("mouseup", (event) => {
     }
 });
 
-gameCanvas.addEventListener("mousedown", (event) => {
-    inWindow = true;
-});
-
 gameCanvas.addEventListener("wheel", (event) => {
     if (!Client.player) return;
     const delta = event.deltaY || event.deltaX;
@@ -126,19 +122,8 @@ export function resetScreenSize() {
     WindowResizer.resize();
 }
 
-let inWindow = false;
-
-export function isOnWindow() {
-    return inWindow;
-}
-
 window.onblur = () => {
-    inWindow = false;
     Input.keys = {};
-};
-
-window.onfocus = () => {
-    inWindow = true;
 };
 
 function isKeyboardActive() {
@@ -148,7 +133,6 @@ function isKeyboardActive() {
 const pauseIcon = getElem("paused-icon");
 
 document.addEventListener("keydown", (event) => {
-    inWindow = true;
     if (!Client.player) return;
 
     if (event.code === "Enter") {

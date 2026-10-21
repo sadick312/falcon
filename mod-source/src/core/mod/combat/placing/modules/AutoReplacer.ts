@@ -8,12 +8,6 @@ import ModManager from "@core/ModManager";
 import PacketTracker from "@core/utils/PacketTracker";
 import Placer, { PlacementTypes } from "@placing/utils/Placer";
 
-export interface ReplacementQueue {
-    count: number;
-    tick: number;
-    placements: Replacement[];
-}
-
 export class Replacement {
     x: number = -1000000;
     y: number = -1000000;
