@@ -11,7 +11,7 @@ import PacketManager from "@core/utils/PacketManager";
 import PacketTracker from "@core/utils/PacketTracker";
 import Menu from "@menu/Menu";
 import { decode } from "@msgpack/msgpack";
-import PacketMap, { MOOMOO_CLIENT_TO_SERVER_MAP, MOOMOO_SERVER_TO_CLIENT_MAP } from "@root/utils/socket/PacketMap";
+import PacketMap, { knownServerPackets, MOOMOO_CLIENT_TO_SERVER_MAP, MOOMOO_SERVER_TO_CLIENT_MAP } from "@root/utils/socket/PacketMap";
 import TaskScheduler from "@services/event-timer/TaskScheduler";
 import PacketRecorder from "@services/packet-recorder/PacketRecorder";
 import { showConnectionError } from "@ui/ConnectionError";
@@ -139,7 +139,18 @@ export default class Socket extends WebSocket {
         const bytes = new Uint8Array(ev.data);
         this.manager.maskIncoming(bytes);
 
-        const parsed = decode(bytes) as any[];
+        let parsed: any[];
+        try {
+            parsed = decode(bytes) as any[];
+        } catch (err) {
+            console.warn("[Falcon] Dropped a server message that is not valid msgpack.", err);
+            return;
+        }
+
+        if (!Array.isArray(parsed)) {
+            console.warn("[Falcon] Dropped a server message that is not a [type, data] array.", parsed);
+            return;
+        }
 
         if (parsed[0] === "io-init") {
             const [id, seed, salt] = parsed[1] as MOOMOO_SERVER_TO_CLIENT_MAP["io-init"];
@@ -153,6 +164,11 @@ export default class Socket extends WebSocket {
         if (this.manager.tables && typeof parsed[0] === "number") {
             parsed[0] = this.manager.tables.s2c.decrypt[parsed[0]];
             if (parsed[0] === undefined) return;
+        }
+
+        if (!knownServerPackets.has(parsed[0])) {
+            this.logUnknownPacket(parsed[0], parsed[1]);
+            return;
         }
 
         if (this.legacyAdapter) parsed[1] = this.legacyAdapter.adapt(parsed[0], parsed[1]);
@@ -184,8 +200,27 @@ export default class Socket extends WebSocket {
         const callback = this.handlers[type];
         if (!callback) return;
 
-        const typedData = data as MOOMOO_SERVER_TO_CLIENT_MAP[K];
-        callback(...typedData);
+        // Some servers send packets with no data array (e.g. ["P"]); spread an empty list instead of throwing.
+        const typedData = (Array.isArray(data) ? data : []) as MOOMOO_SERVER_TO_CLIENT_MAP[K];
+
+        try {
+            callback(...typedData);
+        } catch (err) {
+            console.error(`[Falcon] Handler for packet '${String(type)}' failed.`, err, data);
+        }
+    }
+
+    private unknownPackets = new Map<string, number>();
+
+    /** Logs the first time each unknown packet type arrives (with a sample), then every 100th. */
+    private logUnknownPacket(type: unknown, data: unknown) {
+        const key = String(type);
+        const count = (this.unknownPackets.get(key) ?? 0) + 1;
+        this.unknownPackets.set(key, count);
+
+        if (count === 1 || count % 100 === 0) {
+            console.info(`[Falcon] Ignoring unknown packet '${key}' (seen ${count}x).`, data);
+        }
     }
 
     on<K extends EventKey>(event: K, callback: EventCallback<K>) {

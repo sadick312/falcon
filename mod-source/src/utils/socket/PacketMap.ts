@@ -78,6 +78,12 @@ const PacketMap = {
     }
 } as const;
 
+/** Every packet type Falcon handles from the server. Anything else (e.g. moomodding.io's auth_* packets) is logged and dropped. */
+export const knownServerPackets = new Set<string>([
+    ...Object.values(PacketMap.SERVER_TO_CLIENT),
+    ...Object.values(PacketMap.CUSTOM_PACKETS.SERVER_TO_CLIENT)
+]);
+
 export const clientToServerArr: string[] = [];
 export const serverToClientArr: string[] = [];
 
