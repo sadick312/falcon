@@ -194,51 +194,6 @@ export const resRenderers: Record<number, (obj: GameObject, ctx: CanvasRendering
     3: (obj, ctx) => renderStone(obj, ctx, "#e0c655", "#ebdca3")
 };
 
-export const buildingHealthRenders: Record<string, (obj: GameObject, ctx: CanvasRenderingContext2D) => void> = {
-    "wood wall": (obj, ctx) => {
-        const angleRot = Math.PI / 6;
-
-        ctx.rotate(angleRot);
-        RendererUtils.drawPartialPolygonStroke(ctx, 6, 0, 0, obj.scale * 1.1, obj.health / obj.maxHealth);
-        ctx.rotate(-angleRot);
-    },
-    "stone wall": (obj, ctx) => {
-        const angleRot = Math.PI / 6;
-
-        ctx.rotate(angleRot);
-        RendererUtils.drawPartialPolygonStroke(ctx, 6, 0, 0, obj.scale * 1.1, obj.health / obj.maxHealth);
-        ctx.rotate(-angleRot);
-    },
-    "castle wall": (obj, ctx) => {
-        const angleRot = Math.PI / 8;
-
-        ctx.rotate(angleRot);
-        RendererUtils.drawPartialPolygonStroke(ctx, 8, 0, 0, obj.scale * 1.1, obj.health / obj.maxHealth);
-        ctx.rotate(-angleRot);
-    },
-
-    spikes: (obj, ctx) => RendererUtils.drawPartialCircleStroke(0, 0, ctx, obj.scale * .6, obj.health / obj.maxHealth),
-    "greater spikes": (obj, ctx) => RendererUtils.drawPartialCircleStroke(0, 0, ctx, obj.scale * .6, obj.health / obj.maxHealth),
-    "poison spikes": (obj, ctx) => RendererUtils.drawPartialCircleStroke(0, 0, ctx, obj.scale * .6, obj.health / obj.maxHealth),
-    "spinning spikes": (obj, ctx) => RendererUtils.drawPartialCircleStroke(0, 0, ctx, obj.scale * .6, obj.health / obj.maxHealth),
-
-    "pit trap": (obj, ctx) => {
-        const angleRot = Math.PI / 6;
-
-        ctx.rotate(angleRot);
-        RendererUtils.drawPartialPolygonStroke(ctx, 6, 0, 0, obj.scale * 1.1, obj.health / obj.maxHealth);
-        ctx.rotate(-angleRot);
-    },
-    "boost pad": (obj, ctx) => {
-        const angleRot = Math.PI / 4;
-        const rectSize = obj.scale * 1.425;
-
-        ctx.rotate(angleRot);
-        RendererUtils.drawPartialPolygonStroke(ctx, 4, 0, 0, rectSize, obj.health / obj.maxHealth)
-        ctx.rotate(-angleRot);
-    },
-};
-
 export default class RendererUtils {
     static outlineWidth = 5.5;
     static outlineColor = "#525252";

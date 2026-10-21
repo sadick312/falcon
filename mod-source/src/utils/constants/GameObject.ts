@@ -2,8 +2,6 @@ import { Entity } from "@constants/Entity";
 import items from "@constants/items";
 import { GameObjectSimulationState } from "@simulation/SimulationStates";
 
-export const spikeDamages = new Set([20, 35, 45, 30]);
-
 export default class GameObject implements Entity {
     isFakeObject = false;
 

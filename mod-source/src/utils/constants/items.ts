@@ -840,8 +840,6 @@ const list: ListItem[] = [{
     placeOffset: -5
 }] as const;
 
-export type ListId = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22;
-
 export const LIST_ID_MAP = {
     APPLE: 0,
     COOKIE: 1,
@@ -893,8 +891,6 @@ export const WEAPON_ID_MAP = {
     MC_GRABBY: 14,
     MUSKET: 15
 } as const;
-
-export type WeaponId = typeof WEAPON_ID_MAP[keyof typeof WEAPON_ID_MAP];
 
 const items: Items = { groups, projectiles, weapons, list };
 export default items;
