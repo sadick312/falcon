@@ -37,8 +37,12 @@ export interface EndpointConfig {
     staticToken: string;
 }
 
+/** Game client version the site runs. "1.8.2" packet layouts are converted by LegacyPacketAdapter. */
+export type GameVersion = "1.9.0" | "1.8.2";
+
 interface HostProfile {
     mode: HostMode;
+    gameVersion: GameVersion;
     /** Page hostnames this profile is used on. */
     pageHosts: string[];
     /** Overridden origins must be https on this domain or a subdomain of it. */
@@ -51,6 +55,7 @@ interface HostProfile {
 const PROFILES: Record<HostMode, HostProfile> = {
     "moomoo-sandbox": {
         mode: "moomoo-sandbox",
+        gameVersion: "1.9.0",
         pageHosts: ["sandbox.moomoo.io"],
         trustedDomain: "moomoo.io",
         handshake: "ticket",
@@ -69,6 +74,7 @@ const PROFILES: Record<HostMode, HostProfile> = {
     },
     moomodding: {
         mode: "moomodding",
+        gameVersion: "1.8.2",
         pageHosts: ["sandbox.moomodding.io"],
         trustedDomain: "moomodding.io",
         handshake: "static",
@@ -151,6 +157,7 @@ export const HANDSHAKE_TIMEOUT_MS = 10_000;
 const Endpoints = {
     config,
     mode: profile.mode,
+    gameVersion: profile.gameVersion,
     handshake: profile.handshake,
     serverListFormat: profile.serverListFormat,
 

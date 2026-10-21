@@ -1,7 +1,8 @@
-import { HANDSHAKE_TIMEOUT_MS } from "@constants/Endpoints";
+import Endpoints, { HANDSHAKE_TIMEOUT_MS } from "@constants/Endpoints";
 import { deathText } from "@core/Client";
 import GameEventTracker from "@core/mod/utils/GameEventTracker";
 import CustomEncoder from "@core/socket/CustomEncoder";
+import LegacyPacketAdapter from "@core/socket/LegacyPacketAdapter";
 import PlayerUpdateEvent from "@core/socket/events/core/PlayerUpdateEvent";
 import SocketListener from "@core/socket/SocketListener";
 import { MooMooProtocol } from "@core/utils/CaptchaManager";
@@ -44,6 +45,8 @@ export default class Socket extends WebSocket {
     isPrivateServer = false;
     /** Send plain msgpack instead of signed, encrypted packets. */
     private plainPackets = false;
+    /** Rewrites v1.8.2 packet layouts into the v1.9.0 ones the handlers expect. */
+    private legacyAdapter = Endpoints.gameVersion === "1.8.2" ? new LegacyPacketAdapter() : null;
 
     private hasOpened = false;
     private handshakeDone = false;
@@ -151,6 +154,8 @@ export default class Socket extends WebSocket {
             parsed[0] = this.manager.tables.s2c.decrypt[parsed[0]];
             if (parsed[0] === undefined) return;
         }
+
+        if (this.legacyAdapter) parsed[1] = this.legacyAdapter.adapt(parsed[0], parsed[1]);
 
         if (PacketBatcher.UI_PACKETS.has(parsed[0])) {
             this.processPacket(parsed[0], parsed[1]);
