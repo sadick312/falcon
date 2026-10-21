@@ -9,7 +9,6 @@
         "skipLibCheck": true
     },
     "exclude": [
-        "backend",
         "node_modules"
     ]
 }

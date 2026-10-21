@@ -9,14 +9,12 @@
         "type": "module"
     },
     "permissions": [
-        "storage",
         "webNavigation",
         "scripting",
         "declarativeNetRequest"
     ],
     "host_permissions": [
-        "*://sandbox.moomoo.io/*",
-        "http://localhost:8080/*"
+        "*://sandbox.moomoo.io/*"
     ],
     "content_scripts": [
         {
