@@ -1,4 +1,15 @@
 (function () {
+    // Game pages Falcon replaces. Keep in sync with content_scripts in manifest.json and the
+    // profiles in mod-source/src/utils/constants/Endpoints.ts.
+    const GAME_HOSTS = ["sandbox.moomoo.io", "sandbox.moomodding.io"];
+
+    function isGamePage(url: string) {
+        try {
+            return GAME_HOSTS.includes(new URL(url).hostname);
+        } catch {
+            return false;
+        }
+    }
 
     async function registerCspBypassRule() {
         const RULE_ID = 9999;
@@ -16,7 +27,7 @@
                 ]
             },
             condition: {
-                urlFilter: "sandbox.moomoo.io",
+                requestDomains: GAME_HOSTS,
                 resourceTypes: [
                     chrome.declarativeNetRequest.ResourceType.MAIN_FRAME,
                     chrome.declarativeNetRequest.ResourceType.SUB_FRAME
@@ -60,7 +71,7 @@
     });
 
     chrome.webNavigation.onCommitted.addListener((details) => {
-        if (!details.url.includes("sandbox.moomoo.io")) return;
+        if (!isGamePage(details.url)) return;
         if (details.frameId !== 0) return;
 
         Promise.all([

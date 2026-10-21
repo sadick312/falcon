@@ -14,7 +14,9 @@
         "declarativeNetRequest"
     ],
     "host_permissions": [
-        "*://sandbox.moomoo.io/*"
+        "*://sandbox.moomoo.io/*",
+        "*://moomodding.io/*",
+        "*://*.moomodding.io/*"
     ],
     "content_scripts": [
         {
@@ -22,7 +24,8 @@
                 "src/remove.js"
             ],
             "matches": [
-                "*://sandbox.moomoo.io/*"
+                "*://sandbox.moomoo.io/*",
+                "*://sandbox.moomodding.io/*"
             ],
             "all_frames": true,
             "run_at": "document_start"

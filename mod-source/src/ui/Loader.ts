@@ -73,20 +73,19 @@ function hookMainMenuBtns() {
         ServerBrowser.start();
     };
 
-    if (typeof localStorage.getItem("falcon-recent-server") !== "string") {
+    if (!ServerBrowser.getRecent()) {
         recentMultiplayerBtn.style.display = "none";
         largestRecentMultiplayerBtn.style.display = "none";
     }
 
     largestRecentMultiplayerBtn.onclick = async () => {
-        const serverKey = localStorage.getItem("falcon-recent-server")!;
-        const [_, region] = serverKey.split(":");
+        const { region } = ServerBrowser.getRecent()!;
         loadingCirclePage.style.display = "flex";
 
         const mostActiveServer = await ServerBrowser.getHighest(region);
         if (mostActiveServer) {
             ServerBrowser.selectedOption = mostActiveServer;
-            Client.connect(mostActiveServer.key, region, mostActiveServer.name);
+            Client.connect(mostActiveServer);
         } else {
             // getHighest() returns undefined both for "no servers in region" and for a failed fetch
             // (the latter already showed a notice), so only hide the button when the fetch itself worked.
@@ -95,17 +94,16 @@ function hookMainMenuBtns() {
     };
 
     recentMultiplayerBtn.onclick = async () => {
-        const serverKey = localStorage.getItem("falcon-recent-server")!;
+        const { key, region } = ServerBrowser.getRecent()!;
         loadingCirclePage.style.display = "flex";
 
-        const exists = await ServerBrowser.doesExist(serverKey);
-        if (exists) {
-            const [key, region, name] = serverKey.split(":");
-            Client.connect(key, region, name);
+        const server = await ServerBrowser.find(key, region);
+        if (server) {
+            Client.connect(server);
         } else {
             loadingCirclePage.style.display = "none";
             // undefined = the list could not be fetched; keep the button so the user can retry.
-            if (exists === false) recentMultiplayerBtn.style.display = "none";
+            if (server === null) recentMultiplayerBtn.style.display = "none";
         }
     };
 
