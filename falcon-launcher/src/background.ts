@@ -1,5 +1,4 @@
 (function () {
-    const baseURL = "http://localhost:8080";
 
     async function registerCspBypassRule() {
         const RULE_ID = 9999;
@@ -35,29 +34,13 @@
         registerCspBypassRule().catch(console.error);
     });
 
-    interface SettingsSchema {
-        accessToken?: string;
-        versionSelection?: string;
-    }
-
-    async function getLatestVersion() {
-        const response = await fetch(`${baseURL}/versions.json`);
-        const data = await response.json();
-        return data.versions[data.latest];
-    }
-
-    async function fetchAsset(path: string, key: string) {
-        const response = await fetch(`${baseURL}/${path}`, {
-            headers: {
-                authorization: `Bearer ${key}`
-            }
-        });
+    async function fetchAsset(path: string) {
+        const response = await fetch(chrome.runtime.getURL(`mod/${path}`));
 
         if (!response.ok)
-            throw new Error(`server fetch failed`);
+            throw new Error(`failed to load bundled asset ${path}`);
 
-        const isTextAsset = path.endsWith(".html") || path.endsWith(".css") || path.endsWith(".js");
-        return isTextAsset ? response.text() : await response.json();
+        return response.text();
     }
 
     chrome.runtime.onInstalled.addListener((details) => {
@@ -80,46 +63,19 @@
         if (!details.url.includes("sandbox.moomoo.io")) return;
         if (details.frameId !== 0) return;
 
-        chrome.storage.local.get(["accessToken", "versionSelection"], async (items: SettingsSchema) => {
-            if (!items.accessToken) {
-                chrome.tabs.remove(details.tabId);
-                return chrome.tabs.create({
-                    url: chrome.runtime.getURL(`index.html`)
-                });
-            }
-
-            const token = items.accessToken;
-            let version = "latest";
-
-            if (items.versionSelection) {
-                version = items.versionSelection;
-            }
-
-            if (version === "latest") {
-                try {
-                    version = await getLatestVersion();
-                } catch (e) { }
-            }
-
-            try {
-                const htmlContent = await fetchAsset(`${version}/index.html`, token);
-                const cssContent = await fetchAsset(`${version}/style.css`, token);
-                const jsContent = await fetchAsset(`${version}/bundle.js`, token);
-
-                chrome.scripting.executeScript({
-                    target: { tabId: details.tabId, frameIds: [details.frameId] },
-                    injectImmediately: true,
-                    world: "MAIN",
-                    func: injectDynamicLoader,
-                    args: [htmlContent, cssContent, jsContent]
-                });
-            } catch (e) {
-                chrome.tabs.remove(details.tabId);
-                chrome.tabs.create({
-                    url: chrome.runtime.getURL(`index.html?error=${encodeURIComponent("invalid_access_token")}`)
-                });
-            }
-        });
+        Promise.all([
+            fetchAsset("index.html"),
+            fetchAsset("style.css"),
+            fetchAsset("bundle.js")
+        ]).then(([htmlContent, cssContent, jsContent]) => {
+            chrome.scripting.executeScript({
+                target: { tabId: details.tabId, frameIds: [details.frameId] },
+                injectImmediately: true,
+                world: "MAIN",
+                func: injectDynamicLoader,
+                args: [htmlContent, cssContent, jsContent]
+            });
+        }).catch(console.error);
     });
 
     function injectDynamicLoader(htmlContent: string, cssContent: string, jsContent: string) {
