@@ -23,6 +23,15 @@ Below are the instructions to download a local copy of the client.
 
 After changing mod code, run steps 2 and 3 again and reload the extension.
 
+The extension runs on sandbox.moomoo.io (v1.9.0) and on moomodding.io game pages (sandbox.moomodding.io, v1.8.2).
+On moomodding.io, open a game from the launcher (or go to `https://sandbox.moomodding.io/?server=1:1`) and Falcon replaces it.
+
+### Quick Inject build (moomodding.io, no extension)
+1. Run ```npm run inject:build```. It writes ```mod-source/dist/falcon-quick-inject.js```.
+2. On moomodding.io, open Quick Inject, choose "Bundle Replacement" and paste the whole file.
+
+The file can also be pasted into the DevTools console on a sandbox.moomodding.io game page.
+
 ## Contribution / Code Modification
 This specific project is **NOT** opened to community contributions.
 

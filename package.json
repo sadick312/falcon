@@ -14,7 +14,8 @@
         "mod:watch": "npm run watch --workspace=mod-source",
         "mod:build": "npm run build --workspace=mod-source",
         "ext:build": "npm run build --workspace=falcon-launcher",
-        "ext:dev": "npm run dev --workspace=falcon-launcher"
+        "ext:dev": "npm run dev --workspace=falcon-launcher",
+        "inject:build": "npm run build --workspace=mod-source && npm run build:inject --workspace=mod-source"
     },
     "allowScripts": {
         "esbuild@0.27.7": true,
