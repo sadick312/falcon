@@ -175,6 +175,21 @@
      hurt you now; Counter Insta "Falcon" mode + Force Anti Bull: spike gear
      only when the enemy just reloaded, never with 4+ shame or when nearby
      bull hits add up to 100, counter hit only when it kills.
+   - Graded Auto Place (Offensive, /, with Auto Placer): the 4 best graded
+     non-overlapping spikes/traps per tick while an enemy is within Auto
+     Place Range; Angle Finder Level 1-10 (16-70 candidates per item), Two
+     Tick Placements. With Auto Replacer on, replacements after a break are
+     graded on the angles the broken object covered.
+   - Kept Robotics' versions: Spike Tick (Falcon's is the same idea - bull
+     hit when a placed spike lands next to a trapped enemy - but hangs off its
+     own placement pipeline; Robotics' already does it from its placer and
+     adds the turret follow-up) and the breakers (Falcon's AutoBreaker is the
+     same idea; Robotics' one is already tied into its hats and reloads).
+   - Not ported: Shame Grind and Blood Wings are stubs / disabled in Falcon
+     itself, so there is nothing to port.
+   - Timing (same benchmark as above, alternating runs): Phase 4 build
+     1.99 / 3.4 ms tick; part 2 with its toggles off 1.95 / 3.3 ms; with every
+     Falcon toggle on 2.21 / 3.7 ms. Frames stay at ~6.2 ms.
    Other
    - CONFIG block with keybinds, scheduler, packet budget, sync, reload.
    - Status line adds frame and tick handler time (avg/max ms per second)
@@ -1019,6 +1034,24 @@ let serverID;
                         }
                     }
                 });
+                cK.BoxF("Graded Auto Place", "Falcon: Auto Placer and Auto Replacer pick their spots with Falcon's angle finder and grader: the 4 best spikes/traps per tick (key /)", "gradedAutoPlace");
+                cK.BoxF("Angle Finder Level", "Falcon: candidates per item, 1 (16, fastest) to 10 (70, best)", "angleFinderLevel", {
+                    setting: true,
+                    input: {
+                        min: 1,
+                        max: 10,
+                        value: 7
+                    }
+                });
+                cK.BoxF("Auto Place Range", "Falcon: Graded Auto Place works while an enemy is this close (100-1200)", "autoPlaceRange", {
+                    setting: true,
+                    input: {
+                        min: 100,
+                        max: 1200,
+                        value: 400
+                    }
+                });
+                cK.BoxF("Two Tick Placements", "Falcon: Graded Auto Place places every other tick (fewer packets)", "twoTickPlacements");
                 cK.BoxF("Auto Push", "Pushes enemies to spike when they in trap", "autoPush");
                 cK.BoxF("Reverse Insta", "Always reverse insta", "revInsta");
                 cK.BoxF("Spike On Reverse", "Place spike when reverse instaing and close to enemy", "doSpikeOnReverse");
@@ -1197,7 +1230,11 @@ let serverID;
                 cK.newLine(1);
                 cK.Text("t arms one (Falcon) one tick, hold '.' (period) for boost tick. Space hits once. All keys can be changed in CONFIG.keys at the top of the script");
                 cK.newLine(1);
-                cK.Text("Falcon features: j Smart Anti-Insta, k Projectile Sync, i Velocity Hits, u Dynamic One Tick, o Graded Preplace");
+                cK.Text("Falcon toggles: j k i u o / b p [ ] ; ' - = 0 Home End (see the visual tab for names)");
+                cK.newLine(1);
+                cK.Text("Falcon features: j Smart Anti-Insta, k Projectile Sync, i Velocity Hits, u Dynamic One Tick, o Graded Preplace, / Graded Auto Place");
+                cK.Text("b Knockback Hits, p Knockback Instakills, [ Auto Push Strikes, ] Turret Gear Knockback, ; Turret Bullet Assist, ' Barbarian Knockback, - Apple Insta, = Melee Sync");
+                cK.Text("Home Pattern Recognition, End Smart Hats, 0 Artificial Ping");
             });
             ci.TabContent("others", cK => {
                 cK.Text("OTHERS TAB", "20px", "white");
@@ -5793,6 +5830,14 @@ let serverID;
                         }
                         et(6, 0);
                     }
+                    // Graded Auto Place also grades replacements (Falcon AutoReplacer).
+                    if (fu.gradedAutoPlace) {
+                        let cg = roboticsSafeCall(() => roboticsAngles.findPlacements([2, 4], Ad.filter(cp => cp.dist2 <= 400), roboticsAngles.levelBudget(), 2, cK), "graded replace") || [];
+                        if (cg.length) {
+                            cg.forEach(cp => ev(cp.slot, cp.angle));
+                            return;
+                        }
+                    }
                     if (AQ.escaped) {
                         if (cQ == AQ.lastTrap.sid && [4, 5].includes(Ai.weapons[0]) && Ai.primaryReloaded && !AW.autoPush) {
                             return this.testCanPlace(2, AQ.aim2 - Math.PI / 3, AQ.aim2 + Math.PI / 3, Math.PI / 7.5, AQ.aim2, true, true, 1);
@@ -8062,6 +8107,19 @@ let serverID;
             return true;
         }
 
+        /* Graded Auto Place (Falcon AutoPlacer): with Auto Placer on, places
+           the 4 best graded spikes/traps each tick (every other tick with Two
+           Tick Placements) while an enemy is within Auto Place Range. */
+        function roboticsGradedAutoPlace() {
+            const range = Math.min(1200, Math.max(100, parseInt(fl.autoPlaceRange) || 400));
+            const enemies = Ad.filter(enemy => enemy.dist2 <= range);
+            if (!enemies.length || fu.twoTickPlacements && fU.tick % 2) return;
+            const best = roboticsAngles.findPlacements([2, 4], enemies, roboticsAngles.levelBudget(), 4);
+            for (let i = 0; i < best.length; i++) {
+                if (!ev(best[i].slot, best[i].angle)) break;
+            }
+        }
+
         // Modules that read the placement potential (added with them).
         const roboticsPlacePotentialUsers = ["turretGearKB", "barbKB", "smartHats", "antiBullType"];
         function roboticsPlacePotentialWanted() {
@@ -8325,6 +8383,66 @@ let serverID;
                     }
                     if (candidate.dontUse) return;
                 }
+            },
+
+            // Candidates per item, from Falcon's angle finder level (1-10).
+            levelBudget() {
+                const level = Math.min(10, Math.max(1, parseInt(fl.angleFinderLevel) || 7));
+                return 16 + (level - 1) * 6;
+            },
+
+            /* Graded auto place / replace (Falcon AutoPlacer, AutoReplacer): the
+               best `count` spots that don't overlap each other, for item slots
+               (2 = spike, 4 = trap), graded against `enemies`. With `broken` (an
+               object that just broke) only the angles it covered are candidates,
+               graded on alignment with it as for preplacing. */
+            findPlacements(slots, enemies, budget, count, broken) {
+                if (!Ai || !enemies.length) return [];
+                const px = Ai.x2;
+                const py = Ai.y2;
+                const objects = roboticsGrid.near(px, py, 350, []).filter(obj => obj.active && obj !== broken);
+                const breaking = new Set();
+                if (broken) breaking.add(broken);
+                const myNext = roboticsSim.simTick(roboticsSim.state(Ai), Ai.moveDir);
+                this.river.x = px;
+                const candidates = [];
+
+                for (const slot of slots) {
+                    const item = s5.list[Ai.items[slot]];
+                    if (!item || slot === 4 && item.id !== 15) continue;
+                    const raw = [];
+                    for (const obj of objects) this.pushInterval(px, py, obj, item, raw, false);
+                    this.pushInterval(px, py, this.river, item, raw, false);
+                    let arcs;
+                    if (broken) {
+                        const open = [];
+                        this.pushInterval(px, py, broken, item, open, true);
+                        arcs = this.subtract(this.merge(open), this.merge(raw));
+                    } else {
+                        arcs = this.subtract([[0, Math.PI * 2]], this.merge(raw));
+                    }
+                    const offset = 35 + item.scale + (item.placeOffset || 0);
+                    for (const angle of this.sample(arcs, budget)) {
+                        const candidate = {
+                            slot, angle, id: item.id, scale: item.scale, isTrap: item.id === 15,
+                            x: px + Math.cos(angle) * offset, y: py + Math.sin(angle) * offset,
+                            grade: 0, dontUse: false
+                        };
+                        this.grade(candidate, enemies, breaking, myNext);
+                        if (!candidate.dontUse) candidates.push(candidate);
+                    }
+                }
+                candidates.sort((a, b) => b.grade - a.grade || b.isTrap - a.isTrap);
+                const best = [];
+                for (let i = 0; i < candidates.length && best.length < count; i++) {
+                    const c = candidates[i];
+                    let overlaps = false;
+                    for (let j = 0; j < best.length && !overlaps; j++) {
+                        overlaps = s4.getDistance(c.x, c.y, best[j].x, best[j].y) < c.scale + best[j].scale;
+                    }
+                    if (!overlaps) best.push(c);
+                }
+                return best;
             },
 
             /* Best preplace spot for the given item slots (2 = spike, 4 = trap),
@@ -8798,7 +8916,8 @@ let serverID;
             appleInsta: () => roboticsToggleSetting("appleInsta", "Apple Insta"),
             meleeSync: () => roboticsToggleSetting("meleeSync", "Melee Sync"),
             patternRec: () => roboticsToggleSetting("patternRec", "Pattern Recognition"),
-            smartHats: () => roboticsToggleSetting("smartHats", "Smart Hats")
+            smartHats: () => roboticsToggleSetting("smartHats", "Smart Hats"),
+            gradedAutoPlace: () => roboticsToggleSetting("gradedAutoPlace", "Graded Auto Place")
         };
         for (let ci in roboticsKeyActions) {
             if (RK[ci] && !sw[RK[ci]]) {
@@ -14208,7 +14327,9 @@ let serverID;
                     if (Ad.length) {
                         ss.preplaces[0] = [];
                         ss.preplaces[1] = [];
-                        if (AQ.dist2 <= 222) {
+                        if (fu.autoPlace && fu.gradedAutoPlace) {
+                            roboticsSafeCall(roboticsGradedAutoPlace, "graded auto place");
+                        } else if (AQ.dist2 <= 222) {
                             if (AW.autoPush) {
                                 ss.autoPlace(1, 4, 2, true);
                             } else if (AQ.inTrap) {
