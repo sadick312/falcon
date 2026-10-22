@@ -189,7 +189,9 @@
      itself, so there is nothing to port.
    - Breaker fixes: trees, bushes and rocks are never breaker targets (they
      can't be broken; "Obstacle Breaker" queued them and the breaker swung at
-     them forever); no target under the chosen aim = not breaking; the aim
+     them forever); no building under the chosen aim = aim straight at the
+     nearest target; buildings are recognised by their item id, not by a
+     null type (the breaker never started when the server sent one); the aim
      stays on the target between hits (it snapped back to the mouse while
      not reloaded, so auto gather swings could go the wrong way); the swing
      check uses the object grid instead of every object; a radians/degrees
@@ -5954,15 +5956,16 @@ let serverID;
                 let cK = this.nearCache || roboticsGrid.near(Ai.x2, Ai.y2, 300, this.nearTmp || (this.nearTmp = []));
                 for (let cd = 0; cd < cK.length; cd++) {
                     let ck = cK[cd];
-                    if (ck.active && ck.type == null && s4.getDist(Ai, ck, 2, 0) <= s5.weapons[this.useHammer(ck) ? Ai.weapons[1] : Ai.weapons[0]].range + ck.scale && s4.getAngleDist(s4.getDirect(ck, Ai, 0, 2), ci) <= Math.PI / 2.6) {
+                    if (ck.active && ck.isItem && s4.getDist(Ai, ck, 2, 0) <= s5.weapons[this.useHammer(ck) ? Ai.weapons[1] : Ai.weapons[0]].range + ck.scale && s4.getAngleDist(s4.getDirect(ck, Ai, 0, 2), ci) <= Math.PI / 2.6) {
                         cC.push(ck);
                     }
                 }
                 return cC;
             }
-            // Targets in reach. Only buildings: trees, bushes and rocks can't be broken.
+            // Targets in reach. Only buildings (objects with an item id): trees, bushes and
+            // rocks can't be broken. (Not type == null: the server may send a type for buildings.)
             getFilteredPriority() {
-                const ci = this.priority.map(cC => cC.filter(cK => cK.active && cK.type == null && s4.getDist(cK, Ai, 0, 2) <= s5.weapons[this.useHammer(cK) ? Ai.weapons[1] : Ai.weapons[0]].range + cK.scale));
+                const ci = this.priority.map(cC => cC.filter(cK => cK.active && cK.isItem && s4.getDist(cK, Ai, 0, 2) <= s5.weapons[this.useHammer(cK) ? Ai.weapons[1] : Ai.weapons[0]].range + cK.scale));
                 return ci;
             }
             calculateAim() {
@@ -6082,7 +6085,7 @@ let serverID;
                     }
                     this.aim = cn.sort((cu, cl) => cl.reward - cu.reward)[0].aim;
                     this.target = this.objectsHit(this.aim).sort((cu, cl) => s4.getDist(cu, Ai, 0, 2) - s4.getDist(cl, Ai, 0, 2))[0];
-                    this.active = !!this.target;
+                    this.aimAtNearest(ci);
                     return;
                 }
                 let ck = [];
@@ -6140,12 +6143,32 @@ let serverID;
                 }
                 this.aim = ck.sort((cy, ch) => ch.reward - cy.reward)[0].aim;
                 this.target = this.objectsHit(this.aim).sort((cy, ch) => s4.getDist(cy, Ai, 0, 2) - s4.getDist(ch, Ai, 0, 2))[0];
-                this.active = !!this.target;
+                this.aimAtNearest(ci);
                 return;
             }
             /* Hammer breaker: great hammer when it breaks this object sooner (hits x
                reload, tank gear and weapon variant counted) or only it reaches;
                the primary otherwise. Without an object: the hammer. */
+            // No building under the chosen aim: aim straight at the nearest target in reach
+            // instead of giving up (targets passed getFilteredPriority, so they are reachable).
+            aimAtNearest(ci) {
+                if (!this.target) {
+                    let cC = null;
+                    let cK = Infinity;
+                    for (let cd = 0; cd < ci.length; cd++) {
+                        const ck = s4.getDist(ci[cd], Ai, 0, 2);
+                        if (ck < cK) {
+                            cK = ck;
+                            cC = ci[cd];
+                        }
+                    }
+                    this.target = cC;
+                    if (cC) {
+                        this.aim = s4.getDirect(cC, Ai, 0, 2);
+                    }
+                }
+                this.active = !!this.target;
+            }
             useHammer(ci) {
                 if (!fu.hammerBreakerOptimisation || Ai.weapons[1] != 10) {
                     return false;
@@ -9524,7 +9547,7 @@ let serverID;
             }
             V9();
             for (let ci = Ac.length - 1; ci >= 0; ci--) {
-                if (Ac[ci].type == null && !Ac[ci].active && Date.now() - Ac[ci].breakTime > 5000) {
+                if (Ac[ci].isItem && !Ac[ci].active && Date.now() - Ac[ci].breakTime > 5000) {
                     roboticsGrid.remove(Ac[ci]);
                     Ac.splice(ci, 1);
                 }
@@ -14162,7 +14185,7 @@ let serverID;
                             }
                             if (fu.breakAllSwitch) {
                                 AF.forEach(cW => {
-                                    if (cW.type == null) {
+                                    if (cW.isItem) {
                                         sV.queue(3, cW);
                                     }
                                 });
@@ -14414,7 +14437,7 @@ let serverID;
                         if (fu.breakAroundSwitch) {
                             if (AQ.inTrap) {
                                 AF.forEach(cG => {
-                                    if (cG.type == null && !cG.trap && cG.sid != AQ.inTrap.sid && (!cG.dmg || !cG.isTeamObject(Ai)) && s4.getDist(cG, AQ.inTrap, 0, 0) < 200) {
+                                    if (cG.isItem && !cG.trap && cG.sid != AQ.inTrap.sid && (!cG.dmg || !cG.isTeamObject(Ai)) && s4.getDist(cG, AQ.inTrap, 0, 0) < 200) {
                                         sV.queue(1, cG);
                                     }
                                 });
