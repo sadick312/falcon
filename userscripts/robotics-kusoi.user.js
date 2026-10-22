@@ -145,6 +145,22 @@
      builder methods and helper methods.
    - Fix: spike-tick knockback read the enemy's .weapons list, which is never
      filled in for other players, so it always assumed a tool hammer.
+   Falcon port, part 2 (toggles off by default unless noted; keys in CONFIG.keys)
+   - Packet Budget Limit / Strictness (Others tab): packets per second and
+     how many stay free for heals (3 x strictness + 3). Defaults = CONFIG.
+   - Artificial Ping (Others, 0): handles server packets amount/2 ms later.
+   - Follow SID (Others): Player Follow follows that player id.
+   - Safe Walk also stops at boost pads and teleporters; your team's
+     teleporters / boost pads only with "Avoid My Teleporters" / "Avoid Ally
+     Boost Pads" (both on by default, as in Falcon).
+   - One Tick Ignores Hats (Offensive): Dynamic One Tick counts full damage.
+   - Enemy placement potential: where each enemy within 400 px could put a
+     spike next tick and whether one would touch you (used by the modules).
+   - Menu: settings rows without a checkbox, number fields; typing in a menu
+     field no longer fires keybinds or moves you, handled keys don't reach the
+     browser (Firefox quick find on / and ').
+   - Player state: last tick's reload state, the tick each weapon reloaded,
+     the tick of the last gather animation and the last health drop.
    Other
    - CONFIG block with keybinds, scheduler, packet budget, sync, reload.
    - Status line adds frame and tick handler time (avg/max ms per second)
@@ -188,6 +204,18 @@ const CONFIG = {
         velocityHits: "i",       // toggle Velocity Hits (Falcon)
         dynamicOneTick: "u",     // toggle Dynamic One Tick, automatic (Falcon); "t" still arms one
         gradedPreplace: "o",     // toggle Graded Preplace (Falcon)
+        knockbackHits: "b",      // toggle Knockback Hits (Falcon)
+        knockbackInsta: "p",     // toggle Knockback Instakills (Falcon)
+        pushStrikes: "[",        // toggle Auto Push Strikes (Falcon)
+        turretGearKB: "]",       // toggle Turret Gear Knockback (Falcon)
+        turretAssist: ";",       // toggle Turret Bullet Assist (Falcon)
+        barbKB: "'",             // toggle Barbarian Knockback (Falcon)
+        appleInsta: "-",         // toggle Apple Insta (Falcon)
+        meleeSync: "=",          // toggle Melee Sync (Falcon)
+        gradedAutoPlace: "/",    // toggle Graded Auto Place (Falcon)
+        artificialPing: "0",     // toggle Artificial Ping (Falcon)
+        patternRec: "Home",      // toggle Pattern Recognition (Falcon)
+        smartHats: "End",        // toggle Smart Hats (Falcon)
         debugAngles: "g",        // hold: draw free trap angles (debug)
         debugChat: ",",          // debug: send the debug menu's 2nd field as chat
         debugMenu: "\\"          // debug: show the test input menu
@@ -877,10 +905,14 @@ let serverID;
                 }
                 cK.textContent = cC;
             }
+            // cd.option: add a dropdown (fl[id]); cd.input: add a number field (fl[id]);
+            // cd.setting: a settings row without the on/off checkbox; cd.defaultOn: on until turned off.
             BoxF(ci, cC, cK, cd = {}) {
-                const ck = localStorage.getItem(cK) === "true";
+                const cS = localStorage.getItem(cK);
+                const ck = cS === null ? !!cd.defaultOn : cS === "true";
                 const cQ = cd.option ? "<select id=\"" + cK + "-dropdown\" class=\"checkbox-dropdown\">\n            " + Object.entries(cd.options || {}).map(([cp, cW]) => "<option value=\"" + cW.id + "\" " + (cW.selected ? "selected" : "") + ">\n                        " + cp + "\n                    </option>").join("") + "\n        </select>" : "";
-                const cg = "\n    <div id=\"" + cK + "\" class=\"checkbox-container\">\n        <label class=\"checkbox-label\">\n            <input type=\"checkbox\" " + (ck ? "checked" : "") + " class=\"checkbox-input\" />\n            <span class=\"checkbox-name\">" + ci + "</span>\n            " + cQ + "\n        </label>\n        <p class=\"checkbox-description\">" + cC + "</p>\n    </div>\n    ";
+                const cX = cd.input ? "<input type=\"number\" id=\"" + cK + "-input\" class=\"checkbox-dropdown\" style=\"width: 90px;\" min=\"" + cd.input.min + "\" max=\"" + cd.input.max + "\" value=\"" + cd.input.value + "\" />" : "";
+                const cg = "\n    <div id=\"" + cK + "\" class=\"checkbox-container\">\n        <label class=\"checkbox-label\">\n            <input type=\"checkbox\" " + (ck ? "checked" : "") + " class=\"checkbox-input\"" + (cd.setting ? " style=\"display: none;\"" : "") + " />\n            <span class=\"checkbox-name\">" + ci + "</span>\n            " + cQ + cX + "\n        </label>\n        <p class=\"checkbox-description\">" + cC + "</p>\n    </div>\n    ";
                 this.append(cg);
                 setTimeout(() => {
                     const cp = document.querySelector("#" + cK + " .checkbox-input");
@@ -895,9 +927,25 @@ let serverID;
                             }
                         });
                     }
+                    if (cd.input) {
+                        const cW = document.getElementById(cK + "-input");
+                        if (cW) {
+                            const ct = localStorage.getItem(cK + "-value");
+                            if (ct !== null) {
+                                cW.value = ct;
+                            }
+                            fl[cK] = cW.value;
+                            cW.addEventListener("change", () => {
+                                localStorage.setItem(cK + "-value", cW.value);
+                                fl[cK] = cW.value;
+                            });
+                            roboticsKeepKeysInField(cW);
+                        }
+                    }
                     if (cd.option) {
                         const cW = document.getElementById(cK + "-dropdown");
                         if (cW) {
+                            roboticsKeepKeysInField(cW);
                             // Start from the option the menu shows as selected, so an
                             // untouched dropdown does what it displays.
                             fl[cK] = cW.value;
@@ -968,6 +1016,7 @@ let serverID;
                 cK.BoxF("Projectile Sync", "Falcon: bull hit when your or your team's arrows/turrets already flying at the enemy plus your hit kill (key k)", "projectileSync");
                 cK.BoxF("Velocity Hits", "Falcon: bull hit when the enemy is about to slide into a spike and the hit plus the spike kill (key i)", "velocityHits");
                 cK.BoxF("Dynamic One Tick", "Falcon: simulates both players 2 ticks ahead and one ticks (turret gear, then bull hit) automatically when it kills. Diamond polearm or ruby katana (key u; t still arms one)", "dynamicOneTick");
+                cK.BoxF("One Tick Ignores Hats", "Falcon: Dynamic One Tick counts full damage even when the enemy wears soldier or EMP helmet", "oneTickIgnoreHats");
                 cK.BoxF("Graded Preplace", "Falcon: Preplacer picks its spot with Falcon's angle grader (needs Preplacer on) (key o)", "gradedPreplace");
                 cK.newLine(2);
                 cK.BoxF("Primary Sync", "Sync with players using this mod with primary (needs External Sync in the Others tab)", "serverSync");
@@ -992,6 +1041,12 @@ let serverID;
                             id: "stop"
                         }
                     }
+                });
+                cK.BoxF("Avoid My Teleporters", "Falcon: Safe Walk also stops you walking into your team's teleporters (enemy teleporters are always avoided)", "safeWalkAvoidMyTps", {
+                    defaultOn: true
+                });
+                cK.BoxF("Avoid Ally Boost Pads", "Falcon: Safe Walk also stops you walking onto your team's boost pads (enemy boost pads are always avoided)", "safeWalkAvoidAllyPads", {
+                    defaultOn: true
                 });
                 cK.BoxF("Anti Trap", "Places traps or spikes behind you when in trap", "antiTrap");
                 cK.BoxF("Extra Anti Spike Tick", "Uses knock back prediction and trap health to soldier or heal too", "safeAntiSpikeTick");
@@ -1066,6 +1121,62 @@ let serverID;
                 cK.BoxF("Ping Map", "Pings the map when you press r or click it", "allowPing");
                 cK.BoxF("External Sync", "Connects to robotics-ahh.fly.dev for Primary Sync and the green/red names of other Robotics users. Every 20 s it sends your id, name, server, ping and position. Off by default", "externalSync");
                 cK.BoxF("Player Follow", "Follows the targetted player around", "playerFollow");
+                cK.BoxF("Follow SID", "Falcon: player id to follow with Player Follow (-1 = the targetted player)", "followSid", {
+                    setting: true,
+                    input: {
+                        min: -1,
+                        max: 999,
+                        value: -1
+                    }
+                });
+                cK.BoxF("Packet Budget Limit", "Falcon: packets per second the mod may send. The server kicks above its limit, so raise it with care", "packetLimit", {
+                    setting: true,
+                    option: true,
+                    options: {
+                        "60 / s": {
+                            id: "60"
+                        },
+                        "69 / s": {
+                            id: "69",
+                            selected: true
+                        },
+                        "80 / s": {
+                            id: "80"
+                        },
+                        "90 / s": {
+                            id: "90"
+                        },
+                        "100 / s": {
+                            id: "100"
+                        },
+                        "110 / s": {
+                            id: "110"
+                        }
+                    }
+                });
+                cK.BoxF("Packet Budget Strictness", "Falcon: how many packets per second stay free for heals and placing (2 keeps 9, 3 keeps 12, 4 keeps 15)", "packetStrictness", {
+                    setting: true,
+                    option: true,
+                    options: {
+                        "2": {
+                            id: "2",
+                            selected: true
+                        },
+                        "3": {
+                            id: "3"
+                        },
+                        "4": {
+                            id: "4"
+                        }
+                    }
+                });
+                cK.BoxF("Artificial Ping", "Falcon: handles server packets this many ms later, in order (applied as half, like Falcon) (key 0)", "artificialPing", {
+                    input: {
+                        min: 10,
+                        max: 80,
+                        value: 35
+                    }
+                });
                 cK.BoxF("Funni Hats :)", "Changes hat changing when not near players", "hatType", {
                     option: true,
                     options: {
@@ -1241,6 +1352,11 @@ let serverID;
         fR.addEventListener("blur", () => {
             fD = false;
         });
+        // Typing in a menu field must not move you or fire keybinds.
+        function roboticsKeepKeysInField(ci) {
+            ci.addEventListener("keydown", cC => cC.stopPropagation());
+            ci.addEventListener("keyup", cC => cC.stopPropagation());
+        }
         // Player names and chat are text: never let them become HTML in the page.
         function roboticsEscapeHtml(ci) {
             return String(ci).replace(/[&<>"']/g, cC => ({
@@ -1429,6 +1545,21 @@ let serverID;
                 }
             }
         };
+        /* Packet budget: CONFIG.packets, overridden by the menu's Packet Budget
+           Limit (packets per second) and Strictness (packets kept free for
+           heals: 3 x strictness + 3, so the default 2 keeps 9). */
+        let roboticsBudget = {
+            perSecond: CONFIG.packets.perSecond,
+            perTick: CONFIG.packets.perTick,
+            reserve: CONFIG.packets.reserve
+        };
+        function roboticsPacketBudget() {
+            let ci = parseInt(fl.packetLimit);
+            let cC = parseInt(fl.packetStrictness);
+            roboticsBudget.perSecond = ci >= 30 && ci <= 120 ? ci : CONFIG.packets.perSecond;
+            roboticsBudget.reserve = cC >= 2 && cC <= 4 ? cC * 3 + 3 : CONFIG.packets.reserve;
+            return roboticsBudget;
+        }
         function roboticsPacketPriority(ci, cC) {
             switch (ci) {
                 case "M":
@@ -1459,7 +1590,7 @@ let serverID;
            reserves room for a whole sequence (select item, use, re-select
            weapon) so it is never split across ticks. */
         let roboticsLimiter = {
-            stamps: new Float64Array(CONFIG.packets.perSecond + 1),
+            stamps: new Float64Array(Math.max(CONFIG.packets.perSecond, 120) + 1),
             head: 0,
             count: 0,
             tickCount: 0,
@@ -1474,7 +1605,7 @@ let serverID;
             },
             canSend: function (ci, cC) {
                 this.purge(performance.now());
-                let cK = CONFIG.packets;
+                let cK = roboticsPacketBudget();
                 if (this.count + ci > (cC === 0 ? cK.perSecond : cK.perSecond - cK.reserve)) {
                     return false;
                 }
@@ -1554,7 +1685,7 @@ let serverID;
                 if (!fB || fB.readyState !== WebSocket.OPEN || !this.canSend(ci, cC)) {
                     return false;
                 }
-                if (cC !== 0 && this.tickCount + ci > CONFIG.packets.perTick - CONFIG.packets.placeReserve) {
+                if (cC !== 0 && this.tickCount + ci > roboticsBudget.perTick - CONFIG.packets.placeReserve) {
                     return false;
                 }
                 this.prepaid = ci;
@@ -1588,7 +1719,12 @@ let serverID;
             if (!fB) {
                 fB = this;
                 fB.addEventListener("message", function (cC) {
-                    A3(cC);
+                    // Artificial Ping (Falcon): handle server packets later, in order.
+                    if (fu.artificialPing) {
+                        setTimeout(A3, (parseInt(fl.artificialPing) || 35) / 2, cC);
+                    } else {
+                        A3(cC);
+                    }
                 });
                 fB.addEventListener("close", cC => {
                     // Rejoin after a disconnect, but rate-limit the reload so a
@@ -4755,6 +4891,10 @@ let serverID;
                     return 0;
                 };
                 this.manageReload = function () {
+                    // Last tick's reload state and when each weapon finished reloading
+                    // (barbarian knockback, predictive push strikes).
+                    this.prevPrimaryReloaded = this.primaryReloaded;
+                    this.prevSecondaryReloaded = this.secondaryReloaded;
                     if (this.shooting[53]) {
                         this.shooting[53] = 0;
                         this.reloads[53] = 2500 - fU.tickRate;
@@ -4790,6 +4930,12 @@ let serverID;
                         this.primaryReloaded = this.reloads[this.weaponIndex] <= (this.sid == Ai.sid ? Ap.avg / 2 : Ap.max);
                     } else {
                         this.secondaryReloaded = this.reloads[this.weaponIndex] <= (this.sid == Ai.sid ? Ap.avg / 2 : Ap.max);
+                    }
+                    if (this.primaryReloaded && !this.prevPrimaryReloaded) {
+                        this.primaryReloadTick = fU.tick;
+                    }
+                    if (this.secondaryReloaded && !this.prevSecondaryReloaded) {
+                        this.secondaryReloadTick = fU.tick;
                     }
                 };
                 this.addDamageThreat = function (cv) {
@@ -6812,7 +6958,7 @@ let serverID;
         const ROBOTICS_HITBOX = 63;
 
         // Damage per weapon and variant, computed once. Ranged weapons ignore the variant.
-        const roboticsWeaponDamageTable = s5.weapons.map(weapon => r.weaponVariants.map(variant => (weapon.dmg || 0) * (weapon.projectile !== undefined ? 1 : variant.val)));
+        const roboticsWeaponDamageTable = s5.weapons.map(weapon => r.weaponVariants.map(variant => weapon.projectile !== undefined ? weapon.Pdmg || 0 : (weapon.dmg || 0) * variant.val));
         function roboticsWeaponDamage(weaponId, variant) {
             const row = roboticsWeaponDamageTable[weaponId];
             if (!row) return 0;
@@ -7302,11 +7448,69 @@ let serverID;
                 dontUse: !myTurnFirst
             }]], 1);
             if (!AQ.inTrap) total += knock.spikesHit * 35;
-            if (AQ.skinIndex == 6) total *= 0.75;
-            if (AQ.skinIndex == 22) total -= 25;
+            if (!fu.oneTickIgnoreHats) {
+                if (AQ.skinIndex == 6) total *= 0.75;
+                if (AQ.skinIndex == 22) total -= 25;
+            }
             if (total < 100) return null;
             return { firstDir: first.dir, secondDir: second.dir };
         }
+
+        // Modules that read the placement potential (added with them).
+        const roboticsPlacePotentialUsers = [];
+        function roboticsPlacePotentialWanted() {
+            for (let i = 0; i < roboticsPlacePotentialUsers.length; i++) {
+                if (fu[roboticsPlacePotentialUsers[i]]) return true;
+            }
+            return false;
+        }
+        /* ---- Enemy placement potential (Falcon PlayerPlacementManager) ----
+           Where each nearby enemy could put a spike next tick (free angles
+           around them, sampled). canPlaceOnMe: one of those spots touches you.
+           Used by the graders and to skip moves that would get you spiked. */
+        let roboticsPlacePotential = {
+            canPlaceOnMe: false,
+            range: 0,
+            objectScale: 0,
+            update() {
+                this.canPlaceOnMe = false;
+                if (!roboticsPlacePotentialWanted()) {
+                    for (let i = 0; i < Ad.length; i++) {
+                        Ad[i].placeOnMe = 0;
+                    }
+                    return;
+                }
+                const item = s5.list[9];
+                const offset = 35 + item.scale + (item.placeOffset || 0);
+                this.range = offset;
+                this.objectScale = item.scale;
+                for (let i = 0; i < Ad.length; i++) {
+                    const enemy = Ad[i];
+                    if (!enemy.placeAll) enemy.placeAll = [];
+                    enemy.placeAll.length = 0;
+                    enemy.placeOnMe = 0;
+                    if (!(enemy.dist2 <= 400)) continue;
+                    const raw = [];
+                    const nearby = roboticsGrid.near(enemy.x2, enemy.y2, 300, roboticsNearTmp);
+                    for (let j = 0; j < nearby.length; j++) {
+                        if (nearby[j].active) roboticsAngles.pushInterval(enemy.x2, enemy.y2, nearby[j], item, raw, false, -0.05);
+                    }
+                    roboticsAngles.river.x = enemy.x2;
+                    roboticsAngles.pushInterval(enemy.x2, enemy.y2, roboticsAngles.river, item, raw, false, -0.05);
+                    const free = roboticsAngles.subtract([[0, Math.PI * 2]], roboticsAngles.merge(raw));
+                    const angles = roboticsAngles.sample(free, 24);
+                    for (let j = 0; j < angles.length; j++) {
+                        const x = enemy.x2 + Math.cos(angles[j]) * offset;
+                        const y = enemy.y2 + Math.sin(angles[j]) * offset;
+                        enemy.placeAll.push({ x, y });
+                        if (s4.getDistance(x, y, Ai.x2, Ai.y2) <= 35 + item.scale) {
+                            enemy.placeOnMe++;
+                            this.canPlaceOnMe = true;
+                        }
+                    }
+                }
+            }
+        };
 
         /* ---- Graded placement (Falcon AngleFinder + AngleGrader) ----
            Free placement angles are computed exactly (law of cosines) against
@@ -7319,10 +7523,10 @@ let serverID;
             budget: 58,
             river: { x: 0, y: r.mapScale / 2, scale: r.riverWidth / 2, river: true, sid: -2 },
 
-            pushInterval(px, py, obj, item, out, isPreplace) {
+            pushInterval(px, py, obj, item, out, isPreplace, pad) {
                 const itemScale = item.scale;
                 const place = 35 + itemScale + (item.placeOffset || 0);
-                const objScale = (obj.river ? obj.scale : obj.blocker ? obj.blocker : obj.getScale(0.6, obj.isItem)) + 0.01;
+                const objScale = (obj.river ? obj.scale : obj.blocker ? obj.blocker : obj.getScale(0.6, obj.isItem)) + (pad === undefined ? 0.01 : pad);
                 const total = itemScale + objScale;
                 const dx = obj.x - px;
                 const dy = obj.y - py;
@@ -7331,7 +7535,7 @@ let serverID;
                 if (distSq > reach * reach) return;
 
                 const insideRiver = obj.river && distSq <= (obj.scale - 20) * (obj.scale - 20);
-                const ownTrap = isPreplace && Ai.inTrap && obj.sid === Ai.inTrap.sid;
+                const ownTrap = isPreplace && pad === undefined && Ai.inTrap && obj.sid === Ai.inTrap.sid;
                 if (ownTrap || obj.blocker && distSq < 270 * 270 || distSq < 400 || insideRiver) {
                     out.push(0, Math.PI * 2);
                     return;
@@ -7977,7 +8181,8 @@ let serverID;
             projectileSync: () => roboticsToggleSetting("projectileSync", "Projectile Sync"),
             velocityHits: () => roboticsToggleSetting("velocityHits", "Velocity Hits"),
             dynamicOneTick: () => roboticsToggleSetting("dynamicOneTick", "Dynamic One Tick"),
-            gradedPreplace: () => roboticsToggleSetting("gradedPreplace", "Graded Preplace")
+            gradedPreplace: () => roboticsToggleSetting("gradedPreplace", "Graded Preplace"),
+            artificialPing: () => roboticsToggleSetting("artificialPing", "Artificial Ping")
         };
         for (let ci in roboticsKeyActions) {
             if (RK[ci] && !sw[RK[ci]]) {
@@ -7986,14 +8191,21 @@ let serverID;
         }
         function sL(ci) {
             let cC = ci.which || ci.keyCode || 0;
+            // Keys typed into a text/number field (menu search, settings) are not commands.
+            let cK = ci.target && ci.target.tagName;
+            if (cK === "INPUT" || cK === "TEXTAREA" || cK === "SELECT") {
+                return;
+            }
             if (Ai && Ai.alive && sI()) {
                 if (!AT[cC]) {
                     AT[cC] = 1;
                     e0[ci.key] = 1;
                     if (Ai.weapons[cC - 49] != undefined) {
                         Ai.weaponCode = Ai.weapons[cC - 49];
-                    } else {
-                        sw[ci.key]?.();
+                    } else if (sw[ci.key]) {
+                        // e.g. stops Firefox quick-find on "/" and "'"
+                        ci.preventDefault();
+                        sw[ci.key]();
                     }
                 }
             }
@@ -8032,6 +8244,12 @@ let serverID;
                 return;
             }
             if (fu.playerFollow) {
+                // Follow by SID (Falcon): a number in the menu picks the player to follow.
+                let ci = parseInt(fl.followSid);
+                if (ci >= 0) {
+                    let cC = AM(ci);
+                    Ag = cC && cC.visible && cC !== Ai ? cC : Ag;
+                }
                 if (Ag) {
                     if (Ag.dist2 >= (fu.serverSync ? 10 : 135)) {
                         sh = Ag.aim2;
@@ -8164,9 +8382,36 @@ let serverID;
             const ct = s4.getDistance(cp, cW, ci.x, ci.y);
             return ct <= cC;
         }
+        /* Safe walk also stops you walking onto boost pads and teleporters
+           (Falcon). Your own teleporters and your allies' boost pads are fine
+           unless "Avoid My Teleporters" / "Avoid Ally Boost Pads" are on. */
+        function roboticsSafeWalkPad() {
+            if (Ai.moveDir == undefined) {
+                return null;
+            }
+            for (let ci = 0; ci < AF.length; ci++) {
+                let cC = AF[ci];
+                if (!cC.teleport && !cC.boostSpeed) {
+                    continue;
+                }
+                let cK = cC.isTeamObject(Ai);
+                if (cC.teleport && cK && !fu.safeWalkAvoidMyTps || cC.boostSpeed && cK && !fu.safeWalkAvoidAllyPads) {
+                    continue;
+                }
+                if (V0(cC) && s4.getDist(Ai, cC, 3, 0) <= cC.getScale() + 75) {
+                    return cC;
+                }
+            }
+            return null;
+        }
         function V1() {
             AW.safeWalk = false;
             if (!fu.safeWalk) {
+                return;
+            }
+            if (roboticsSafeWalkPad()) {
+                AW.safeWalk = true;
+                A0("9", undefined, 1);
                 return;
             }
             if (fl.safeWalk == "move") {
@@ -12699,6 +12944,9 @@ let serverID;
                     // Damage: start counting heals from zero again. Healing: those heals have landed.
                     AW.pendingHeal = ck < 0 ? 0 : Math.max(0, AW.pendingHeal - ck);
                 }
+                if (ck < 0) {
+                    AK.damagedTick = fU.tick + 1;
+                }
                 if (ck <= 0) {
                     AK.hitTime = Date.now();
                     AW.antiInsta = true;
@@ -13203,6 +13451,7 @@ let serverID;
             }
             // Due tickBase() callbacks run every tick, alive or not, after AQ is fresh.
             fU.runDue();
+            roboticsSafeCall(() => roboticsPlacePotential.update(), "placement potential");
             if (Ai && Ai.alive) {
                 V2();
                 Ai.processDamages();
@@ -13792,6 +14041,7 @@ let serverID;
                 AK.gatherIndex = cK;
                 AK.gathering = 1;
                 AK.lastGather = Date.now();
+                AK.lastGatherTick = fU.tick + 1;
                 if (cC) {
                     let cd = s6.hitObj;
                     s6.hitObj = [];
