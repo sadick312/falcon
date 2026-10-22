@@ -5056,10 +5056,12 @@ let serverID;
                 }
             }
         }
-        // Eat exactly ci items.
+        // Eat up to ci items. Stops once health plus heals already sent reaches
+        // full: the server ignores food at full health, so those packets only
+        // used up the packet budget.
         function eO(ci) {
             for (let cC = 0; cC < ci; cC++) {
-                if (!roboticsHealOnce()) {
+                if (Ai.health + AW.pendingHeal >= 100 || !roboticsHealOnce()) {
                     break;
                 }
             }
@@ -5470,13 +5472,13 @@ let serverID;
                         if (cn == undefined || cn == null) {
                             return null;
                         }
-                    }
-                         return cC.list[cn] || null;
+                        return cC.list[cn] || null;
                     };
                     let cW = cp(cd);
                     if (!cW) {
                         return;
-                   if (cK == 0) {
+                    }
+                    if (cK == 0) {
                         let ct = cp(ck);
                         this.radObjs = AF;
                         if (this.radObjs && this.radObjs.length) {
