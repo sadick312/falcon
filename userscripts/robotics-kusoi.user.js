@@ -187,6 +187,21 @@
      same idea; Robotics' one is already tied into its hats and reloads).
    - Not ported: Shame Grind and Blood Wings are stubs / disabled in Falcon
      itself, so there is nothing to port.
+   - Breaker fixes: trees, bushes and rocks are never breaker targets (they
+     can't be broken; "Obstacle Breaker" queued them and the breaker swung at
+     them forever); no target under the chosen aim = not breaking; the aim
+     stays on the target between hits (it snapped back to the mouse while
+     not reloaded, so auto gather swings could go the wrong way); the swing
+     check uses the object grid instead of every object; a radians/degrees
+     mix-up in the two-target aim is gone.
+   - Pathfinder fixes (auto push / auto play): the grid was built around
+     your predicted position but paths were read back around your current
+     one; a one-cell path crashed (paths[1]); diagonal steps squeezed
+     between two blocked cells; no goal in the grid walked you to its
+     corner. Now: one origin, binary-heap A* with an octile heuristic and no
+     corner cutting, capped at 4000 cells (~1 ms; the old search could take
+     40 ms of the tick), and you walk
+     straight toward the farthest visible waypoint instead of zig-zagging.
    - Timing (same benchmark as above, alternating runs): Phase 4 build
      1.99 / 3.4 ms tick; part 2 with its toggles off 1.95 / 3.3 ms; with every
      Falcon toggle on 2.21 / 3.7 ms. Frames stay at ~6.2 ms.
@@ -5866,18 +5881,21 @@ let serverID;
                 this.priority = [[], [], [], []];
                 this.target = null;
             }
+            // Buildings a swing toward angle ci would hit (range + scale, within the server's gather angle).
             objectsHit(ci) {
                 let cC = [];
-                AF.forEach(cK => {
-                    let cd = s4.getDirect(cK, Ai, 0, 2);
-                    if (cK.type == null && s4.getDist(Ai, cK, 2, 0) <= s5.weapons[this.useHammer(cK) ? Ai.weapons[1] : Ai.weapons[0]].range + cK.scale && s4.getAngleDist(cd, ci) <= Math.PI / 2.6) {
-                        cC.push(cK);
+                let cK = roboticsGrid.near(Ai.x2, Ai.y2, 300, this.nearTmp || (this.nearTmp = []));
+                for (let cd = 0; cd < cK.length; cd++) {
+                    let ck = cK[cd];
+                    if (ck.active && ck.type == null && s4.getDist(Ai, ck, 2, 0) <= s5.weapons[this.useHammer(ck) ? Ai.weapons[1] : Ai.weapons[0]].range + ck.scale && s4.getAngleDist(s4.getDirect(ck, Ai, 0, 2), ci) <= Math.PI / 2.6) {
+                        cC.push(ck);
                     }
-                });
+                }
                 return cC;
             }
+            // Targets in reach. Only buildings: trees, bushes and rocks can't be broken.
             getFilteredPriority() {
-                const ci = this.priority.map(cC => cC.filter(cK => cK.active && s4.getDist(cK, Ai, 0, 2) <= s5.weapons[this.useHammer(cK) ? Ai.weapons[1] : Ai.weapons[0]].range + cK.scale));
+                const ci = this.priority.map(cC => cC.filter(cK => cK.active && cK.type == null && s4.getDist(cK, Ai, 0, 2) <= s5.weapons[this.useHammer(cK) ? Ai.weapons[1] : Ai.weapons[0]].range + cK.scale));
                 return ci;
             }
             calculateAim() {
@@ -5923,7 +5941,7 @@ let serverID;
                             if (cv > Math.PI) {
                                 cv -= Math.PI * 2;
                             }
-                            let cb = cv + (cE > 180) * 180;
+                            let cb = cv;
                             if (cd.has(cb)) {
                                 continue;
                             }
@@ -5991,7 +6009,7 @@ let serverID;
                     }
                     this.aim = cn.sort((cu, cl) => cl.reward - cu.reward)[0].aim;
                     this.target = this.objectsHit(this.aim).sort((cu, cl) => s4.getDist(cu, Ai, 0, 2) - s4.getDist(cl, Ai, 0, 2))[0];
-                    this.active = true;
+                    this.active = !!this.target;
                     return;
                 }
                 let ck = [];
@@ -6049,7 +6067,7 @@ let serverID;
                 }
                 this.aim = ck.sort((cy, ch) => ch.reward - cy.reward)[0].aim;
                 this.target = this.objectsHit(this.aim).sort((cy, ch) => s4.getDist(cy, Ai, 0, 2) - s4.getDist(ch, Ai, 0, 2))[0];
-                this.active = true;
+                this.active = !!this.target;
                 return;
             }
             useHammer(ci) {
@@ -6302,283 +6320,220 @@ let serverID;
         };
         class eT {
             constructor() {
-                this.grid = [];
+                this.cells = null;
+                this.originX = 0;
+                this.originY = 0;
                 this.foundPath = false;
             }
+            /* em.gridSize x em.gridSize cells, em.scale px wide, centred on you
+               (current position, the same origin the path is read back with).
+               Blocked: enemy spikes/traps, anything solid and teleporters (grown
+               by your radius), the enemy's body when auto pushing, the map edge.
+               Goal: the cell nearest the enemy's position minus offset ci, within
+               one cell + 10 px; those cells and your own are always free.
+               Returns {start, goal} cell coordinates, or nulls. */
             init(ci, cC, cK) {
-                let cd = {
-                    x: 0,
-                    y: 0
+                const n = em.gridSize;
+                const cp = em.scale / n;
+                const cQ = this.originX = Math.round(Ai.x2) - em.scale / 2;
+                const cg = this.originY = Math.round(Ai.y2) - em.scale / 2;
+                const cI = this.cells && this.cells.length === n * n ? this.cells.fill(0) : this.cells = new Uint8Array(n * n);
+                const mark = (x, y, radius, value) => {
+                    const x0 = Math.max(0, Math.ceil((x - radius - cQ) / cp));
+                    const x1 = Math.min(n - 1, Math.floor((x + radius - cQ) / cp));
+                    const y0 = Math.max(0, Math.ceil((y - radius - cg) / cp));
+                    const y1 = Math.min(n - 1, Math.floor((y + radius - cg) / cp));
+                    for (let row = y0; row <= y1; row++) {
+                        for (let col = x0; col <= x1; col++) {
+                            const dx = cQ + cp * col - x;
+                            const dy = cg + cp * row - y;
+                            if (dx * dx + dy * dy <= radius * radius) {
+                                cI[row * n + col] = value;
+                            }
+                        }
+                    }
                 };
-                let ck = [];
-                let cQ = Math.round(Ai.x3) - em.scale / 2;
-                let cg = Math.round(Ai.y3) - em.scale / 2;
-                let cp = em.scale / em.gridSize;
-                let cW = [cp - 10, cp + 10];
-                let ct = [Ai.scale, r.mapScale - Ai.scale];
-                let cn = cC ? cW[1] : cp;
-                // Mark the cells each obstacle covers once, instead of testing every
-                // obstacle against every one of the 10,000 cells.
-                let cO = em.gridSize;
-                let cI = this.blocked && this.blocked.length === cO * cO ? this.blocked.fill(0) : this.blocked = new Uint8Array(cO * cO);
                 for (let ca = 0; ca < AF.length; ca++) {
-                    let cu = AF[ca];
+                    const cu = AF[ca];
                     if (!(!cu.isTeamObject(Ai) && (cu.dmg || cu.trap)) && !(!cu.ignoreCollision || cu.name == "teleporter")) {
                         continue;
                     }
-                    let cl = cu.getScale(0.6, cu.isItem) + Ai.scale;
-                    let cB = Math.max(0, Math.ceil((cu.x - cl - cQ) / cp));
-                    let cw = Math.min(cO - 1, Math.floor((cu.x + cl - cQ) / cp));
-                    let cL = Math.max(0, Math.ceil((cu.y - cl - cg) / cp));
-                    let cy = Math.min(cO - 1, Math.floor((cu.y + cl - cg) / cp));
-                    for (let ch = cL; ch <= cy; ch++) {
-                        for (let cP = cB; cP <= cw; cP++) {
-                            let cq = cQ + cp * cP - cu.x;
-                            let cU = cg + cp * ch - cu.y;
-                            if (cq * cq + cU * cU <= cl * cl) {
-                                cI[ch * cO + cP] = 1;
-                            }
-                        }
-                    }
+                    mark(cu.x, cu.y, cu.getScale(0.6, cu.isItem) + Ai.scale, 1);
                 }
-                this.grid = [];
-                for (let cx = 0; cx < em.gridSize; cx++) {
-                    this.grid[cx] = [];
-                    for (let cM = 0; cM < em.gridSize; cM++) {
-                        let cY = {
-                            x: cQ + cp * cM,
-                            y: cg + cp * cx
-                        };
-                        if (s4.getDist(cY, Ai, 0, 2) <= Ai.scale) {
-                            this.grid[cx][cM] = 0;
-                            continue;
-                        }
-                        if (cK == "auto push") {
-                            let co = s4.getDist(cY, {
-                                x: AQ.x2 - ci.x,
-                                y: AQ.y2 - ci.y
-                            }, 0, 0);
-                            if (co <= cW[1]) {
-                                ck.push({
-                                    x: cM,
-                                    y: cx,
-                                    dist: co
-                                });
-                                this.grid[cx][cM] = 0;
-                                continue;
-                            }
-                            let cG = s4.getDist(cY, AQ, 0, 2);
-                            if (cG < AQ.scale + Ai.scale) {
-                                this.grid[cx][cM] = 1;
-                                continue;
-                            }
-                            let cS = cI[cx * cO + cM] === 1;
-                            if (cS) {
-                                this.grid[cx][cM] = 1;
-                            } else {
-                                this.grid[cx][cM] = 0;
-                            }
-                        } else if (cK == "follow") {
-                            let cv = s4.getDist(cY, {
-                                x: AQ.x2 - ci.x,
-                                y: AQ.y2 - ci.y
-                            }, 0, 0);
-                            if (cv <= cW[1]) {
-                                ck.push({
-                                    x: cM,
-                                    y: cx,
-                                    dist: cv
-                                });
-                                this.grid[cx][cM] = 0;
-                                continue;
-                            }
-                            let cE = cI[cx * cO + cM] === 1;
-                            if (cE) {
-                                this.grid[cx][cM] = 1;
-                            } else {
-                                this.grid[cx][cM] = 0;
-                            }
-                        }
-                        if (cY.x < ct[0] || cY.x > ct[1] || cY.y < ct[0] || cY.y > ct[1]) {
-                            this.grid[cx][cM] = 1;
-                        }
+                if (cK == "auto push" && AQ.sid !== undefined) {
+                    mark(AQ.x2, AQ.y2, AQ.scale + Ai.scale, 1);
+                }
+                const lo = Ai.scale;
+                const hi = r.mapScale - Ai.scale;
+                for (let i = 0; i < n; i++) {
+                    const at = cQ + cp * i;
+                    const atY = cg + cp * i;
+                    for (let j = 0; j < n; j++) {
+                        if (at < lo || at > hi) cI[j * n + i] = 1;
+                        if (atY < lo || atY > hi) cI[i * n + j] = 1;
                     }
                 }
                 this.foundPath = false;
-                if (ck.length) {
-                    ck.sort((cb, cR) => cb.dist - cR.dist);
-                    cd = {
-                        x: ck[0].x,
-                        y: ck[0].y
-                    };
+                if (AQ.sid === undefined) {
+                    return { start: null, goal: null };
                 }
-                const cz = {
-                    x: Math.round(em.gridSize / 2),
-                    y: Math.round(em.gridSize / 2)
-                };
-                if (this.grid[cz.y][cz.x] === 1) {
-                    return {
-                        start: null,
-                        goal: null
-                    };
+                // Goal cells (always walkable) and the one nearest the goal point.
+                const gx = AQ.x2 - ci.x;
+                const gy = AQ.y2 - ci.y;
+                const reach = cp + 10;
+                mark(gx, gy, reach, 0);
+                const col = Math.round((gx - cQ) / cp);
+                const row = Math.round((gy - cg) / cp);
+                if (col < 0 || row < 0 || col >= n || row >= n) {
+                    return { start: null, goal: null };
                 }
-                if (this.grid[cd.y]?.[cd.x] === 1) {
-                    const cb = this.getPaths(cd).filter(cD => cD.x >= 0 && cD.y >= 0 && cD.x < em.gridSize && cD.y < em.gridSize);
-                    const cR = cb.find(cD => this.grid[cD.y]?.[cD.x] === 0);
-                    if (cR) {
-                        cd = cR;
-                    } else {
-                        return {
-                            start: null,
-                            goal: null
-                        };
-                    }
-                }
-                return {
-                    start: cz,
-                    goal: cd
-                };
+                mark(Ai.x2, Ai.y2, Ai.scale, 0);
+                const cz = { x: Math.round(n / 2), y: Math.round(n / 2) };
+                return { start: cz, goal: { x: col, y: row } };
             }
-            getPaths(ci) {
-                return [{
-                    x: ci.x + 1,
-                    y: ci.y
-                }, {
-                    x: ci.x + 1,
-                    y: ci.y + 1
-                }, {
-                    x: ci.x,
-                    y: ci.y + 1
-                }, {
-                    x: ci.x - 1,
-                    y: ci.y + 1
-                }, {
-                    x: ci.x - 1,
-                    y: ci.y
-                }, {
-                    x: ci.x - 1,
-                    y: ci.y - 1
-                }, {
-                    x: ci.x,
-                    y: ci.y - 1
-                }, {
-                    x: ci.x + 1,
-                    y: ci.y - 1
-                }];
-            }
-            getScore(ci, cC) {
-                return Math.abs(ci.x - cC.x) + Math.abs(ci.y - cC.y);
-            }
+            /* A* over the cells: binary heap, octile distance, no cutting corners
+               between two blocked cells. Looks at most 4000 cells (a fixed cap, so
+               the result doesn't depend on timing; ~1 ms), with a 10 ms safety
+               stop for slow devices. Returns {paths, attempts}:
+               world positions from you to the goal, and how many cells it looked at. */
             calc(ci, cC, cK) {
-                let cd = this.init(ci, cC, cK);
-                if (!cd.start || !cd.goal) {
-                    return {
-                        paths: [],
-                        attempts: 0
-                    };
+                const ends = this.init(ci, cC, cK);
+                if (!ends.start || !ends.goal) {
+                    return { paths: [], attempts: 0 };
                 }
-                let ck = cd.start;
-                let cQ = cd.goal;
-                if (this.grid[ck.y][ck.x] == 1 || this.grid[cQ.y][cQ.x] == 1) {
-                    return {
-                        paths: [],
-                        attempts: 0
-                    };
+                const n = em.gridSize;
+                const size = n * n;
+                const cells = this.cells;
+                if (!this.g || this.g.length !== size) {
+                    this.g = new Float32Array(size);
+                    this.parent = new Int32Array(size);
+                    this.closed = new Uint8Array(size);
+                    this.heapCell = new Int32Array(size * 8);
+                    this.heapF = new Float32Array(size * 8);
                 }
-                const cg = [];
-                const cp = new Set();
-                const cW = new Map();
-                const ct = new Map();
-                const cn = new Map();
-                const cz = ck.x + "," + ck.y;
-                cW.set(cz, 0);
-                ct.set(cz, this.getScore(ck, cQ));
-                cg.push({
-                    x: ck.x,
-                    y: ck.y,
-                    f: ct.get(cz)
-                });
-                let cx = 0;
-                const cM = 3000;
-                const cY = Date.now();
-                const co = 40;
-                while (cg.length > 0 && cx < cM && Date.now() - cY < co) {
-                    cx++;
-                    let cG = 0;
-                    for (let cb = 1; cb < cg.length; cb++) {
-                        if (cg[cb].f < cg[cG].f) {
-                            cG = cb;
-                        }
+                const g = this.g.fill(Infinity);
+                const parent = this.parent;
+                const closed = this.closed.fill(0);
+                const heapCell = this.heapCell;
+                const heapF = this.heapF;
+                let heapSize = 0;
+                const push = (cell, f) => {
+                    let i = heapSize++;
+                    while (i > 0) {
+                        const up = (i - 1) >> 1;
+                        if (heapF[up] <= f) break;
+                        heapCell[i] = heapCell[up];
+                        heapF[i] = heapF[up];
+                        i = up;
                     }
-                    const cS = cg.splice(cG, 1)[0];
-                    const cv = cS.x + "," + cS.y;
-                    if (cS.x === cQ.x && cS.y === cQ.y) {
-                        const cR = [];
-                        let cD = cS;
-                        let cZ = cv;
-                        while (cZ) {
-                            cR.unshift(cD);
-                            const ca = cn.get(cZ);
-                            if (!ca) {
-                                break;
-                            }
-                            cD = ca;
-                            cZ = ca.x + "," + ca.y;
-                        }
-                        const cO = [];
-                        const cI = em.scale / em.gridSize;
-                        for (const cu of cR) {
-                            cO.push({
-                                x: Ai.x2 - em.scale / 2 + cI * cu.x,
-                                y: Ai.y2 - em.scale / 2 + cI * cu.y
-                            });
-                        }
-                        return {
-                            paths: cO,
-                            attempts: cx
-                        };
-                    }
-                    cp.add(cv);
-                    const cE = this.getPaths(cS);
-                    for (const cl of cE) {
-                        if (cl.x < 0 || cl.y < 0 || cl.x >= em.gridSize || cl.y >= em.gridSize) {
-                            continue;
-                        }
-                        if (this.grid[cl.y][cl.x] === 1) {
-                            continue;
-                        }
-                        const cB = cl.x + "," + cl.y;
-                        if (cp.has(cB)) {
-                            continue;
-                        }
-                        const cw = cl.x !== cS.x && cl.y !== cS.y;
-                        const cL = cw ? 1.414 : 1;
-                        const cy = cW.get(cv) + cL;
-                        const ch = cW.get(cB);
-                        if (ch === undefined || cy < ch) {
-                            cn.set(cB, {
-                                x: cS.x,
-                                y: cS.y
-                            });
-                            cW.set(cB, cy);
-                            const cP = this.getScore(cl, cQ);
-                            const cq = cy + cP;
-                            ct.set(cB, cq);
-                            const cU = cg.some(cm => cm.x === cl.x && cm.y === cl.y);
-                            if (!cU) {
-                                cg.push({
-                                    x: cl.x,
-                                    y: cl.y,
-                                    f: cq
-                                });
-                            }
-                        }
-                    }
-                }
-                return {
-                    paths: [],
-                    attempts: cx
+                    heapCell[i] = cell;
+                    heapF[i] = f;
                 };
+                const pop = () => {
+                    const top = heapCell[0];
+                    const lastCell = heapCell[--heapSize];
+                    const lastF = heapF[heapSize];
+                    let i = 0;
+                    for (;;) {
+                        let child = 2 * i + 1;
+                        if (child >= heapSize) break;
+                        if (child + 1 < heapSize && heapF[child + 1] < heapF[child]) child++;
+                        if (heapF[child] >= lastF) break;
+                        heapCell[i] = heapCell[child];
+                        heapF[i] = heapF[child];
+                        i = child;
+                    }
+                    heapCell[i] = lastCell;
+                    heapF[i] = lastF;
+                    return top;
+                };
+                const goalX = ends.goal.x;
+                const goalY = ends.goal.y;
+                const heuristic = (x, y) => {
+                    const dx = Math.abs(x - goalX);
+                    const dy = Math.abs(y - goalY);
+                    return dx + dy + (Math.SQRT2 - 2) * Math.min(dx, dy);
+                };
+                const start = ends.start.y * n + ends.start.x;
+                const goal = goalY * n + goalX;
+                if (cells[start] || cells[goal]) {
+                    return { paths: [], attempts: 0 };
+                }
+                g[start] = 0;
+                parent[start] = -1;
+                push(start, heuristic(ends.start.x, ends.start.y));
+                const deadline = performance.now() + 10;
+                let attempts = 0;
+                while (heapSize > 0 && attempts < 4000) {
+                    if ((attempts & 63) === 63 && performance.now() > deadline) break;
+                    const cur = pop();
+                    if (closed[cur]) continue;
+                    closed[cur] = 1;
+                    attempts++;
+                    if (cur === goal) {
+                        return { paths: this.toPath(cur), attempts };
+                    }
+                    const cx = cur % n;
+                    const cy = (cur - cx) / n;
+                    for (let dy = -1; dy <= 1; dy++) {
+                        const ny = cy + dy;
+                        if (ny < 0 || ny >= n) continue;
+                        for (let dx = -1; dx <= 1; dx++) {
+                            const nx = cx + dx;
+                            if (!dx && !dy || nx < 0 || nx >= n) continue;
+                            const next = ny * n + nx;
+                            if (cells[next] || closed[next]) continue;
+                            const diagonal = dx && dy;
+                            if (diagonal && (cells[cy * n + nx] || cells[ny * n + cx])) continue;
+                            const cost = g[cur] + (diagonal ? Math.SQRT2 : 1);
+                            if (cost < g[next]) {
+                                g[next] = cost;
+                                parent[next] = cur;
+                                push(next, cost + heuristic(nx, ny));
+                            }
+                        }
+                    }
+                }
+                return { paths: [], attempts };
+            }
+            toPath(cell) {
+                const n = em.gridSize;
+                const cp = em.scale / n;
+                const out = [];
+                for (let c = cell; c !== -1; c = this.parent[c]) {
+                    const x = c % n;
+                    out.push({ x: this.originX + cp * x, y: this.originY + cp * ((c - x) / n) });
+                }
+                return out.reverse();
+            }
+            /* Direction to walk along a path from calc(): toward the farthest of
+               the next 12 waypoints you can reach in a straight line over free
+               cells (no zig-zag along the 8 grid directions). undefined when
+               there is no next waypoint. */
+            step(paths) {
+                if (!paths || paths.length < 2) {
+                    return undefined;
+                }
+                const n = em.gridSize;
+                const cp = em.scale / n;
+                const blockedAt = (x, y) => {
+                    const col = Math.round((x - this.originX) / cp);
+                    const row = Math.round((y - this.originY) / cp);
+                    return col < 0 || row < 0 || col >= n || row >= n || this.cells[row * n + col] === 1;
+                };
+                let best = paths[1];
+                for (let i = 2; i < Math.min(paths.length, 14); i++) {
+                    const p = paths[i];
+                    const dist = Math.hypot(p.x - Ai.x2, p.y - Ai.y2);
+                    const steps = Math.ceil(dist / (cp / 2));
+                    let clear = true;
+                    for (let k = 1; k < steps && clear; k++) {
+                        clear = !blockedAt(Ai.x2 + (p.x - Ai.x2) * k / steps, Ai.y2 + (p.y - Ai.y2) * k / steps);
+                    }
+                    if (!clear) break;
+                    best = p;
+                }
+                return Math.atan2(best.y - Ai.y2, best.x - Ai.x2);
             }
         }
         ;
@@ -8745,7 +8700,9 @@ let serverID;
                 e2 = Ad.length ? AQ.aim2 : sD();
             } else if (so.right) {
                 e2 = sD();
-            } else if (sV.active && Ai[(sV.useHammer(sV.target) ? "secondary" : "primary") + "Reloaded"]) {
+            } else if (sV.active) {
+                // Auto gather stays on while breaking and swings when the server's reload
+                // ends, which can be before ours: keep aiming at the target the whole time.
                 e2 = sV.aim;
             } else if (!Ai.lockDir) {
                 if (fu.renderDir && fl.renderDir == "noDir") {
@@ -9315,7 +9272,7 @@ let serverID;
                 em.attempts = cI.attempts;
                 if (em.paths.length > 0) {
                     em.active = true;
-                    let ca = s4.getDirect(em.paths[1], Ai, 0, 2);
+                    let ca = sN.step(em.paths);
                     A0("9", ca, 1);
                     AW.autoPush = true;
                     AW.pushData.x2 = AQ.x2 - cZ;
@@ -14536,7 +14493,7 @@ let serverID;
                                 em.attempts = cR.attempts;
                                 if (em.paths.length > 0) {
                                     em.finded = true;
-                                    let cD = s4.getDirect(em.paths[1], Ai, 0, 2);
+                                    let cD = sN.step(em.paths);
                                     A0("9", cD, 1);
                                 } else if (em.attempts < 20) {
                                     cR = sN.calc({
@@ -14547,7 +14504,7 @@ let serverID;
                                     em.attempts = cR.attempts;
                                     if (em.paths.length > 0) {
                                         em.finded = true;
-                                        let cZ = s4.getDirect(em.paths[1], Ai, 0, 2);
+                                        let cZ = sN.step(em.paths);
                                         A0("9", cZ, 1);
                                     } else {
                                         em.finded = false;
