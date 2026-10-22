@@ -154,8 +154,8 @@
      teleporters / boost pads only with "Avoid My Teleporters" / "Avoid Ally
      Boost Pads" (both on by default, as in Falcon).
    - One Tick Ignores Hats (Offensive): Dynamic One Tick counts full damage.
-   - Enemy placement potential: where each enemy within 400 px could put a
-     spike next tick and whether one would touch you (used by the modules).
+   - Enemy placement potential: whether an enemy close enough could put a
+     spike next tick that touches you (used by the modules).
    - Menu: settings rows without a checkbox, number fields; typing in a menu
      field no longer fires keybinds or moves you, handled keys don't reach the
      browser (Firefox quick find on / and ').
@@ -202,6 +202,29 @@
      corner cutting, capped at 4000 cells (~1 ms; the old search could take
      40 ms of the tick), and you walk
      straight toward the farthest visible waypoint instead of zig-zagging.
+   - Breakers (from Falcon's AutoBreaker): the hammer breaker picks the
+     weapon that breaks the object sooner (hits x reload, tank gear and
+     weapon variant counted) or the one that reaches it; tank gear only when
+     it saves a hit, and soldier instead of tank while an enemy with a
+     loaded one-shot is near and you touch or are about to touch a spike;
+     aims that finish an object sooner score higher.
+   - Connection: the mod's own packets were encoded, sent into the send
+     hook, decoded and encoded again; now one pass, and unchanged game
+     packets keep their bytes. Server packet handlers are one table instead
+     of a new 30-entry object per packet. External Sync connects as soon as
+     it is turned on (it waited for the next 20 s update).
+   - Faster ticks: player updates no longer predict a collision position
+     nothing read; nearby objects are sorted with one distance per object;
+     breaker queues use a per-tick mark instead of includes() scans; the
+     breaker and the placement grader query the object grid once per tick;
+     placement potential only checks enemies close enough to spike you;
+     the pathfinder skips the map-edge pass away from edges and skips the
+     search when the straight line is clear.
+   - Faster frames: visible objects are sorted into their draw layers once
+     per frame instead of being rescanned for each of the 5 layers.
+   - Timing for this round, every toggle on including Auto Push and Auto
+     Play (3 alternating runs): tick 2.88 -> 2.38 ms, frame 5.9 -> 5.6 ms;
+     with the Falcon toggles off the tick is 1.8 ms.
    - Timing (same benchmark as above, alternating runs): Phase 4 build
      1.99 / 3.4 ms tick; part 2 with its toggles off 1.95 / 3.3 ms; with every
      Falcon toggle on 2.21 / 3.7 ms. Frames stay at ~6.2 ms.
@@ -966,8 +989,13 @@ let serverID;
                             const ct = cW.target.checked;
                             localStorage.setItem(cK, ct);
                             fu[cK] = ct;
-                            if (cK === "externalSync" && !ct) {
-                                roboticsSyncOff();
+                            if (cK === "externalSync") {
+                                // Connect at once instead of at the next 20 s update.
+                                if (ct) {
+                                    V8();
+                                } else {
+                                    roboticsSyncOff();
+                                }
                             }
                         });
                     }
@@ -1883,108 +1911,125 @@ let serverID;
                     this.nsend(ci);
                     return;
                 }
-                fj = false;
-                let cC = new Uint8Array(ci);
                 let cK;
                 try {
-                    cK = msgpack.decode(cC);
+                    cK = msgpack.decode(new Uint8Array(ci));
                 } catch (err) {
                     console.warn("[Robotics] could not decode an outgoing packet; sending it unmodified.", err);
                     this.nsend(ci);
                     return;
                 }
-                let cd = cK[0];
-                cC = cK[1];
-                if (cd == "6") {
-                    let ck = cC[0];
-                    if (ck) {
-                        e8.forEach(cQ => {
-                            let cg = new RegExp(cQ, "g");
-                            ck = ck.replace(cg, cp => {
-                                return cp[0].toUpperCase() + cp.slice(1);
-                            });
-                        });
-                        cC[0] = ck.slice(0, 30);
-                    }
-                } else if (cd == "L") {
-                    cC[0] = cC[0] + String.fromCharCode(0).repeat(7);
-                    cC[0] = cC[0].slice(0, 7);
-                } else if (cd == "M") {
-                    cC[0].name = cC[0].name == "" ? "unknown" : cC[0].name;
-                    cC[0].moofoll = true;
-                    cC[0].skin = cC[0].skin == 10 ? "__proto__" : cC[0].skin;
-                    fX = [cC[0].name, cC[0].moofoll, cC[0].skin];
-                } else if (cd == "D") {
-                    if (AW.lastDir == cC[0] || [null, undefined].includes(cC[0])) {
-                        fj = true;
-                    } else {
-                        AW.lastDir = cC[0];
-                    }
-                } else if (cd == "F") {
-                    if (!cC[2]) {
-                        fj = true;
-                    } else if (![null, undefined].includes(cC[1])) {
-                        AW.lastDir = cC[1];
-                    }
-                } else if (cd == "K") {
-                    if (!cC[1]) {
-                        fj = true;
-                    }
-                } else if (cd == "S") {
-                    sc.wait = !sc.wait;
-                    if (!fu.allowPing) {
-                        fj = true;
-                    }
-                } else if (cd == "9") {
-                    if (Ai && cC[1]) {
-                        if (Ai.moveDir == cC[0]) {
-                            fj = true;
-                        } else {
-                            Ai.moveDir = cC[0];
-                        }
-                        if (Ai.moveDir || Ai.moveDir == 0) {
-                            Ai.moveTime = Date.now();
-                        }
-                    } else {
-                        fj = true;
-                    }
-                } else if (cd == "0") {
-                    if (!cC[0]) {
-                        fj = true;
-                    }
-                } else if (cd == "P") {
-                    if (!cC[2]) {
-                        VT.shift();
-                    } else {
-                        VT = VT.filter(cQ => cQ != cC[0]);
-                    }
-                } else if (cd == "e") {
-                    if (Ai) {
-                        Ai.moveDir = undefined;
-                    }
-                }
-                if (!fj) {
-                    let cQ;
-                    try {
-                        cQ = msgpack.encode([cd, cC]);
-                    } catch (err) {
-                        console.warn("[Robotics] could not encode an outgoing packet; sending it unmodified.", err);
-                        cQ = ci;
-                    }
-                    roboticsLimiter.send(this, cd, cC, cQ);
-                }
+                roboticsOutgoing(this, cK[0], cK[1], ci);
             } else {
                 this.nsend(ci);
             }
         };
+        /* One outgoing path for the game's packets and the mod's own (A0): the
+           rules below adjust or drop them, then the limiter sends them. Game
+           packets are decoded once; the mod's arrive decoded and are encoded
+           once (they used to be encoded, sent into this hook, decoded and
+           encoded again). Unchanged game packets keep their bytes (copied, in
+           case the page reuses its buffer while the packet waits in the queue). */
+        function roboticsOutgoing(ws, cd, cC, raw) {
+            fj = false;
+            let cW = false;
+            if (cd == "6") {
+                let ck = cC[0];
+                if (ck) {
+                    e8.forEach(cQ => {
+                        let cg = new RegExp(cQ, "g");
+                        ck = ck.replace(cg, cp => {
+                            return cp[0].toUpperCase() + cp.slice(1);
+                        });
+                    });
+                    cC[0] = ck.slice(0, 30);
+                    cW = true;
+                }
+            } else if (cd == "L") {
+                cC[0] = cC[0] + String.fromCharCode(0).repeat(7);
+                cC[0] = cC[0].slice(0, 7);
+                cW = true;
+            } else if (cd == "M") {
+                cC[0].name = cC[0].name == "" ? "unknown" : cC[0].name;
+                cC[0].moofoll = true;
+                cC[0].skin = cC[0].skin == 10 ? "__proto__" : cC[0].skin;
+                fX = [cC[0].name, cC[0].moofoll, cC[0].skin];
+                cW = true;
+            } else if (cd == "D") {
+                if (AW.lastDir == cC[0] || [null, undefined].includes(cC[0])) {
+                    fj = true;
+                } else {
+                    AW.lastDir = cC[0];
+                }
+            } else if (cd == "F") {
+                if (!cC[2]) {
+                    fj = true;
+                } else if (![null, undefined].includes(cC[1])) {
+                    AW.lastDir = cC[1];
+                }
+            } else if (cd == "K") {
+                if (!cC[1]) {
+                    fj = true;
+                }
+            } else if (cd == "S") {
+                sc.wait = !sc.wait;
+                if (!fu.allowPing) {
+                    fj = true;
+                }
+            } else if (cd == "9") {
+                if (Ai && cC[1]) {
+                    if (Ai.moveDir == cC[0]) {
+                        fj = true;
+                    } else {
+                        Ai.moveDir = cC[0];
+                    }
+                    if (Ai.moveDir || Ai.moveDir == 0) {
+                        Ai.moveTime = Date.now();
+                    }
+                } else {
+                    fj = true;
+                }
+            } else if (cd == "0") {
+                if (!cC[0]) {
+                    fj = true;
+                }
+            } else if (cd == "P") {
+                if (!cC[2]) {
+                    VT.shift();
+                } else {
+                    VT = VT.filter(cQ => cQ != cC[0]);
+                }
+            } else if (cd == "e") {
+                if (Ai) {
+                    Ai.moveDir = undefined;
+                }
+            }
+            if (fj) {
+                return;
+            }
+            let cQ = null;
+            if (raw && !cW) {
+                cQ = raw.slice ? raw.slice(0) : raw;
+            } else {
+                try {
+                    cQ = msgpack.encode([cd, cC]);
+                } catch (err) {
+                    if (!raw) {
+                        console.warn("[Robotics] failed to send packet " + cd + ":", err);
+                        return;
+                    }
+                    console.warn("[Robotics] could not encode an outgoing packet; sending it unmodified.", err);
+                    cQ = raw;
+                }
+            }
+            roboticsLimiter.send(ws, cd, cC, cQ);
+        }
         function A0(ci) {
             if (!fB || !roboticsHasMsgpack() || fB.readyState !== WebSocket.OPEN) {
                 return;
             }
             try {
-                let cC = Array.prototype.slice.call(arguments, 1);
-                let cK = msgpack.encode([ci, cC]);
-                fB.send(cK);
+                roboticsOutgoing(fB, ci, Array.prototype.slice.call(arguments, 1), null);
             } catch (err) {
                 console.warn("[Robotics] failed to send packet " + ci + ":", err);
             }
@@ -1992,6 +2037,7 @@ let serverID;
         let A2 = {
             send: A0
         };
+        let roboticsHandlers = null;
         function A3(ci) {
             if (!roboticsHasMsgpack()) {
                 return;
@@ -2005,7 +2051,8 @@ let serverID;
             }
             let cd = cK[0];
             cC = cK[1];
-            let ck = {
+            // Server packet handlers, built once (it was a new 30-entry object per packet).
+            let ck = roboticsHandlers || (roboticsHandlers = {
                 A: Vc,
                 C: VF,
                 D: VH,
@@ -2039,7 +2086,7 @@ let serverID;
                 8: r5,
                 9: rJ,
                 0: VQ
-            };
+            });
             try {
                 if (cd == "io-init") {
                     // nothing to do: no cipher on this host
@@ -2288,6 +2335,22 @@ let serverID;
         };
         // Scratch array for grid lookups whose result is filtered right away.
         let roboticsNearTmp = [];
+        // Active objects within r of (x, y), nearest first; obj.nearDist holds the distance.
+        function roboticsNearSorted(x, y, r) {
+            const list = roboticsGrid.near(x, y, r, roboticsNearTmp);
+            const out = [];
+            for (let i = 0; i < list.length; i++) {
+                const obj = list[i];
+                if (!obj.active) continue;
+                const dist = Math.hypot(obj.x - x, obj.y - y);
+                if (dist <= r) {
+                    obj.nearDist = dist;
+                    out.push(obj);
+                }
+            }
+            out.sort((a, b) => a.nearDist - b.nearDist);
+            return out;
+        }
         function Ao(ci) {
             return roboticsGrid.bySid.get(ci);
         }
@@ -4864,65 +4927,16 @@ let serverID;
                     this.scale = cv[8];
                     this.skinColor = cv[9];
                 };
+                /* Speed multiplier from build item, weapon, hat, accessory, snow and
+                   slow. (It also predicted a collision-adjusted next position every
+                   tick for every player, which nothing read; the simulator and x3/y3
+                   do that job.) */
                 this.update = function (cv) {
                     if (this.active) {
-                        let cD = {
-                            skin: roboticsHatById.get(this.skinIndex),
-                            tail: roboticsTailById.get(this.tailIndex)
-                        };
-                        let cZ = (this.buildIndex >= 0 ? 0.5 : 1) * (cW.weapons[this.weaponIndex].spdMult || 1) * (cD.skin ? cD.skin.spdMult || 1 : 1) * (cD.tail ? cD.tail.spdMult || 1 : 1) * (this.y <= cK.snowBiomeTop ? cD.skin && cD.skin.coldM ? 1 : cK.snowSpeed : 1) * this.slowMult;
-                        this.xVel = (this.x2 - this.oldPos.x2) / cv;
-                        this.yVel = (this.y2 - this.oldPos.y2) / cv;
-                        if (!this.zIndex && this.y >= cK.mapScale / 2 - cK.riverWidth / 2 && this.y <= cK.mapScale / 2 + cK.riverWidth / 2) {
-                            cZ *= cD.skin && cD.skin.watrImm ? 0.75 : 0.33;
-                            this.xVel += cD.skin && cD.skin.watrImm ? cK.waterCurrent * 0.4 * cv : cK.waterCurrent * cv;
-                        }
-                        var cE = this.moveDir != undefined ? Math.cos(this.moveDir) : 0;
-                        var cb = this.moveDir != undefined ? Math.sin(this.moveDir) : 0;
-                        var cR = Math.hypot(cE, cb);
-                        if (cR) {
-                            cE /= cR;
-                            cb /= cR;
-                        }
-                        ;
-                        if (cE) {
-                            this.xVel += cE * this.speed * cZ;
-                        }
-                        if (cb) {
-                            this.yVel += cb * this.speed * cZ;
-                        }
-                        if (this.xVel) {
-                            this.xVel *= Math.pow(cK.playerDecel, cv);
-                            if (this.xVel <= 0.01 && this.xVel >= -0.01) {
-                                this.xVel = 0;
-                            }
-                        }
-                        if (this.yVel) {
-                            this.yVel *= Math.pow(cK.playerDecel, cv);
-                            if (this.yVel <= 0.01 && this.yVel >= -0.01) {
-                                this.yVel = 0;
-                            }
-                        }
-                        this.xlvel = this.x2 + this.xVel * cv;
-                        this.ylvel = this.y2 + this.yVel * cv;
-                        roboticsGrid.near(this.xlvel, this.ylvel, 250, roboticsNearTmp).filter(cO => cO.active && !cO.ignoreCollision).forEach(cO => {
-                            let cI = this.xlvel - cO.x;
-                            let ca = this.ylvel - cO.y;
-                            let cu = 35 + (cO.getScale ? cO.getScale() : cO.scale);
-                            if (Math.abs(cI) <= cu || Math.abs(ca) <= cu) {
-                                let cl = Math.max(0, cu - cd.getDistance(0, 0, cI, ca));
-                                if (cl) {
-                                    let cB = Math.atan2(ca, cI);
-                                    let cw = Math.min(cl, cv);
-                                    if (!cO.isTeamObject(this) && cO.dmg > 0 && cO.name.includes("spikes") || cO.type == 1 && cO.y >= 12000) {
-                                        cw *= 1.5;
-                                    }
-                                    this.xlvel += Math.cos(cB) * cw;
-                                    this.ylvel += Math.sin(cB) * cw;
-                                }
-                            }
-                        });
-                        this.maxSpeed = cZ;
+                        let cD = roboticsHatById.get(this.skinIndex);
+                        let cE = roboticsTailById.get(this.tailIndex);
+                        let cR = cW.weapons[this.weaponIndex];
+                        this.maxSpeed = (this.buildIndex >= 0 ? 0.5 : 1) * (cR && cR.spdMult || 1) * (cD ? cD.spdMult || 1 : 1) * (cE ? cE.spdMult || 1 : 1) * (this.y <= cK.snowBiomeTop ? cD && cD.coldM ? 1 : cK.snowSpeed : 1) * this.slowMult;
                     }
                 };
                 let cY = 0;
@@ -5874,17 +5888,70 @@ let serverID;
             }
         }
         ;
+        const ROBOTICS_BREAK_KEYS = ["breakQ0", "breakQ1", "breakQ2", "breakQ3"];
+        /* Falcon's anti pre-hit (AutoBreaker.shouldUseTank): no tank gear while
+           breaking when an enemy within 300 has a reloaded primary whose bull hit
+           plus a spike (45) one-shots, and you touch or are about to touch an
+           enemy spike - soldier instead. */
+        function roboticsBreakNoTank() {
+            let ci = false;
+            for (let cC = 0; cC < Ad.length && !ci; cC++) {
+                const cK = Ad[cC];
+                ci = cK.dist2 <= 300 && cK.primaryReloaded && cK.primaryIndex !== undefined && roboticsWeaponDamage(cK.primaryIndex, cK.primaryVariant || 0) * 1.5 + 45 >= 100;
+            }
+            if (!ci) {
+                return false;
+            }
+            const cd = roboticsNextPos(Ai);
+            const ck = roboticsGrid.near(Ai.x2, Ai.y2, 160, roboticsNearTmp);
+            for (let cC = 0; cC < ck.length; cC++) {
+                const cQ = ck[cC];
+                if (!cQ.active || !(cQ.dmg && !cQ.isTeamObject(Ai) || roboticsSim.isCactus(cQ))) continue;
+                if (Math.hypot(Ai.x2 - cQ.x, Ai.y2 - cQ.y) <= cQ.scale + 36 || Math.hypot(cd.x - cQ.x, cd.y - cQ.y) <= cQ.scale + 35) {
+                    return true;
+                }
+            }
+            return false;
+        }
         class eq {
             constructor() {
                 this.active = false;
                 this.aim = 0;
                 this.priority = [[], [], [], []];
+                this.queueId = 1;
                 this.target = null;
+                this.nearCache = null;
+            }
+            // Add obj to priority list p once per tick (was an includes() scan per add).
+            queue(ci, cC) {
+                const cK = ROBOTICS_BREAK_KEYS[ci];
+                if (cC[cK] !== this.queueId) {
+                    cC[cK] = this.queueId;
+                    this.priority[ci].push(cC);
+                }
+            }
+            // Damage one hit of weaponId does to a building, with tank gear when ci.
+            buildingHit(ci, cC) {
+                return roboticsBuildingDamage(ci, ci < 9 ? Ai.primaryVariant : Ai.secondaryVariant, cC ? 40 : 0);
+            }
+            hitsToBreak(ci, cC, cK) {
+                const cd = this.buildingHit(ci, cK);
+                return cd > 0 ? Math.max(1, Math.ceil(cC.health / cd)) : Infinity;
+            }
+            // ms until weaponId breaks obj: wait for the reload, then one swing per weapon speed.
+            timeToBreak(ci, cC) {
+                const cK = this.hitsToBreak(ci, cC, !!Ai.skins[40]);
+                return Math.max(0, Ai.reloads[ci] || 0) + (cK - 1) * (s5.weapons[ci].speed || 300);
+            }
+            // Aims that finish an object sooner score higher (40 for a one-hit break, 20 for two...).
+            finishBonus(ci) {
+                const cC = this.useHammer(ci) ? Ai.weapons[1] : Ai.weapons[0];
+                return 40 / this.hitsToBreak(cC, ci, !!Ai.skins[40]);
             }
             // Buildings a swing toward angle ci would hit (range + scale, within the server's gather angle).
             objectsHit(ci) {
                 let cC = [];
-                let cK = roboticsGrid.near(Ai.x2, Ai.y2, 300, this.nearTmp || (this.nearTmp = []));
+                let cK = this.nearCache || roboticsGrid.near(Ai.x2, Ai.y2, 300, this.nearTmp || (this.nearTmp = []));
                 for (let cd = 0; cd < cK.length; cd++) {
                     let ck = cK[cd];
                     if (ck.active && ck.type == null && s4.getDist(Ai, ck, 2, 0) <= s5.weapons[this.useHammer(ck) ? Ai.weapons[1] : Ai.weapons[0]].range + ck.scale && s4.getAngleDist(s4.getDirect(ck, Ai, 0, 2), ci) <= Math.PI / 2.6) {
@@ -5899,21 +5966,27 @@ let serverID;
                 return ci;
             }
             calculateAim() {
-                const ci = this.getFilteredPriority();
-                for (let cC = 0; cC < ci.length; cC++) {
-                    const cK = ci[cC];
-                    if (cC == 3) {
-                        if (Ad.length && AQ.dist2 < 300) {
-                            this.active = false;
+                // One grid query for every candidate aim this tick.
+                this.nearCache = roboticsGrid.near(Ai.x2, Ai.y2, 300, this.nearTmp || (this.nearTmp = []));
+                try {
+                    const ci = this.getFilteredPriority();
+                    for (let cC = 0; cC < ci.length; cC++) {
+                        const cK = ci[cC];
+                        if (cC == 3) {
+                            if (Ad.length && AQ.dist2 < 300) {
+                                this.active = false;
+                                return;
+                            }
+                        }
+                        if (cK.length > 0) {
+                            this.processTargets(cK, cC);
                             return;
                         }
                     }
-                    if (cK.length > 0) {
-                        this.processTargets(cK, cC);
-                        return;
-                    }
+                    this.active = false;
+                } finally {
+                    this.nearCache = null;
                 }
-                this.active = false;
             }
             processTargets(ci, cC) {
                 if (!ci.length) {
@@ -5950,7 +6023,7 @@ let serverID;
                             let cD = 0;
                             cR.forEach(cZ => {
                                 if (ci.includes(cZ)) {
-                                    cD += 100;
+                                    cD += 100 + this.finishBonus(cZ);
                                 }
                                 if (cZ.isTeamObject(Ai)) {
                                     if (AQ.inTrap && cZ.sid == AQ.inTrap.sid) {
@@ -5984,7 +6057,7 @@ let serverID;
                         let ca = 0;
                         cI.forEach(cu => {
                             if (ci.includes(cu)) {
-                                ca += 100;
+                                ca += 100 + this.finishBonus(cu);
                             }
                             if (cu.isTeamObject(Ai)) {
                                 if (AQ.inTrap && cu.sid == AQ.inTrap.sid) {
@@ -6019,7 +6092,7 @@ let serverID;
                 let cW = 0;
                 cp.forEach(cu => {
                     if (ci.includes(cu)) {
-                        cW += 100;
+                        cW += 100 + this.finishBonus(cu);
                     }
                     if (cu.isTeamObject(Ai)) {
                         if (AQ.inTrap && cu.sid == AQ.inTrap.sid) {
@@ -6045,7 +6118,7 @@ let serverID;
                         let cL = 0;
                         cw.forEach(cy => {
                             if (ci.includes(cy)) {
-                                cL += 100;
+                                cL += 100 + this.finishBonus(cy);
                             }
                             if (cy.isTeamObject(Ai)) {
                                 if (AQ.inTrap && cy.sid == AQ.inTrap.sid) {
@@ -6070,16 +6143,24 @@ let serverID;
                 this.active = !!this.target;
                 return;
             }
+            /* Hammer breaker: great hammer when it breaks this object sooner (hits x
+               reload, tank gear and weapon variant counted) or only it reaches;
+               the primary otherwise. Without an object: the hammer. */
             useHammer(ci) {
-                if (fu.hammerBreakerOptimisation && Ai.weapons[1] == 10) {
-                    if (ci) {
-                        if (ci.health > 0 && ci.health <= s5.weapons[Ai.weapons[0]].dmg && s6.canHit(Ai, ci, Ai.weapons[0]) && ![5, 8].includes(Ai.weapons[0])) {
-                            return false;
-                        }
-                    }
+                if (!fu.hammerBreakerOptimisation || Ai.weapons[1] != 10) {
+                    return false;
+                }
+                if (!ci || !(ci.health > 0)) {
                     return true;
                 }
-                return false;
+                const cC = Ai.weapons[0];
+                const cK = s6.canHit(Ai, ci, 10);
+                const cd = s6.canHit(Ai, ci, cC);
+                if (cK !== cd) {
+                    return cK;
+                }
+                // A tie goes to the primary: you stay on your combat weapon.
+                return this.timeToBreak(10, ci) < this.timeToBreak(cC, ci);
             }
         }
         class eU {
@@ -6365,7 +6446,8 @@ let serverID;
                 }
                 const lo = Ai.scale;
                 const hi = r.mapScale - Ai.scale;
-                for (let i = 0; i < n; i++) {
+                // Map edge: only when the grid reaches past it.
+                for (let i = 0; (cQ < lo || cg < lo || cQ + em.scale > hi || cg + em.scale > hi) && i < n; i++) {
                     const at = cQ + cp * i;
                     const atY = cg + cp * i;
                     for (let j = 0; j < n; j++) {
@@ -6459,6 +6541,14 @@ let serverID;
                 if (cells[start] || cells[goal]) {
                     return { paths: [], attempts: 0 };
                 }
+                // Straight line already clear: no search needed.
+                if (this.lineClear(ends.start.x, ends.start.y, goalX, goalY)) {
+                    const cp = em.scale / n;
+                    return {
+                        paths: [{ x: this.originX + cp * ends.start.x, y: this.originY + cp * ends.start.y }, { x: this.originX + cp * goalX, y: this.originY + cp * goalY }],
+                        attempts: 1
+                    };
+                }
                 g[start] = 0;
                 parent[start] = -1;
                 push(start, heuristic(ends.start.x, ends.start.y));
@@ -6495,6 +6585,17 @@ let serverID;
                     }
                 }
                 return { paths: [], attempts };
+            }
+            // Cells along the segment between two cells (sampled every quarter cell) are all free.
+            lineClear(x0, y0, x1, y1) {
+                const n = em.gridSize;
+                const steps = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0) * 4));
+                for (let k = 1; k < steps; k++) {
+                    const col = Math.round(x0 + (x1 - x0) * k / steps);
+                    const row = Math.round(y0 + (y1 - y0) * k / steps);
+                    if (this.cells[row * n + col]) return false;
+                }
+                return true;
             }
             toPath(cell) {
                 const n = em.gridSize;
@@ -8084,8 +8185,8 @@ let serverID;
             return false;
         }
         /* ---- Enemy placement potential (Falcon PlayerPlacementManager) ----
-           Where each nearby enemy could put a spike next tick (free angles
-           around them, sampled). canPlaceOnMe: one of those spots touches you.
+           Whether an enemy close enough could put a spike next tick that touches
+           you (free angles around them, sampled): enemy.placeOnMe, canPlaceOnMe.
            Used by the graders and to skip moves that would get you spiked. */
         let roboticsPlacePotential = {
             canPlaceOnMe: false,
@@ -8103,12 +8204,12 @@ let serverID;
                 const offset = 35 + item.scale + (item.placeOffset || 0);
                 this.range = offset;
                 this.objectScale = item.scale;
+                // A spike an enemy places can only touch you within offset + 35 + its scale.
+                const reachMe = offset + 35 + item.scale + 5;
                 for (let i = 0; i < Ad.length; i++) {
                     const enemy = Ad[i];
-                    if (!enemy.placeAll) enemy.placeAll = [];
-                    enemy.placeAll.length = 0;
                     enemy.placeOnMe = 0;
-                    if (!(enemy.dist2 <= 400)) continue;
+                    if (!(enemy.dist2 <= reachMe)) continue;
                     const raw = [];
                     const nearby = roboticsGrid.near(enemy.x2, enemy.y2, 300, roboticsNearTmp);
                     for (let j = 0; j < nearby.length; j++) {
@@ -8121,7 +8222,6 @@ let serverID;
                     for (let j = 0; j < angles.length; j++) {
                         const x = enemy.x2 + Math.cos(angles[j]) * offset;
                         const y = enemy.y2 + Math.sin(angles[j]) * offset;
-                        enemy.placeAll.push({ x, y });
                         if (s4.getDistance(x, y, Ai.x2, Ai.y2) <= 35 + item.scale) {
                             enemy.placeOnMe++;
                             this.canPlaceOnMe = true;
@@ -8232,7 +8332,8 @@ let serverID;
             // Spikes/traps near the candidate that would hurt or trap this enemy.
             countNear(candidate, enemy, breaking) {
                 const counts = { traps: 0, spikes: 0 };
-                const nearby = roboticsGrid.near(candidate.x, candidate.y, 150, roboticsNearTmp);
+                // findPlacements / findPreplace pass the objects around you (within 350) once.
+                const nearby = this.nearList || roboticsGrid.near(candidate.x, candidate.y, 150, roboticsNearTmp);
                 const victim = roboticsSim.state(enemy);
                 for (let i = 0; i < nearby.length; i++) {
                     const obj = nearby[i];
@@ -8361,6 +8462,8 @@ let serverID;
                 const myNext = roboticsSim.simTick(roboticsSim.state(Ai), Ai.moveDir);
                 this.river.x = px;
                 const candidates = [];
+                this.nearList = objects;
+                try {
 
                 for (const slot of slots) {
                     const item = s5.list[Ai.items[slot]];
@@ -8386,6 +8489,9 @@ let serverID;
                         this.grade(candidate, enemies, breaking, myNext);
                         if (!candidate.dontUse) candidates.push(candidate);
                     }
+                }
+                } finally {
+                    this.nearList = null;
                 }
                 candidates.sort((a, b) => b.grade - a.grade || b.isTrap - a.isTrap);
                 const best = [];
@@ -13843,7 +13949,8 @@ let serverID;
                     }
                 } else if (sV.active && sV.target) {
                     let cC = sV.useHammer(sV.target) ? Ai.weapons[1] : Ai.weapons[0];
-                    if (sV.target.health > s5.weapons[cC].dmg * (s5.weapons[cC].sDmg || 1) && Ai[(cC < 9 ? "primary" : "secondary") + "Reloaded"]) {
+                    // Tank gear only when it saves a hit, and not when a one-shot could catch you on a spike.
+                    if (Ai[(cC < 9 ? "primary" : "secondary") + "Reloaded"] && Ai.skins[40] && sV.hitsToBreak(cC, sV.target, true) < sV.hitsToBreak(cC, sV.target, false) && !roboticsBreakNoTank()) {
                         et(40, 0);
                     } else if (ci && Ai.shameCount > 0 && !Ai.inTrap) {
                         et(7, 0);
@@ -14020,12 +14127,8 @@ let serverID;
                                 }
                             });
                             AK.antiTurretSpam = cd >= 5;
-                            AF = roboticsGrid.near(AK.x2, AK.y2, 500, roboticsNearTmp).filter(cQ => cQ.active && s4.getDist(cQ, AK, 0, 2) <= 500).sort((cQ, cg) => {
-                                return s4.getDist(cQ, AK, 0, 2) - s4.getDist(cg, AK, 0, 2);
-                            });
-                            let ck = AF.filter(cQ => cQ.dmg && s4.getDist(cQ, Ai, 0, 2) <= 169 && !cQ.isTeamObject(AK)).sort(function (cQ, cg) {
-                                return s4.getDist(cQ, AK, 0, 2) - s4.getDist(cg, AK, 0, 2);
-                            });
+                            AF = roboticsNearSorted(AK.x2, AK.y2, 500);
+                            let ck = AF.filter(cQ => cQ.dmg && cQ.nearDist <= 169 && !cQ.isTeamObject(AK));
                             if (cK) {
                                 ss.info = cK;
                                 let cQ = s4.getDirect(cK, Ai, 0, 2);
@@ -14033,40 +14136,34 @@ let serverID;
                                     ss.protect(cQ);
                                 }
                                 [ck[0], cK, ck[1]].forEach(cg => {
-                                    if (cg && !sV.priority[0].includes(cg)) {
-                                        sV.priority[0].push(cg);
+                                    if (cg) {
+                                        sV.queue(0, cg);
                                     }
                                 });
                             } else {
                                 ss.antiTrapped = false;
                             }
                             if (fu.breakSpikeSwitch) {
-                                ck.forEach(cg => {
-                                    if (!sV.priority[1].includes(cg)) {
-                                        sV.priority[1].push(cg);
-                                    }
-                                });
+                                ck.forEach(cg => sV.queue(1, cg));
                             }
                             if (fu.breakTrapSwitch) {
-                                let cg = AF.filter(cp => !cp.isTeamObject(Ai) && cp.trap);
-                                cg.forEach(cp => {
-                                    if (!sV.priority[1].includes(cp)) {
-                                        sV.priority[1].push(cp);
+                                AF.forEach(cp => {
+                                    if (cp.trap && !cp.isTeamObject(Ai)) {
+                                        sV.queue(1, cp);
                                     }
                                 });
                             }
                             if (fu.breakTTBSwitch) {
-                                let cp = AF.filter(cW => !cW.isTeamObject(Ai) && (cW.name == "turret" || cW.name == "teleporter" || cW.name == "blocker"));
-                                cp.forEach(cW => {
-                                    if (!sV.priority[2].includes(cW)) {
-                                        sV.priority[2].push(cW);
+                                AF.forEach(cW => {
+                                    if ((cW.name == "turret" || cW.name == "teleporter" || cW.name == "blocker") && !cW.isTeamObject(Ai)) {
+                                        sV.queue(2, cW);
                                     }
                                 });
                             }
                             if (fu.breakAllSwitch) {
                                 AF.forEach(cW => {
-                                    if (cW.type == null && !sV.priority[3].includes(cW)) {
-                                        sV.priority[3].push(cW);
+                                    if (cW.type == null) {
+                                        sV.queue(3, cW);
                                     }
                                 });
                             }
@@ -14316,10 +14413,9 @@ let serverID;
                         }
                         if (fu.breakAroundSwitch) {
                             if (AQ.inTrap) {
-                                let co = AF.filter(cG => s4.getDist(cG, AQ.inTrap, 0, 0) < 200 && (!cG.dmg || !cG.isTeamObject(Ai)) && cG.sid != AQ.inTrap.sid && !cG.trap);
-                                co.forEach(cG => {
-                                    if (!sV.priority[1].includes(cG)) {
-                                        sV.priority[1].push(cG);
+                                AF.forEach(cG => {
+                                    if (cG.type == null && !cG.trap && cG.sid != AQ.inTrap.sid && (!cG.dmg || !cG.isTeamObject(Ai)) && s4.getDist(cG, AQ.inTrap, 0, 0) < 200) {
+                                        sV.queue(1, cG);
                                     }
                                 });
                             }
@@ -14645,6 +14741,7 @@ let serverID;
                     AW.forceStop = false;
                     AW.antiInsta = false;
                     sV.priority = [[], [], [], []];
+                    sV.queueId++;
                     ss.replaced = false;
                 }
             }
@@ -15720,10 +15817,27 @@ let serverID;
            instead of once per layer and once per drawn building. */
         let roboticsFrame = {
             visible: [],
+            layers: [[], [], [], [], []],
             hit: new Set()
         };
         function roboticsPrepareFrame(ci, cC) {
             roboticsGrid.near(ci + AE / 2, cC + Ab / 2, Math.max(AE, Ab) / 2 + 400, roboticsFrame.visible);
+            // Sort visible objects into their layers (-1..3) once and update their wiggle;
+            // each rP(layer) pass used to scan every visible object.
+            const cK = roboticsFrame.layers;
+            for (let cd = 0; cd < cK.length; cd++) {
+                cK[cd].length = 0;
+            }
+            for (let cd = 0; cd < roboticsFrame.visible.length; cd++) {
+                const ck = roboticsFrame.visible[cd];
+                if (ck.alive) {
+                    ck.update(AD);
+                    const cQ = cK[ck.layer + 1];
+                    if (cQ) {
+                        cQ.push(ck);
+                    }
+                }
+            }
             roboticsFrame.hit.clear();
             if (Ai) {
                 let cK = sV.objectsHit(sZ());
@@ -15736,14 +15850,12 @@ let serverID;
             let cd;
             let ck;
             let cQ;
-            roboticsFrame.visible.forEach(cg => {
+            // Layer 3 also draws every damaged building's health bar, so it walks all visible objects.
+            (ci == 3 ? roboticsFrame.visible : roboticsFrame.layers[ci + 1] || []).forEach(cg => {
                 AK = cg;
                 if (AK.alive) {
                     ck = AK.x + AK.xWiggle - cC;
                     cQ = AK.y + AK.yWiggle - cK;
-                    if (ci == 0) {
-                        AK.update(AD);
-                    }
                     fV.globalAlpha = AK.alpha;
                     if (AK.layer == ci && rl(ck, cQ, AK.scale + (AK.blocker || 0))) {
                         if (AK.isItem) {
