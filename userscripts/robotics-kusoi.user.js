@@ -161,6 +161,15 @@
      browser (Firefox quick find on / and ').
    - Player state: last tick's reload state, the tick each weapon reloaded,
      the tick of the last gather animation and the last health drop.
+   - Attack modules (Offensive tab), at most one per tick, in this order:
+     Knockback Instakills (p, + "In Trap"), Apple Insta (-, + "In Trap",
+     "Low Damage"), Velocity Hits, Projectile Sync, Melee Sync (=, partner
+     SID in its field), Knockback Hits (b), Auto Push Strikes ([, Shame
+     Strike / Predictive / Bullspam per weapon, shame threshold), Turret
+     Bullet Assist (;), Barbarian Knockback ('), Turret Gear Knockback (]).
+     Knockback checks run Falcon's movement simulator on the enemy.
+   - Falcon's Turret Gear Knockback only fired when the turret could NOT
+     reach the enemy (inverted line check); it now needs a clear line.
    Other
    - CONFIG block with keybinds, scheduler, packet budget, sync, reload.
    - Status line adds frame and tick handler time (avg/max ms per second)
@@ -1016,6 +1025,76 @@ let serverID;
                 cK.BoxF("Projectile Sync", "Falcon: bull hit when your or your team's arrows/turrets already flying at the enemy plus your hit kill (key k)", "projectileSync");
                 cK.BoxF("Velocity Hits", "Falcon: bull hit when the enemy is about to slide into a spike and the hit plus the spike kill (key i)", "velocityHits");
                 cK.BoxF("Dynamic One Tick", "Falcon: simulates both players 2 ticks ahead and one ticks (turret gear, then bull hit) automatically when it kills. Diamond polearm or ruby katana (key u; t still arms one)", "dynamicOneTick");
+                cK.BoxF("Knockback Hits", "Falcon: bull hit when the knockback bounces the enemy into 3+ spikes or kills (key b)", "knockbackHits");
+                cK.BoxF("Knockback Instakills", "Falcon: turret gear insta only when the simulated knockback ends on a spike. Needs great hammer (reverse) or a ranged secondary (key p)", "knockbackInsta");
+                cK.BoxF("Knockback Insta In Trap", "Falcon: allow Knockback Instakills while you are trapped", "knockbackInstaInTrap");
+                cK.BoxF("Auto Push Strikes", "Falcon: hit while Auto Push shoves a trapped enemy into a spike, method per weapon below (key [)", "pushStrikes");
+                cK.BoxF("Push Strike: Daggers", "Shame Strike: turret gear + daggers once their shame reaches the threshold", "pushStrikeDagger", {
+                    setting: true,
+                    option: true,
+                    options: {
+                        "Shame Strike": {
+                            id: "shame",
+                            selected: true
+                        },
+                        Bullspam: {
+                            id: "bullspam"
+                        },
+                        Disabled: {
+                            id: "off"
+                        }
+                    }
+                });
+                cK.BoxF("Push Strike: Polearm / Katana", "Predictive: learns when the enemy wears tank gear after reloading and hits one tick before", "pushStrikeHighDamage", {
+                    setting: true,
+                    option: true,
+                    options: {
+                        Predictive: {
+                            id: "predictive",
+                            selected: true
+                        },
+                        Bullspam: {
+                            id: "bullspam"
+                        },
+                        Disabled: {
+                            id: "off"
+                        }
+                    }
+                });
+                cK.BoxF("Push Strike: Other Weapons", "Bullspam: bull hit whenever reloaded and the enemy is on the spike", "pushStrikeGeneric", {
+                    setting: true,
+                    option: true,
+                    options: {
+                        Bullspam: {
+                            id: "bullspam",
+                            selected: true
+                        },
+                        Disabled: {
+                            id: "off"
+                        }
+                    }
+                });
+                cK.BoxF("Shame Strike Threshold", "Enemy shame count needed for a dagger Shame Strike (2-7)", "pushShameThreshold", {
+                    setting: true,
+                    input: {
+                        min: 2,
+                        max: 7,
+                        value: 4
+                    }
+                });
+                cK.BoxF("Turret Gear Knockback", "Falcon: turret gear when the bullet's knockback bounces the enemy into 3+ spikes or kills (key ])", "turretGearKB");
+                cK.BoxF("Turret Bullet Assist", "Falcon: turret gear when a trapped enemy on a spike takes damage, in one tick range (key ;)", "turretAssist");
+                cK.BoxF("Barbarian Knockback", "Falcon: barbarian armor when the enemy is about to hit you and the knockback bounces them into spikes (key ')", "barbKB");
+                cK.BoxF("Apple Insta", "Falcon: tank gear + great hammer breaks the enemy's trap, then spike + bull hit (key -)", "appleInsta");
+                cK.BoxF("Apple Insta In Trap", "Falcon: allow Apple Insta while you are trapped", "appleInstaInTrap");
+                cK.BoxF("Apple Insta Low Damage", "Falcon: allow Apple Insta with primaries other than short sword, katana and polearm", "appleInstaLowDamage");
+                cK.BoxF("Melee Sync", "Falcon: bull hit together with this player id when both hits kill (key =)", "meleeSync", {
+                    input: {
+                        min: -1,
+                        max: 999,
+                        value: -1
+                    }
+                });
                 cK.BoxF("One Tick Ignores Hats", "Falcon: Dynamic One Tick counts full damage even when the enemy wears soldier or EMP helmet", "oneTickIgnoreHats");
                 cK.BoxF("Graded Preplace", "Falcon: Preplacer picks its spot with Falcon's angle grader (needs Preplacer on) (key o)", "gradedPreplace");
                 cK.newLine(2);
@@ -6643,12 +6722,14 @@ let serverID;
                         }, 1);
                     }, 1);
                 };
-                // Bull hit with the primary this tick (projectile sync, velocity hit).
-                this.bullHitType = function (ci) {
+                // Hit with the primary this tick in bull helmet (or hat cK), aimed at
+                // the enemy (or angle cd). Projectile sync, velocity hits, push strikes...
+                this.bullHitType = function (ci, cK, cd) {
                     this.isTrue = true;
                     AW.autoAim = true;
+                    AW.customAim = cd;
                     ez(Ai.weapons[0]);
-                    et(7, 0);
+                    et(cK || 7, 0);
                     if (!eM) {
                         eY();
                     }
@@ -6657,6 +6738,64 @@ let serverID;
                     fU.tickBase(() => {
                         this.isTrue = false;
                         AW.autoAim = false;
+                        AW.customAim = undefined;
+                    }, 1);
+                };
+                // Falcon knockback insta. Normal: bull + primary, then turret gear +
+                // secondary. Reverse (ci): turret gear + secondary, then bull + primary.
+                this.knockbackInstaType = function (ci, cK) {
+                    this.isTrue = true;
+                    AW.autoAim = true;
+                    ez(Ai.weapons[ci ? 1 : 0]);
+                    et(ci ? 53 : 7, 0);
+                    if (!eM) {
+                        eY();
+                    }
+                    Ai.chat.message = cK;
+                    Ai.chat.count = 600;
+                    fU.tickBase(() => {
+                        ez(Ai.weapons[ci ? 0 : 1]);
+                        et(ci ? 7 : 53, 0);
+                        fU.tickBase(() => {
+                            this.isTrue = false;
+                            AW.autoAim = false;
+                        }, 1);
+                    }, 1);
+                };
+                // One tick in hat ci without attacking (turret gear / barbarian knockback, turret assist).
+                this.gearTickType = function (ci, cK) {
+                    this.isTrue = true;
+                    et(ci, 0);
+                    Ai.chat.message = cK;
+                    Ai.chat.count = 600;
+                    fU.tickBase(() => {
+                        this.isTrue = false;
+                    }, 1);
+                };
+                // Falcon apple insta: tank gear + great hammer on the enemy's trap (ci),
+                // then a spike toward them with bull + primary once the trap is gone.
+                this.appleInstaType = function (ci) {
+                    this.isTrue = true;
+                    AW.autoAim = true;
+                    AW.customAim = Math.atan2(ci.y - Ai.y2, ci.x - Ai.x2);
+                    ez(Ai.weapons[1]);
+                    et(40, 0);
+                    if (!eM) {
+                        eY();
+                    }
+                    Ai.chat.message = "apple insta";
+                    Ai.chat.count = 600;
+                    fU.tickBase(() => {
+                        AW.customAim = undefined;
+                        ez(Ai.weapons[0]);
+                        if (AQ.sid !== undefined) {
+                            ev(2, AQ.aim2);
+                        }
+                        et(7, 0);
+                        fU.tickBase(() => {
+                            this.isTrue = false;
+                            AW.autoAim = false;
+                        }, 1);
                     }, 1);
                 };
                 // Falcon one tick: tick 1 turret gear (no hit), tick 2 bull + primary hit,
@@ -7456,8 +7595,304 @@ let serverID;
             return { firstDir: first.dir, secondDir: second.dir };
         }
 
+        /* ---- Falcon attack modules ----
+           Each checks the nearest enemy (AQ) once per tick and starts a
+           sequence on sc when it passes. roboticsFalconAttacks() tries them in
+           priority order and runs at most one per tick. Knockback checks use
+           the movement simulator: "kills" means it one-ticks them, pit-traps
+           them or bounces them into 3+ spikes, as in Falcon. */
+        function roboticsKnockPower(weaponId) {
+            const weapon = s5.weapons[weaponId];
+            return (weapon && weapon.knock || 0) + 0.3;
+        }
+        function roboticsNextPos(player) {
+            return { x: isFinite(player.x3) ? player.x3 : player.x2, y: isFinite(player.y3) ? player.y3 : player.y2 };
+        }
+        function roboticsTurretReady() {
+            return !!Ai.skins[53] && !(Ai.reloads[53] > fU.tickRate);
+        }
+        function roboticsSecondaryReady() {
+            const weapon = Ai.weapons[1];
+            return weapon !== undefined && !(Ai.reloads[weapon] > 0);
+        }
+        // Server update order: players earlier in the list move first, so your hit's knockback lands this tick.
+        function roboticsMeFirst(enemy) {
+            return (Ai.updateOrder || 0) < (enemy.updateOrder || 0);
+        }
+        function roboticsInRangeOf(enemy, weaponId, pad) {
+            const weapon = s5.weapons[weaponId];
+            return !!weapon && roboticsInCombatRange({ x: Ai.x2, y: Ai.y2 }, { x: enemy.x2, y: enemy.y2 }, weapon.range - (pad || 0));
+        }
+        // Hat-only moves (no bull hit needed); never over a forced soldier / anti-insta hat.
+        function roboticsCanGearMove() {
+            return Ad.length && AQ.sid !== undefined && !sc.isTrue && !sc.ticking && !sV.active && AW.anti0Tick <= 0 && !AW.forceStop && !Ai.empAnti && !Ai.soldierAnti && !Ai.antiTurretSpam;
+        }
+        function roboticsKnockbackKills(res) {
+            return res.oneTicked || res.pitTrapped || res.spikesHit >= 3;
+        }
+
+        /* Knockback Hits (Falcon AutoAttacker): bull hit when its knockback
+           bounces the enemy into 3+ spikes or kills them. */
+        function roboticsKnockbackHit() {
+            if (!fu.knockbackHits || !roboticsCanBullHit() || !roboticsPrimaryReady() || AQ.inTrap) return false;
+            const weapon = Ai.weapons[0];
+            if (!roboticsInRangeOf(AQ, weapon)) return false;
+            const knock = { type: "knockback", pos: { x: Ai.x2, y: Ai.y2 }, knockPower: roboticsKnockPower(weapon) };
+            const actions = [[{ type: "damage", damage: roboticsWeaponDamage(weapon, Ai.primaryVariant) * 1.5 }], []];
+            actions[roboticsMeFirst(AQ) ? 0 : 1].push(knock);
+            if (!roboticsKnockbackKills(roboticsSim.simulate(roboticsSim.state(AQ), actions, 2))) return false;
+            sc.bullHitType("knockback hit");
+            return true;
+        }
+
+        /* Knockback Instakills (Falcon AutoInstakiller): a two-hit insta with
+           turret gear, only when the simulated knockback ends on a spike (or a
+           one tick / pit trap). Great hammer or an enemy in spike gear means
+           reverse order. Needs a great hammer or a ranged secondary. */
+        function roboticsKnockbackInsta() {
+            if (!fu.knockbackInsta || !roboticsCanBullHit() || AQ.inTrap) return false;
+            if (Ai.inTrap && !fu.knockbackInstaInTrap) return false;
+            const primary = Ai.weapons[0];
+            const secondary = Ai.weapons[1];
+            if (secondary === undefined || primary === 0) return false;
+            if (!roboticsPrimaryReady() || !roboticsSecondaryReady() || !roboticsTurretReady()) return false;
+            const hammer = secondary === 10;
+            if (!hammer && s5.weapons[secondary].projectile === undefined) return false;
+            if (!roboticsInRangeOf(AQ, hammer ? secondary : primary, 1)) return false;
+
+            const reverse = hammer || AQ.skinIndex == 11;
+            const first = roboticsMeFirst(AQ);
+            const here = { x: Ai.x2, y: Ai.y2 };
+            const next = roboticsNextPos(Ai);
+            const primaryHit = { type: "damage", damage: roboticsWeaponDamage(primary, Ai.primaryVariant) * 1.5 };
+            const secondaryHit = { type: "damage", damage: roboticsWeaponDamage(secondary, Ai.secondaryVariant) };
+            const turretHit = { type: "damage", damage: 25 };
+            const actions = [[], [], []];
+            if (reverse) {
+                actions[0].push(turretHit, secondaryHit);
+                actions[first ? 0 : 1].push({ type: "knockback", pos: here, knockPower: roboticsKnockPower(secondary) });
+                actions[1].push({ type: "knockback", pos: here, knockPower: 0.3 }, primaryHit);
+                actions[first ? 1 : 2].push({ type: "knockback", pos: next, knockPower: roboticsKnockPower(primary) });
+            } else {
+                actions[0].push(primaryHit);
+                actions[first ? 0 : 1].push({ type: "knockback", pos: here, knockPower: roboticsKnockPower(primary) });
+                actions[1].push(turretHit, secondaryHit);
+                actions[2].push({ type: "knockback", pos: next, knockPower: 0.3 });
+                actions[first ? 1 : 2].push({ type: "knockback", pos: next, knockPower: roboticsKnockPower(secondary) });
+            }
+            const res = roboticsSim.simulate(roboticsSim.state(AQ), actions, 2);
+            const spikesNeeded = roboticsWeaponDamage(primary, Ai.primaryVariant) <= 25 ? 1 : 0;
+            if (!(res.spikesHit > spikesNeeded || res.oneTicked || res.pitTrapped)) return false;
+            sc.knockbackInstaType(reverse, reverse ? "reverse knockback insta" : "knockback insta");
+            return true;
+        }
+
+        /* Auto Push Strikes (Falcon AutoPushStriker): while auto push shoves a
+           trapped enemy into a spike, hit them. Per primary:
+           daggers: Shame Strike (turret gear + daggers once their shame count
+           reaches the threshold) or Bullspam; polearm/katana: Predictive
+           (learns when this enemy puts on tank gear after reloading and hits
+           one tick before) or Bullspam; others: Bullspam (bull hit whenever
+           reloaded and they're on the spike). */
+        let roboticsPredictive = { attacked: null };
+        function roboticsTankRow(enemy, weapon) {
+            if (!enemy.tankHits) enemy.tankHits = [];
+            if (!enemy.tankHits[weapon]) enemy.tankHits[weapon] = new Array(16).fill(0);
+            return enemy.tankHits[weapon];
+        }
+        function roboticsPushTouch(spike) {
+            const scale = spike.scale + 35.8;
+            const next = roboticsNextPos(AQ);
+            return {
+                scale,
+                now: s4.getDistance(AQ.x2, AQ.y2, spike.x, spike.y) <= scale,
+                next: s4.getDistance(next.x, next.y, spike.x, spike.y) <= scale - 0.8
+            };
+        }
+        function roboticsPushStrikeMethod() {
+            const primary = Ai.weapons[0];
+            if (primary === 7) return fl.pushStrikeDagger || "shame";
+            if (primary === 4 || primary === 5) return fl.pushStrikeHighDamage || "predictive";
+            return fl.pushStrikeGeneric || "bullspam";
+        }
+        // Every tick: score the last predictive strike, and learn tank gear timing while pushing.
+        function roboticsPredictiveUpdate() {
+            const last = roboticsPredictive.attacked;
+            if (last) {
+                // Still visible = it didn't kill, so that timing was wrong.
+                roboticsTankRow(last.enemy, last.weapon)[last.dt] += last.enemy.visible ? -1 : 1;
+                roboticsPredictive.attacked = null;
+            }
+            const spike = AW.pushSpike;
+            if (!fu.pushStrikes || !spike || !Ad.length || AQ.sid === undefined) return;
+            const touch = roboticsPushTouch(spike);
+            if (!touch.now && !touch.next) return;
+            if (!roboticsPrimaryReady() || roboticsWeaponDamage(Ai.weapons[0], Ai.primaryVariant) * 1.5 + spike.dmg < 100) return;
+            if (AQ.skinIndex == 40 && AQ.lastGatherTick === fU.tick && AQ.weaponIndex !== undefined) {
+                const dt = fU.tick - (AQ.weaponIndex < 9 ? AQ.primaryReloadTick : AQ.secondaryReloadTick);
+                if (dt >= 0 && dt < 16) roboticsTankRow(AQ, AQ.weaponIndex)[dt]++;
+            }
+        }
+        function roboticsPushStrike() {
+            const spike = AW.pushSpike;
+            if (!fu.pushStrikes || !spike || !roboticsCanBullHit() || !roboticsPrimaryReady()) return false;
+            const primary = Ai.weapons[0];
+            const method = roboticsPushStrikeMethod();
+            if (method === "off" || primary === 8 || !roboticsInRangeOf(AQ, primary)) return false;
+            const touch = roboticsPushTouch(spike);
+            const dist = s4.getDistance(AQ.x2, AQ.y2, spike.x, spike.y);
+
+            if (method === "bullspam") {
+                if (dist > touch.scale + (Ai.inTrap ? 0 : 10) || AQ.dist2 > 100) return false;
+                sc.bullHitType("push strike", primary === 7 && roboticsTurretReady() ? 53 : 7);
+                return true;
+            }
+            if (method === "shame") {
+                const threshold = parseInt(fl.pushShameThreshold) || 4;
+                if ((AQ.shameCount || 0) < threshold || AQ.skinIndex == 45 || !roboticsTurretReady() || AQ.dist2 > 100 || !touch.now) return false;
+                sc.bullHitType("shame strike", 53);
+                return true;
+            }
+            // predictive
+            if ((!touch.now && !touch.next) || AQ.weaponIndex === undefined) return false;
+            const row = roboticsTankRow(AQ, AQ.weaponIndex);
+            let best = -1;
+            for (let i = 0; i < row.length; i++) {
+                if (row[i] <= 0) {
+                    row[i] = 0;
+                } else if (best < 0 || row[i] > row[best]) {
+                    best = i;
+                }
+            }
+            if (best < 0) return false;
+            const dt = fU.tick - (AQ.weaponIndex < 9 ? AQ.primaryReloadTick : AQ.secondaryReloadTick);
+            if (dt !== best - 1) return false;
+            roboticsPredictive.attacked = { enemy: AQ, weapon: AQ.weaponIndex, dt: best };
+            sc.bullHitType("predictive strike");
+            return true;
+        }
+
+        /* Turret Gear Knockback (Falcon TurretGearKnockbacker): turret gear for
+           a tick when its bullet's knockback bounces the enemy into 3+ spikes
+           or kills them. Falcon's line-of-sight check was inverted (it only
+           fired when the turret could NOT hit); here the line must be clear. */
+        function roboticsTurretGearKB() {
+            if (!fu.turretGearKB || !roboticsCanGearMove() || !roboticsTurretReady()) return false;
+            if (AQ.skinIndex == 22 || AQ.inTrap || roboticsPlacePotential.canPlaceOnMe) return false;
+            if (!(AQ.dist2 <= 700) || !roboticsTurretLineClear(AQ)) return false;
+            const res = roboticsSim.simulate(roboticsSim.state(AQ), [
+                [{ type: "damage", damage: 25 }],
+                [{ type: "knockback", pos: roboticsNextPos(Ai), knockPower: 0.3 }]
+            ], 2);
+            if (!roboticsKnockbackKills(res)) return false;
+            sc.gearTickType(53, "turret knockback");
+            return true;
+        }
+
+        /* Turret Bullet Assist (Falcon TurretAPAssister): turret gear when the
+           enemy is trapped, standing still, touching a spike that hurts them,
+           took damage this tick and is in one-tick distance (150-310). */
+        function roboticsTurretAssist() {
+            if (!fu.turretAssist || !roboticsCanGearMove() || !roboticsTurretReady()) return false;
+            if (!AQ.inTrap || AQ.skinIndex == 22 || AQ.damagedTick !== fU.tick) return false;
+            if (AW.autoPush && !Ai.inTrap) return false;
+            if (!(AQ.dist2 >= 150 && AQ.dist2 <= 310) || !roboticsTurretLineClear(AQ)) return false;
+            const next = roboticsNextPos(AQ);
+            if ((next.x - AQ.x2) ** 2 + (next.y - AQ.y2) ** 2 >= 25) return false;
+            const victim = roboticsSim.state(AQ);
+            const nearby = roboticsGrid.near(AQ.x2, AQ.y2, 120, roboticsNearTmp);
+            let onSpike = false;
+            for (let i = 0; i < nearby.length && !onSpike; i++) {
+                const obj = nearby[i];
+                onSpike = obj.active && !!obj.dmg && !roboticsSim.isTeam(victim, obj) && s4.getDistance(AQ.x2, AQ.y2, obj.x, obj.y) <= obj.scale + 36;
+            }
+            if (!onSpike) return false;
+            sc.gearTickType(53, "turret assist");
+            return true;
+        }
+
+        /* Barbarian Knockback (Falcon BarbarianKnockbacker): the enemy's melee
+           weapon finished reloading this tick and you're in its range, so they
+           are about to hit you. Barbarian armor knocks them back 0.6; wear it
+           when that bounces them into 3+ spikes or kills them. */
+        function roboticsBarbKB() {
+            if (!fu.barbKB || !roboticsCanGearMove() || !Ai.skins[26] || AQ.inTrap || roboticsPlacePotential.canPlaceOnMe) return false;
+            const weapon = s5.weapons[AQ.weaponIndex];
+            if (!weapon || weapon.projectile !== undefined) return false;
+            if (!roboticsInCombatRange({ x: AQ.x2, y: AQ.y2 }, { x: Ai.x2, y: Ai.y2 }, weapon.range - 1)) return false;
+            const primary = AQ.weaponIndex < 9;
+            const reloaded = primary ? AQ.primaryReloaded : AQ.secondaryReloaded;
+            const wasReloaded = primary ? AQ.prevPrimaryReloaded : AQ.prevSecondaryReloaded;
+            if (!reloaded || wasReloaded) return false;
+            const res = roboticsSim.simulate(roboticsSim.state(AQ), [
+                [],
+                [{ type: "knockback", pos: roboticsNextPos(Ai), knockPower: 0.6 }]
+            ], 2);
+            if (!roboticsKnockbackKills(res)) return false;
+            sc.gearTickType(26, "barbarian knockback");
+            return true;
+        }
+
+        /* Apple Insta (Falcon AppleInstakiller): you have a great hammer and
+           the enemy's trap breaks in one tank-gear hit: break it, then spike
+           them and bull hit. Short sword / katana / polearm only unless "Apple
+           Insta Low Damage" is on. */
+        function roboticsAppleInsta() {
+            if (!fu.appleInsta || !roboticsCanBullHit() || !AQ.inTrap || AW.pushSpike) return false;
+            if (Ai.inTrap && !fu.appleInstaInTrap) return false;
+            const primary = Ai.weapons[0];
+            if (Ai.weapons[1] !== 10 || !Ai.skins[40]) return false;
+            if (![3, 4, 5].includes(primary) && !fu.appleInstaLowDamage) return false;
+            if (!roboticsPrimaryReady() || !roboticsSecondaryReady() || !roboticsInRangeOf(AQ, primary)) return false;
+            const trap = AQ.inTrap;
+            const hammer = s5.weapons[10];
+            const variant = r.weaponVariants[Ai.secondaryVariant] || r.weaponVariants[0];
+            if (trap.health > hammer.dmg * variant.val * (hammer.sDmg || 1) * 3.3) return false;
+            const next = roboticsNextPos(Ai);
+            if (s4.getDistance(next.x, next.y, trap.x, trap.y) > hammer.range - 1 + trap.scale) return false;
+            sc.appleInstaType(trap);
+            return true;
+        }
+
+        /* Melee Sync (Falcon AutoMeleeSyncer): a partner (by SID) and you both
+           have primaries reloaded, both reach the same enemy, and both bull hits
+           together kill: hit, aimed at the average direction of those enemies. */
+        function roboticsMeleeSync() {
+            if (!fu.meleeSync || !roboticsCanBullHit() || !roboticsPrimaryReady()) return false;
+            const sid = parseInt(fl.meleeSync);
+            if (!(sid >= 0) || sid === Ai.sid) return false;
+            const partner = AM(sid);
+            if (!partner || !partner.visible || partner === Ai || partner.primaryIndex === undefined || !partner.primaryReloaded) return false;
+            const mine = roboticsWeaponDamage(Ai.weapons[0], Ai.primaryVariant) * 1.5;
+            const theirs = roboticsWeaponDamage(partner.primaryIndex, partner.primaryVariant || 0) * 1.5;
+            if (mine + theirs < 100) return false;
+            const partnerRange = s5.weapons[partner.primaryIndex].range - 1;
+            const me = roboticsNextPos(Ai);
+            let ax = 0;
+            let ay = 0;
+            for (let i = 0; i < Ad.length; i++) {
+                const enemy = Ad[i];
+                if (enemy.sid === sid || !roboticsInRangeOf(enemy, Ai.weapons[0], 1)) continue;
+                if (!roboticsInCombatRange({ x: partner.x2, y: partner.y2 }, { x: enemy.x2, y: enemy.y2 }, partnerRange)) continue;
+                const next = roboticsNextPos(enemy);
+                const angle = Math.atan2(next.y - me.y, next.x - me.x);
+                ax += Math.cos(angle);
+                ay += Math.sin(angle);
+            }
+            if (!ax && !ay) return false;
+            sc.bullHitType("melee sync", 7, Math.atan2(ay, ax));
+            return true;
+        }
+
+        function roboticsFalconAttacks() {
+            roboticsPredictiveUpdate();
+            return roboticsKnockbackInsta() || roboticsAppleInsta() || roboticsVelocityHit() || roboticsProjectileSync() ||
+                roboticsMeleeSync() || roboticsKnockbackHit() || roboticsPushStrike() || roboticsTurretAssist() ||
+                roboticsBarbKB() || roboticsTurretGearKB();
+        }
+
         // Modules that read the placement potential (added with them).
-        const roboticsPlacePotentialUsers = [];
+        const roboticsPlacePotentialUsers = ["turretGearKB", "barbKB"];
         function roboticsPlacePotentialWanted() {
             for (let i = 0; i < roboticsPlacePotentialUsers.length; i++) {
                 if (fu[roboticsPlacePotentialUsers[i]]) return true;
@@ -8016,7 +8451,7 @@ let serverID;
                 return 0;
             }
             if (AW.autoAim) {
-                e2 = fu.weaponGrind ? sD() : Ad.length ? AW.revAim ? AQ.aim2 + Math.PI : AQ.aim2 : sD();
+                e2 = typeof AW.customAim === "number" ? AW.customAim : fu.weaponGrind ? sD() : Ad.length ? AW.revAim ? AQ.aim2 + Math.PI : AQ.aim2 : sD();
             } else if (sb && so.left) {
                 e2 = Ad.length ? AQ.aim2 : sD();
             } else if (so.right) {
@@ -8036,7 +8471,7 @@ let serverID;
                 return 0;
             }
             if (AW.autoAim || sb() && so.left) {
-                e2 = fu.weaponGrind ? sD() : Ad.length ? AW.revAim ? AQ.aim2 + Math.PI : AQ.aim2 : sD();
+                e2 = typeof AW.customAim === "number" ? AW.customAim : fu.weaponGrind ? sD() : Ad.length ? AW.revAim ? AQ.aim2 + Math.PI : AQ.aim2 : sD();
             } else if (so.right) {
                 e2 = sD();
             } else if (sV.active) {
@@ -8182,7 +8617,15 @@ let serverID;
             velocityHits: () => roboticsToggleSetting("velocityHits", "Velocity Hits"),
             dynamicOneTick: () => roboticsToggleSetting("dynamicOneTick", "Dynamic One Tick"),
             gradedPreplace: () => roboticsToggleSetting("gradedPreplace", "Graded Preplace"),
-            artificialPing: () => roboticsToggleSetting("artificialPing", "Artificial Ping")
+            artificialPing: () => roboticsToggleSetting("artificialPing", "Artificial Ping"),
+            knockbackHits: () => roboticsToggleSetting("knockbackHits", "Knockback Hits"),
+            knockbackInsta: () => roboticsToggleSetting("knockbackInsta", "Knockback Instakills"),
+            pushStrikes: () => roboticsToggleSetting("pushStrikes", "Auto Push Strikes"),
+            turretGearKB: () => roboticsToggleSetting("turretGearKB", "Turret Gear Knockback"),
+            turretAssist: () => roboticsToggleSetting("turretAssist", "Turret Bullet Assist"),
+            barbKB: () => roboticsToggleSetting("barbKB", "Barbarian Knockback"),
+            appleInsta: () => roboticsToggleSetting("appleInsta", "Apple Insta"),
+            meleeSync: () => roboticsToggleSetting("meleeSync", "Melee Sync")
         };
         for (let ci in roboticsKeyActions) {
             if (RK[ci] && !sw[RK[ci]]) {
@@ -8526,6 +8969,13 @@ let serverID;
             AW.pushData = {
                 x: cC.x,
                 y: cC.y
+            };
+            // The spike (or spike pair midpoint) being pushed into, for push strikes.
+            AW.pushSpike = {
+                x: cC.x,
+                y: cC.y,
+                scale: cC.scale,
+                dmg: cK.dmg || 35
             };
             let cg;
             let cp;
@@ -13773,6 +14223,7 @@ let serverID;
                             };
                         }
                     }
+                    AW.pushSpike = null;
                     V1();
                     if (!AW.safeWalk) {
                         V3();
@@ -13831,9 +14282,9 @@ let serverID;
                             sc.spikeTickType();
                         }
                     }
-                    // Falcon bull hits: velocity hit first (needs a spike), else projectile sync.
-                    if (fy < 69 && !roboticsVelocityHit()) {
-                        roboticsProjectileSync();
+                    // Falcon attack modules, at most one per tick (roboticsFalconAttacks).
+                    if (fy < 69) {
+                        roboticsSafeCall(roboticsFalconAttacks, "falcon attacks");
                     }
                     sV.calculateAim();
                     if (AW.forceStop && eM) {
