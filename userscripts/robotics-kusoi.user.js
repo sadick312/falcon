@@ -170,6 +170,11 @@
      Knockback checks run Falcon's movement simulator on the enemy.
    - Falcon's Turret Gear Knockback only fired when the turret could NOT
      reach the enemy (inverted line check); it now needs a clear line.
+   - Defensive tab: Pattern Recognition (Home) ignores some baited spike
+     tick threats; Smart Hats (End) soldier only when the enemy's weapon can
+     hurt you now; Counter Insta "Falcon" mode + Force Anti Bull: spike gear
+     only when the enemy just reloaded, never with 4+ shame or when nearby
+     bull hits add up to 100, counter hit only when it kills.
    Other
    - CONFIG block with keybinds, scheduler, packet budget, sync, reload.
    - Status line adds frame and tick handler time (avg/max ms per second)
@@ -1134,7 +1139,7 @@ let serverID;
                 cK.BoxF("Obstacle Breaker", "Auto break objects near the trap enemy is in", "breakAroundSwitch");
                 cK.BoxF("Turret type Breaker", "Auto break enemy turret/tp/blocked in range", "breakTTBSwitch");
                 cK.BoxF("Break All", "Auto break all buildings. Note: disables avoid ur own buildings breaker", "breakAllSwitch");
-                cK.BoxF("Counter Insta", "Spike gear and hit when enemy hit you (strongly not recommended)", "antiBullType", {
+                cK.BoxF("Counter Insta", "Spike gear and hit when enemy hit you (strongly not recommended). Falcon: spike gear only when the enemy just reloaded, never with 4+ shame or when nearby bull hits add up to 100; counters only when the hit kills", "antiBullType", {
                     option: true,
                     options: {
                         Predict: {
@@ -1143,9 +1148,15 @@ let serverID;
                         Always: {
                             id: "abalway",
                             selected: true
+                        },
+                        Falcon: {
+                            id: "abfalcon"
                         }
                     }
                 });
+                cK.BoxF("Force Anti Bull", "Falcon mode: spike gear whenever the enemy's primary is reloaded, if no enemy spikes are within 150 and nobody can spike you", "forceAntiBull");
+                cK.BoxF("Pattern Recognition", "Falcon: ignores some baited spike tick threats (when you leave a trap or could be spiked) so you don't soldier/heal every time and gain shame (key Home)", "patternRec");
+                cK.BoxF("Smart Hats", "Falcon: when idle near an enemy, soldier only when their weapon can hurt you now (daggers, polearm reload, traps, turrets), else speed hat (key End)", "smartHats");
             });
             ci.TabContent("render", cK => {
                 cK.Text("VISUAL TAB", "20px", "white");
@@ -5605,7 +5616,7 @@ let serverID;
                         return false;
                     }
                     if (AQ.dist2 <= 175) {
-                        if (Ai.escaped || Ai.inTrap && s6.canBeBroken(Ai.inTrap)) {
+                        if ((Ai.escaped || Ai.inTrap && s6.canBeBroken(Ai.inTrap)) && roboticsSpikeTickRespond()) {
                             if (Ai.escaped) {
                                 AW.anti0Tick = 2;
                             }
@@ -5652,6 +5663,9 @@ let serverID;
                                 }
                                 A8.mex = Ai.x2 + cz * 24 * cI;
                                 A8.mey = Ai.y2 + cz * 24 * ca;
+                                if (cd.size && !roboticsSpikeTickRespond()) {
+                                    cd.clear();
+                                }
                                 if (cd.size) {
                                     cd.forEach(cv => {
                                         Ai.addDamageThreat(Ao(cv).dmg || 35);
@@ -7886,13 +7900,170 @@ let serverID;
 
         function roboticsFalconAttacks() {
             roboticsPredictiveUpdate();
-            return roboticsKnockbackInsta() || roboticsAppleInsta() || roboticsVelocityHit() || roboticsProjectileSync() ||
+            return roboticsAntiBullCounter() || roboticsKnockbackInsta() || roboticsAppleInsta() || roboticsVelocityHit() || roboticsProjectileSync() ||
                 roboticsMeleeSync() || roboticsKnockbackHit() || roboticsPushStrike() || roboticsTurretAssist() ||
                 roboticsBarbKB() || roboticsTurretGearKB();
         }
 
+        /* ---- Spike tick pattern recognition (Falcon DefenseSystem) ----
+           Players bait the anti spike tick (soldier / heal when you leave a
+           trap or could be knocked into spikes) to farm your shame. After
+           currentMax answered threats the next one or two are ignored, and each
+           repeat of the pattern lowers currentMax (down to 1). Two calm trap
+           exits reset it. A real spike tick that lands in an ignored slot gets
+           through: that is Falcon's trade-off. */
+        let roboticsPatternRec = {
+            max: 3,
+            currentMax: 3,
+            amount: 0,
+            resolve: 0,
+            seen: false,
+            resetTicks: 0,
+            process(reset) {
+                if (reset) {
+                    if (++this.resetTicks >= 2) {
+                        this.amount = 0;
+                        this.currentMax = this.max;
+                        this.resolve = 0;
+                        this.seen = false;
+                        this.resetTicks = 0;
+                    }
+                    return true;
+                }
+                if (this.currentMax === 1 && Ai.shameCount === 0) return true;
+                this.resetTicks = 0;
+                if (this.resolve > 0) {
+                    this.resolve--;
+                    return false;
+                }
+                if (++this.amount >= this.currentMax) {
+                    if (this.seen) {
+                        this.currentMax = Math.max(this.currentMax - 1, 1);
+                        this.resolve = Math.floor(Math.random() * 2) + 1;
+                    } else {
+                        this.resolve = 1;
+                    }
+                    this.amount = 0;
+                    this.seen = true;
+                }
+                return true;
+            }
+        };
+        // Answer this spike tick threat? One decision per threat (consecutive ticks).
+        function roboticsSpikeTickRespond() {
+            if (!fu.patternRec) return true;
+            if (AW.spikeTickEpisode !== fU.tick && AW.spikeTickEpisode !== fU.tick - 1) {
+                AW.spikeTickAnswer = roboticsPatternRec.process(false);
+            }
+            AW.spikeTickEpisode = fU.tick;
+            return AW.spikeTickAnswer;
+        }
+        function roboticsPatternRecTick() {
+            const trapped = !!Ai.inTrap;
+            if (fu.patternRec && AW.wasTrapped && !trapped && AW.spikeTickEpisode !== fU.tick) {
+                roboticsPatternRec.process(true);
+            }
+            AW.wasTrapped = trapped;
+        }
+
+        /* ---- Smart Hats (Falcon HatSystem) ----
+           Idle near an enemy, soldier only when it matters. Daggers: when you
+           are trapped, or they can break out of their trap in one hit and are
+           (about to be) in dagger range. Polearm within 200: when you are
+           trapped, can be spiked, under turret fire, near several enemies, or
+           their polearm reloads within a tick. Anything else within 200:
+           soldier. Otherwise the normal speed / biome hat. */
+        function roboticsBuildingDamage(weaponId, variant, skinIndex) {
+            const weapon = s5.weapons[weaponId];
+            if (!weapon) return 0;
+            const v = r.weaponVariants[variant] || r.weaponVariants[0];
+            return (weapon.dmg || 0) * v.val * (weapon.sDmg || 1) * (skinIndex == 40 ? 3.3 : 1);
+        }
+        function roboticsDaggerCanEscape(enemy) {
+            const trap = enemy.inTrap;
+            if (!trap) return true;
+            if (enemy.primaryReloaded && trap.health <= roboticsBuildingDamage(enemy.primaryIndex, enemy.primaryVariant, enemy.skinIndex)) return true;
+            return enemy.secondaryIndex === 10 && !!enemy.secondaryReloaded && trap.health <= roboticsBuildingDamage(10, enemy.secondaryVariant, enemy.skinIndex);
+        }
+        function roboticsNeedSoldier(enemy) {
+            if (enemy.primaryIndex === 7) {
+                if (Ai.inTrap) return true;
+                if (!roboticsDaggerCanEscape(enemy)) return false;
+                const range = (s5.weapons[7].range + ROBOTICS_HITBOX) * 1.3;
+                const dist = s4.getDistance(Ai.x2, Ai.y2, enemy.x2, enemy.y2);
+                if (dist <= range) return true;
+                const me = roboticsNextPos(Ai);
+                const them = roboticsNextPos(enemy);
+                const next = s4.getDistance(me.x, me.y, them.x, them.y);
+                return next < dist && next <= range;
+            }
+            if (!(enemy.dist2 <= 200)) return false;
+            if (enemy.primaryIndex === 5) {
+                if (Ai.inTrap || roboticsPlacePotential.canPlaceOnMe || Ai.turretThreat > 0) return true;
+                let near = 0;
+                for (let i = 0; i < Ad.length; i++) {
+                    if (Ad[i].dist2 <= 300) near++;
+                }
+                if (near > 1) return true;
+                return !(enemy.reloads && enemy.reloads[5] > fU.tickRate);
+            }
+            return true;
+        }
+        function roboticsSmartHat() {
+            if (!Ai.inWater && roboticsNeedSoldier(AQ)) {
+                et(6, 0);
+            } else {
+                el(1);
+            }
+        }
+
+        /* ---- Anti Bull (Falcon AntiBuller), Counter Insta "Falcon" mode ----
+           Spike gear (with Corrupt X wings on) when the nearest enemy's short
+           sword / katana / polearm just finished reloading (always, with Force
+           Anti Bull, when no enemy spikes are within 150 and nobody can spike
+           you). Never with 4+ shame, never when the reloaded bull hits around
+           you add up to 100. When an enemy hits your spike gear and your bull
+           hit now kills them, counter at once. */
+        function roboticsAntiBullMode() {
+            return fu.antiBullType && fl.antiBullType == "abfalcon";
+        }
+        function roboticsEnemySpikeNear(range) {
+            const nearby = roboticsGrid.near(Ai.x2, Ai.y2, range + 60, roboticsNearTmp);
+            for (let i = 0; i < nearby.length; i++) {
+                const obj = nearby[i];
+                if (!obj.active || !(obj.dmg && !obj.isTeamObject(Ai) || roboticsSim.isCactus(obj))) continue;
+                if (s4.getDistance(Ai.x2, Ai.y2, obj.x, obj.y) <= range) return true;
+            }
+            return false;
+        }
+        function roboticsAntiBullWanted() {
+            if (!roboticsAntiBullMode() || !Ai.skins[11] || Ai.tailIndex != 21 || !Ad.length || AQ.sid === undefined) return false;
+            if (Ai.shameCount >= 4 || ![3, 4, 5].includes(Ai.weapons[0]) || roboticsPlacePotential.canPlaceOnMe) return false;
+            const force = fu.forceAntiBull && !roboticsEnemySpikeNear(150);
+            let total = 0;
+            let consider = false;
+            for (let i = 0; i < Ad.length; i++) {
+                const enemy = Ad[i];
+                if (!(enemy.dist2 <= 300) || !enemy.primaryReloaded || enemy.primaryIndex === undefined) continue;
+                if (enemy === AQ && [3, 4, 5].includes(enemy.primaryIndex) && (force || !enemy.prevPrimaryReloaded)) consider = true;
+                total += roboticsWeaponDamage(enemy.primaryIndex, enemy.primaryVariant || 0) * 1.5;
+            }
+            return consider && total < 100;
+        }
+        /* Falcon's kill estimate added the enemy's own hit and a raw 0.25 for
+           the wings; the enemy's health after the reflection already holds it. */
+        function roboticsAntiBullCounter() {
+            if (!roboticsAntiBullMode() || !roboticsCanBullHit() || !roboticsPrimaryReady()) return false;
+            if (Ai.skinIndex != 11 || Ai.damagedTick !== fU.tick || AQ.damagedTick !== fU.tick) return false;
+            if (Ai.shameCount >= 4 || ![3, 4, 5].includes(Ai.weapons[0]) || !roboticsInRangeOf(AQ, Ai.weapons[0])) return false;
+            const hit = roboticsWeaponDamage(Ai.weapons[0], Ai.primaryVariant) * 1.5 * (AQ.skinIndex == 6 ? 0.75 : 1);
+            if (hit < AQ.health) return false;
+            sc.bullHitType("anti bull");
+            return true;
+        }
+
         // Modules that read the placement potential (added with them).
-        const roboticsPlacePotentialUsers = ["turretGearKB", "barbKB"];
+        const roboticsPlacePotentialUsers = ["turretGearKB", "barbKB", "smartHats", "antiBullType"];
         function roboticsPlacePotentialWanted() {
             for (let i = 0; i < roboticsPlacePotentialUsers.length; i++) {
                 if (fu[roboticsPlacePotentialUsers[i]]) return true;
@@ -8625,7 +8796,9 @@ let serverID;
             turretAssist: () => roboticsToggleSetting("turretAssist", "Turret Bullet Assist"),
             barbKB: () => roboticsToggleSetting("barbKB", "Barbarian Knockback"),
             appleInsta: () => roboticsToggleSetting("appleInsta", "Apple Insta"),
-            meleeSync: () => roboticsToggleSetting("meleeSync", "Melee Sync")
+            meleeSync: () => roboticsToggleSetting("meleeSync", "Melee Sync"),
+            patternRec: () => roboticsToggleSetting("patternRec", "Pattern Recognition"),
+            smartHats: () => roboticsToggleSetting("smartHats", "Smart Hats")
         };
         for (let ci in roboticsKeyActions) {
             if (RK[ci] && !sw[RK[ci]]) {
@@ -13605,6 +13778,10 @@ let serverID;
                     et(Ai.empAnti || Ai.antiTurretSpam ? 22 : 6, 0);
                 } else if (ci && Ai.shameCount > 0 && !Ai.inTrap) {
                     et(7, 0);
+                } else if (roboticsAntiBullWanted()) {
+                    et(11, 0);
+                } else if (fu.smartHats && Ad.length) {
+                    roboticsSmartHat();
                 } else if (Ai.inWater) {
                     if (!fu.alwaysFlipper) {
                         if (AQ.dist2 <= 300) {
@@ -13904,6 +14081,7 @@ let serverID;
             roboticsSafeCall(() => roboticsPlacePotential.update(), "placement potential");
             if (Ai && Ai.alive) {
                 V2();
+                roboticsPatternRecTick();
                 Ai.processDamages();
                 // One tick: armed once by the velocity tick key, or every tick with "Dynamic One Tick" on.
                 if ((sB.oneTick || fu.dynamicOneTick) && AW.anti0Tick <= 0 && !AW.forceStop && fy < 69) {
@@ -13993,7 +14171,7 @@ let serverID;
                                         roboticsAntiInstaHeal();
                                     }
                                 }
-                                if (cv >= 20 && Ai.skinIndex == 11) {
+                                if (cv >= 20 && Ai.skinIndex == 11 && !roboticsAntiBullMode()) {
                                     sc.canCounter = true;
                                 }
                             }
