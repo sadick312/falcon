@@ -91,7 +91,7 @@ export default class AutoPlacer extends Placer {
 
     private placePreplacement(index: number) {
         const padding = Menu.getValue("prenorounding") ? 0 : .5;
-        let waitMs = ScriptConfig.SERVER_UPDATE_SPEED - PingTracker.getCurrentPing() + padding;
+        let waitMs = ScriptConfig.SERVER_UPDATE_SPEED - PingTracker.getStablePing() + padding;
 
         const preplacement = this.preplacements[index];
         const arr = preplacement.placements;

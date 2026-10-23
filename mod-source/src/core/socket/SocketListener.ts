@@ -48,11 +48,17 @@ export default class SocketListener {
 
     private static socket: Socket | FakeSocket;
     private static lastPingSocket = 0;
+    private static awaitingPong = false;
 
     static pingSocket() {
         if (!this.isInitialized) return;
 
-        this.lastPingSocket = performance.now();
+        // A reply slower than the 1s interval would otherwise be timed against the newer ping and read far too low.
+        const now = performance.now();
+        if (this.awaitingPong && now - this.lastPingSocket < 5e3) return;
+
+        this.awaitingPong = true;
+        this.lastPingSocket = now;
         this.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.PING_SOCKET);
     }
 
@@ -119,6 +125,7 @@ export default class SocketListener {
 
     /** Stops the 1s ping loop. Called when the socket closes so the interval doesn't outlive it. */
     static stopPinging() {
+        this.awaitingPong = false;
         if (this.pingTimer === undefined) return;
         clearInterval(this.pingTimer);
         this.pingTimer = undefined;
@@ -206,11 +213,14 @@ export default class SocketListener {
         });
 
         this.socket.on(PacketMap.SERVER_TO_CLIENT.PING_RESPONSE, () => {
+            if (!this.awaitingPong) return;
+            this.awaitingPong = false;
+
             const rawPing = performance.now() - this.lastPingSocket;
             PingTracker.update(rawPing);
 
             Client.pingTime = Math.round(rawPing * 1e3) / 1e3;
-            pingDisplay.innerText = `Ping: ${Client.pingTime} ms | FPS: ${RendererSystem.fps} | BWin: ${PacketBatcher.effectiveBatchWindow.toFixed(1)} ms`;
+            pingDisplay.innerText = `Ping: ${Client.pingTime} ms | FPS: ${RendererSystem.fps} | BWin: ${PacketBatcher.effectiveBatchWindow.toFixed(1)} ms | Jitter: ${PacketBatcher.tickJitter.toFixed(1)} ms`;
         });
 
         this.socket.on(PacketMap.SERVER_TO_CLIENT.ADD_ALLIANCE, (data) => {
