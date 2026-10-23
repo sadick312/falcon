@@ -65,7 +65,7 @@ export default class RendererSystem {
             this.lastUpdateFrames = Date.now();
             this.fpsCount = 0;
 
-            pingDisplay.innerText = `Ping: ${Client.pingTime} ms | FPS: ${this.fps} | BWin: ${PacketBatcher.effectiveBatchWindow.toFixed(1)} ms`;
+            pingDisplay.innerText = `Ping: ${Client.pingTime} ms | FPS: ${this.fps} | BWin: ${PacketBatcher.effectiveBatchWindow.toFixed(1)} ms | Jitter: ${PacketBatcher.tickJitter.toFixed(1)} ms`;
         }
     }
 

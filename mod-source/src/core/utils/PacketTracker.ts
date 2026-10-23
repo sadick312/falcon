@@ -108,7 +108,7 @@ export default class PacketTracker {
         if (!this.isInitialized) return 0;
         if (amount <= 0) return 0;
 
-        const halfAvgPing = PingTracker.getAveragePing() / 2;
+        const halfAvgPing = PingTracker.getStablePing() / 2;
         const realNow = performance.now() - halfAvgPing;
         const unitCost = PacketAllocationPool[type];
 
