@@ -3,6 +3,7 @@ import updateClanMenu, { allianceHolder } from "@core/events/updateClanMenu";
 import TextManager from "@core/logic/TextManager";
 import AttackManager from "@core/mod/combat/core/AttackManager";
 import CombatController from "@core/mod/combat/core/CombatController";
+import ChatCommands from "@core/utils/ChatCommands";
 import PacketReplayer from "@core/PacketReplayer";
 import Menu from "@menu/Menu";
 import AutoGrinder from "@placing/modules/AutoGrinder";
@@ -84,8 +85,68 @@ function resetMovementDir() {
 const MAX_CHAT_LENGTH = 30;
 const MAX_COMMAND_LENGTH = 100;
 
+const chatHint = getElem("chat-hint");
+const chatHistory: string[] = [];
+const MAX_CHAT_HISTORY = 20;
+/** Position while browsing history with the arrow keys; equal to the length when not browsing. */
+let historyIndex = 0;
+
+function updateChatHint() {
+    const matches = ChatCommands.suggest(chatInput.value);
+
+    if (!matches.length) {
+        chatHint.style.display = "none";
+        return;
+    }
+
+    chatHint.innerHTML = "";
+    for (const [name, desc] of matches) {
+        const row = document.createElement("div");
+        const nameEl = document.createElement("b");
+        nameEl.textContent = name;
+        row.append(nameEl, ` ${desc}`);
+        chatHint.appendChild(row);
+    }
+
+    chatHint.style.display = "block";
+}
+
+function rememberChat(msg: string) {
+    if (chatHistory[chatHistory.length - 1] !== msg) chatHistory.push(msg);
+    if (chatHistory.length > MAX_CHAT_HISTORY) chatHistory.shift();
+    historyIndex = chatHistory.length;
+}
+
+chatInput.addEventListener("input", updateChatHint);
+
+chatInput.addEventListener("keydown", (event) => {
+    if (event.code === "Escape") {
+        // Stop here so the menu's own Escape shortcut doesn't open the menu as the chat closes.
+        event.stopPropagation();
+        closeChat();
+    } else if (event.code === "Tab") {
+        // Complete to the first matching command, keeping any arguments already typed.
+        event.preventDefault();
+        const match = ChatCommands.suggest(chatInput.value)[0];
+        if (!match) return;
+
+        const args = chatInput.value.split(" ").slice(1).join(" ");
+        chatInput.value = `${match[0]} ${args}`;
+        updateChatHint();
+    } else if (event.code === "ArrowUp" || event.code === "ArrowDown") {
+        if (!chatHistory.length) return;
+        event.preventDefault();
+
+        const step = event.code === "ArrowUp" ? -1 : 1;
+        historyIndex = Math.min(chatHistory.length, Math.max(0, historyIndex + step));
+        chatInput.value = chatHistory[historyIndex] ?? "";
+        updateChatHint();
+    }
+});
+
 function closeChat() {
     chatInput.style.display = "none";
+    chatHint.style.display = "none";
     chatInput.blur();
 }
 
@@ -96,6 +157,7 @@ function toggleChat() {
         const msg = chatInput.value.trim();
         if (!msg || !Client.socket || !Client.player) return;
 
+        rememberChat(msg);
         const isCommand = msg.startsWith("/") || msg.startsWith("!");
         Client.socket.sendMsg(
             PacketMap.CLIENT_TO_SERVER.SEND_CHAT,
@@ -105,6 +167,8 @@ function toggleChat() {
         chatInput.style.display = "block";
         chatInput.focus();
         chatInput.value = "";
+        historyIndex = chatHistory.length;
+        updateChatHint();
     }
 }
 
@@ -150,8 +214,6 @@ document.addEventListener("keydown", (event) => {
 
     if (event.code === "Enter" || event.code === "NumpadEnter") {
         toggleChat();
-    } else if (event.code === "Escape" && chatInput.style.display === "block") {
-        closeChat();
     } else if (isKeyboardActive()) {
         Input.keys[event.code] = true;
         Input.keys[event.keyCode] = true;
