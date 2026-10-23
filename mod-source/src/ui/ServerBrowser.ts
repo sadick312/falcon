@@ -56,8 +56,15 @@ const regionDescriptions: Record<string, string[]> = {
 
 const RECENT_SERVER_KEY = "falcon-recent-server";
 
+const PING_TIMEOUT_MS = 3000;
+/** Same limit the disclaimer gives for decent performance. */
+const GOOD_PING_MS = 80;
+const OK_PING_MS = 150;
+
 export default class ServerBrowser {
     private static cache?: { at: number; data: GameServer[] };
+    /** Bumped on every render so pings from an older list don't write into a newer one. */
+    private static renderId = 0;
     private static inflight?: Promise<GameServer[]>;
 
     private static isServer(entry: any): entry is MooMooPublicServer | MooModdingServer {
@@ -175,6 +182,12 @@ export default class ServerBrowser {
         playerCount.innerText = String(serverData.playerCount);
         playerCountLabel.append(playerCount, `/${serverData.capacity}`);
 
+        const pingLabel = document.createElement("div");
+        pingLabel.id = `server-ping-${index}`;
+        pingLabel.classList.add("server-browser-option-ping");
+        pingLabel.innerText = "... ms";
+        playerCountLabel.append(pingLabel);
+
         labelHolder.append(regionName, regionDescription);
         button.append(icon, labelHolder, playerCountLabel);
 
@@ -192,7 +205,57 @@ export default class ServerBrowser {
         serverBrowser.appendChild(button);
     }
 
+    /**
+     * One HTTPS round trip to the game host's /ping endpoint, in ms, or null if it doesn't answer.
+     * Opens no game connection. "/" would redirect to moomodding.io and time two requests.
+     */
+    private static async pingHost(host: string) {
+        const url = `https://${host}/ping`;
+
+        const once = async () => {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), PING_TIMEOUT_MS);
+            const start = performance.now();
+
+            try {
+                await fetch(url, { mode: "no-cors", cache: "no-store", signal: controller.signal });
+                return performance.now() - start;
+            } catch {
+                return null;
+            } finally {
+                clearTimeout(timer);
+            }
+        };
+
+        // The first request also pays for DNS and TLS, so only the later ones count.
+        if (await once() === null) return null;
+
+        const a = await once();
+        const b = await once();
+        if (a === null || b === null) return a ?? b;
+        return Math.min(a, b);
+    }
+
+    private static async showPings(data: GameServer[], renderId: number) {
+        await Promise.all(data.map(async (server, index) => {
+            const ping = await this.pingHost(server.host);
+            if (renderId !== this.renderId) return;
+
+            const label = document.getElementById(`server-ping-${index}`);
+            if (!label) return;
+
+            if (ping === null) {
+                label.innerText = "? ms";
+                return;
+            }
+
+            label.innerText = `${Math.round(ping)} ms`;
+            label.style.color = ping <= GOOD_PING_MS ? "#7bd88f" : ping <= OK_PING_MS ? "#e6c86e" : "#ff6b6b";
+        }));
+    }
+
     private static async render(force = false) {
+        const renderId = ++this.renderId;
         this.selectionIndex = -1;
         this.selectedOption = undefined;
         connectToServerBtn.classList.add("disabled");
@@ -226,6 +289,7 @@ export default class ServerBrowser {
 
         serverBrowserLoadingText.style.display = "none";
         refreshServersBtn.classList.remove("disabled");
+        this.showPings(data, renderId);
     }
 
     static async getHighest(region: string) {

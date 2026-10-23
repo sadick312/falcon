@@ -775,22 +775,19 @@ export default class DefenseSystem {
         ModManager.brainState.totalDamage = this.state.totalDamage;
         AutoHealer.main(this.state);
 
-        if (!this.alreadyHealed) {
-            PacketTracker.free("FOOD", "ALL");
-        } else {
-            PacketTracker.free("FOOD", PacketTracker.TOTAL_FOOD - ModManager.brainState.healingUsed);
-        }
+        // Healing is done for this tick and food packets are sent right away, so the ones used are
+        // already in the packet history; keeping their reservation would count them twice.
+        PacketTracker.free("FOOD", "ALL");
     }
 
     static resolve() {
         HatSystem.main();
         MovementManager.main();
 
-        if (!HatSystem.sentHatPacket)
-            PacketTracker.free("HAT_SWITCH", "ALL");
-
-        if (MovementManager.sentMovePacket)
-            PacketTracker.free("MOVE", "ALL");
+        // Hats and movement are settled for this tick: a sent packet is already counted in the
+        // packet history and an unsent one won't be sent, so both reservations can go either way.
+        PacketTracker.free("HAT_SWITCH", "ALL");
+        PacketTracker.free("MOVE", "ALL");
     }
 
     static conclude() {
