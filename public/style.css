@@ -362,6 +362,13 @@ button {
     font-size: inherit;
 }
 
+.server-browser-option-ping {
+    margin-top: 4px;
+    color: var(--generic-white-2);
+    font-size: 13px;
+    text-align: right;
+}
+
 .server-browser-option:hover {
     transform: scale(1.05);
 }
