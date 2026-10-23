@@ -172,6 +172,10 @@ export default class ModManager {
         const closeObjectsLength = closeObjects.length;
         const totalLength = closeObjectsLength + onRenderObjects.length;
 
+        // Both aims are the same for every object this tick, so work them out once instead of per object.
+        const aimDir = this.getAttackDir(true);
+        const mouseDir = Input.getAttackDir();
+
         for (let i = 0; i < totalLength; i++) {
             const gameObject: GameObject | PotentialObject = closeObjects[i] ?? onRenderObjects[i - closeObjectsLength];
             gameObject.willBreak = false;
@@ -186,8 +190,6 @@ export default class ModManager {
                     if (Client.isFriendly(gameObject.ownerSID ?? -1)) continue;
                     if (!Client.isTeam(player, gameObject.ownerSID ?? -1)) continue;
                 } else if (player.sid === Client.mySID) {
-                    const aimDir = this.getAttackDir(true);
-                    const mouseDir = Input.getAttackDir();
                     const tmpDir = getDir(gameObject, player.real_position);
 
                     const withinPrevIntentArc = typeof aimDir === "number" && getAngleDist(aimDir, tmpDir) <= ScriptConfig.GATHER_ANGLE;
@@ -349,15 +351,21 @@ export default class ModManager {
         attackState.confirm = false;
     }
 
+    private static lastActivityHTML = "";
+
     private static updateBrainUI() {
-        activityListDisplay.innerHTML = "";
+        let html = "";
 
-        if (!Menu.getValue("showActivity"))
-            return;
-
-        for (let i = 0; i < this.activityList.length; i++) {
-            activityListDisplay.innerHTML += `<span>${this.activityList[i]}</span>`;
+        if (Menu.getValue("showActivity")) {
+            for (let i = 0; i < this.activityList.length; i++) {
+                html += `<span>${this.activityList[i]}</span>`;
+            }
         }
+
+        // Writing innerHTML every tick forces a re-layout even when nothing changed.
+        if (html === this.lastActivityHTML) return;
+        this.lastActivityHTML = html;
+        activityListDisplay.innerHTML = html;
     }
 
     private static postTick() {
