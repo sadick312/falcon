@@ -6,41 +6,92 @@ import PacketTracker from "@core/utils/PacketTracker";
 import Menu, { ChatLog } from "@menu/Menu";
 import drawChatLog from "@menu/utils/drawChatLog";
 
-type CommandHandler = (args: string[]) => string | void;
+interface ChatCommand {
+    desc: string;
+    run: (args: string[]) => string | void;
+}
 
 /**
  * Client-side "!" chat commands. They run locally and are never sent, so other players don't see them.
  * "/" commands (moomodding.io: /fight, /bot, /var, /clear, /help) are server commands and are sent as typed.
  */
 export default class ChatCommands {
-    private static readonly commands: Record<string, CommandHandler> = {
-        help: () => `!${Object.keys(ChatCommands.commands).join(" !")}`,
-        clear: () => {
-            Menu.chatLogs.length = 0;
-            return "Cleared chat log.";
+    private static readonly commands: Record<string, ChatCommand> = {
+        help: {
+            desc: "list commands",
+            run: () => `!${Object.keys(ChatCommands.commands).join(" !")}`
         },
-        plog: () => {
-            SocketListener.sendFplToDiscord(true);
-            return "Downloading packet log.";
+        clear: {
+            desc: "clear the chat log",
+            run: () => {
+                Menu.chatLogs.length = 0;
+                return "Cleared chat log.";
+            }
         },
-        pl: (args) => ChatCommands.commands.plog(args),
-        ping: () => `Ping ${Math.round(PingTracker.getCurrentPing())}ms, stable ${Math.round(PingTracker.getStablePing())}ms`,
-        packets: () => {
-            const limit = parseInt(Menu.getValue("packetBudgetLimit"));
-            return `Packets ${PacketTracker.getCurrent()}/${isNaN(limit) ? 110 : limit} in the last second`;
+        plog: {
+            desc: "download the packet log",
+            run: () => {
+                SocketListener.sendFplToDiscord(true);
+                return "Downloading packet log.";
+            }
         },
-        shame: () => `Shame ${Client.player?.shameCount ?? 0}/8`,
+        pl: {
+            desc: "same as !plog",
+            run: (args) => ChatCommands.commands.plog.run(args)
+        },
+        ping: {
+            desc: "show ping",
+            run: () => `Ping ${Math.round(PingTracker.getCurrentPing())}ms, stable ${Math.round(PingTracker.getStablePing())}ms`
+        },
+        packets: {
+            desc: "packets used this second",
+            run: () => {
+                const limit = parseInt(Menu.getValue("packetBudgetLimit"));
+                return `Packets ${PacketTracker.getCurrent()}/${isNaN(limit) ? 110 : limit} in the last second`;
+            }
+        },
+        shame: {
+            desc: "show shame count",
+            run: () => `Shame ${Client.player?.shameCount ?? 0}/8`
+        },
     };
+
+    /** moomodding.io server commands, offered as suggestions only. */
+    private static readonly serverCommands: Record<string, string> = {
+        bot: "spawn a bot (server)",
+        fight: "start a fight (server)",
+        var: "set a server variable",
+        clear: "clear (server)",
+        help: "server help",
+    };
+
+    /** Commands matching what has been typed so far, as `[command, description]`. Empty for normal chat. */
+    static suggest(input: string): [string, string][] {
+        const prefix = input[0];
+        if (prefix !== "!" && prefix !== "/") return [];
+
+        const typed = input.slice(1).split(" ")[0].toLowerCase();
+        const source = prefix === "!" ?
+            Object.entries(this.commands).map(([name, cmd]) => [name, cmd.desc] as const) :
+            Object.entries(this.serverCommands);
+
+        const matches: [string, string][] = [];
+        for (const [name, desc] of source) {
+            if (name.startsWith(typed)) matches.push([prefix + name, desc]);
+        }
+
+        return matches;
+    }
 
     /** Runs `input` if it is a known "!" command. Returns true when it was handled and must not be sent. */
     static run(input: string) {
         if (!input.startsWith("!")) return false;
 
         const [name, ...args] = input.slice(1).trim().split(/\s+/);
-        const handler = this.commands[name.toLowerCase()];
-        if (!handler) return false;
+        const command = this.commands[name.toLowerCase()];
+        if (!command) return false;
 
-        const reply = handler(args);
+        const reply = command.run(args);
         if (reply) this.reply(reply);
         return true;
     }
