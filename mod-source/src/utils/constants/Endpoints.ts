@@ -94,7 +94,22 @@ const PROFILES: Record<HostMode, HostProfile> = {
     }
 };
 
+/** On a localhost test page, `falcon-host-mode` in localStorage picks the profile (e.g. "moomodding"). */
+function localTestProfile(): HostProfile | null {
+    if (location.hostname !== "localhost" && location.hostname !== "127.0.0.1") return null;
+
+    try {
+        const mode = localStorage.getItem("falcon-host-mode") as HostMode | null;
+        return mode && mode in PROFILES ? PROFILES[mode] : null;
+    } catch {
+        return null;
+    }
+}
+
 function detectProfile(): HostProfile {
+    const testProfile = localTestProfile();
+    if (testProfile) return testProfile;
+
     const host = location.hostname;
     for (const profile of Object.values(PROFILES)) {
         if (profile.pageHosts.includes(host)) return profile;

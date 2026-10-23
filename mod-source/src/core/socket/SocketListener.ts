@@ -334,11 +334,6 @@ export default class SocketListener {
 
                     Menu.chatLogs.push(new ChatLog(`${player.name} {${player.sid}} - ${msg}`));
 
-                    if (msg === "!clear" && sid === Client.mySID) {
-                        Menu.chatLogs.length = 1;
-                        Menu.chatLogs[0] = new ChatLog(`Cleared chat log.`);
-                    }
-
                     if (Menu.selectedTab === 5) drawChatLog();
                 }
 

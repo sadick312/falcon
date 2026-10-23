@@ -1,6 +1,6 @@
 import items from "@constants/items";
 import Client from "@core/Client";
-import SocketListener from "@core/socket/SocketListener";
+import ChatCommands from "@core/utils/ChatCommands";
 import { MooMooProtocol } from "@core/utils/CaptchaManager";
 import { hmac } from "@noble/hashes/hmac.js";
 import { sha256 } from "@noble/hashes/sha2.js";
@@ -12,6 +12,14 @@ const profanityList = [
     "tits", "penis", "clit", "pussy", "meatcurtain", "jizz", "prune",
     "douche", "wanker", "damn", "bitch", "dick", "fag", "bastard"
 ];
+
+// Built once instead of a new RegExp per word on every chat message.
+const profanityFilters = [...new Set(profanityList)].map(word => ({
+    word,
+    regex: new RegExp(word, "g"),
+    replacement: word[0] + String.fromCharCode(0) + word.slice(1)
+}));
+const mohRegex = /m\s*o\s*h/gi;
 
 function createPRNG(seed: number) {
     return function nextRandom() {
@@ -170,77 +178,63 @@ export default class PacketManager {
     }
 
     private data: Record<string, any> = {};
-    private aimDirection: number = 0;
+    private aimDirection: number = Infinity;
+
+    /** Forget the last sent move/aim so the first ones after a (re)spawn are never dropped as duplicates. */
+    private resetDedupe() {
+        this.data = {};
+        this.aimDirection = Infinity;
+    }
+
+    private filterChat(chatInput: string) {
+        for (let i = 0; i < profanityFilters.length; i++) {
+            const filter = profanityFilters[i];
+            if (chatInput.indexOf(filter.word) > -1) chatInput = chatInput.replace(filter.regex, filter.replacement);
+        }
+
+        if (chatInput.replace(/ /g, "").includes("moh")) {
+            chatInput = chatInput.replace(mohRegex, (match) => match[0] + "\0" + match.slice(1));
+        }
+
+        return chatInput;
+    }
 
     manage(type: string, data: any[]) {
         if (type === PacketMap.CLIENT_TO_SERVER.SEND_CHAT) {
-            let chatInput = data[0] as string;
+            const chatInput = data[0];
+            if (typeof chatInput !== "string") return true;
+
+            // Local "!" commands (!help, !clear, !plog, ...) never reach the server.
+            if (ChatCommands.run(chatInput)) return false;
 
             // Server commands (moomodding.io: /fight, /bot, /var, /clear, /help) must reach the server
             // exactly as typed, so skip the filter rewrites below.
-            if (typeof chatInput === "string" && chatInput.startsWith("/")) return true;
+            if (chatInput.startsWith("/")) return true;
 
-            for (const profanity of profanityList) {
-                if (chatInput.indexOf(profanity) > -1) {
-                    const tmp = profanity[0] + String.fromCharCode(0) + profanity.slice(1);
-                    const regex = new RegExp(profanity, "g");
-                    chatInput = chatInput.replace(regex, tmp);
-                }
-            }
-
-            if (chatInput.split("").filter(e => e !== " ").join("").includes("moh")) {
-                const escapedProfanity = "moh".split("").map(char =>
-                    char.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-                ).join("\\s*");
-
-                const regex = new RegExp(escapedProfanity, "gi");
-
-                chatInput = chatInput.replace(regex, (match) => {
-                    return match[0] + "\0" + match.slice(1);
-                });
-            }
-
-            if (data[0] === "!plog" || data[0] === "!pl") {
-                SocketListener.sendFplToDiscord(true);
-                return false;
-            }
-
-            data[0] = chatInput;
-        } else if (type === PacketMap.CLIENT_TO_SERVER.SEND_UPGRADE) {
-            if (Client.upgradesObtained.has(data[0])) return false;
-            Client.upgradesObtained.add(data[0]);
+            data[0] = this.filterChat(chatInput);
+        } else if (type === PacketMap.CLIENT_TO_SERVER.JOIN_GAME) {
+            this.resetDedupe();
+        } else if (type === PacketMap.CLIENT_TO_SERVER.RESET_MOVEMENT_DIR) {
+            this.data[PacketMap.CLIENT_TO_SERVER.MOVE] = Infinity;
         } else if (type === PacketMap.CLIENT_TO_SERVER.MOVE) {
-            if (typeof this.data[type] == "undefined") this.data[type] = Infinity;
-
-            if (this.data[type] !== data[0]) {
-                this.data[type] = data[0];
-            } else {
-                return false;
-            }
+            if (this.data[type] === data[0]) return false;
+            this.data[type] = data[0];
         } else if (type === PacketMap.CLIENT_TO_SERVER.SEND_AIM) {
-            if (typeof this.aimDirection == "undefined") this.aimDirection = Infinity;
-
-            if (this.aimDirection !== data[0]) {
-                this.aimDirection = data[0];
-            } else {
-                return false;
-            }
+            if (this.aimDirection === data[0]) return false;
+            this.aimDirection = data[0];
         } else if (type === PacketMap.CLIENT_TO_SERVER.SEND_HIT) {
-            if (typeof this.aimDirection == "undefined") this.aimDirection = Infinity;
-
-            if (this.aimDirection !== data[1]) {
-                this.aimDirection = data[1];
-            }
+            // A hit carries its own direction, so the next identical aim packet is redundant.
+            if (typeof data[1] === "number") this.aimDirection = data[1];
         } else if (type === PacketMap.CLIENT_TO_SERVER.SEND_UPGRADE) {
             const id = data[0];
+            if (Client.upgradesObtained.has(id)) return false;
+            Client.upgradesObtained.add(id);
 
             if (id < 16) {
                 const wpn = items.weapons[id];
+                const current = items.weapons[Client.weaponIndex];
 
-                if (
-                    (items.weapons[Client.weaponIndex].type === 0 && wpn.type === 0) ||
-                    (items.weapons[Client.weaponIndex].type === 1 && wpn.type === 1)
-                ) {
+                if (wpn && current && current.type === wpn.type && wpn.type <= 1) {
                     Client.weaponIndex = id;
                 }
             }

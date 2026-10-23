@@ -120,19 +120,25 @@ export default class Socket extends WebSocket {
         }
     }
 
-    processPacket(type: any, data: any[]) {
-        const artificialPing = Menu.getValue("artificialPing");
-        const parsedAmt = parseInt(Menu.getValue("artificialPingAmt"));
-        const artificialPingAmt = isNaN(parsedAmt) ? 20 : parsedAmt;
+    /** One-way delay added by the "artificial ping" setting, or 0 when it is off. */
+    private getArtificialDelay() {
+        if (!Menu.getValue("artificialPing")) return 0;
 
-        if (!artificialPing) {
+        const parsedAmt = parseInt(Menu.getValue("artificialPingAmt"));
+        return (isNaN(parsedAmt) ? 20 : parsedAmt) / 2;
+    }
+
+    processPacket(type: any, data: any[]) {
+        const delay = this.getArtificialDelay();
+
+        if (!delay) {
             this.dispatch(type, data);
             return;
         }
 
         TaskScheduler.setTimeout(() => {
             this.dispatch(type, data);
-        }, artificialPingAmt / 2);
+        }, delay);
     }
 
     private onMessage(ev: MessageEvent) {
@@ -257,11 +263,9 @@ export default class Socket extends WebSocket {
         if (this.readyState !== WebSocket.OPEN) return;
         if (!this.manager.manage(type, this.DATA_BUFFER)) return;
 
-        const artificialPing = Menu.getValue("artificialPing");
-        const parsedAmt = parseInt(Menu.getValue("artificialPingAmt"));
-        const artificialPingAmt = isNaN(parsedAmt) ? 20 : parsedAmt;
+        const delay = this.getArtificialDelay();
 
-        if (!artificialPing) {
+        if (!delay) {
             this.sendActualMsg(type);
             return;
         }
@@ -273,7 +277,7 @@ export default class Socket extends WebSocket {
         TaskScheduler.setTimeout(() => {
             this.populateBuffer(arg1, arg2, arg3);
             this.sendActualMsg(type);
-        }, artificialPingAmt / 2);
+        }, delay);
     }
 
     private binaryPacketBuffer = new Uint8Array(1024);
