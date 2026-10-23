@@ -38,6 +38,8 @@ export default function renderNames() {
         if (entity && entity.visible) {
             const teamName = (entity as Player).team;
             const tmpName = renderNames ? `${teamName ? `[${teamName}] ` : ""}${entity.name || ""}` : "";
+            // Measured once after the name font is set; the crown, skull and shame count all need it.
+            let nameHalfWidth = 0;
 
             if (tmpName) {
                 mainContext.font = `${(entity.nameScale || 30)}px Hammersmith One`;
@@ -46,11 +48,12 @@ export default function renderNames() {
                 mainContext.textAlign = "center";
                 mainContext.lineWidth = (entity.nameScale ? 11 : 8);
                 mainContext.lineJoin = "round";
+                nameHalfWidth = mainContext.measureText(tmpName).width / 2;
                 mainContext.strokeText(tmpName, entity.render_position.x - xOffset, (entity.render_position.y - yOffset - entity.scale) - RendererUtils.nameY);
                 mainContext.fillText(tmpName, entity.render_position.x - xOffset, (entity.render_position.y - yOffset - entity.scale) - RendererUtils.nameY);
 
                 if (entity.isLeader && SpriteCache.iconSprites["crown"].isLoaded) {
-                    const tmpX = entity.render_position.x - xOffset - (tmpS / 2) - (mainContext.measureText(tmpName).width / 2) - crownPad;
+                    const tmpX = entity.render_position.x - xOffset - (tmpS / 2) - nameHalfWidth - crownPad;
 
                     mainContext.drawImage(
                         SpriteCache.iconSprites["crown"],
@@ -62,7 +65,7 @@ export default function renderNames() {
                 }
 
                 if (entity.iconIndex == 1 && SpriteCache.iconSprites["skull"].isLoaded) {
-                    const tmpX = entity.render_position.x - xOffset - (tmpS / 2) + (mainContext.measureText(tmpName).width / 2) + crownPad;
+                    const tmpX = entity.render_position.x - xOffset - (tmpS / 2) + nameHalfWidth + crownPad;
 
                     mainContext.drawImage(
                         SpriteCache.iconSprites["skull"],
@@ -102,7 +105,7 @@ export default function renderNames() {
                 mainContext.lineWidth = entity.nameScale ? 11 : 8;
                 mainContext.lineJoin = "round";
 
-                const shameXCoords = entity.render_position.x - xOffset + (mainContext.measureText(tmpName).width / 2) + crownPad + (entity.clowned ? crownPad * .5 : 0) + (entity.iconIndex == 1 ? crownPad * 1.5 : 0)
+                const shameXCoords = entity.render_position.x - xOffset + nameHalfWidth + crownPad + (entity.clowned ? crownPad * .5 : 0) + (entity.iconIndex == 1 ? crownPad * 1.5 : 0)
                 const shameYCoords = entity.render_position.y - yOffset - 35 - RendererUtils.nameY;
                 const text = entity.clowned ? (entity.shameTimer / 1e3).toFixed(1) : entity.shameCount.toString();
 
