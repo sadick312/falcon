@@ -61,7 +61,7 @@ export default class PacketTracker {
         const val = HealerUtils.getFoodValue(foodID);
         const total = Math.ceil(100 / val);
 
-        if (total !== this.TOTAL_FOOD) return;
+        if (total === this.TOTAL_FOOD) return;
         this.TOTAL_FOOD = total;
 
         const totalFoodCost = PacketAllocationPool.FOOD * this.TOTAL_FOOD;

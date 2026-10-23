@@ -80,13 +80,26 @@ function resetMovementDir() {
     Client.lastMoveDir = null;
 }
 
+/** Normal chat is capped at 30 characters by the game; commands need room for their arguments. */
+const MAX_CHAT_LENGTH = 30;
+const MAX_COMMAND_LENGTH = 100;
+
+function closeChat() {
+    chatInput.style.display = "none";
+    chatInput.blur();
+}
+
 function toggleChat() {
     if (chatInput.style.display === "block") {
-        chatInput.style.display = "none";
+        closeChat();
 
-        if (Client.socket && Client.player) Client.socket.sendMsg(
+        const msg = chatInput.value.trim();
+        if (!msg || !Client.socket || !Client.player) return;
+
+        const isCommand = msg.startsWith("/") || msg.startsWith("!");
+        Client.socket.sendMsg(
             PacketMap.CLIENT_TO_SERVER.SEND_CHAT,
-            chatInput.value.slice(0, 30)
+            msg.slice(0, isCommand ? MAX_COMMAND_LENGTH : MAX_CHAT_LENGTH)
         );
     } else {
         chatInput.style.display = "block";
@@ -135,8 +148,10 @@ const pauseIcon = getElem("paused-icon");
 document.addEventListener("keydown", (event) => {
     if (!Client.player) return;
 
-    if (event.code === "Enter") {
+    if (event.code === "Enter" || event.code === "NumpadEnter") {
         toggleChat();
+    } else if (event.code === "Escape" && chatInput.style.display === "block") {
+        closeChat();
     } else if (isKeyboardActive()) {
         Input.keys[event.code] = true;
         Input.keys[event.keyCode] = true;
