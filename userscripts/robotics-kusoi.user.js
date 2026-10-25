@@ -2,9 +2,10 @@
 // @name          Robotics kusoi
 
 // @match        *://sandbox.moomodding.io/*
+// @match        *://moomodding.io/*
 // @grant         none
 // @run-at        document-start
-// @version       v1.9.0
+// @version       v2.0.0
 // @author        Yurio, Oe And Brt3726
 // @description   Mod With Try Out Bundle Testing real
 // @require       https://cdn.jsdelivr.net/npm/msgpack-lite@0.1.26/dist/msgpack.min.js
@@ -15,12 +16,13 @@
 {
   "name": "Robotics (Kusoi version)",
   "match": [
-    "*://sandbox.moomodding.io/*"
+    "*://sandbox.moomodding.io/*",
+    "*://moomodding.io/*"
   ],
   "grant": [
     "none"
   ],
-  "version": "v1.9.0",
+  "version": "v2.0.0",
   "author": "Yurio, Oe And Brt3726 <= all skids btw",
   "description": "Mod With Try Out Bundle Testing real",
   "require": [
@@ -32,6 +34,84 @@
 /* ===========================================================================
    CHANGELOG
    ---------------------------------------------------------------------------
+   v2.0.0
+   Hosts (CONFIG.hosts, ROBOTICS_HOST)
+   - @match / ScriptFlow: exactly sandbox.moomodding.io and moomodding.io.
+   - One profile per host: game socket URL pattern, packet limits, tick
+     rate, fields per player, item limits, required page elements, packet
+     name maps. Every module reads the active profile. moomodding.io is
+     NOT confirmed: conservative 50/s, 9/tick until real data says more;
+     localStorage "robotics_host_overrides" tries values without editing
+     the file (clamped; never above 120/s).
+   - Starts only on a game page (the profile's element ids); otherwise
+     waits 30 s for one, then stays idle and forwards every packet as is
+     (moomodding.io looks like the launcher hub, which has no game).
+   - Game socket: the WebSocket constructor is wrapped at document-start,
+     so a socket matching the host's URL pattern is recognised when it is
+     created and what the server sends before your first packet is kept
+     (it used to bind to whichever socket sent first and miss io-init). A
+     new game socket (server switch / reconnect) clears the old server's
+     players, objects and queued actions; a close reloads only if no new
+     socket came within the reload delay. Unmatched sockets are left alone
+     (sandbox keeps the v1.9.0 "first socket that sends" as a fallback).
+   - Packet budget from the profile; "Host default" in Packet Budget Limit;
+     the hard-coded fy < 69 / fy < 60 checks follow the menu and the host.
+   - userscripts/ws-capture.user.js logs a host's socket URL and first
+     packets so its profile can be filled in.
+   Offense
+   - Attack Planner (Offensive, on): each tick dry-runs every enabled
+     attack module against up to 3 enemies within 450 px and runs the one
+     with the best reliability x hit chance x target weakness; a sequence
+     on another enemy than the nearest keeps it as the target for 3 ticks.
+     Off = the v1.9.0 fixed order on the nearest enemy. Planner Targets 1-5.
+   - Hit chance: spare reach vs how far the target drifts in one RTT.
+     Target weakness: health (soldier = more), trapped, shame, shield.
+   - Reload Timing (Offensive): Legacy (v1.9.0, default) / Tick-exact
+     (reload <= floor(RTT / tick) ticks: the updates that run before your
+     packet lands) / Falcon (fully reloaded). Needs live testing.
+   - Movement simulator: the first simulated tick starts from the enemy's
+     current health (CONFIG.combat.simCurrentHealth; false = v1.9.0).
+   - Hat requests have priorities: defensive soldier/EMP > a running
+     attack sequence > anything else (it was last request wins).
+   Defense
+   - Predictive Heal (Defensive, on): also heals when this tick's likely
+     damage plus the weapons that reload next tick would leave you under
+     Heal Threshold (default 20). Heal Timing: Legacy / Precise (120 ms -
+     RTT instead of - RTT/2).
+   - Knockback Threat (on): spikes an enemy's next hit would knock you
+     into (simulator) count as incoming damage.
+   - Safe Walk "Smart": steers 30-120 degrees around enemy spikes, cactus
+     and enemy projectile paths instead of stopping, in place of your
+     normal move packet (no extra packets).
+   - Health updates without a change no longer count as hits (they reset
+     your heal timer and enemies' shame windows). Spike-hit and insta
+     damage matching use a tolerance instead of exact float compares, and
+     the spike lookup uses the object grid.
+   Placing / movement
+   - Keep Escape Path (on): graded placements never close your last
+     quarter circle of walkable directions.
+   - Auto Turret (off): turret on the free spot closest to behind you when
+     an enemy is near and none of yours is.
+   - Pathfinder: sees everything its 1440 px grid covers (it only saw
+     objects within 500 px); a ring around enemy spikes/cactus and other
+     enemies' reach costs 4x, so paths keep distance.
+   - Auto Farm (Others, off): no enemy in sight and no key held: walk to
+     the nearest tree/bush/rock/gold and gather it.
+   - Fix: holding left click aimed at the nearest enemy even out of reach
+     (sb was used without calling it).
+   HUD / menu
+   - Render tab: enemy reload bars, predicted positions, threat readout,
+     insta-ready ring, danger zones, projectile lines (all off). Status
+     line shows packets/budget and the host profile.
+   - Presets (Balanced / Aggressive / Max Defense), settings export/import
+     (menu settings and keys only; never External Sync or host overrides).
+     Settings are per site (each host has its own storage).
+   - Key editor in the Keybinds tab: rebind live, conflicts flagged,
+     saved in localStorage "robotics_keys", reset button.
+   Performance (offline replay, hidden browser pane, same session):
+     v1.9.0 tick 2.0-2.2 ms, frame 4.8-5.7 ms; v2.0.0 defaults tick
+     2.2-2.3 ms, frame 4.6-5.9 ms; no handler failures with every toggle on.
+
    v1.9.0
    Security
    - Removed the remote song-timing fetch + eval(). It ran a GitHub file
@@ -243,7 +323,7 @@
    localStorage under the ids shown in the menu code (fu.<id>).
    =========================================================================== */
 const CONFIG = {
-    version: "v1.9.0",
+    version: "v2.0.0",
 
     /* Keybinds use KeyboardEvent.key, so letters are case sensitive
        ("Z" means Shift+z). Hold keys act every tick while held. */
@@ -289,28 +369,95 @@ const CONFIG = {
         debugChat: ",",          // debug: send the debug menu's 2nd field as chat
         debugMenu: "\\"          // debug: show the test input menu
     },
+    /* Key pairs that share a key on purpose (the key editor doesn't flag them):
+       q eats while held and re-selects your weapon when pressed. */
+    keyShared: [["heal", "selectWeapon"]],
 
     /* One scheduler runs everything that used to be on separate timers.
        It ticks on every server player update ("a" packet, ~111 ms). When no
        update has arrived for fallbackAfter ms (main menu, dead) it runs its own
-       ticks at the same rate so respawn and ping still work. */
+       ticks at the same rate so respawn and ping still work. The tick rate
+       itself is per host (CONFIG.hosts[...].tickRate). */
     tick: {
-        rate: 1000 / 9,
         fallbackAfter: 1000,
         slots: 256               // how far ahead tickBase() can schedule
     },
 
-    /* Every packet (mod and game) goes through one limiter.
-       perSecond is a sliding 1 s window, perTick a per-tick cap. Healing and
-       spawning ignore perTick and may use the reserve; everything else stops
-       at perSecond - reserve. Over-budget packets wait for the next tick;
-       chat, buying and clan packets are dropped when the queue is full. */
-    packets: {
-        perSecond: 69,
-        perTick: 12,
-        reserve: 9,
-        placeReserve: 4,         // per-tick room placing leaves free for hits, weapon swaps and hats
-        queueLimit: 48
+    /* Per-host profiles. The script runs on exactly these two hosts (see
+       @match); ROBOTICS_HOST below is the active one.
+
+       socket          URL pattern of the game WebSocket. Only a socket whose
+                       URL matches is hooked; every other socket is left alone.
+       socketFallback  also take the first other socket that sends a packet
+                       (v1.9.0 behaviour), for when the URL pattern is wrong.
+       packets         the packet limiter (every packet goes through it):
+                       perSecond is a sliding 1 s window, perTick a per-tick
+                       cap. Healing and spawning ignore perTick and may use the
+                       reserve; everything else stops at perSecond - reserve.
+                       Over-budget packets wait for the next tick; chat, buying
+                       and clan packets are dropped when the queue is full.
+                       placeReserve is the per-tick room placing leaves free
+                       for hits, weapon swaps and hats.
+       maxPerSecond    the menu's Packet Budget Limit can't go above this.
+       tickRate        ms per server tick (1000 / updates per second).
+       playerStride    fields per player in the "a" (players update) packet.
+       sandboxLimits   sandbox item limits (99, 299 for spikes/mills and up)
+                       instead of the normal per-group limits.
+       requireIds      the mod only starts on a page that has these element
+                       ids (a game page); it waits waitForGameMs for them
+                       to appear, then stays idle and touches nothing.
+       packetIds       mod packet name -> name on the wire, client to server.
+       serverIds       name on the wire -> mod packet name, server to client.
+                       Both empty = the 1.8.2 names the mod uses.
+
+       moomodding.io: NOT confirmed. It looks like the launcher hub (the
+       sandbox's "/" redirects there), so the mod most likely stays idle on
+       it. If a game does run there, the limits below are deliberately lower
+       than the sandbox's until its real limit is known; raise them only with
+       data (userscripts/ws-capture.user.js). To try values without editing
+       this file, put JSON in localStorage "robotics_host_overrides", e.g.
+       {"moomodding.io": {"packets": {"perSecond": 60}, "maxPerSecond": 69}}. */
+    hosts: {
+        "sandbox.moomodding.io": {
+            name: "sandbox",
+            socket: /^wss?:\/\/(?:[a-z0-9-]+\.)*moomodding\.io(?::\d+)?\//i,
+            socketFallback: true,
+            packets: {
+                perSecond: 69,
+                perTick: 12,
+                reserve: 9,
+                placeReserve: 4,
+                queueLimit: 48
+            },
+            maxPerSecond: 120,
+            tickRate: 1000 / 9,
+            playerStride: 13,
+            sandboxLimits: true,
+            requireIds: ["gameCanvas", "mapDisplay", "mainMenu", "enterGame", "gameUI", "actionBar", "storeHolder", "chatBox", "nameInput"],
+            waitForGameMs: 30000,
+            packetIds: {},
+            serverIds: {}
+        },
+        "moomodding.io": {
+            name: "moomodding.io",
+            socket: /^wss?:\/\/(?:[a-z0-9-]+\.)*moomodding\.io(?::\d+)?\//i,
+            socketFallback: false,
+            packets: {
+                perSecond: 50,
+                perTick: 9,
+                reserve: 9,
+                placeReserve: 3,
+                queueLimit: 40
+            },
+            maxPerSecond: 50,
+            tickRate: 1000 / 9,
+            playerStride: 13,
+            sandboxLimits: false,
+            requireIds: ["gameCanvas", "mapDisplay", "mainMenu", "enterGame", "gameUI", "actionBar", "storeHolder", "chatBox", "nameInput"],
+            waitForGameMs: 30000,
+            packetIds: {},
+            serverIds: {}
+        }
     },
 
     /* Optional sync server for "Primary Sync" and the green/red names of
@@ -331,6 +478,35 @@ const CONFIG = {
         chunk: 300
     },
 
+    /* Offense (v2.0.0).
+       plannerTargets / plannerRange: the Attack Planner tries the attack
+       modules against this many enemies (nearest first) within this many px.
+       simCurrentHealth: the movement simulator starts the first tick from the
+       enemy's current health instead of full health (later ticks still
+       assume a full heal in between, as in Falcon). false = v1.9.0. */
+    combat: {
+        plannerTargets: 3,
+        plannerRange: 450,
+        simCurrentHealth: true
+    },
+
+    /* Defense (v2.0.0). healThreshold: Predictive Heal heals when this
+       tick's likely damage plus what reloads next tick would leave you
+       below this much health (menu: Heal Threshold). */
+    defense: {
+        healThreshold: 20
+    },
+
+    /* Placing and movement (v2.0.0).
+       escapeArc: Keep Escape Path rejects a graded placement that would
+       leave you less than this many radians of directions to walk (pi/2 =
+       a quarter circle), unless you already had less. farmRange: Auto Farm
+       looks this far for trees, bushes, rocks and gold. */
+    placing: {
+        escapeArc: Math.PI / 2
+    },
+    farmRange: 900,
+
     /* Rejoin after a disconnect, at most `limit` reloads per `window` ms. */
     reload: {
         key: "robotics_kusoi_reloads",
@@ -344,6 +520,91 @@ const CONFIG = {
     pingEveryTicks: 9,
     chatLogLimit: 200
 };
+
+/* The active host profile: CONFIG.hosts[location.hostname] plus the optional
+   localStorage overrides described above. An unknown host (only possible if
+   @match is edited) gets the conservative moomodding.io profile. Every module
+   reads limits, tick rate and packet names from here. */
+const ROBOTICS_HOST = (function () {
+    const host = String(location.hostname || "").toLowerCase();
+    const known = Object.prototype.hasOwnProperty.call(CONFIG.hosts, host);
+    const base = CONFIG.hosts[known ? host : "moomodding.io"];
+    const map = src => Object.assign(Object.create(null), src);
+    const p = {
+        host: host,
+        known: known,
+        name: base.name,
+        socket: base.socket,
+        socketFallback: !!base.socketFallback,
+        packets: Object.assign({}, base.packets),
+        maxPerSecond: base.maxPerSecond,
+        tickRate: base.tickRate,
+        playerStride: base.playerStride,
+        sandboxLimits: !!base.sandboxLimits,
+        requireIds: base.requireIds.slice(),
+        waitForGameMs: base.waitForGameMs,
+        packetIds: map(base.packetIds),
+        serverIds: map(base.serverIds),
+        wireToMod: Object.create(null),
+        overridden: false
+    };
+    try {
+        const all = JSON.parse(localStorage.getItem("robotics_host_overrides") || "null");
+        const o = all && typeof all === "object" ? all[host] : null;
+        if (o && typeof o === "object") {
+            const int = (v, lo, hi, d) => Number.isInteger(v) && v >= lo && v <= hi ? v : d;
+            p.maxPerSecond = int(o.maxPerSecond, 10, 120, p.maxPerSecond);
+            const pk = o.packets && typeof o.packets === "object" ? o.packets : {};
+            p.packets.perSecond = int(pk.perSecond, 10, 120, p.packets.perSecond);
+            p.packets.perTick = int(pk.perTick, 2, 30, p.packets.perTick);
+            p.packets.reserve = int(pk.reserve, 3, 20, p.packets.reserve);
+            p.packets.placeReserve = int(pk.placeReserve, 0, 10, p.packets.placeReserve);
+            p.packets.queueLimit = int(pk.queueLimit, 8, 200, p.packets.queueLimit);
+            p.playerStride = int(o.playerStride, 5, 30, p.playerStride);
+            if (typeof o.tickRate === "number" && o.tickRate >= 30 && o.tickRate <= 500) p.tickRate = o.tickRate;
+            if (typeof o.sandboxLimits === "boolean") p.sandboxLimits = o.sandboxLimits;
+            if (typeof o.socketFallback === "boolean") p.socketFallback = o.socketFallback;
+            if (typeof o.socket === "string") p.socket = new RegExp(o.socket, "i");
+            for (const key of ["packetIds", "serverIds"]) {
+                const ids = o[key] && typeof o[key] === "object" ? o[key] : {};
+                for (const name of Object.keys(ids)) {
+                    if (name.length <= 16 && typeof ids[name] === "string" && ids[name].length <= 16) p[key][name] = ids[name];
+                }
+            }
+            p.overridden = true;
+        }
+    } catch (err) {
+        console.warn("[Robotics] ignoring robotics_host_overrides:", err);
+    }
+    p.packets.perSecond = Math.min(p.packets.perSecond, p.maxPerSecond);
+    p.packets.reserve = Math.min(p.packets.reserve, p.packets.perSecond - 1);
+    for (const name of Object.keys(p.packetIds)) p.wireToMod[p.packetIds[name]] = name;
+    return p;
+})();
+
+/* Keybinds changed in the menu's key editor (Keybinds tab) are stored in
+   localStorage "robotics_keys" as {action: key} and applied over CONFIG.keys
+   here. ROBOTICS_DEFAULT_KEYS keeps the values written in CONFIG. */
+const ROBOTICS_DEFAULT_KEYS = Object.assign({}, CONFIG.keys);
+(function () {
+    try {
+        const saved = JSON.parse(localStorage.getItem("robotics_keys") || "null");
+        if (!saved || typeof saved !== "object") return;
+        for (const action of Object.keys(saved)) {
+            if (Object.prototype.hasOwnProperty.call(CONFIG.keys, action) && typeof saved[action] === "string" && saved[action].length <= 16) {
+                CONFIG.keys[action] = saved[action];
+            }
+        }
+    } catch (err) {
+        console.warn("[Robotics] ignoring robotics_keys:", err);
+    }
+})();
+
+/* Is this WebSocket URL the game server of the active host? The optional
+   sync socket never is. */
+function roboticsIsGameUrl(url) {
+    return typeof url === "string" && url.indexOf(CONFIG.sync.url) !== 0 && ROBOTICS_HOST.socket.test(url);
+}
 
 /* Hats / accessories / weapons / animals are loaded from whichever site the
    script runs on, instead of a hardcoded moomoo.io URL. Resolved lazily because
@@ -361,12 +622,65 @@ function roboticsImg(path) {
     return ROBOTICS_IMG_BASE + String(path).replace(/^\/+/, "");
 }
 
+/* Game sockets created before the mod has started (the page can open its
+   socket while it is still loading). Each keeps what it receives, up to 256
+   messages, until the mod attaches it; once the mod has decided this page has
+   no game (idle) nothing is kept. */
+const ROBOTICS_SOCKETS = {
+    pending: [],
+    attach: null,
+    idle: false
+};
+
+function roboticsSocketCreated(ws, url) {
+    if (!roboticsIsGameUrl(url)) {
+        return;
+    }
+    ws.__roboticsGame = true;
+    if (ROBOTICS_SOCKETS.attach) {
+        ROBOTICS_SOCKETS.attach(ws, null);
+        return;
+    }
+    if (ROBOTICS_SOCKETS.idle) {
+        return;
+    }
+    const entry = { ws: ws, buffer: [], listener: null };
+    entry.listener = function (event) {
+        if (entry.buffer.length < 256) {
+            entry.buffer.push(event);
+        }
+    };
+    ws.addEventListener("message", entry.listener);
+    ROBOTICS_SOCKETS.pending.push(entry);
+}
+
 /* @run-at document-start is required for the packet hook: the host client does
    `const nativeSend = WebSocket.prototype.send` while it loads, then calls that
    cached reference. A hook installed at document-idle is therefore bypassed.
    This trampoline is installed before the page scripts and forwards to the mod
-   once its handler is registered at DOMContentLoaded. */
+   once its handler is registered at DOMContentLoaded.
+   The constructor is wrapped too (a Proxy, so instanceof and the static
+   constants still work): a socket whose URL matches the host profile is
+   recognised the moment it is created, not at its first send, so the mod
+   also sees what the server sends before the client's first packet, and a
+   reconnect or server switch is noticed. */
 const ROBOTICS_NATIVE_SEND = (function () {
+    try {
+        const NativeWebSocket = window.WebSocket;
+        window.WebSocket = new Proxy(NativeWebSocket, {
+            construct: function (target, args, newTarget) {
+                const ws = Reflect.construct(target, args, newTarget);
+                try {
+                    roboticsSocketCreated(ws, String(args[0]));
+                } catch (err) {
+                    console.warn("[Robotics] socket check failed:", err);
+                }
+                return ws;
+            }
+        });
+    } catch (err) {
+        console.warn("[Robotics] could not wrap the WebSocket constructor; the game socket is found at its first send.", err);
+    }
     try {
         const proto = WebSocket.prototype;
         const nativeSend = proto.send;
@@ -478,7 +792,7 @@ let serverID;
     "config.js": function (e, s) {
         e.exports.maxScreenWidth = 1920;
         e.exports.maxScreenHeight = 1080;
-        e.exports.serverUpdateRate = 9;
+        e.exports.serverUpdateRate = Math.round(1000 / ROBOTICS_HOST.tickRate);
         e.exports.maxPlayers = 40;
         e.exports.maxPlayersHard = e.exports.maxPlayers + 10;
         e.exports.collisionDepth = 6;
@@ -494,7 +808,8 @@ let serverID;
         e.exports.crownPad = 35;
         e.exports.chatCountdown = 3000;
         e.exports.chatCooldown = 500;
-        e.exports.isSandbox = /(sandbox|dev)/i.test(window.location.hostname) ? true : false;
+        // Sandbox item limits come from the host profile (was: "sandbox" or "dev" in the hostname).
+        e.exports.isSandbox = ROBOTICS_HOST.sandboxLimits;
         e.exports.maxAge = 100;
         e.exports.gatherAngle = Math.PI / 2.6;
         e.exports.gatherWiggle = 10;
@@ -1080,6 +1395,10 @@ let serverID;
                     }
                 });
                 cK.BoxF("Graded Auto Place", "Falcon: Auto Placer and Auto Replacer pick their spots with Falcon's angle finder and grader: the 4 best spikes/traps per tick (key /)", "gradedAutoPlace");
+                cK.BoxF("Keep Escape Path", "Graded Auto Place / Replace skip a spot that would leave you less than a quarter circle of directions to walk (spikes, walls and enemy traps around you count)", "keepEscape", {
+                    defaultOn: true
+                });
+                cK.BoxF("Auto Turret", "With an enemy within 600 px and none of your turrets within 400 px, places a turret (if you have one) on the free spot closest to straight behind you, at most every 9 ticks", "autoTurret");
                 cK.BoxF("Angle Finder Level", "Falcon: candidates per item, 1 (16, fastest) to 10 (70, best)", "angleFinderLevel", {
                     setting: true,
                     input: {
@@ -1108,6 +1427,33 @@ let serverID;
                 cK.BoxF("Projectile Sync", "Falcon: bull hit when your or your team's arrows/turrets already flying at the enemy plus your hit kill (key k)", "projectileSync");
                 cK.BoxF("Velocity Hits", "Falcon: bull hit when the enemy is about to slide into a spike and the hit plus the spike kill (key i)", "velocityHits");
                 cK.BoxF("Dynamic One Tick", "Falcon: simulates both players 2 ticks ahead and one ticks (turret gear, then bull hit) automatically when it kills. Diamond polearm or ruby katana (key u; t still arms one)", "dynamicOneTick");
+                cK.BoxF("Attack Planner", "Tries every enabled attack module below against the nearest few enemies each tick and runs the one most likely to kill (module reliability x hit chance x how weak the target is). Off = v1.9.0: first module that passes, nearest enemy only", "attackPlanner", {
+                    defaultOn: true
+                });
+                cK.BoxF("Planner Targets", "How many nearby enemies (within " + CONFIG.combat.plannerRange + " px) the Attack Planner considers, 1-5", "plannerTargets", {
+                    setting: true,
+                    input: {
+                        min: 1,
+                        max: 5,
+                        value: CONFIG.combat.plannerTargets
+                    }
+                });
+                cK.BoxF("Reload Timing", "When a weapon counts as reloaded. Legacy: yours RTT/2 early, enemies' your worst ping early (v1.9.0). Tick-exact: floor(RTT / tick) ticks early, the updates that run before your packet lands. Falcon: only when fully reloaded. Try Tick-exact on the live server and keep it if instas land more often", "reloadTiming", {
+                    setting: true,
+                    option: true,
+                    options: {
+                        "Legacy (RTT/2)": {
+                            id: "legacy",
+                            selected: true
+                        },
+                        "Tick-exact": {
+                            id: "exact"
+                        },
+                        "Falcon (no ping)": {
+                            id: "falcon"
+                        }
+                    }
+                });
                 cK.BoxF("Knockback Hits", "Falcon: bull hit when the knockback bounces the enemy into 3+ spikes or kills (key b)", "knockbackHits");
                 cK.BoxF("Knockback Instakills", "Falcon: turret gear insta only when the simulated knockback ends on a spike. Needs great hammer (reverse) or a ranged secondary (key p)", "knockbackInsta");
                 cK.BoxF("Knockback Insta In Trap", "Falcon: allow Knockback Instakills while you are trapped", "knockbackInstaInTrap");
@@ -1190,9 +1536,36 @@ let serverID;
                 cK.BoxF("Auto buy", "Buys hats and accessories automatically", "autoBuy");
                 cK.BoxF("Anti 1 tick", "Forces soldier when detects 1 tick", "anti1tick");
                 cK.BoxF("Smart Anti-Insta", "Falcon: when a hit would kill you, wear EMP helmet if it blocks enough, else soldier, else heal - no early heal, no shame (key j)", "smartAntiInsta");
+                cK.BoxF("Predictive Heal", "Also heals when this tick's likely damage plus the enemies whose weapons reload next tick would leave you under Heal Threshold (shame 5 or less). Off = v1.9.0 heal rules only", "predictiveHeal", {
+                    defaultOn: true
+                });
+                cK.BoxF("Heal Threshold", "Predictive Heal: health you want left after the next two ticks, 0-90", "healThreshold", {
+                    setting: true,
+                    input: {
+                        min: 0,
+                        max: 90,
+                        value: CONFIG.defense.healThreshold
+                    }
+                });
+                cK.BoxF("Heal Timing", "How long after a hit auto-heal waits so the heal doesn't count as shame. Legacy (v1.9.0): 120 ms - RTT/2. Precise: 120 ms - RTT (the hit happened RTT/2 before you saw it and the heal lands RTT/2 after you send it). Precise heals sooner; switch back if your shame count climbs", "healTiming", {
+                    setting: true,
+                    option: true,
+                    options: {
+                        "Legacy": {
+                            id: "legacy",
+                            selected: true
+                        },
+                        "Precise": {
+                            id: "precise"
+                        }
+                    }
+                });
+                cK.BoxF("Knockback Threat", "Counts the spikes an enemy's next hit would knock you into (movement simulator) as incoming damage, so heals and soldier come in time", "knockbackThreat", {
+                    defaultOn: true
+                });
                 cK.BoxF("Auto Q on sync", "Heals as fast as possible when you may be synced", "autoQonSync");
                 cK.BoxF("Hammer breaker", "Use hammer when breaking", "hammerBreakerOptimisation");
-                cK.BoxF("Safe Walk", "Avoids spikes", "safeWalk", {
+                cK.BoxF("Safe Walk", "Avoids enemy spikes and cactus. Smart: simulates your next step and, if it touches a spike or crosses an enemy arrow/bullet, walks the nearest safe direction (30-120 degrees off) instead of stopping", "safeWalk", {
                     option: true,
                     options: {
                         "Move Away": {
@@ -1201,6 +1574,9 @@ let serverID;
                         },
                         Stop: {
                             id: "stop"
+                        },
+                        "Smart (steer around)": {
+                            id: "smart"
                         }
                     }
                 });
@@ -1241,6 +1617,12 @@ let serverID;
                 cC(cK);
                 cK.newLine(1);
                 cK.BoxF("Smoother Camera", "Makes camera move slower", "CAmera");
+                cK.BoxF("HUD: Enemy Reloads", "Bars under each enemy: primary, secondary and turret gear reload (full = ready)", "hudReloads");
+                cK.BoxF("HUD: Predicted Positions", "Line from each enemy to where they will be next tick", "hudPredict");
+                cK.BoxF("HUD: Threat", "Above you: this tick's likely incoming damage and next tick's (red when it would kill)", "hudThreat");
+                cK.BoxF("HUD: Insta Ready", "Green ring around you when primary, secondary, turret gear and bull helmet are all ready", "hudInsta");
+                cK.BoxF("HUD: Danger Zones", "Rings around enemy spikes and cactus (red) and enemy traps (orange) near you: where your centre must not go", "hudDanger");
+                cK.BoxF("HUD: Projectile Lines", "Where enemy arrows and bullets are heading", "hudProjectiles");
                 cK.BoxF("Render Direction", "Shows real direction", "renderDir", {
                     option: true,
                     options: {
@@ -1280,6 +1662,9 @@ let serverID;
                 cK.Text("Falcon features: j Smart Anti-Insta, k Projectile Sync, i Velocity Hits, u Dynamic One Tick, o Graded Preplace, / Graded Auto Place");
                 cK.Text("b Knockback Hits, p Knockback Instakills, [ Auto Push Strikes, ] Turret Gear Knockback, ; Turret Bullet Assist, ' Barbarian Knockback, - Apple Insta, = Melee Sync");
                 cK.Text("Home Pattern Recognition, End Smart Hats, 0 Artificial Ping");
+                cK.newLine(1);
+                cK.append(roboticsKeyEditorHtml());
+                setTimeout(roboticsMenuExtrasBind, 150);
             });
             ci.TabContent("others", cK => {
                 cK.Text("OTHERS TAB", "20px", "white");
@@ -1292,7 +1677,15 @@ let serverID;
                 cK.BoxF("Auto Accept", "Adds players into your party asap when they request to join", "autoAccept");
                 cK.BoxF("Ping Map", "Pings the map when you press r or click it", "allowPing");
                 cK.BoxF("External Sync", "Connects to robotics-ahh.fly.dev for Primary Sync and the green/red names of other Robotics users. Every 20 s it sends your id, name, server, ping and position. Off by default", "externalSync");
+                cK.append("<div class=\"checkbox-container\" id=\"robotics-presets\"><span class=\"checkbox-name\">Presets and saved settings</span>" +
+                    "<div style=\"margin-top: 6px;\"><select id=\"robotics-preset\" class=\"checkbox-dropdown\"><option value=\"\">Apply a preset...</option>" +
+                    "<option value=\"balanced\">Balanced</option><option value=\"aggressive\">Aggressive</option><option value=\"defense\">Max Defense</option></select>" +
+                    " <button id=\"robotics-export\" class=\"checkbox-dropdown\" style=\"width: 80px;\">Export</button>" +
+                    " <button id=\"robotics-import\" class=\"checkbox-dropdown\" style=\"width: 80px;\">Import</button></div>" +
+                    "<textarea id=\"robotics-settings-io\" rows=\"3\" style=\"width: 95%; margin-top: 6px; background: #222; color: #ddd; border-radius: 6px;\" placeholder=\"Export puts your settings here (and on the clipboard); paste settings here and press Import\"></textarea>" +
+                    "<p class=\"checkbox-description\">A preset switches a group of toggles at once (External Sync is never touched). Settings are saved per site: sandbox.moomodding.io and moomodding.io each keep their own. Import accepts only menu settings and keybinds, never External Sync or host overrides; reload after importing.</p></div>");
                 cK.BoxF("Player Follow", "Follows the targetted player around", "playerFollow");
+                cK.BoxF("Auto Farm", "With no enemy in sight and no movement key held: walks to the nearest tree, bush, rock or gold (within " + CONFIG.farmRange + " px, cactus excluded) and gathers it with your primary. Stops as soon as an enemy shows up or you move", "autoFarm");
                 cK.BoxF("Follow SID", "Falcon: player id to follow with Player Follow (-1 = the targetted player)", "followSid", {
                     setting: true,
                     input: {
@@ -1301,16 +1694,25 @@ let serverID;
                         value: -1
                     }
                 });
-                cK.BoxF("Packet Budget Limit", "Falcon: packets per second the mod may send. The server kicks above its limit, so raise it with care", "packetLimit", {
+                cK.BoxF("Packet Budget Limit", "Packets per second the mod may send. The server kicks above its limit. Host default = " + ROBOTICS_HOST.packets.perSecond + "/s on " + ROBOTICS_HOST.name + "; values above " + ROBOTICS_HOST.maxPerSecond + "/s are capped on this host", "packetLimit", {
                     setting: true,
                     option: true,
                     options: {
+                        "Host default": {
+                            id: "host",
+                            selected: true
+                        },
+                        "40 / s": {
+                            id: "40"
+                        },
+                        "50 / s": {
+                            id: "50"
+                        },
                         "60 / s": {
                             id: "60"
                         },
                         "69 / s": {
-                            id: "69",
-                            selected: true
+                            id: "69"
                         },
                         "80 / s": {
                             id: "80"
@@ -1653,7 +2055,7 @@ let serverID;
            each callback runs in its own try/catch. */
         let fU = {
             tick: 0,
-            tickRate: CONFIG.tick.rate,
+            tickRate: ROBOTICS_HOST.tickRate,
             tickSpeed: 0,
             lastTick: performance.now(),
             lastRealTick: 0,
@@ -1717,20 +2119,29 @@ let serverID;
                 }
             }
         };
-        /* Packet budget: CONFIG.packets, overridden by the menu's Packet Budget
-           Limit (packets per second) and Strictness (packets kept free for
-           heals: 3 x strictness + 3, so the default 2 keeps 9). */
+        /* Packet budget: the host profile's packets, overridden by the menu's
+           Packet Budget Limit (packets per second, never above the profile's
+           maxPerSecond; "Host default" uses the profile) and Strictness
+           (packets kept free for heals: 3 x strictness + 3, so the default 2
+           keeps 9). */
         let roboticsBudget = {
-            perSecond: CONFIG.packets.perSecond,
-            perTick: CONFIG.packets.perTick,
-            reserve: CONFIG.packets.reserve
+            perSecond: ROBOTICS_HOST.packets.perSecond,
+            perTick: ROBOTICS_HOST.packets.perTick,
+            reserve: ROBOTICS_HOST.packets.reserve
         };
         function roboticsPacketBudget() {
             let ci = parseInt(fl.packetLimit);
             let cC = parseInt(fl.packetStrictness);
-            roboticsBudget.perSecond = ci >= 30 && ci <= 120 ? ci : CONFIG.packets.perSecond;
-            roboticsBudget.reserve = cC >= 2 && cC <= 4 ? cC * 3 + 3 : CONFIG.packets.reserve;
+            roboticsBudget.perSecond = ci >= 30 && ci <= 120 ? Math.min(ci, ROBOTICS_HOST.maxPerSecond) : ROBOTICS_HOST.packets.perSecond;
+            roboticsBudget.reserve = Math.min(cC >= 2 && cC <= 4 ? cC * 3 + 3 : ROBOTICS_HOST.packets.reserve, roboticsBudget.perSecond - 1);
             return roboticsBudget;
+        }
+        /* Room left in this second's budget. Replaces the hard-coded checks
+           fy < 69 (= perSecond on the sandbox) and fy < 60 (= perSecond -
+           reserve), which ignored the menu and the host. */
+        function roboticsBudgetFree(keepReserve) {
+            let ci = roboticsPacketBudget();
+            return fy < ci.perSecond - (keepReserve ? ci.reserve : 0);
         }
         function roboticsPacketPriority(ci, cC) {
             switch (ci) {
@@ -1762,7 +2173,7 @@ let serverID;
            reserves room for a whole sequence (select item, use, re-select
            weapon) so it is never split across ticks. */
         let roboticsLimiter = {
-            stamps: new Float64Array(Math.max(CONFIG.packets.perSecond, 120) + 1),
+            stamps: new Float64Array(Math.max(ROBOTICS_HOST.maxPerSecond, 120) + 1),
             head: 0,
             count: 0,
             tickCount: 0,
@@ -1817,7 +2228,7 @@ let serverID;
                         }
                     }
                 }
-                if (cQ.length >= CONFIG.packets.queueLimit) {
+                if (cQ.length >= ROBOTICS_HOST.packets.queueLimit) {
                     this.dropped++;
                     if (ck === 3) {
                         return;
@@ -1857,7 +2268,7 @@ let serverID;
                 if (!fB || fB.readyState !== WebSocket.OPEN || !this.canSend(ci, cC)) {
                     return false;
                 }
-                if (cC !== 0 && this.tickCount + ci > roboticsBudget.perTick - CONFIG.packets.placeReserve) {
+                if (cC !== 0 && this.tickCount + ci > roboticsBudget.perTick - ROBOTICS_HOST.packets.placeReserve) {
                     return false;
                 }
                 this.prepaid = ci;
@@ -1883,48 +2294,120 @@ let serverID;
         // The page may have cached the original send at load time, so the real
         // interception point is the trampoline installed at document-start.
         WebSocket.prototype.nsend = ROBOTICS_NATIVE_SEND || WebSocket.prototype.send;
-        window.__ROBOTICS_SEND_HANDLER = function (ci) {
-            // The optional sync socket is not the game socket.
-            if (typeof this.url === "string" && this.url.indexOf(CONFIG.sync.url) === 0) {
-                return this.nsend(ci);
+        /* The game socket (fB). A socket counts as the game's when its URL
+           matches the host profile (marked when it was created, see
+           roboticsSocketCreated), or - with the profile's socketFallback - when
+           it is the first other socket to send while there is none. A newer
+           game socket replaces the old one (server switch / reconnect): the
+           world state is cleared and only the new socket's packets are read. */
+        let roboticsSocketGen = 0;
+        function roboticsOnMessage(ci) {
+            if (this !== fB) {
+                return;
             }
-            if (!fB) {
-                fB = this;
-                fB.addEventListener("message", function (cC) {
-                    // Artificial Ping (Falcon): handle server packets later, in order.
-                    if (fu.artificialPing) {
-                        setTimeout(A3, (parseInt(fl.artificialPing) || 35) / 2, cC);
-                    } else {
-                        A3(cC);
-                    }
-                });
-                fB.addEventListener("close", cC => {
-                    // Rejoin after a disconnect, but rate-limit the reload so a
-                    // flapping server cannot put the tab into an endless loop.
-                    roboticsSafeReload("game socket closed");
-                });
-                fB.addEventListener("error", () => {
-                    console.warn("[Robotics] game socket error.");
-                });
-            }
-            if (fB == this) {
-                if (!roboticsHasMsgpack()) {
-                    console.warn("[Robotics] msgpack is missing; sending packets unmodified.");
-                    this.nsend(ci);
-                    return;
-                }
-                let cK;
-                try {
-                    cK = msgpack.decode(new Uint8Array(ci));
-                } catch (err) {
-                    console.warn("[Robotics] could not decode an outgoing packet; sending it unmodified.", err);
-                    this.nsend(ci);
-                    return;
-                }
-                roboticsOutgoing(this, cK[0], cK[1], ci);
+            // Artificial Ping (Falcon): handle server packets later, in order.
+            if (fu.artificialPing) {
+                setTimeout(A3, (parseInt(fl.artificialPing) || 35) / 2, ci);
             } else {
-                this.nsend(ci);
+                A3(ci);
             }
+        }
+        function roboticsOnClose() {
+            if (this !== fB) {
+                return;
+            }
+            fB = null;
+            AX = false;
+            // A server switch opens the next game socket right away. Rejoin
+            // (rate-limited reload, so a flapping server cannot loop the tab)
+            // only if no new game socket came within the reload delay.
+            let ci = roboticsSocketGen;
+            setTimeout(function () {
+                if (roboticsSocketGen === ci && !fB) {
+                    roboticsSafeReload("game socket closed");
+                }
+            }, CONFIG.reload.delay);
+        }
+        function roboticsOnSocketError() {
+            if (this === fB) {
+                console.warn("[Robotics] game socket error.");
+            }
+        }
+        // Forget the old server's players, objects and pending actions.
+        function roboticsResetWorld() {
+            AX = false;
+            Am = true;
+            Ai = undefined;
+            Ae.length = 0;
+            AH.length = 0;
+            Ac.length = 0;
+            Ad.length = 0;
+            Ak.length = 0;
+            AF = [];
+            AQ = {};
+            ey = [];
+            roboticsGrid.clear();
+            fU.clear();
+            for (let ci = 0; ci < roboticsLimiter.queue.length; ci++) {
+                roboticsLimiter.queue[ci].length = 0;
+            }
+        }
+        function roboticsAttachSocket(ci, cC) {
+            if (ci === fB) {
+                return;
+            }
+            if (fB) {
+                console.info("[Robotics] new game socket; clearing the old server's state.");
+                roboticsResetWorld();
+            }
+            fB = ci;
+            roboticsSocketGen++;
+            ci.__roboticsGame = true;
+            ci.addEventListener("message", roboticsOnMessage);
+            ci.addEventListener("close", roboticsOnClose);
+            ci.addEventListener("error", roboticsOnSocketError);
+            if (cC) {
+                for (let cK = 0; cK < cC.length; cK++) {
+                    roboticsOnMessage.call(ci, cC[cK]);
+                }
+            }
+        }
+        // Runs once the whole start-up has finished (every handler exists):
+        // attach sockets the page opened before the mod started, newest last.
+        function roboticsAttachPending() {
+            ROBOTICS_SOCKETS.attach = roboticsAttachSocket;
+            for (const ci of ROBOTICS_SOCKETS.pending.splice(0)) {
+                ci.ws.removeEventListener("message", ci.listener);
+                if (ci.ws.readyState === WebSocket.CONNECTING || ci.ws.readyState === WebSocket.OPEN) {
+                    roboticsAttachSocket(ci.ws, ci.buffer);
+                }
+            }
+        }
+        window.__ROBOTICS_SEND_HANDLER = function (ci) {
+            if (this !== fB) {
+                let cC = typeof this.url === "string" && this.url.indexOf(CONFIG.sync.url) === 0;
+                if (!cC && (this.__roboticsGame || ROBOTICS_HOST.socketFallback && !fB)) {
+                    roboticsAttachSocket(this, null);
+                } else {
+                    return this.nsend(ci);
+                }
+            }
+            if (!roboticsHasMsgpack()) {
+                console.warn("[Robotics] msgpack is missing; sending packets unmodified.");
+                this.nsend(ci);
+                return;
+            }
+            let cK;
+            try {
+                cK = msgpack.decode(new Uint8Array(ci));
+            } catch (err) {
+                console.warn("[Robotics] could not decode an outgoing packet; sending it unmodified.", err);
+                this.nsend(ci);
+                return;
+            }
+            // The rules use the mod's packet names; the host may name them differently on the wire.
+            let cd = ROBOTICS_HOST.wireToMod[cK[0]] || cK[0];
+            roboticsOutgoing(this, cd, cK[1], ci);
         };
         /* One outgoing path for the game's packets and the mod's own (A0): the
            rules below adjust or drop them, then the limiter sends them. Game
@@ -2014,7 +2497,7 @@ let serverID;
                 cQ = raw.slice ? raw.slice(0) : raw;
             } else {
                 try {
-                    cQ = msgpack.encode([cd, cC]);
+                    cQ = msgpack.encode([ROBOTICS_HOST.packetIds[cd] || cd, cC]);
                 } catch (err) {
                     if (!raw) {
                         console.warn("[Robotics] failed to send packet " + cd + ":", err);
@@ -2051,7 +2534,7 @@ let serverID;
             } catch (err) {
                 return;
             }
-            let cd = cK[0];
+            let cd = ROBOTICS_HOST.serverIds[cK[0]] || cK[0];
             cC = cK[1];
             // Server packet handlers, built once (it was a new 30-entry object per packet).
             let ck = roboticsHandlers || (roboticsHandlers = {
@@ -5085,9 +5568,9 @@ let serverID;
                         }
                     }
                     if (this.weaponIndex < 9) {
-                        this.primaryReloaded = this.reloads[this.weaponIndex] <= (this.sid == Ai.sid ? Ap.avg / 2 : Ap.max);
+                        this.primaryReloaded = this.reloads[this.weaponIndex] <= roboticsReloadSlack(this);
                     } else {
-                        this.secondaryReloaded = this.reloads[this.weaponIndex] <= (this.sid == Ai.sid ? Ap.avg / 2 : Ap.max);
+                        this.secondaryReloaded = this.reloads[this.weaponIndex] <= roboticsReloadSlack(this);
                     }
                     if (this.primaryReloaded && !this.prevPrimaryReloaded) {
                         this.primaryReloadTick = fU.tick;
@@ -5164,6 +5647,8 @@ let serverID;
            while the server has not confirmed it yet (up to 2 ticks). */
         let roboticsGear = {
             want: [null, null],
+            // Priority of each wanted item this task: 3 defensive, 2 attack sequence, 1 anything else.
+            wantPri: [0, 0],
             sent: [{
                 id: null,
                 tick: -9
@@ -5181,6 +5666,7 @@ let serverID;
             for (let ci = 0; ci < 2; ci++) {
                 let cC = roboticsGear.want[ci];
                 roboticsGear.want[ci] = null;
+                roboticsGear.wantPri[ci] = 0;
                 if (cC === null || (ci ? Ai.latestTail : Ai.latestSkin) == cC) {
                     continue;
                 }
@@ -5193,12 +5679,26 @@ let serverID;
                 A0("c", 0, cC, ci);
             }
         }
-        function roboticsWantGear(ci, cC) {
+        /* Several hat requests in one task used to end with whichever came
+           last. Now a lower-priority request can't replace a higher one
+           (v2.0.0): defensive soldier/EMP > a running attack sequence > the rest. */
+        function roboticsWantGear(ci, cC, cK) {
+            cK = cK || 1;
+            if (roboticsGear.want[cC] !== null && cK < roboticsGear.wantPri[cC]) {
+                return;
+            }
             roboticsGear.want[cC] = ci;
+            roboticsGear.wantPri[cC] = cK;
             if (!roboticsGear.queued) {
                 roboticsGear.queued = true;
                 queueMicrotask(roboticsFlushGear);
             }
+        }
+        function roboticsGearPriority(ci) {
+            if (ci == 6 && (AW.anti0Tick > 0 || AW.forceStop || Ai.soldierAnti) || ci == 22 && (Ai.empAnti || Ai.antiTurretSpam)) {
+                return 3;
+            }
+            return sc.isTrue ? 2 : 1;
         }
         function et(ci, cC) {
             let cK = Ai.skins[6] ? 6 : 0;
@@ -5213,13 +5713,13 @@ let serverID;
                         eW = ci;
                         ep = Date.now();
                     }
-                    roboticsWantGear(Ai.skins[ci] ? ci : cK, 0);
+                    roboticsWantGear(Ai.skins[ci] ? ci : cK, 0, roboticsGearPriority(ci));
                 } else if (cC == 1) {
                     if (fL && ci != 11 && ci != 0) {
                         roboticsWantGear(0, 1);
                         return;
                     }
-                    roboticsWantGear(Ai.tails[ci] ? ci : 0, 1);
+                    roboticsWantGear(Ai.tails[ci] ? ci : 0, 1, sc.isTrue ? 2 : 1);
                 }
             }
         }
@@ -6442,6 +6942,7 @@ let serverID;
                 const cQ = this.originX = Math.round(Ai.x2) - em.scale / 2;
                 const cg = this.originY = Math.round(Ai.y2) - em.scale / 2;
                 const cI = this.cells && this.cells.length === n * n ? this.cells.fill(0) : this.cells = new Uint8Array(n * n);
+                // Cell values: 0 free, 1 blocked, 2 danger (walkable, costs more; never overwrites 1).
                 const mark = (x, y, radius, value) => {
                     const x0 = Math.max(0, Math.ceil((x - radius - cQ) / cp));
                     const x1 = Math.min(n - 1, Math.floor((x + radius - cQ) / cp));
@@ -6451,18 +6952,34 @@ let serverID;
                         for (let col = x0; col <= x1; col++) {
                             const dx = cQ + cp * col - x;
                             const dy = cg + cp * row - y;
-                            if (dx * dx + dy * dy <= radius * radius) {
+                            if (dx * dx + dy * dy <= radius * radius && (value !== 2 || cI[row * n + col] === 0)) {
                                 cI[row * n + col] = value;
                             }
                         }
                     }
                 };
-                for (let ca = 0; ca < AF.length; ca++) {
-                    const cu = AF[ca];
-                    if (!(!cu.isTeamObject(Ai) && (cu.dmg || cu.trap)) && !(!cu.ignoreCollision || cu.name == "teleporter")) {
+                // Every object the grid covers (AF only holds objects within 500 px,
+                // the grid reaches ~1000 px into its corners).
+                const near = this.near = roboticsGrid.near(Ai.x2, Ai.y2, em.scale * 0.71, this.near || []);
+                for (let ca = 0; ca < near.length; ca++) {
+                    const cu = near[ca];
+                    if (!cu.active || !(!cu.isTeamObject(Ai) && (cu.dmg || cu.trap)) && !(!cu.ignoreCollision || cu.name == "teleporter")) {
                         continue;
                     }
                     mark(cu.x, cu.y, cu.getScale(0.6, cu.isItem) + Ai.scale, 1);
+                    // A ring around enemy spikes and cactus costs more, so paths keep some distance.
+                    if (cu.dmg && !cu.isTeamObject(Ai) || roboticsSim.isCactus(cu)) {
+                        mark(cu.x, cu.y, cu.getScale(0.6, cu.isItem) + Ai.scale + 45, 2);
+                    }
+                }
+                // Other enemies' melee reach costs more too (not the one you are going for).
+                for (let ca = 0; ca < Ad.length; ca++) {
+                    const cu = Ad[ca];
+                    if (cu === AQ || !cu.visible) {
+                        continue;
+                    }
+                    const cw = s5.weapons[cu.primaryIndex];
+                    mark(cu.x2, cu.y2, (cw && cw.projectile === undefined ? cw.range : 60) + Ai.scale, 2);
                 }
                 if (cK == "auto push" && AQ.sid !== undefined) {
                     mark(AQ.x2, AQ.y2, AQ.scale + Ai.scale, 1);
@@ -6561,7 +7078,7 @@ let serverID;
                 };
                 const start = ends.start.y * n + ends.start.x;
                 const goal = goalY * n + goalX;
-                if (cells[start] || cells[goal]) {
+                if (cells[start] === 1 || cells[goal] === 1) {
                     return { paths: [], attempts: 0 };
                 }
                 // Straight line already clear: no search needed.
@@ -6595,10 +7112,11 @@ let serverID;
                             const nx = cx + dx;
                             if (!dx && !dy || nx < 0 || nx >= n) continue;
                             const next = ny * n + nx;
-                            if (cells[next] || closed[next]) continue;
+                            if (cells[next] === 1 || closed[next]) continue;
                             const diagonal = dx && dy;
-                            if (diagonal && (cells[cy * n + nx] || cells[ny * n + cx])) continue;
-                            const cost = g[cur] + (diagonal ? Math.SQRT2 : 1);
+                            if (diagonal && (cells[cy * n + nx] === 1 || cells[ny * n + cx] === 1)) continue;
+                            // A danger cell costs 4 steps: a short detour beats brushing a spike.
+                            const cost = g[cur] + (diagonal ? Math.SQRT2 : 1) * (cells[next] === 2 ? 4 : 1);
                             if (cost < g[next]) {
                                 g[next] = cost;
                                 parent[next] = cur;
@@ -7249,6 +7767,302 @@ let serverID;
             return dx * dx + dy * dy <= total * total;
         }
 
+        /* ---- HUD overlays (v2.0.0, Render tab; all off by default) ----
+           Drawn in world space after the buildings, only for what is near the
+           camera: enemies in view, objects from the grid within 450 px of you,
+           active projectiles on screen. No allocations per frame. */
+        function roboticsDrawOverlays(ctx, ox, oy) {
+            if (!Ai || !AX || !(fu.hudReloads || fu.hudPredict || fu.hudThreat || fu.hudInsta || fu.hudDanger || fu.hudProjectiles)) return;
+            ctx.save();
+            ctx.globalAlpha = 1;
+            if (fu.hudDanger) {
+                const near = roboticsGrid.near(Ai.x2, Ai.y2, 450, roboticsNearTmp);
+                ctx.lineWidth = 2;
+                for (let i = 0; i < near.length; i++) {
+                    const obj = near[i];
+                    if (!obj.active) continue;
+                    const spike = obj.dmg && !obj.isTeamObject(Ai) || roboticsSim.isCactus(obj);
+                    if (!spike && !(obj.trap && !obj.isTeamObject(Ai))) continue;
+                    ctx.strokeStyle = spike ? "rgba(255, 70, 70, 0.6)" : "rgba(255, 170, 0, 0.6)";
+                    ctx.beginPath();
+                    ctx.arc(obj.x - ox, obj.y - oy, obj.getScale() + Ai.scale, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+            }
+            if (fu.hudProjectiles) {
+                ctx.strokeStyle = "rgba(255, 80, 80, 0.8)";
+                ctx.lineWidth = 2;
+                for (let i = 0; i < AH.length; i++) {
+                    const p = AH[i];
+                    if (!p.active || !p.owner || p.owner.isTeam(Ai) || !isFinite(p.x3)) continue;
+                    // Four ticks of flight from where it is now.
+                    ctx.beginPath();
+                    ctx.moveTo(p.x2 - ox, p.y2 - oy);
+                    ctx.lineTo(p.x2 + (p.x3 - p.x2) * 4 - ox, p.y2 + (p.y3 - p.y2) * 4 - oy);
+                    ctx.stroke();
+                }
+            }
+            for (let i = 0; i < Ad.length; i++) {
+                const enemy = Ad[i];
+                const sx = enemy.x - ox;
+                const sy = enemy.y - oy;
+                if (!enemy.visible || sx < -100 || sy < -100 || sx > AE + 100 || sy > Ab + 100) continue;
+                if (fu.hudPredict && isFinite(enemy.x3)) {
+                    ctx.strokeStyle = "rgba(255, 255, 255, 0.7)";
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(sx, sy);
+                    ctx.lineTo(sx + enemy.x3 - enemy.x2, sy + enemy.y3 - enemy.y2);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.arc(sx + enemy.x3 - enemy.x2, sy + enemy.y3 - enemy.y2, 6, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+                if (fu.hudReloads && enemy.reloads) {
+                    // Three bars below the health bar: primary, secondary, turret gear (2.5 s).
+                    const top = sy + enemy.scale + r.nameY + 20;
+                    for (let k = 0; k < 3; k++) {
+                        const id = k === 0 ? enemy.primaryIndex : k === 1 ? enemy.secondaryIndex : 53;
+                        const total = k === 2 ? 2500 : s5.weapons[id] ? s5.weapons[id].speed : 0;
+                        if (!total) continue;
+                        const done = 1 - Math.min(1, (enemy.reloads[id] || 0) / total);
+                        ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+                        ctx.fillRect(sx - 40, top + k * 7, 80, 5);
+                        ctx.fillStyle = done >= 1 ? "#ff5555" : k === 2 ? "#c9a227" : "#8ecae6";
+                        ctx.fillRect(sx - 40, top + k * 7, 80 * done, 5);
+                    }
+                }
+            }
+            const mx = Ai.x - ox;
+            const my = Ai.y - oy;
+            if (fu.hudInsta && Ai.primaryReloaded && Ai.secondaryReloaded && Ai.skins[7] && roboticsTurretReady()) {
+                ctx.strokeStyle = "rgba(80, 255, 120, 0.8)";
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(mx, my, Ai.scale + 12, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            if (fu.hudThreat && Ad.length) {
+                const now = Math.round(Ai.damageThreat || 0);
+                const next = Math.round(roboticsNextTickThreat());
+                ctx.font = "18px Hammersmith One";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.lineWidth = 5;
+                ctx.strokeStyle = "#000";
+                ctx.fillStyle = now >= Ai.health ? "#ff5555" : now + next >= Ai.health ? "#ffb347" : "#ffffff";
+                const text = now + " / " + next;
+                ctx.strokeText(text, mx, my - Ai.scale - 62);
+                ctx.fillText(text, mx, my - Ai.scale - 62);
+            }
+            ctx.restore();
+        }
+
+        /* ---- Presets, settings export/import, key editor (v2.0.0) ---- */
+        const ROBOTICS_PRESET_ATTACK = ["attackPlanner", "autoPlace", "gradedAutoPlace", "knockbackHits", "knockbackInsta", "velocityHits", "projectileSync"];
+        const ROBOTICS_PRESET_DEFENSE = ["smartAntiInsta", "predictiveHeal", "knockbackThreat", "patternRec", "smartHats", "keepEscape", "antiTrap"];
+        const ROBOTICS_PRESETS = {
+            balanced: {
+                label: "Balanced",
+                on: ROBOTICS_PRESET_ATTACK.concat(ROBOTICS_PRESET_DEFENSE, ["safeWalk"]),
+                off: ["dynamicOneTick", "pushStrikes", "turretGearKB", "turretAssist", "barbKB", "appleInsta", "autoTurret"],
+                set: { safeWalk: "smart" }
+            },
+            aggressive: {
+                label: "Aggressive",
+                on: ROBOTICS_PRESET_ATTACK.concat(ROBOTICS_PRESET_DEFENSE, ["dynamicOneTick", "pushStrikes", "turretGearKB", "turretAssist", "barbKB", "appleInsta", "autoTurret", "spikeTick"]),
+                off: ["safeWalk"],
+                set: {}
+            },
+            defense: {
+                label: "Max Defense",
+                on: ROBOTICS_PRESET_DEFENSE.concat(["safeWalk", "anti1tick", "safeAntiSpikeTick", "autoPlace", "gradedAutoPlace", "attackPlanner"]),
+                off: ["dynamicOneTick", "knockbackInsta", "pushStrikes", "turretGearKB", "turretAssist", "barbKB", "appleInsta", "autoTurret", "autoPush", "autoPlay"],
+                set: { safeWalk: "smart" }
+            }
+        };
+        function roboticsSetToggle(id, on) {
+            if (id === "externalSync") return;
+            fu[id] = on;
+            try {
+                localStorage.setItem(id, on);
+            } catch (err) { /* storage unavailable */ }
+            const box = document.querySelector("#" + id + " .checkbox-input");
+            if (box) box.checked = on;
+        }
+        function roboticsSetOption(id, value) {
+            const select = document.getElementById(id + "-dropdown");
+            if (!select || !select.querySelector("option[value=\"" + value + "\"]")) return;
+            select.value = value;
+            fl[id] = value;
+            try {
+                localStorage.setItem(id + "-selected", value);
+            } catch (err) { /* storage unavailable */ }
+        }
+        function roboticsApplyPreset(name) {
+            const preset = ROBOTICS_PRESETS[name];
+            if (!preset) return;
+            preset.off.forEach(id => roboticsSetToggle(id, false));
+            preset.on.forEach(id => roboticsSetToggle(id, true));
+            Object.keys(preset.set).forEach(id => roboticsSetOption(id, preset.set[id]));
+            fO("Preset", preset.label + " applied", "#8ecc51", 1);
+        }
+        // Menu settings that export/import may touch: every menu row's id, its dropdown and its number field.
+        function roboticsSettingKeys() {
+            const keys = new Set(["robotics_keys"]);
+            document.querySelectorAll("#modmenus .checkbox-container").forEach(box => {
+                if (!box.id || box.id === "externalSync" || box.id === "robotics-presets") return;
+                keys.add(box.id);
+                keys.add(box.id + "-selected");
+                keys.add(box.id + "-value");
+            });
+            return keys;
+        }
+        function roboticsExportSettings() {
+            const out = {};
+            roboticsSettingKeys().forEach(key => {
+                const value = localStorage.getItem(key);
+                if (value !== null) out[key] = value;
+            });
+            return JSON.stringify(out);
+        }
+        function roboticsImportSettings(text) {
+            const data = JSON.parse(text);
+            if (!data || typeof data !== "object") return 0;
+            const allowed = roboticsSettingKeys();
+            let count = 0;
+            for (const key of Object.keys(data)) {
+                if (allowed.has(key) && typeof data[key] === "string" && data[key].length <= 400) {
+                    localStorage.setItem(key, data[key]);
+                    count++;
+                }
+            }
+            return count;
+        }
+        function roboticsKeyName(key) {
+            return key === " " ? "Space" : key === "" ? "(none)" : key;
+        }
+        function roboticsKeyEditorHtml() {
+            let html = "<div class=\"checkbox-container\" id=\"robotics-key-editor\"><span class=\"checkbox-name\">Key editor</span>" +
+                "<p class=\"checkbox-description\">Click a field, then press the new key (Esc cancels, Backspace unbinds). Keys are case sensitive: Shift+z is \"Z\". Changes apply at once and are saved for this site.</p>" +
+                "<div style=\"display: grid; grid-template-columns: 1fr 110px; gap: 4px 10px; font-size: 14px;\">";
+            for (const action of Object.keys(CONFIG.keys)) {
+                html += "<span>" + roboticsEscapeHtml(action) + "</span><input type=\"text\" readonly class=\"robotics-key checkbox-dropdown\" style=\"width: 100px;\" data-action=\"" +
+                    roboticsEscapeHtml(action) + "\" value=\"" + roboticsEscapeHtml(roboticsKeyName(CONFIG.keys[action])) + "\" />";
+            }
+            return html + "</div><p id=\"robotics-key-conflicts\" class=\"checkbox-description\"></p>" +
+                "<button id=\"robotics-keys-reset\" class=\"checkbox-dropdown\" style=\"width: 140px;\">Reset all keys</button></div>";
+        }
+        // Actions bound to the same key, except the pairs in CONFIG.keyShared. Returns [[key, [actions]], ...].
+        function roboticsKeyConflicts() {
+            const byKey = new Map();
+            for (const action of Object.keys(CONFIG.keys)) {
+                const key = CONFIG.keys[action];
+                if (!key) continue;
+                if (!byKey.has(key)) byKey.set(key, []);
+                byKey.get(key).push(action);
+            }
+            const out = [];
+            byKey.forEach((actions, key) => {
+                if (actions.length < 2) return;
+                const shared = CONFIG.keyShared.some(pair => actions.length === pair.length && pair.every(a => actions.includes(a)));
+                if (!shared) out.push([key, actions]);
+            });
+            return out;
+        }
+        // Rebuild the keydown action map after a key changed (the first action bound to a key wins, as at start-up).
+        function roboticsRebuildKeys() {
+            for (const key of Object.keys(sw)) delete sw[key];
+            for (const action in roboticsKeyActions) {
+                if (RK[action] && !sw[RK[action]]) sw[RK[action]] = roboticsKeyActions[action];
+            }
+        }
+        function roboticsSaveKeys() {
+            const changed = {};
+            for (const action of Object.keys(CONFIG.keys)) {
+                if (CONFIG.keys[action] !== ROBOTICS_DEFAULT_KEYS[action]) changed[action] = CONFIG.keys[action];
+            }
+            try {
+                localStorage.setItem("robotics_keys", JSON.stringify(changed));
+            } catch (err) { /* storage unavailable */ }
+        }
+        function roboticsShowKeyConflicts() {
+            const conflicts = roboticsKeyConflicts();
+            const clash = new Set();
+            conflicts.forEach(c => c[1].forEach(a => clash.add(a)));
+            document.querySelectorAll("#robotics-key-editor .robotics-key").forEach(input => {
+                input.value = roboticsKeyName(CONFIG.keys[input.dataset.action]);
+                input.style.borderColor = clash.has(input.dataset.action) ? "#ff5555" : "";
+            });
+            const out = document.getElementById("robotics-key-conflicts");
+            if (out) {
+                out.style.color = conflicts.length ? "#ff7777" : "";
+                out.textContent = conflicts.length ? "Same key: " + conflicts.map(c => roboticsKeyName(c[0]) + " = " + c[1].join(", ")).join("; ") + " (only the first of each acts on key press)" : "No key conflicts.";
+            }
+        }
+        function roboticsMenuExtrasBind() {
+            document.querySelectorAll("#robotics-key-editor .robotics-key").forEach(input => {
+                input.addEventListener("focus", () => {
+                    input.value = "press a key";
+                });
+                input.addEventListener("blur", roboticsShowKeyConflicts);
+                input.addEventListener("keydown", event => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const action = input.dataset.action;
+                    if (event.key !== "Escape") {
+                        CONFIG.keys[action] = event.key === "Backspace" || event.key === "Delete" ? "" : event.key;
+                        roboticsSaveKeys();
+                        roboticsRebuildKeys();
+                    }
+                    // Refresh now: blur doesn't fire when the page itself isn't focused.
+                    roboticsShowKeyConflicts();
+                    input.blur();
+                });
+            });
+            const reset = document.getElementById("robotics-keys-reset");
+            if (reset) {
+                reset.addEventListener("click", () => {
+                    Object.assign(CONFIG.keys, ROBOTICS_DEFAULT_KEYS);
+                    roboticsSaveKeys();
+                    roboticsRebuildKeys();
+                    roboticsShowKeyConflicts();
+                });
+            }
+            roboticsShowKeyConflicts();
+            const preset = document.getElementById("robotics-preset");
+            if (preset) {
+                roboticsKeepKeysInField(preset);
+                preset.addEventListener("change", () => {
+                    roboticsApplyPreset(preset.value);
+                    preset.value = "";
+                });
+            }
+            const io = document.getElementById("robotics-settings-io");
+            if (io) roboticsKeepKeysInField(io);
+            const exp = document.getElementById("robotics-export");
+            if (exp && io) {
+                exp.addEventListener("click", () => {
+                    io.value = roboticsExportSettings();
+                    try {
+                        navigator.clipboard.writeText(io.value).catch(() => {});
+                    } catch (err) { /* no clipboard */ }
+                    fO("Settings", "Exported (also copied to the clipboard)", "#8ecc51", 1);
+                });
+            }
+            const imp = document.getElementById("robotics-import");
+            if (imp && io) {
+                imp.addEventListener("click", () => {
+                    try {
+                        const count = roboticsImportSettings(io.value);
+                        fO("Settings", "Imported " + count + " settings - reload the page to apply", "#8ecc51", 1);
+                    } catch (err) {
+                        fO("Settings", "Import failed: not valid settings JSON", "#cc5151", 1);
+                    }
+                });
+            }
+        }
+
         function roboticsToggleSetting(id, label) {
             fu[id] = !fu[id];
             try {
@@ -7264,7 +8078,7 @@ let serverID;
            river current, object collisions, spikes, traps, boost pads and
            knockback. Positions/velocities come from the last server update. */
         let roboticsSim = {
-            decel: Math.pow(r.playerDecel, CONFIG.tick.rate),
+            decel: Math.pow(r.playerDecel, ROBOTICS_HOST.tickRate),
             objects: [],
             extra: [],
             marks: new Map(),
@@ -7468,7 +8282,9 @@ let serverID;
                 let spikeHits = 0;
 
                 for (let tick = 0; tick < ticks; tick++) {
-                    victim.health = victim.maxHealth;
+                    // Damage must land within one tick: the enemy can heal between ticks. The first
+                    // tick starts from their current health (CONFIG.combat.simCurrentHealth).
+                    victim.health = tick === 0 && CONFIG.combat.simCurrentHealth ? Math.min(victim.health, victim.maxHealth) : victim.maxHealth;
                     const queue = actions[tick] || [];
                     for (let i = 0; i < queue.length; i++) {
                         const action = queue[i];
@@ -8029,6 +8845,153 @@ let serverID;
                 roboticsBarbKB() || roboticsTurretGearKB();
         }
 
+        /* ---- Attack Planner (v2.0.0) ----
+           roboticsFalconAttacks() runs the first module that passes, in a
+           fixed order, against the nearest enemy. The planner dry-runs every
+           module against up to plannerTargets enemies (nearest first, within
+           CONFIG.combat.plannerRange): the combat sequences on sc are swapped
+           for a recorder, so a module only reports that it would start one.
+           Each candidate scores
+               reliability(module) x hit chance x target weakness
+           and the best is then run for real. Reliability follows the old
+           order (earlier = higher), so with one target and a sure hit the
+           planner picks what v1.9.0 picked. A sequence started on an enemy
+           other than the nearest keeps that enemy as AQ for 3 ticks (see the
+           lock in the players update) so its follow-up hits aim at them. */
+        // [module, reliability, weapon slot of its hit: 0 primary, -1 hat only]
+        const roboticsPlanModules = [
+            [roboticsAntiBullCounter, 1.0, 0],
+            [roboticsKnockbackInsta, 0.95, 0],
+            [roboticsAppleInsta, 0.9, 0],
+            [roboticsVelocityHit, 0.85, 0],
+            [roboticsProjectileSync, 0.8, 0],
+            [roboticsMeleeSync, 0.75, 0],
+            [roboticsKnockbackHit, 0.7, 0],
+            [roboticsPushStrike, 0.65, 0],
+            [roboticsTurretAssist, 0.6, -1],
+            [roboticsBarbKB, 0.55, -1],
+            [roboticsTurretGearKB, 0.5, -1]
+        ];
+        const roboticsPlanSequences = ["bullHitType", "knockbackInstaType", "gearTickType", "appleInstaType"];
+        const roboticsPlanSaved = {};
+        let roboticsPlanCalled = false;
+        function roboticsPlanRecorder() {
+            roboticsPlanCalled = true;
+        }
+        // Would this module start a sequence now? Runs it with the sequences replaced by a recorder.
+        function roboticsPlanWouldRun(fn) {
+            for (let i = 0; i < roboticsPlanSequences.length; i++) {
+                const name = roboticsPlanSequences[i];
+                roboticsPlanSaved[name] = sc[name];
+                sc[name] = roboticsPlanRecorder;
+            }
+            roboticsPlanCalled = false;
+            let ran = false;
+            try {
+                ran = !!fn();
+            } finally {
+                for (let i = 0; i < roboticsPlanSequences.length; i++) {
+                    const name = roboticsPlanSequences[i];
+                    sc[name] = roboticsPlanSaved[name];
+                }
+            }
+            return ran && roboticsPlanCalled;
+        }
+
+        /* Chance a melee hit started now lands. The server hits when the
+           target is within range + ROBOTICS_HITBOX of you (roboticsInCombatRange)
+           at the update your packet reaches, about one RTT from now; until then
+           the target drifts about |velocity| x RTT (velocity is px per ms).
+           Spare reach equal to that drift gives 100%, none gives 50%. */
+        function roboticsHitChance(target, weaponId) {
+            const weapon = s5.weapons[weaponId];
+            if (!weapon) return 0;
+            const me = roboticsNextPos(Ai);
+            const them = roboticsNextPos(target);
+            const margin = weapon.range + ROBOTICS_HITBOX - Math.hypot(them.x - me.x, them.y - me.y);
+            const drift = Math.max(6, Math.hypot(target.vx || 0, target.vy || 0) * (Ap.avg || 60));
+            return Math.max(0.05, Math.min(1, 0.5 + margin / (2 * drift)));
+        }
+
+        /* How much a kill on this enemy is worth trying now (1 = full health):
+           lower health counts more (a soldier helmet makes health count 1/0.75),
+           trapped and high-shame enemies more, a shield in hand less. */
+        function roboticsTargetWeakness(enemy) {
+            const health = (enemy.health > 0 ? enemy.health : 100) / (enemy.skinIndex == 6 ? 0.75 : 1);
+            let weakness = 1 + Math.max(0, 133 - health) / 200;
+            if (enemy.inTrap) weakness += 0.15;
+            if ((enemy.shameCount || 0) >= 5) weakness += 0.1;
+            if (enemy.weaponIndex == 11) weakness -= 0.15;
+            return weakness;
+        }
+
+        function roboticsPlanAttack() {
+            roboticsPredictiveUpdate();
+            if (!Ad.length || AQ.sid === undefined) return false;
+            const nearest = AQ;
+            const maxTargets = Math.max(1, Math.min(5, parseInt(fl.plannerTargets) || CONFIG.combat.plannerTargets));
+            // Push Strike's predictive mode records the strike it starts; a dry run must not.
+            const predicted = roboticsPredictive.attacked;
+            let best = null;
+            let bestTarget = null;
+            let bestScore = 0;
+            let considered = 0;
+            try {
+                for (let i = 0; i < Ad.length && considered < maxTargets; i++) {
+                    const enemy = Ad[i];
+                    if (!enemy.visible || !(enemy.dist2 <= CONFIG.combat.plannerRange)) continue;
+                    considered++;
+                    AQ = enemy;
+                    const weakness = roboticsTargetWeakness(enemy);
+                    for (let j = 0; j < roboticsPlanModules.length; j++) {
+                        const entry = roboticsPlanModules[j];
+                        // Even a sure hit can't beat the best so far.
+                        if (entry[1] * weakness <= bestScore) continue;
+                        if (!roboticsPlanWouldRun(entry[0])) continue;
+                        const score = entry[1] * (entry[2] < 0 ? 1 : roboticsHitChance(enemy, Ai.weapons[entry[2]])) * weakness;
+                        if (score > bestScore) {
+                            bestScore = score;
+                            best = entry;
+                            bestTarget = enemy;
+                        }
+                    }
+                }
+            } finally {
+                roboticsPredictive.attacked = predicted;
+                AQ = nearest;
+            }
+            if (!best) return false;
+            AQ = bestTarget;
+            const ran = !!best[0]();
+            if (!ran) {
+                AQ = nearest;
+            } else if (bestTarget !== nearest) {
+                AW.lockSid = bestTarget.sid;
+                AW.lockUntil = fU.tick + 3;
+            }
+            return ran;
+        }
+
+        /* Reload left (ms) at which a weapon counts as ready (menu: Reload Timing).
+           Tick-exact: you read the server's update T; a packet you send now
+           lands about one RTT after T, so floor(RTT / tick) more updates run
+           first, each taking a tick off the reload, and the server swings at
+           the first update that starts with the reload done. So the weapon is
+           ready when reload <= floor(RTT / tick) x tick. Your counter-hat lands
+           just as late, so the same window says whether an enemy can hit you
+           before it does. Legacy (v1.9.0): yours RTT/2, enemies' your worst
+           recent ping. Falcon: 0. */
+        function roboticsReloadSlack(player) {
+            const mode = fl.reloadTiming;
+            if (mode === "falcon") {
+                return 0;
+            }
+            if (mode === "exact") {
+                return Math.floor((Ap.avg || 0) / fU.tickRate) * fU.tickRate;
+            }
+            return Ai && player.sid == Ai.sid ? Ap.avg / 2 : Ap.max;
+        }
+
         /* ---- Spike tick pattern recognition (Falcon DefenseSystem) ----
            Players bait the anti spike tick (soldier / heal when you leave a
            trap or could be knocked into spikes) to farm your shame. After
@@ -8189,6 +9152,76 @@ let serverID;
         /* Graded Auto Place (Falcon AutoPlacer): with Auto Placer on, places
            the 4 best graded spikes/traps each tick (every other tick with Two
            Tick Placements) while an enemy is within Auto Place Range. */
+        /* Auto Turret (v2.0.0): an enemy within 600 px and none of your
+           turrets within 400 px: place a turret (item 17) on the free angle
+           closest to straight away from the nearest enemy, at most every 9
+           ticks. Free angles come from the angle finder (so no packets are
+           spent on spots the server would refuse); the place itself goes
+           through ev() and the limiter like any other placement. */
+        let roboticsTurretTick = -99;
+        function roboticsAutoTurret() {
+            if (!fu.autoTurret || !Ad.length || !(AQ.dist2 <= 600) || sc.isTrue || fU.tick - roboticsTurretTick < 9) return;
+            const slot = Ai.items.indexOf(17);
+            const item = s5.list[17];
+            if (slot < 0 || !item) return;
+            for (const obj of roboticsGrid.turrets) {
+                if (obj.active && obj.owner && obj.owner.sid === Ai.sid && s4.getDistance(obj.x, obj.y, Ai.x2, Ai.y2) <= 400) return;
+            }
+            roboticsTurretTick = fU.tick;
+            const raw = [];
+            const near = roboticsGrid.near(Ai.x2, Ai.y2, 350, roboticsNearTmp);
+            for (let i = 0; i < near.length; i++) {
+                if (near[i].active) roboticsAngles.pushInterval(Ai.x2, Ai.y2, near[i], item, raw, false);
+            }
+            roboticsAngles.river.x = Ai.x2;
+            roboticsAngles.pushInterval(Ai.x2, Ai.y2, roboticsAngles.river, item, raw, false);
+            const away = sr.normalizeAngle(AQ.aim2 + Math.PI);
+            let angle = null;
+            let off = 1.6;
+            for (const arc of roboticsAngles.subtract([[0, Math.PI * 2]], roboticsAngles.merge(raw))) {
+                const pick = away >= arc[0] && away <= arc[1] ? away : s4.getAngleDist(arc[0], away) < s4.getAngleDist(arc[1], away) ? arc[0] : arc[1];
+                const d = s4.getAngleDist(pick, away);
+                if (d < off) {
+                    off = d;
+                    angle = pick;
+                }
+            }
+            if (angle !== null) ev(slot, angle);
+        }
+
+        /* Auto Farm (v2.0.0): with no enemy in sight and no movement key
+           held, walk to the nearest tree, bush, rock or gold within
+           CONFIG.farmRange (never a cactus) and gather it with the primary.
+           Returns the direction to walk (sent by sP in place of your normal
+           move packet) or undefined once in reach; AW.farmAim aims the hits. */
+        function roboticsFarmDir() {
+            if (!fu.autoFarm || !Ai || !Ai.alive || Ad.length || AW.autoPush || A7 || sc.isTrue || sV.active || Ai.inTrap) return undefined;
+            let best = null;
+            let bestD = Infinity;
+            const near = roboticsGrid.near(Ai.x2, Ai.y2, CONFIG.farmRange, roboticsNearTmp);
+            for (let i = 0; i < near.length; i++) {
+                const obj = near[i];
+                if (!obj.active || obj.isItem || !(obj.type >= 0 && obj.type <= 3) || roboticsSim.isCactus(obj)) continue;
+                const d = s4.getDistance(Ai.x2, Ai.y2, obj.x, obj.y);
+                if (d < bestD) {
+                    bestD = d;
+                    best = obj;
+                }
+            }
+            if (!best) return undefined;
+            AW.farming = true;
+            const weapon = s5.weapons[Ai.weapons[0]];
+            const angle = Math.atan2(best.y - Ai.y2, best.x - Ai.x2);
+            // Gather reaches objects whose edge is within the weapon's range of you.
+            if (bestD > (weapon ? weapon.range : 65) + best.scale - 8) {
+                return fu.safeWalk && fl.safeWalk == "smart" ? roboticsSafeWalkSteer(angle) : angle;
+            }
+            AW.farmAim = angle;
+            if (Ai.weaponIndex != Ai.weapons[0] || Ai.buildIndex > -1) ez(Ai.weapons[0]);
+            if (!eM) eY();
+            return undefined;
+        }
+
         function roboticsGradedAutoPlace() {
             const range = Math.min(1200, Math.max(100, parseInt(fl.autoPlaceRange) || 400));
             const enemies = Ad.filter(enemy => enemy.dist2 <= range);
@@ -8518,15 +9551,65 @@ let serverID;
                 }
                 candidates.sort((a, b) => b.grade - a.grade || b.isTrap - a.isTrap);
                 const best = [];
+                // Keep Escape Path: never take the last open quarter circle (unless you were already boxed in).
+                const minFree = fu.keepEscape ? CONFIG.placing.escapeArc : 0;
+                const freeBefore = minFree ? this.freeArc(px, py, objects, best) : 0;
                 for (let i = 0; i < candidates.length && best.length < count; i++) {
                     const c = candidates[i];
                     let overlaps = false;
                     for (let j = 0; j < best.length && !overlaps; j++) {
                         overlaps = s4.getDistance(c.x, c.y, best[j].x, best[j].y) < c.scale + best[j].scale;
                     }
-                    if (!overlaps) best.push(c);
+                    if (overlaps) continue;
+                    if (minFree && !c.isTrap) {
+                        best.push(c);
+                        const freeAfter = this.freeArc(px, py, objects, best);
+                        if (freeAfter < minFree && freeAfter < freeBefore - 1e-6) {
+                            best.pop();
+                            continue;
+                        }
+                        best.pop();
+                    }
+                    best.push(c);
                 }
                 return best;
+            },
+
+            /* Directions (radians of the circle) you could still walk a step
+               (60 px) in without bumping into something solid. Something with
+               radius s at distance d blocks the directions within
+               asin((s + 35) / d) of it (35 = your radius); something you already
+               touch blocks a half circle. Walls, spikes and other solid items
+               block, and so do enemy traps; walk-through items (your traps,
+               pads) don't. extra = planned placements {x, y, scale, isTrap}. */
+            freeArc(px, py, objects, extra) {
+                const raw = [];
+                const add = (x, y, scale) => {
+                    const dx = x - px;
+                    const dy = y - py;
+                    const reach = scale + 35;
+                    const distSq = dx * dx + dy * dy;
+                    if (distSq > (reach + 60) * (reach + 60)) return;
+                    const dist = Math.sqrt(distSq);
+                    const half = dist <= reach ? Math.PI / 2 : Math.asin(reach / dist);
+                    const dir = Math.atan2(dy, dx);
+                    const start = sr.normalizeAngle(dir - half);
+                    const end = sr.normalizeAngle(dir + half);
+                    if (start > end) {
+                        raw.push(start, Math.PI * 2, 0, end);
+                    } else {
+                        raw.push(start, end);
+                    }
+                };
+                for (const obj of objects) {
+                    if (!obj.ignoreCollision || obj.trap && !obj.isTeamObject(Ai)) add(obj.x, obj.y, obj.getScale());
+                }
+                for (const c of extra) {
+                    if (!c.isTrap) add(c.x, c.y, c.scale);
+                }
+                let free = 0;
+                for (const arc of this.subtract([[0, Math.PI * 2]], this.merge(raw))) free += arc[1] - arc[0];
+                return free;
             },
 
             /* Best preplace spot for the given item slots (2 = spike, 4 = trap),
@@ -8825,8 +9908,11 @@ let serverID;
             }
             if (AW.autoAim) {
                 e2 = typeof AW.customAim === "number" ? AW.customAim : fu.weaponGrind ? sD() : Ad.length ? AW.revAim ? AQ.aim2 + Math.PI : AQ.aim2 : sD();
-            } else if (sb && so.left) {
+            } else if (sb() && so.left) {
+                // Left click aims at the enemy only when it is in reach (sb was never called, so this always aimed at them).
                 e2 = Ad.length ? AQ.aim2 : sD();
+            } else if (typeof AW.farmAim === "number" && !so.left && !so.right) {
+                e2 = AW.farmAim;
             } else if (so.right) {
                 e2 = sD();
             } else if (sV.active) {
@@ -9061,6 +10147,9 @@ let serverID;
         addEventListener("keyup", s4.checkTrusted(sy), true);
         let sh;
         function sP() {
+            // Auto Farm sets these again below when it is farming this tick.
+            AW.farming = false;
+            AW.farmAim = undefined;
             if (sc.ticking) {
                 return;
             }
@@ -9082,7 +10171,8 @@ let serverID;
                 sh = sE();
             }
             if (!AW.autoPush && !e0[RK.followPlace]) {
-                A0("9", sh, 1);
+                let ci = sh === undefined ? roboticsFarmDir() : sh;
+                A0("9", fu.safeWalk && fl.safeWalk == "smart" && ci === sh ? roboticsSafeWalkSteer(ci) : ci, 1);
             }
         }
         let sU = [];
@@ -9233,6 +10323,11 @@ let serverID;
             if (roboticsSafeWalkPad()) {
                 AW.safeWalk = true;
                 A0("9", undefined, 1);
+                return;
+            }
+            if (fl.safeWalk == "smart") {
+                // Steered (or stopped) in sP this tick: keep auto push / auto play from overriding it.
+                AW.safeWalk = roboticsSteer.tick === fU.tick;
                 return;
             }
             if (fl.safeWalk == "move") {
@@ -13745,15 +14840,160 @@ let serverID;
            threat instead of the last player whose health changed.
            Normally it waits 120 ms - ping/2 after your last hit (no shame);
            it heals sooner when the predicted damage would kill you. */
+        /* Damage the enemies can add next tick (v2.0.0): melee weapons that
+           are not ready now but will be within one tick (reload <= one tick
+           plus the Reload Timing slack), as a bull hit (x1.5), and turret gear
+           that comes off cooldown. Enemies already reloaded are in this tick's
+           threat (processDamages); they can't hit twice in a row. Only enemies
+           close enough to reach you within a tick count. Cached per tick:
+           auto-heal also runs every frame. */
+        let roboticsNextThreat = { tick: -1, value: 0 };
+        function roboticsNextTickThreat() {
+            if (roboticsNextThreat.tick === fU.tick) {
+                return roboticsNextThreat.value;
+            }
+            let ci = 0;
+            for (let cC = 0; cC < Ad.length; cC++) {
+                const cK = Ad[cC];
+                if (!cK.visible) {
+                    continue;
+                }
+                const cd = s5.weapons[cK.primaryIndex];
+                // Their reach plus about a tick of walking toward you.
+                if (!(cK.dist2 <= (cd ? cd.range : 150) + Ai.scale * 2 + 69 + 30)) {
+                    continue;
+                }
+                let ck = 0;
+                const cQ = cK.reloads ? cK.reloads[cK.primaryIndex] : 0;
+                if (cd && cd.projectile === undefined && !cK.primaryReloaded && cQ <= fU.tickRate + roboticsReloadSlack(cK)) {
+                    ck = roboticsWeaponDamage(cK.primaryIndex, cK.primaryVariant || 0) * 1.5;
+                }
+                const cg = cK.reloads ? cK.reloads[53] : 0;
+                if (cg > 0 && cg <= fU.tickRate) {
+                    ck = Math.max(ck, 25);
+                }
+                ci += ck;
+            }
+            roboticsNextThreat.tick = fU.tick;
+            roboticsNextThreat.value = ci * (Ai.skinIndex == 6 ? 0.75 : 1);
+            return roboticsNextThreat.value;
+        }
+
+        /* Knockback Threat (v2.0.0): an enemy with a reloaded melee weapon in
+           range can knock you into spikes. Simulate one tick of that knockback
+           (from where they'll be, with their weapon's knock power) and add the
+           spike damage it deals. The worst single enemy counts (one knock at
+           a time). Skipped when no enemy spike or cactus is within 200 px. */
+        function roboticsAddKnockbackThreat() {
+            if (!Ak.length || !roboticsEnemySpikeNear(200)) {
+                return;
+            }
+            let ci = 0;
+            for (let cC = 0; cC < Ak.length; cC++) {
+                const cK = Ak[cC];
+                const cd = s5.weapons[cK.primaryIndex];
+                if (!cK.visible || !cd || cd.projectile !== undefined || !cK.primaryReloaded) {
+                    continue;
+                }
+                if (!roboticsInCombatRange({ x: cK.x2, y: cK.y2 }, { x: Ai.x2, y: Ai.y2 }, cd.range)) {
+                    continue;
+                }
+                const ck = roboticsSim.state(Ai);
+                // Raw damage: addDamageThreat applies the soldier helmet itself.
+                ck.skinIndex = 0;
+                const cQ = roboticsSim.simulate(ck, [[{
+                    type: "knockback",
+                    pos: roboticsNextPos(cK),
+                    knockPower: roboticsKnockPower(cK.primaryIndex)
+                }]], 1);
+                ci = Math.max(ci, cQ.totalDamage);
+            }
+            if (ci > 0) {
+                Ai.addDamageThreat(ci);
+            }
+        }
+
+        /* Smart Safe Walk (v2.0.0). Simulates one tick of walking in your
+           direction; when that touches an enemy spike or cactus or crosses an
+           enemy projectile's path, tries 30, 60, 90 and 120 degrees to either
+           side and walks the first safe one, and stops only when none is safe.
+           Steering goes out in place of your normal move packet (sP), so it
+           costs no extra packet. */
+        let roboticsSteer = {
+            tick: -1
+        };
+        function roboticsWalkSafe(ci) {
+            const cC = roboticsGrid.near(ci.x, ci.y, 220, roboticsNearTmp);
+            for (let cK = 0; cK < cC.length; cK++) {
+                const cd = cC[cK];
+                if (!cd.active || !(cd.dmg && !cd.isTeamObject(Ai) || roboticsSim.isCactus(cd))) {
+                    continue;
+                }
+                // The simulator pushes you out of what you walk into, so touching = within the summed radii (+4 px).
+                const ck = cd.getScale() + Ai.scale + 4;
+                const cQ = ci.x - cd.x;
+                const cg = ci.y - cd.y;
+                if (cQ * cQ + cg * cg <= ck * ck) {
+                    return false;
+                }
+            }
+            for (let cK = 0; cK < AH.length; cK++) {
+                const cd = AH[cK];
+                if (!cd.active || !cd.owner || cd.owner.isTeam(Ai)) {
+                    continue;
+                }
+                // Closest point of the projectile's next-tick path to you.
+                const cQ = cd.x3 - cd.x2;
+                const cg = cd.y3 - cd.y2;
+                const cp = cQ * cQ + cg * cg || 1;
+                const cW = Math.max(0, Math.min(1, ((ci.x - cd.x2) * cQ + (ci.y - cd.y2) * cg) / cp));
+                const ct = cd.x2 + cQ * cW - ci.x;
+                const cn = cd.y2 + cg * cW - ci.y;
+                if (ct * ct + cn * cn <= Ai.scale * Ai.scale) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        function roboticsSafeWalkSteer(ci) {
+            if (typeof ci !== "number" || !Ai || !Ai.alive) {
+                return ci;
+            }
+            const cC = roboticsSim.state(Ai);
+            if (roboticsWalkSafe(roboticsSim.simTick(cC, ci))) {
+                return ci;
+            }
+            roboticsSteer.tick = fU.tick;
+            for (let cK = 1; cK <= 4; cK++) {
+                for (let cd = -1; cd <= 1; cd += 2) {
+                    const ck = ci + cd * cK * Math.PI / 6;
+                    if (roboticsWalkSafe(roboticsSim.simTick(cC, ck))) {
+                        return ck;
+                    }
+                }
+            }
+            return undefined;
+        }
+
         function roboticsAutoHeal() {
             if (!AX || !Ai || AW.healed || Ai.health >= 100) {
                 return;
             }
             let ci = Date.now() - Ai.lastHit;
-            let cC = Ap.avg / 2;
+            // Heal Timing "precise": the hit happened on the server RTT/2 before you
+            // saw it and the heal lands RTT/2 after you send it, so the server sees
+            // ci + RTT between them; legacy waits RTT/2 more than that.
+            let cC = fl.healTiming === "precise" ? Ap.avg : Ap.avg / 2;
             let cK = Ai.shameCount <= 5;
             let cd = Ai.damageThreat >= Ai.health;
             let ck = ci > 120 - cC || cK && Ai.health < 70 && cd && ci > 85 - cC || cd && ci > 40 - cC || cK && Ai.health <= 50 && ci > 50 - cC || cK && Ai.health <= 70 && ci > 30 - cC && AQ.secondaryReloaded === false;
+            // Predictive Heal: also heal when this tick's likely damage plus what
+            // reloads next tick would leave you under the threshold.
+            if (!ck && fu.predictiveHeal && cK && ci > 40 - cC) {
+                let cQ = parseInt(fl.healThreshold);
+                cQ = cQ >= 0 && cQ <= 90 ? cQ : CONFIG.defense.healThreshold;
+                ck = Ai.health - Ai.damageThreat - roboticsNextTickThreat() < cQ;
+            }
             if (ck) {
                 eZ();
                 // If the packet budget cut the heal short, try again next frame.
@@ -13764,6 +15004,11 @@ let serverID;
             AK = AM(ci);
             if (AK) {
                 let ck = cC - AK.health;
+                // An update without a change is not a hit: it used to reset your
+                // heal timer and the enemy's shame window and log a 0 damage hit.
+                if (ck === 0) {
+                    return;
+                }
                 // Only your own health changes move your heal timer.
                 if (AK === Ai) {
                     Ai.lastHeal = Date.now();
@@ -14202,7 +15447,7 @@ let serverID;
                         AK.secondaryVariant = AK.weaponVariant;
                     }
                 }
-                cC += 13;
+                cC += ROBOTICS_HOST.playerStride;
             }
             if (se.stack.length) {
                 let cW = [];
@@ -14264,13 +15509,26 @@ let serverID;
                     }
                     AK.manageReload();
                 }
-                cY += 13;
+                cY += ROBOTICS_HOST.playerStride;
             }
             AQ = {};
             if (Ad.length) {
                 AQ = Ad.sort(function (co, cG) {
                     return co.dist2 - cG.dist2;
                 })[0];
+                // Attack Planner: a sequence started on another enemy keeps that enemy as the target until it ends.
+                if (AW.lockSid !== undefined) {
+                    if (fU.tick <= AW.lockUntil) {
+                        for (let co = 0; co < Ad.length; co++) {
+                            if (Ad[co].sid === AW.lockSid) {
+                                AQ = Ad[co];
+                                break;
+                            }
+                        }
+                    } else {
+                        AW.lockSid = undefined;
+                    }
+                }
             }
             // Due tickBase() callbacks run every tick, alive or not, after AQ is fresh.
             fU.runDue();
@@ -14279,8 +15537,11 @@ let serverID;
                 V2();
                 roboticsPatternRecTick();
                 Ai.processDamages();
+                if (fu.knockbackThreat) {
+                    roboticsSafeCall(roboticsAddKnockbackThreat, "knockback threat");
+                }
                 // One tick: armed once by the velocity tick key, or every tick with "Dynamic One Tick" on.
-                if ((sB.oneTick || fu.dynamicOneTick) && AW.anti0Tick <= 0 && !AW.forceStop && fy < 69) {
+                if ((sB.oneTick || fu.dynamicOneTick) && AW.anti0Tick <= 0 && !AW.forceStop && roboticsBudgetFree(false)) {
                     let co = roboticsOneTickPlan();
                     if (co) {
                         sc.dynamicOneTickType(co);
@@ -14308,8 +15569,9 @@ let serverID;
                                 Vr(AK);
                             }
                         }
-                        let cb = AF.find(cR => (cR.type == 1 && cR.y >= 12000 || cR.dmg && !cR.isTeamObject(AK)) && s4.getDist(cR, AK, 0, 2) <= cR.scale + AK.scale + 1);
-                        if (cb && cv == cb.dmg * (AK.skinIndex == 6 ? 0.75 : 1)) {
+                        // Spike under the player (object grid: AF only holds objects near you).
+                        let cb = roboticsGrid.near(AK.x2, AK.y2, 200, roboticsNearTmp).find(cR => cR.active && (cR.type == 1 && cR.y >= 12000 || cR.dmg && !cR.isTeamObject(AK)) && s4.getDist(cR, AK, 0, 2) <= cR.scale + AK.scale + 1);
+                        if (cb && Math.abs(cv - (cb.dmg || 35) * (AK.skinIndex == 6 ? 0.75 : 1)) < 0.01) {
                             AK.hitSpike = cb.dmg || 35;
                         }
                         // Bull helmet drain / poison tick on you (other players' drains no longer move your bull timing).
@@ -14349,7 +15611,7 @@ let serverID;
                                         if (AK.shameCount < cR) {
                                             roboticsAntiInstaHeal();
                                         }
-                                    } else if ([18.75, 22.5, 25, 26.25, 30, 35, 37.5, 50].includes(cv) && cZ + AK.damageThreat >= 100) {
+                                    } else if ([18.75, 22.5, 25, 26.25, 30, 35, 37.5, 50].some(cI => Math.abs(cI - cv) < 0.01) && cZ + AK.damageThreat >= 100) {
                                         if (fU.tick - AK.antiTimer > 1) {
                                             AK.canEmpAnti = true;
                                             AK.antiTimer = fU.tick;
@@ -14404,6 +15666,9 @@ let serverID;
                     if (Ad.length) {
                         ss.preplaces[0] = [];
                         ss.preplaces[1] = [];
+                        if (fu.autoTurret) {
+                            roboticsSafeCall(roboticsAutoTurret, "auto turret");
+                        }
                         if (fu.autoPlace && fu.gradedAutoPlace) {
                             roboticsSafeCall(roboticsGradedAutoPlace, "graded auto place");
                         } else if (AQ.dist2 <= 222) {
@@ -14466,7 +15731,7 @@ let serverID;
                                 }
                             });
                         }
-                        if (Ak.length > 1 && Ak.some(cS => [undefined, 3, 4, 5].includes(cS.primaryIndex)) && fy < 60) {
+                        if (Ak.length > 1 && Ak.some(cS => [undefined, 3, 4, 5].includes(cS.primaryIndex)) && roboticsBudgetFree(true)) {
                             if (fu.autoQonSync && Ai.shameCount < 5) {
                                 AW.anti0Tick = 3;
                                 eO(2);
@@ -14642,31 +15907,31 @@ let serverID;
                         AW.autoPush = false;
                         A0("9", Ai.moveDir, 1);
                     }
-                    if (sc.can && AW.anti0Tick <= 0 && !AW.forceStop && fy < 69) {
+                    if (sc.can && AW.anti0Tick <= 0 && !AW.forceStop && roboticsBudgetFree(false)) {
                         sc.changeType(fu.revInsta || Ai.weapons[1] == 10 ? "rev" : "normal");
                     }
-                    if (sc.canCounter && AW.anti0Tick <= 0 && fy < 69) {
+                    if (sc.canCounter && AW.anti0Tick <= 0 && roboticsBudgetFree(false)) {
                         sc.canCounter = false;
                         if (Ai.primaryReloaded && !sc.isTrue) {
                             sc.counterType();
                         }
                     }
-                    if (sc.canSpikeTick && AW.anti0Tick <= 0 && !AW.forceStop && fy < 69) {
+                    if (sc.canSpikeTick && AW.anti0Tick <= 0 && !AW.forceStop && roboticsBudgetFree(false)) {
                         sc.canSpikeTick = false;
                         if (Ai.primaryReloaded && !sc.isTrue && AQ.dist2 <= s5.weapons[Ai.weapons[0]].range + Ai.scale * 1.8) {
                             sc.spikeTickType();
                         }
                     }
                     // Falcon attack modules, at most one per tick (roboticsFalconAttacks).
-                    if (fy < 69) {
-                        roboticsSafeCall(roboticsFalconAttacks, "falcon attacks");
+                    if (roboticsBudgetFree(false)) {
+                        roboticsSafeCall(fu.attackPlanner ? roboticsPlanAttack : roboticsFalconAttacks, "attack modules");
                     }
                     sV.calculateAim();
                     if (AW.forceStop && eM) {
                         eY();
                     } else {
                         // When the mod is idle, auto gather goes back to what you chose with the auto gather key.
-                        if (!so.middle && !so.left && !so.right && !sc.isTrue && !sV.active && eM !== !!AW.userGather) {
+                        if (!so.middle && !so.left && !so.right && !sc.isTrue && !sV.active && !AW.farming && eM !== !!AW.userGather) {
                             eY();
                         }
                         if (!so.middle && (so.left || so.right) && !sc.isTrue) {
@@ -16342,6 +17607,7 @@ let serverID;
             fV.globalAlpha = 1;
             fV.fillStyle = "rgba(0, 0, 70, 0.35)";
             fV.fillRect(0, 0, AE, Ab);
+            roboticsSafeCall(() => roboticsDrawOverlays(fV, cQ, cg), "overlays");
             fV.strokeStyle = AP;
             fV.globalAlpha = 1;
             for (let ca = 0; ca < Ae.length + AA.length; ++ca) {
@@ -16550,7 +17816,7 @@ let serverID;
             if (roboticsPerf.roll(AZ)) {
                 roboticsLimiter.purge(AZ);
                 fy = roboticsLimiter.count;
-                x.textContent = "Ping: " + Math.round(Ap.avg) + " FPS: " + s4.round(fJ.ltime, 10) + " Packets: " + fy + (CONFIG.perfReadout ? roboticsPerf.text : "");
+                x.textContent = "Ping: " + Math.round(Ap.avg) + " FPS: " + s4.round(fJ.ltime, 10) + " Packets: " + fy + "/" + roboticsBudget.perSecond + " [" + ROBOTICS_HOST.name + "]" + (CONFIG.perfReadout ? roboticsPerf.text : "");
             }
             window.rAF(cH);
         }
@@ -16569,6 +17835,7 @@ let serverID;
         });
         rN();
         cH();
+        queueMicrotask(roboticsAttachPending);
         let cN;
         window.debug = function () {
             AW.waitHit = 0;
@@ -16669,8 +17936,70 @@ let serverID;
 });
 }
 
+/* Start only on a game page (the profile's requireIds exist). A page without
+   them (e.g. the moomodding.io launcher) gets waitForGameMs for a game to
+   appear, then the mod stays idle: no menu, nothing hooked, the early send
+   trampoline just forwards every packet. */
+let roboticsStarted = false;
+
+function roboticsGamePresent() {
+    for (const id of ROBOTICS_HOST.requireIds) {
+        if (!document.getElementById(id)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function roboticsGoIdle() {
+    ROBOTICS_SOCKETS.idle = true;
+    for (const entry of ROBOTICS_SOCKETS.pending.splice(0)) {
+        entry.ws.removeEventListener("message", entry.listener);
+    }
+    console.info("[Robotics] no game on this page (" + ROBOTICS_HOST.host + "); staying idle.");
+}
+
+function roboticsBoot() {
+    const begin = function () {
+        if (roboticsStarted) {
+            return;
+        }
+        roboticsStarted = true;
+        console.info("[Robotics] " + CONFIG.version + " on " + ROBOTICS_HOST.host + " (profile " + ROBOTICS_HOST.name +
+            (ROBOTICS_HOST.overridden ? ", with overrides" : "") + ", " + ROBOTICS_HOST.packets.perSecond + " packets/s)");
+        try {
+            roboticsStart();
+        } catch (err) {
+            // A page layout the mod doesn't know: leave the game alone (packets are forwarded unchanged).
+            window.__ROBOTICS_SEND_HANDLER = null;
+            roboticsGoIdle();
+            console.warn("[Robotics] could not start on this page:", err);
+        }
+    };
+    if (roboticsGamePresent()) {
+        begin();
+        return;
+    }
+    console.info("[Robotics] waiting up to " + ROBOTICS_HOST.waitForGameMs / 1000 + " s for a game page (#" + ROBOTICS_HOST.requireIds.join(", #") + ").");
+    let timer = 0;
+    const observer = new MutationObserver(function () {
+        if (roboticsGamePresent()) {
+            observer.disconnect();
+            clearTimeout(timer);
+            begin();
+        }
+    });
+    observer.observe(document.documentElement, { childList: true, subtree: true });
+    timer = setTimeout(function () {
+        observer.disconnect();
+        if (!roboticsStarted) {
+            roboticsGoIdle();
+        }
+    }, ROBOTICS_HOST.waitForGameMs);
+}
+
 if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", roboticsStart, { once: true });
+    document.addEventListener("DOMContentLoaded", roboticsBoot, { once: true });
 } else {
-    roboticsStart();
+    roboticsBoot();
 }
