@@ -1,0 +1,16 @@
+{
+  "name": "robotics-tests",
+  "private": true,
+  "type": "module",
+  "description": "Node test harness for userscripts/robotics-kusoi.user.js",
+  "scripts": {
+    "test": "node run.mjs",
+    "bench": "node --expose-gc bench.mjs",
+    "lint": "cd .. && eslint -c test/eslint.config.mjs robotics-kusoi.user.js"
+  },
+  "devDependencies": {
+    "eslint": "9.39.1",
+    "globals": "15.15.0",
+    "msgpack-lite": "0.1.26"
+  }
+}

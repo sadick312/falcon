@@ -5,7 +5,7 @@
 // @match        *://moomodding.io/*
 // @grant         none
 // @run-at        document-start
-// @version       v2.0.0
+// @version       v2.1.0
 // @author        Yurio, Oe And Brt3726
 // @description   Mod With Try Out Bundle Testing real
 // @require       https://cdn.jsdelivr.net/npm/msgpack-lite@0.1.26/dist/msgpack.min.js
@@ -22,7 +22,7 @@
   "grant": [
     "none"
   ],
-  "version": "v2.0.0",
+  "version": "v2.1.0",
   "author": "Yurio, Oe And Brt3726 <= all skids btw",
   "description": "Mod With Try Out Bundle Testing real",
   "require": [
@@ -34,6 +34,59 @@
 /* ===========================================================================
    CHANGELOG
    ---------------------------------------------------------------------------
+   v2.1.0 - fixes, cleanup and speed only (no new features, no default changes)
+   Bug fixes (ids from the v2.1.0 bug report)
+   - B1  Packet budget checks used the count of the last packet sent; after a
+         busy second with nothing sent since, one tick, counter, spike tick
+         and every attack module stayed off. They read the live 1 s window
+         now, and the status line count updates every tick.
+   - B2  A server switch / reconnect dropped the tick callbacks that end an
+         attack sequence, so "in a sequence" (no hats, no attacks, auto aim
+         on) could stay stuck. One combat reset now clears it, plus the old
+         server's breaker queue, follow target, target lock, sent hats and
+         placement/death markers (B7). The Z reset uses the same reset.
+   - B5  Player Follow kept walking in the last direction of a target that
+         left view or the server. It stops now.
+   - B6  Leaderboard bars were NaN% wide when the top score was 0.
+   - B8  debug() (the Z reset, also a page global) threw before spawning.
+   - B9  Working out who hit you compared float damage exactly and missed
+         hits whose damage came out a hair different; 0.01 tolerance now.
+   - B10 Reconnecting after the socket had closed (not a direct switch)
+         kept the old server's players and buildings.
+   - B11 A packet that decodes to something other than [type, [args]]
+         threw out of the socket message handler.
+   - B12 If the tick handler threw before running the tick's callbacks,
+         they were lost for good (e.g. a sequence never ended). They run at
+         the next tick now.
+   - B13 Malformed packets could add players without an id, objects and
+         projectiles with NaN positions, or NaN health. They are dropped.
+   - Withdrawn after testing: B3 (the Z reset did not leave a sequence
+     stuck; other code clears it) and B4 (damage events don't pile up
+     while dead: your player stays "alive" in the mod's state while dead
+     and only pings are sent).
+   Performance (same packets out, byte for byte: test/compare.mjs)
+   - O1  The every-frame "which buildings would this swing hit" check
+         filtered by reach and angle before the hammer-or-primary decision.
+   - O2  Render query: the screen plus 400 px around it, not a square as wide
+         as the screen in both directions. O3: health bars only on screen.
+   - P1  Object pool: free-slot hint instead of scanning the whole pool for
+         every added object (the first big object packet was O(n^2)).
+   - P2  Unseen players' reloads reset in place (was a new 17-key object per
+         player per tick). P3: tick slot arrays reused. P4: damage threat
+         without two objects per enemy per tick. P6: trap under each player
+         in one pass (was filter + sort). P7: shared getScale for placement
+         candidates. P8: removed a filter + sort whose result was unused.
+   - Render layers loop without a closure per object.
+   - D1  Removed dead code: unused functions/classes (fW, fn, AG, eC, eQ, eg,
+         eB, r2, r6, A2, a shuffle helper), unused element lookups and Math
+         aliases, no-op statements; 112 lines. ESLint: 0 errors.
+   - Timing, same machine, alternating runs. Node harness (test/bench.mjs,
+     script work only): tick 0.45 -> 0.32 ms avg, frame 0.21 -> 0.15 ms.
+     Browser replay (hidden pane, noisy): tick 1.80 -> 1.64 ms best run,
+     frame 2.20 -> 1.85 ms best run.
+   Tests: userscripts/test (npm test): unit, limiter, scheduler, replay,
+   fuzz, plus bench.mjs and compare.mjs.
+
    v2.0.0
    Hosts (CONFIG.hosts, ROBOTICS_HOST)
    - @match / ScriptFlow: exactly sandbox.moomodding.io and moomodding.io.
@@ -323,7 +376,7 @@
    localStorage under the ids shown in the menu code (fu.<id>).
    =========================================================================== */
 const CONFIG = {
-    version: "v2.0.0",
+    version: "v2.1.0",
 
     /* Keybinds use KeyboardEvent.key, so letters are case sensitive
        ("Z" means Shift+z). Hold keys act every tick while held. */
@@ -963,67 +1016,38 @@ let serverID;
         var r = V("config.js");
         window.config = r;
         var F = V("_UIS_client_");
-        var H = F.global.menuText;
         var N = F.global.setupCard;
         var C = F.global.guideCard;
         var K = F.global.gameName;
-        var d = F.global.gameUI;
         var k = F.global.mainMenu;
         var Q = F.global.storeMenu;
         var g = F.global.nameInput;
         var p = F.global.gameCanvas;
-        var W = F.global.gameContext;
         var t = F.global.mapDisplay;
         var n = F.global.mapContext;
         var z = F.global.shutdownDisplay;
         var x = F.global.pingDisplay;
-        var M = F.global.loadingText;
         var Y = F.global.diedText;
-        var o = F.global.ageText;
-        var G = F.global.ageBarBody;
         var S = F.global.allianceMenu;
-        var v = F.global.allianceManager;
         var E = F.global.notificationDisplay;
         var b = F.global.leaderboardData;
         var R = F.global.actionBar;
-        var D = F.global.playMusic;
         var Z = F.global.upgradeCounter;
-        var O = F.global.chatBox;
-        var I = F.global.altcha;
-        var a = F.buttons.store;
-        var u = F.buttons.alliance;
         var l = F.buttons.chat;
         var B = F.buttons.enterGame;
-        var w = F.buttons.altchaCheckBox;
-        var L = F.buttons.partyButton;
-        var y = F.buttons.joinB;
-        var h = F.buttons.settingsButton;
-        var P = F.buttons.settingsButtonTitle;
         removeEl(l);
-        var q = F.resources.food;
-        var U = F.resources.wood;
-        var m = F.resources.stone;
-        var T = F.resources.score;
-        var j = F.resources.kill;
         var J = F.ads.adCard;
-        var X = F.ads.adContainer;
         var f0 = F.ads.promoImg;
         var f1 = F.ads.promoImageHolder;
         var f2 = F.ads.wideAdCard;
-        var f3 = Object.values(F.ads);
         removeEl(f0);
         removeEl(J);
         removeEl(f2);
         var f4 = F.holder.menuCardHolder;
         var f5 = F.holder.itemInfoHolder;
         var f6 = F.holder.upgradeHolder;
-        var f7 = F.holder.allianceHolder;
         var f8 = F.holder.skinColorHolder;
-        var f9 = F.holder.storeHolder;
         var ff = F.holder.chatHolder;
-        var fA = F.server.serverBrowser;
-        var fe = F.server.nativeResolutionOption;
-        var fs = F.server.showPingOption;
         var fV = p.getContext("2d");
         function fr(ci) {
             if (!ci) {
@@ -1070,7 +1094,6 @@ let serverID;
             if (f1) f1.style.opacity = "1";
         }, 2000);
         document.getElementById("loadingText").innerHTML = "\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <style>\n\n        .progress-container {\n            top: 80%;\n            left: 50%;\n            transform: translate(-50%, -50%) scale(0.5);\n            width: 75%;\n            background-color: gray;\n            border-radius: 25px;\n            overflow: hidden;\n            height: 90px;\n            position: relative;\n        }\n        .progress-bar {\n            width: 0%;\n            margin-top: 5px;\n            margin-left: 5px;\n            height: 80%;\n            background-color: #fff;\n            border-radius: 25px;\n            animation: loading 1.2s linear forwards;\n            position: relative;\n        }\n        @keyframes loading {\n            from { width: 0%; }\n            to { width: 100%; }\n        }\n        .progress-text {\n            position: absolute;\n            top: 50%;\n            font-size: 50px;\n            left: 50%;\n            transform: translate(-50%, -50%);\n            color: black;\n            font-weight: bold;\n        }\n    </style>\n</head>\n<body>\n    <div class=\"progress-container\">\n        <div class=\"progress-bar\">\n            <div class=\"progress-text\" id=\"progressText\">Loading...</div>\n        </div>\n    </div>\n</body>\n</html>\n    ";
-        "use strict";
         let fg = document.createElement("link");
         fg.rel = "stylesheet";
         fg.href = "https://fonts.googleapis.com/css?family=Ubuntu:700";
@@ -1081,17 +1104,6 @@ let serverID;
         };
         r.anotherVisual = false;
         let fp = typeof Storage !== "undefined";
-        function fW(ci, cC) {
-            if (fp) {
-                localStorage.setItem(ci, cC);
-            }
-        }
-        function fn(ci) {
-            if (fp) {
-                return localStorage.getItem(ci);
-            }
-            return null;
-        }
         class fx {
             constructor(ci) {
                 this.element = ci;
@@ -2082,12 +2094,22 @@ let serverID;
                     fn: ci
                 });
             },
+            // Tick whose due callbacks have run (runDue), and a spare slot array to swap in.
+            ranTick: 0,
+            spare: [],
             beginTick: function (ci) {
+                // B12: if the last tick's handler threw before runDue(), its callbacks
+                // (e.g. the ones that end an attack sequence) would be lost for good.
+                // Run them now, one tick late.
+                const missed = this.ranTick !== this.tick ? this.tick : -1;
                 this.tick++;
                 if (ci) {
                     this.lastRealTick = performance.now();
                 }
                 roboticsLimiter.newTick();
+                if (missed >= 0) {
+                    this.runSlot(missed);
+                }
                 for (let cC = 0; cC < this.tasks.length; cC++) {
                     if (this.tick % this.tasks[cC].every === 0) {
                         roboticsSafeCall(this.tasks[cC].fn, "scheduled task");
@@ -2095,15 +2117,25 @@ let serverID;
                 }
             },
             runDue: function () {
-                let ci = this.tick % this.slots.length;
-                let cC = this.slots[ci];
-                if (!cC.length) {
+                this.runSlot(this.tick);
+            },
+            runSlot: function (ci) {
+                if (ci === this.tick) {
+                    this.ranTick = ci;
+                }
+                let cC = ci % this.slots.length;
+                let cK = this.slots[cC];
+                if (!cK.length) {
                     return;
                 }
-                this.slots[ci] = [];
-                for (let cK = 0; cK < cC.length; cK++) {
-                    roboticsSafeCall(cC[cK], "tick callback");
+                // Swap in the empty spare (callbacks may schedule into this slot again),
+                // run, then keep this array as the next spare: no new array per tick.
+                this.slots[cC] = this.spare;
+                this.spare = cK;
+                for (let cd = 0; cd < cK.length; cd++) {
+                    roboticsSafeCall(cK[cd], "tick callback");
                 }
+                cK.length = 0;
             },
             pump: function (ci) {
                 if (ci - this.lastRealTick < CONFIG.tick.fallbackAfter || ci - this.lastFallbackTick < this.tickRate) {
@@ -2141,6 +2173,10 @@ let serverID;
            reserve), which ignored the menu and the host. */
         function roboticsBudgetFree(keepReserve) {
             let ci = roboticsPacketBudget();
+            // B1: fy only changed when a packet went out, so after a busy second with
+            // nothing sent since, it stayed high and kept every attack module off.
+            roboticsLimiter.purge(performance.now());
+            fy = roboticsLimiter.count;
             return fy < ci.perSecond - (keepReserve ? ci.reserve : 0);
         }
         function roboticsPacketPriority(ci, cC) {
@@ -2246,6 +2282,9 @@ let serverID;
             },
             newTick: function () {
                 this.tickCount = 0;
+                // Keep the status line's packet count current while nothing is sent (B1).
+                this.purge(performance.now());
+                fy = this.count;
                 for (let ci = 0; ci < this.queue.length; ci++) {
                     let cC = this.queue[ci];
                     while (cC.length) {
@@ -2333,14 +2372,45 @@ let serverID;
                 console.warn("[Robotics] game socket error.");
             }
         }
+        /* Combat state that pending tick callbacks would have ended. Called when
+           those callbacks are dropped (server switch, Z reset) so nothing stays
+           stuck "in a sequence" (B2). */
+        function roboticsResetCombat() {
+            sc.isTrue = false;
+            sc.ticking = false;
+            sc.can = false;
+            sc.canCounter = false;
+            sc.canSpikeTick = false;
+            AW.autoAim = false;
+            AW.customAim = undefined;
+            AW.revAim = false;
+            AW.waitHit = 0;
+            AW.lockSid = undefined;
+            sV.active = false;
+            sV.target = null;
+            sB.oneTick = false;
+            e5.length = 0;
+            e6.length = 0;
+        }
         // Forget the old server's players, objects and pending actions.
         function roboticsResetWorld() {
+            roboticsResetCombat();
+            // Breaker queue, follow target, death markers and sent hats belong to the old server.
+            sV.priority = [[], [], [], []];
+            sV.queueId++;
+            Ag = undefined;
+            sQ.length = 0;
+            AW.anti0Tick = 0;
+            AW.pendingHeal = 0;
+            roboticsGear.sent[0].id = null;
+            roboticsGear.sent[1].id = null;
             AX = false;
             Am = true;
             Ai = undefined;
             Ae.length = 0;
             AH.length = 0;
             Ac.length = 0;
+            s6.freeFrom = 0;
             Ad.length = 0;
             Ak.length = 0;
             AF = [];
@@ -2356,7 +2426,8 @@ let serverID;
             if (ci === fB) {
                 return;
             }
-            if (fB) {
+            // B10: also after a close (fB is null then), not only on a direct switch.
+            if (fB || roboticsSocketGen > 0) {
                 console.info("[Robotics] new game socket; clearing the old server's state.");
                 roboticsResetWorld();
             }
@@ -2519,9 +2590,6 @@ let serverID;
                 console.warn("[Robotics] failed to send packet " + ci + ":", err);
             }
         }
-        let A2 = {
-            send: A0
-        };
         let roboticsHandlers = null;
         function A3(ci) {
             if (!roboticsHasMsgpack()) {
@@ -2532,6 +2600,11 @@ let serverID;
             try {
                 cK = msgpack.decode(cC);
             } catch (err) {
+                return;
+            }
+            // B11: a packet that decodes to something else than [type, [args]] used to
+            // throw out of the socket's message handler.
+            if (!Array.isArray(cK) || cK[1] != null && !Array.isArray(cK[1])) {
                 return;
             }
             let cd = ROBOTICS_HOST.serverIds[cK[0]] || cK[0];
@@ -2673,7 +2746,6 @@ let serverID;
         let Ae = [];
         let As = [];
         let AV = [];
-        let Ar = [];
         let Ac = [];
         let AF = [];
         let AH = [];
@@ -2797,6 +2869,27 @@ let serverID;
                 this.turrets.clear();
             },
             // Every object in the chunks the box (x +- r, y +- r) touches. No distance filter.
+            // Objects in the cells covering the rectangle (x0, y0) - (x1, y1).
+            nearRect: function (ci, cC, cK, cd, ck) {
+                ck = ck || [];
+                ck.length = 0;
+                let cQ = this.size;
+                let cg = ci / cQ | 0;
+                let cp = cK / cQ | 0;
+                let cW = cC / cQ | 0;
+                let ct = cd / cQ | 0;
+                for (let cn = cg; cn <= cp; cn++) {
+                    for (let cz = cW; cz <= ct; cz++) {
+                        let cx = this.cells.get(cn << 16 | cz & 65535);
+                        if (cx) {
+                            for (let cM = 0; cM < cx.length; cM++) {
+                                ck.push(cx[cM]);
+                            }
+                        }
+                    }
+                }
+                return ck;
+            },
             near: function (ci, cC, cK, cd) {
                 cd = cd || [];
                 cd.length = 0;
@@ -2837,9 +2930,6 @@ let serverID;
             return out;
         }
         function Ao(ci) {
-            return roboticsGrid.bySid.get(ci);
-        }
-        function AG(ci) {
             return roboticsGrid.bySid.get(ci);
         }
         let AS;
@@ -2897,14 +2987,10 @@ let serverID;
         };
         let e5 = [];
         let e6 = [];
-        let e7 = [];
         let e8 = ["cunt", "whore", "fuck", "shit", "faggot", "nigger", "nigga", "dick", "vagina", "minge", "cock", "rape", "cum", "sex", "tits", "penis", "clit", "pussy", "meatcurtain", "jizz", "prune", "douche", "wanker", "damn", "bitch", "dick", "fag", "bastard"];
         class e9 {
             constructor() {
                 let ci = Math.abs;
-                let cC = Math.cos;
-                let cK = Math.sin;
-                let cd = Math.pow;
                 let ck = Math.sqrt;
                 let cQ = Math.atan2;
                 let cg = Math.PI;
@@ -4177,28 +4263,18 @@ let serverID;
                         this.list[ci].pre = ci - this.list[ci].pre;
                     }
                 }
-                if (typeof window !== "undefined") {
-                    function cC(cK) {
-                        for (let cd = cK.length - 1; cd > 0; cd--) {
-                            const ck = Math.floor(Math.random() * (cd + 1));
-                            [cK[cd], cK[ck]] = [cK[ck], cK[cd]];
-                        }
-                        return cK;
-                    }
-                }
             }
         }
         class eV {
             constructor(ci, cC, cK, cd) {
-                let ck = Math.floor;
-                let cQ = Math.abs;
-                let cg = Math.cos;
-                let cp = Math.sin;
-                let cW = Math.pow;
-                let ct = Math.sqrt;
                 this.ignoreAdd = false;
                 this.hitObj = [];
+                // P1: no inactive object sits before this index of the pool.
+                this.freeFrom = 0;
                 this.disableObj = function (cz) {
+                    if (cz.poolIndex < this.freeFrom) {
+                        this.freeFrom = cz.poolIndex;
+                    }
                     cz.active = false;
                     cz.breakTime = Date.now();
                     cz.startFadeOut();
@@ -4207,10 +4283,20 @@ let serverID;
                 this.add = function (cz, cx, cM, cY, co, cG, cS, cv, cE) {
                     cn = Ao(cz);
                     if (!cn) {
-                        cn = cC.find(cb => !cb.active);
+                        // First free pooled object, as find() did, but starting at the hint:
+                        // the initial object packet no longer scans the whole pool per object.
+                        for (let cb = this.freeFrom; cb < cC.length; cb++) {
+                            if (!cC[cb].active) {
+                                cn = cC[cb];
+                                this.freeFrom = cb + 1;
+                                break;
+                            }
+                        }
                         if (!cn) {
                             cn = new ci(cz);
+                            cn.poolIndex = cC.length;
                             cC.push(cn);
+                            this.freeFrom = cC.length;
                         }
                     }
                     if (cv) {
@@ -5163,18 +5249,6 @@ let serverID;
             }
         }
         ;
-        class eC {
-            constructor(ci, cC, cK, cd) {
-                this.x = ci;
-                this.y = cC;
-                this.alpha = 0;
-                this.active = true;
-                this.alive = false;
-                this.chat = cK;
-                this.owner = cd;
-            }
-        }
-        ;
         class eK {
             constructor(ci, cC, cK, cd, ck, cQ, cg, cp, cW) {
                 this.x = ci;
@@ -5220,8 +5294,6 @@ let serverID;
                 this.team = null;
                 this.latestSkin = 0;
                 this.oldSkinIndex = 0;
-                this.prevHW;
-                this.prevDW;
                 this.skinIndex = 0;
                 this.latestTail = 0;
                 this.oldTailIndex = 0;
@@ -5586,40 +5658,36 @@ let serverID;
                 };
                 this.processDamages = function () {
                     let cv = 0;
-                    Ak.forEach(cE => {
-                        let cb = {
-                            weapon: cE.primaryIndex,
-                            variant: cE.primaryVariant,
-                            dmg: 0
-                        };
-                        let cR = {
-                            weapon: cE.secondaryIndex,
-                            variant: cE.secondaryVariant,
-                            dmg: 0
-                        };
-                        cb.dmg = cb.weapon == undefined ? 45 : cW.weapons[cb.weapon].dmg;
-                        cR.dmg = cb.weapon == 0 ? 0 : cR.weapon == undefined ? 50 : cW.weapons[cR.weapon].Pdmg;
-                        let cD = cb.variant != undefined && cK.weaponVariants[cb.variant] ? cK.weaponVariants[cb.variant].val : 1.18;
-                        let cZ = cR.variant != undefined && cK.weaponVariants[cR.variant] ? [9, 12, 13, 15].includes(cR.weapon) ? 1 : cK.weaponVariants[cR.variant].val : 1.18;
+                    for (let cO = 0; cO < Ak.length; cO++) {
+                        const cE = Ak[cO];
+                        // Primary (cb*) and secondary (cR*) hit of this enemy (P4: locals, no objects).
+                        const cbWeapon = cE.primaryIndex;
+                        const cbVariant = cE.primaryVariant;
+                        const cRWeapon = cE.secondaryIndex;
+                        const cRVariant = cE.secondaryVariant;
+                        let cbDmg = cbWeapon == undefined ? 45 : cW.weapons[cbWeapon].dmg;
+                        let cRDmg = cbWeapon == 0 ? 0 : cRWeapon == undefined ? 50 : cW.weapons[cRWeapon].Pdmg;
+                        let cD = cbVariant != undefined && cK.weaponVariants[cbVariant] ? cK.weaponVariants[cbVariant].val : 1.18;
+                        let cZ = cRVariant != undefined && cK.weaponVariants[cRVariant] ? cRWeapon == 9 || cRWeapon == 12 || cRWeapon == 13 || cRWeapon == 15 ? 1 : cK.weaponVariants[cRVariant].val : 1.18;
                         // Worst case: an enemy can swap to bull helmet (and off monkey tail)
                         // in the same tick it hits, so melee always counts x1.5.
-                        if (cb.weapon == undefined || cE.primaryReloaded) {
-                            cb.dmg = cb.dmg * cD * 1.5;
+                        if (cbWeapon == undefined || cE.primaryReloaded) {
+                            cbDmg = cbDmg * cD * 1.5;
                         } else {
-                            cb.dmg = 0;
+                            cbDmg = 0;
                         }
-                        if (cR.weapon == undefined || cE.secondaryReloaded) {
-                            cR.dmg = cR.dmg * cZ * ([10, 14].includes(cR.weapon) ? 1.5 : 1);
+                        if (cRWeapon == undefined || cE.secondaryReloaded) {
+                            cRDmg = cRDmg * cZ * (cRWeapon == 10 || cRWeapon == 14 ? 1.5 : 1);
                         } else {
-                            cR.dmg = 0;
+                            cRDmg = 0;
                         }
                         if (cE.reloads[53] == 0) {
-                            cR.dmg += 25;
+                            cRDmg += 25;
                             // Turret gear shots are blocked by the EMP helmet.
                             this.turretThreat = (this.turretThreat || 0) + 25;
                         }
-                        cv += Math.max(cb.dmg, cR.dmg);
-                    });
+                        cv += Math.max(cbDmg, cRDmg);
+                    }
                     // Poison ticks once per tick, not once per nearby enemy.
                     if (this.poisonCounter > 0 && Ak.length) {
                         cv += 5;
@@ -5632,12 +5700,6 @@ let serverID;
         function ek(ci) {
             Ai.reloads[ci] = 0;
             A0("H", ci);
-        }
-        function eQ(ci, cC) {
-            A0("c", 0, ci, cC);
-        }
-        function eg(ci, cC) {
-            A0("c", 1, ci, cC);
         }
         let ep = 0;
         let eW = 0;
@@ -5832,7 +5894,8 @@ let serverID;
                     let ck = (cd > 8 ? s5.weapons[cd].Pdmg : s5.weapons[cd].dmg) || 0;
                     let cQ = cK[(cd < 9 ? "prima" : "seconda") + "ryVariant"];
                     ck *= (Ai.skinIndex == 6 ? 0.75 : 1) * (cK.skinIndex == 7 ? 1.5 : 1) * (cK.tailIndex == 11 ? 0.2 : 1) * (r.weaponVariants[cQ] || r.weaponVariants[0]).val;
-                    if (ci == ck) {
+                    // B9: exact float equality missed hits whose damage was computed in another order.
+                    if (Math.abs(ci - ck) < 0.01) {
                         if (Ai.skinIndex != 23) {
                             Ai.poisonCounter = cQ == 3 ? 5 : cK.skinIndex == 21 ? 6 : Ai.poisonCounter;
                         }
@@ -5929,9 +5992,6 @@ let serverID;
                 return 0;
             }
         }
-        function eB(ci) {
-            et(ci && Ai.moveDir == undefined ? 0 : 11, 1);
-        }
         const ew = (ci, cC, cK) => {
             if (!cC) {
                 return null;
@@ -5940,7 +6000,6 @@ let serverID;
             const ck = Math.PI / 50;
             const cQ = s5.list[Ai.items[ci]];
             let cg = Ai.scale + cQ.scale + (cQ.placeOffset || 0);
-            let cp = [];
             let cW = s4.getDirect(cC, Ai, 0, 2);
             sr.calcPreplace(cC, ci);
             if (cK) {
@@ -6011,6 +6070,10 @@ let serverID;
             });
         };
         let ey = [];
+        // getScale of a placement candidate (shared, P7).
+        function roboticsCandidateScale(ci, cC) {
+            return this.scale * (cC ? 1 : this.colDiv);
+        }
         class eP {
             constructor(ci, cC) {
                 this.replaced = true;
@@ -6084,9 +6147,7 @@ let serverID;
                         dir: cd,
                         scale: cK.scale,
                         colDiv: cK.colDiv,
-                        getScale: function (cQ, cg) {
-                            return this.scale * (cg ? 1 : this.colDiv);
-                        }
+                        getScale: roboticsCandidateScale
                     };
                     ck.x = Ai.x2 + (Ai.scale + ck.scale + (cK.placeOffset || 0)) * Math.cos(ck.dir);
                     ck.y = Ai.y2 + (Ai.scale + ck.scale + (cK.placeOffset || 0)) * Math.sin(ck.dir);
@@ -6454,9 +6515,21 @@ let serverID;
             objectsHit(ci) {
                 let cC = [];
                 let cK = this.nearCache || roboticsGrid.near(Ai.x2, Ai.y2, 300, this.nearTmp || (this.nearTmp = []));
+                // useHammer() runs the break-time math twice, and this runs every frame:
+                // first drop what neither weapon reaches or the swing angle misses (O1).
+                const cQ = s5.weapons[Ai.weapons[0]];
+                const cg = s5.weapons[Ai.weapons[1]];
+                const cp = Math.max(cQ ? cQ.range : 0, cg ? cg.range : 0);
                 for (let cd = 0; cd < cK.length; cd++) {
                     let ck = cK[cd];
-                    if (ck.active && ck.isItem && s4.getDist(Ai, ck, 2, 0) <= s5.weapons[this.useHammer(ck) ? Ai.weapons[1] : Ai.weapons[0]].range + ck.scale && s4.getAngleDist(s4.getDirect(ck, Ai, 0, 2), ci) <= Math.PI / 2.6) {
+                    if (!ck.active || !ck.isItem) {
+                        continue;
+                    }
+                    const cW = s4.getDist(Ai, ck, 2, 0);
+                    if (cW > cp + ck.scale || s4.getAngleDist(s4.getDirect(ck, Ai, 0, 2), ci) > Math.PI / 2.6) {
+                        continue;
+                    }
+                    if (cW <= s5.weapons[this.useHammer(ck) ? Ai.weapons[1] : Ai.weapons[0]].range + ck.scale) {
                         cC.push(ck);
                     }
                 }
@@ -9690,10 +9763,6 @@ let serverID;
                     cz.shooting[1] = 1;
                 }
                 sz(cz, cK, cd, ck, cQ, cW);
-            } else {
-                let cx = AF.filter(cM => s4.getDist(cn, cM, 0, 0) <= cM.scale).sort((cM, cY) => {
-                    return s4.getDist(cn, cM, 0, 0) - s4.getDist(cn, cY, 0, 0);
-                })[0];
             }
         }
         let st = 0;
@@ -9990,7 +10059,6 @@ let serverID;
                 fR[fD ? "blur" : "focus"]();
             }
         }
-        let sl;
         const sB = {
             oneTick: false
         };
@@ -10160,7 +10228,11 @@ let serverID;
                     let cC = AM(ci);
                     Ag = cC && cC.visible && cC !== Ai ? cC : Ag;
                 }
-                if (Ag) {
+                // B5: a target out of view (or gone) keeps its last aim2, which used to
+                // walk you off in that direction forever. Stop instead.
+                if (Ag && !Ag.visible) {
+                    sh = undefined;
+                } else if (Ag) {
                     if (Ag.dist2 >= (fu.serverSync ? 10 : 135)) {
                         sh = Ag.aim2;
                     } else {
@@ -10647,6 +10719,11 @@ let serverID;
                     Ac.splice(ci, 1);
                 }
             }
+            // Positions moved: renumber the pool and rescan it from the start.
+            for (let ci = 0; ci < Ac.length; ci++) {
+                Ac[ci].poolIndex = ci;
+            }
+            s6.freeFrom = 0;
         }
         var songChatoe2735 = class {
             constructor (sendChat) {
@@ -14735,12 +14812,8 @@ let serverID;
                         let cp = Ai.reloads[53] == 0 ? ck + cQ + 75 : cg;
                         let cW = AQ.x2 + ck * Math.cos(ci);
                         let ct = AQ.y2 + ck * Math.sin(ci);
-                        let cn = AQ.x2 + cQ * Math.cos(ci);
-                        let cz = AQ.y2 + cQ * Math.sin(ci);
                         let cx = AQ.x2 + cg * Math.cos(ci);
                         let cM = AQ.y2 + cg * Math.sin(ci);
-                        let cY = AQ.x2 + cp * Math.cos(ci);
-                        let co = AQ.y2 + cp * Math.sin(ci);
                         if (s4.getDist({
                             x: cW,
                             y: ct
@@ -14788,6 +14861,10 @@ let serverID;
             x.style.display = "block";
         }
         function VH(ci, cC) {
+            // B13: a player without a numeric id or a finite position is not added.
+            if (!Array.isArray(ci) || typeof ci[1] !== "number" || !isFinite(ci[3]) || !isFinite(ci[4])) {
+                return;
+            }
             let cK = Ax(ci[0]);
             if (!cK) {
                 cK = new ed(ci[0], ci[1], r, s4, sf, s6, Ae, AA, s5, s8, s9);
@@ -14829,6 +14906,9 @@ let serverID;
             for (let cC = 0; cC < Ae.length; cC++) {
                 if (Ae[cC].id == ci) {
                     fO("Game", Ae[cC].name + " left the game", "yellow");
+                    if (Ae[cC] === Ag) {
+                        Ag = undefined;
+                    }
                     Ae.splice(cC, 1);
                     break;
                 }
@@ -14975,6 +15055,8 @@ let serverID;
             return undefined;
         }
 
+        // Weapon ids with a reload slot (every weapon, plus 53 = turret gear).
+        const ROBOTICS_RELOAD_IDS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 53];
         function roboticsAutoHeal() {
             if (!AX || !Ai || AW.healed || Ai.health >= 100) {
                 return;
@@ -15002,7 +15084,8 @@ let serverID;
         }
         function VK(ci, cC) {
             AK = AM(ci);
-            if (AK) {
+            // B13: health must be a number.
+            if (AK && isFinite(cC)) {
                 let ck = cC - AK.health;
                 // An update without a change is not a hit: it used to reset your
                 // heal timer and the enemy's shame window and log a 0 damage hit.
@@ -15280,7 +15363,6 @@ let serverID;
             }
             return false;
         }
-        let Vv = new Set();
         let VE = performance.now();
         function Vb(ci, cC = 0) {
             let cK = VE + fU.tickRate;
@@ -15295,6 +15377,10 @@ let serverID;
             fU.lastTick = performance.now();
             VE = fU.lastTick - Ap.avg / 2;
             fU.beginTick(true);
+            // B13: a players update that is not a list carries nothing to apply.
+            if (!Array.isArray(ci)) {
+                ci = [];
+            }
             // Before your first spawn there is nothing to update, but scheduled work still runs.
             if (!Ai) {
                 fU.runDue();
@@ -15308,7 +15394,8 @@ let serverID;
             });
             for (let cC = 0; cC < ci.length;) {
                 AK = AM(ci[cC]);
-                if (AK) {
+                // B13: a player record without a finite position is skipped.
+                if (AK && isFinite(ci[cC + 1]) && isFinite(ci[cC + 2])) {
                     AK.t1 = AK.t2 === undefined ? fU.lastTick : AK.t2;
                     AK.t2 = fU.lastTick;
                     AK.oldPos.x2 = AK.x2;
@@ -15357,9 +15444,23 @@ let serverID;
                             eZ();
                         }
                     }
-                    let cK = roboticsGrid.near(AK.x2, AK.y2, 150, roboticsNearTmp).filter(cd => cd.trap && cd.active && s4.getDist(cd, AK, 0, 2) <= AK.scale + cd.getScale() + 3 && !cd.isTeamObject(AK)).sort(function (cd, ck) {
-                        return s4.getDist(cd, AK, 0, 2) - s4.getDist(ck, AK, 0, 2);
-                    })[0];
+                    // Nearest enemy trap touching this player (P6: one pass, first of equals as the stable sort gave).
+                    let cK;
+                    {
+                        const cd = roboticsGrid.near(AK.x2, AK.y2, 150, roboticsNearTmp);
+                        let ck = Infinity;
+                        for (let cQ = 0; cQ < cd.length; cQ++) {
+                            const cg = cd[cQ];
+                            if (!cg.trap || !cg.active) {
+                                continue;
+                            }
+                            const cp = s4.getDist(cg, AK, 0, 2);
+                            if (cp <= AK.scale + cg.getScale() + 3 && !cg.isTeamObject(AK) && cp < ck) {
+                                ck = cp;
+                                cK = cg;
+                            }
+                        }
+                    }
                     if (cK) {
                         cK.hideFromEnemy = false;
                     }
@@ -15450,8 +15551,6 @@ let serverID;
                 cC += ROBOTICS_HOST.playerStride;
             }
             if (se.stack.length) {
-                let cW = [];
-                let ct = [];
                 let cn = 0;
                 let cz = 0;
                 let cx = {
@@ -15639,29 +15738,16 @@ let serverID;
                     AW.healed = false;
                 }
                 roboticsAutoHeal();
-                Ae.forEach(co => {
-                    if (!co.visible && Ai != co) {
-                        co.reloads = {
-                            0: 0,
-                            1: 0,
-                            2: 0,
-                            3: 0,
-                            4: 0,
-                            5: 0,
-                            6: 0,
-                            7: 0,
-                            8: 0,
-                            9: 0,
-                            10: 0,
-                            11: 0,
-                            12: 0,
-                            13: 0,
-                            14: 0,
-                            15: 0,
-                            53: 0
-                        };
+                // Players out of view count as reloaded (P2: reset in place, no new object per tick).
+                for (let co = 0; co < Ae.length; co++) {
+                    const cG = Ae[co];
+                    if (!cG.visible && Ai != cG) {
+                        const cS = cG.reloads;
+                        for (let cv = 0; cv < ROBOTICS_RELOAD_IDS.length; cv++) {
+                            cS[ROBOTICS_RELOAD_IDS[cv]] = 0;
+                        }
                     }
-                });
+                }
                 if (AX) {
                     if (Ad.length) {
                         ss.preplaces[0] = [];
@@ -16046,7 +16132,7 @@ let serverID;
             for (let cd = 0; cd < ci.length; cd += 3) {
                 (function (ck) {
                     let cQ = ci[ck + 2];
-                    let cg = cQ / cK * 100;
+                    let cg = cK > 0 ? cQ / cK * 100 : 0;
                     let cp = document.createElement("div");
                     cp.className = "leaderHolder";
                     cp.style = "\n                background-color: rgba(0, 0, 0, 0.45);\n                height: 20px;\n                border-radius: 5px;\n                margin-bottom: 5px;\n            ";
@@ -16063,7 +16149,6 @@ let serverID;
                     cn.style = "\n                margin-bottom: 5px;\n                display: block;\n                height: 20px;\n                border-radius: 5px;\n                background-color: #94e484;\n                width: " + cg + "% ;\n                transition: width 0.5s ease-in-out;\n            ";
                     cp.appendChild(cn);
                     if (cn.style.width) {
-                        let cz = parseFloat(cn.style.width);
                         let cx = cg + "%";
                         cn.style.width = cx;
                     } else {
@@ -16074,10 +16159,16 @@ let serverID;
             }
         }
         function Vu(ci) {
+            if (!Array.isArray(ci)) {
+                return;
+            }
             for (let cC = 0; cC < ci.length;) {
-                s6.add(ci[cC], ci[cC + 1], ci[cC + 2], ci[cC + 3], ci[cC + 4], ci[cC + 5], s5.list[ci[cC + 6]], true, ci[cC + 7] >= 0 ? {
-                    sid: ci[cC + 7]
-                } : null);
+                // B13: skip objects without a numeric id, a finite position or size.
+                if (typeof ci[cC] === "number" && isFinite(ci[cC + 1]) && isFinite(ci[cC + 2]) && isFinite(ci[cC + 4])) {
+                    s6.add(ci[cC], ci[cC + 1], ci[cC + 2], ci[cC + 3], ci[cC + 4], ci[cC + 5], s5.list[ci[cC + 6]], true, ci[cC + 7] >= 0 ? {
+                        sid: ci[cC + 7]
+                    } : null);
+                }
                 cC += 8;
             }
         }
@@ -16217,6 +16308,10 @@ let serverID;
         // bullets were never drawn or counted as incoming damage) and queue the
         // shooter lookup for the next tick (sW).
         function Vq(ci, cC, cK, cd, ck, cQ, cg, cp) {
+            // B13: a projectile needs a position, a direction and a known type.
+            if (!isFinite(ci) || !isFinite(cC) || !isFinite(cK) || !s5.projectiles[cQ]) {
+                return;
+            }
             let cW = sf.addProjectile(ci, cC, cK, cd, ck, cQ, cg);
             cW.sid = cp;
             fm.push([ci, cC, cK, cd, ck, cQ, cg, cp, cW]);
@@ -16271,9 +16366,6 @@ let serverID;
                 Ai.latestSkin = cC;
             }
         }
-        function r2(ci) {
-            return ci == Ai || ci.team && ci.team == Ai.team;
-        }
         function r3(ci, cC) {
             let cK = AM(ci);
             if (cK) {
@@ -16290,9 +16382,6 @@ let serverID;
         }
         function r5(ci, cC, cK, cd) {
             se.showText(ci, cC, 50, 0.18, 500, Math.abs(cK), cK >= 0 ? "#fff" : "#8ecc51");
-        }
-        function r6(ci, cC) {
-            se.showText(Ai.x, Ai.y, Ai.scale, 0.1, ci, cC, "#fff");
         }
         function r7(ci, cC, cK, cd, ck) {
             let cQ = ci + cK * Math.cos(cd);
@@ -16408,8 +16497,6 @@ let serverID;
         }
         function rc(ci, cC, cK, cd) {
             let ck = Math.PI / 2 * 3;
-            let cQ;
-            let cg;
             let cp = Math.PI / cC;
             let cW;
             ci.beginPath();
@@ -16461,7 +16548,6 @@ let serverID;
             s6.add(11, ci + 650, ci - 390, 0, s5.list[4].scale, s5.list[4].id, s5.list[10]);
             s6.add(12, ci - 400, ci - 450, 0, r.rockScales[2], 2);
         }
-        const ri = 35;
         function rC(ci, cC) {
             fV.fillStyle = "#91b2db";
             // Drop faded death markers instead of keeping them forever.
@@ -17109,7 +17195,8 @@ let serverID;
             hit: new Set()
         };
         function roboticsPrepareFrame(ci, cC) {
-            roboticsGrid.near(ci + AE / 2, cC + Ab / 2, Math.max(AE, Ab) / 2 + 400, roboticsFrame.visible);
+            // The screen plus 400 px on every side (it used to be a square as wide as the screen, O2).
+            roboticsGrid.nearRect(ci - 400, cC - 400, ci + AE + 400, cC + Ab + 400, roboticsFrame.visible);
             // Sort visible objects into their layers (-1..3) once and update their wiggle;
             // each rP(layer) pass used to scan every visible object.
             const cK = roboticsFrame.layers;
@@ -17139,7 +17226,10 @@ let serverID;
             let ck;
             let cQ;
             // Layer 3 also draws every damaged building's health bar, so it walks all visible objects.
-            (ci == 3 ? roboticsFrame.visible : roboticsFrame.layers[ci + 1] || []).forEach(cg => {
+            // A plain loop instead of forEach: no closure call per drawn object.
+            const cW = ci == 3 ? roboticsFrame.visible : roboticsFrame.layers[ci + 1] || [];
+            for (let ct = 0; ct < cW.length; ct++) {
+                const cg = cW[ct];
                 AK = cg;
                 if (AK.alive) {
                     ck = AK.x + AK.xWiggle - cC;
@@ -17192,7 +17282,8 @@ let serverID;
                             fV.drawImage(cd, ck - cd.width / 2, cQ - cd.height / 2);
                         }
                     }
-                    if (ci == 3 && !fL) {
+                    // Health bars only for buildings on screen (O3).
+                    if (ci == 3 && !fL && rl(ck, cQ, r.healthBarWidth)) {
                         if (AK.health < AK.maxHealth) {
                             fV.fillStyle = AP;
                             fV.roundRect(ck - r.healthBarWidth / 2 - r.healthBarPad, cQ - r.healthBarPad, r.healthBarWidth + r.healthBarPad * 2, 17, 8);
@@ -17203,7 +17294,7 @@ let serverID;
                         }
                     }
                 }
-            });
+            }
             if (ci == 0) {
                 if (e5.length) {
                     e5.forEach(cg => {
@@ -17836,21 +17927,25 @@ let serverID;
         rN();
         cH();
         queueMicrotask(roboticsAttachPending);
-        let cN;
         window.debug = function () {
             AW.waitHit = 0;
             AW.autoAim = false;
             sc.isTrue = false;
             sV.active = false;
             AW.anti0Tick = false;
-            Ai.antiTimer = 2;
+            // B8: debug() is a page global; before spawning there is no player.
+            if (Ai) {
+                Ai.antiTimer = 2;
+            }
             rD = [];
             rI = [];
             rb = [];
             A7 = true;
             AW.pauseUntil = fU.tick + Math.round(10000 / fU.tickRate);
-            // Drop pending tick callbacks (the tick counter itself keeps running).
+            // Drop pending tick callbacks (the tick counter itself keeps running)
+            // and everything they would have ended.
             fU.clear();
+            roboticsResetCombat();
         };
         window.wasdMode = function () {
             fL = !fL;
