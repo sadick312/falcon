@@ -169,7 +169,8 @@ export async function createRobotics(opts = {}) {
     const sandbox = {
         console: opts.quiet === false ? console : {
             log() {}, info() {}, debug() {},
-            warn: (...a) => { warnings.push(a.map(String).join(" ")); },
+            // Errors keep their top stack frames, so a failure can be traced to its line.
+            warn: (...a) => { warnings.push(a.map(x => x && x.stack ? String(x) + " @" + String(x.stack).split(/\r?\n/).slice(1, 4).map(l => l.trim()).join(" < ") : String(x)).join(" ")); },
             error: (...a) => { errors.push(a.map(String).join(" ")); }
         },
         document: doc, localStorage: storage, sessionStorage: makeStorage(),

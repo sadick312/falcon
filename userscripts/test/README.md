@@ -13,7 +13,8 @@ npm test
 | `limiter.test.mjs` | per-second and per-tick limits under random load, heal reserve, priorities, whole sequences, newest-only aim; both host profiles |
 | `scheduler.test.mjs` | `fU` timing, isolation, no double runs, runs while dead, resets, missed-tick catch-up |
 | `replay.test.mjs` | spawn, fight, death, respawn, reconnect, server switch ×4; no failures, nothing grows, heap stays flat |
-| `fuzz.test.mjs` | 3000 random/malformed packets (`FUZZ_SEED`, `FUZZ_ROUNDS`); nothing escapes, state stays sane, a normal game works afterwards |
+| `robustness.test.mjs` | inputs a modded server can send: unknown weapon/hat/item/animal ids, missing lists, non-stat "set value" packets, reused player ids |
+| `fuzz.test.mjs` | 3000 random/malformed packets (`FUZZ_SEED`, `FUZZ_ROUNDS`); no handler throws, state stays sane, a normal game works afterwards |
 
 Other commands:
 
@@ -25,7 +26,7 @@ Seeded replay: about 900 objects, 8 enemies, 300 ticks, 6 frames per tick. Print
 ```bash
 node compare.mjs old.user.js
 ```
-Plays the same seeded game on both copies with most toggles on and diffs every packet sent. Use it to prove a refactor changes nothing.
+Plays the same seeded game on both copies (graded and legacy placer configurations) and diffs every packet sent. Use it to prove a refactor changes nothing.
 
 ```bash
 npm run lint

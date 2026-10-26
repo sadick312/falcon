@@ -5,7 +5,7 @@
 // @match        *://moomodding.io/*
 // @grant         none
 // @run-at        document-start
-// @version       v2.1.0
+// @version       v2.1.1
 // @author        Yurio, Oe And Brt3726
 // @description   Mod With Try Out Bundle Testing real
 // @require       https://cdn.jsdelivr.net/npm/msgpack-lite@0.1.26/dist/msgpack.min.js
@@ -22,7 +22,7 @@
   "grant": [
     "none"
   ],
-  "version": "v2.1.0",
+  "version": "v2.1.1",
   "author": "Yurio, Oe And Brt3726 <= all skids btw",
   "description": "Mod With Try Out Bundle Testing real",
   "require": [
@@ -34,6 +34,35 @@
 /* ===========================================================================
    CHANGELOG
    ---------------------------------------------------------------------------
+   v2.1.1 - robustness fixes found by longer fuzzing (16 seeds x 10000 packets)
+   - B14 A player holding a weapon, wearing a hat/accessory or holding an
+         item the script doesn't know (a broken packet, or a modded server's
+         own content) broke every later weapon lookup and the whole render
+         frame, so the screen froze. Unknown ids now count as the previous
+         weapon / no hat / nothing held; a gather animation with an unknown
+         weapon is ignored.
+   - B15 Your weapon list with an unknown primary is ignored (an unknown
+         secondary is dropped); the item list must be a list; no known food
+         in slot 0 means nothing to eat (it threw on every heal).
+   - B16 Buildings and animals of unknown types are not added (they broke
+         every frame).
+   - B17 Leaderboard, clan and alliance packets without a list are ignored;
+         a bad alliance list broke the team check of every object.
+   - B18 "Set player value" packets wrote any key onto your player (items,
+         weapons, position, __proto__...). Only numeric stats are set now.
+   - B19 Two players with the same sid (a missed "left" packet, or a reused
+         sid): updates went to the stale one, e.g. you stopped moving. Adding
+         a player now drops any other entry with that sid.
+   - B13 follow-up: the new finite-number checks used isFinite(), which lets
+         false/null/"5" through; they use Number.isFinite() now.
+   - P9  Legacy auto placer (radCalc): candidate spots computed in place, an
+         object only for a spot that is kept, plain loops instead of two
+         closures per call. Same packets byte for byte (test/compare.mjs now
+         checks the graded and the legacy placer).
+   - Tests: robustness.test.mjs (modded-server inputs, B14-B19); the fuzz
+     test now requires zero handler failures (was ~800 per 3000 packets in
+     v2.0.0, 77 in v2.1.0).
+
    v2.1.0 - fixes, cleanup and speed only (no new features, no default changes)
    Bug fixes (ids from the v2.1.0 bug report)
    - B1  Packet budget checks used the count of the last packet sent; after a
@@ -376,7 +405,7 @@
    localStorage under the ids shown in the menu code (fu.<id>).
    =========================================================================== */
 const CONFIG = {
-    version: "v2.1.0",
+    version: "v2.1.1",
 
     /* Keybinds use KeyboardEvent.key, so letters are case sensitive
        ("Z" means Shift+z). Hold keys act every tick while held. */
@@ -5885,7 +5914,12 @@ let serverID;
             if (AW.pendingHeal && Date.now() - AW.pendingHealAt > 500) {
                 AW.pendingHeal = 0;
             }
-            return Math.max(0, Math.ceil((100 - Ai.health - AW.pendingHeal) / s5.list[Ai.items[0]].healing));
+            // B15: no known food in slot 0, nothing to eat.
+            const ci = s5.list[Ai.items[0]];
+            if (!ci || !(ci.healing > 0)) {
+                return 0;
+            }
+            return Math.max(0, Math.ceil((100 - Ai.health - AW.pendingHeal) / ci.healing));
         }
         function eD(ci) {
             let cC = Ak.filter(cK => {
@@ -6153,49 +6187,59 @@ let serverID;
                     ck.y = Ai.y2 + (Ai.scale + ck.scale + (cK.placeOffset || 0)) * Math.sin(ck.dir);
                     return ck;
                 };
+                // Does a spot of radius cs at (cx, cy) overlap a spot already planned this tick?
+                this.overlapsPlanned = function (cx, cy, cs) {
+                    for (let cn = 0; cn < 2; cn++) {
+                        const cK = this.preplaces[cn];
+                        for (let cd = 0; cd < cK.length; cd++) {
+                            const ck = cK[cd];
+                            const cQ = cx - ck.x;
+                            const cg = cy - ck.y;
+                            if (Math.sqrt(cQ * cQ + cg * cg) < ck.scale + cs) {
+                                return true;
+                            }
+                        }
+                    }
+                    return false;
+                };
+                /* Angles near `direct` where `item` fits beside `obj`. Candidate spots are
+                   computed in place (same maths as createObj and getDist); an object is
+                   only made for a spot that is kept, and the planned-spot checks are plain
+                   loops (they made 1-3 objects and 2 closures per call). */
                 this.radCalc = function (obj, direct, item, type) {
-                    let preObj = this.createObj(item, direct);
+                    const off = Ai.scale + item.scale + (item.placeOffset || 0);
+                    let px = Ai.x2 + off * Math.cos(direct);
+                    let py = Ai.y2 + off * Math.sin(direct);
                     let getScale = obj.getScale(0.6, obj.isItem);
-                    let dist = s4.getDist(obj, preObj, 0, 0);
-                    let scale = getScale + preObj.scale;
+                    let dx = px - obj.x;
+                    let dy = py - obj.y;
+                    let dist = Math.sqrt(dx * dx + dy * dy);
+                    let scale = getScale + item.scale;
                     let angles = [];
                     if (dist < scale) {
                         let calc = Math.acos(dist / scale);
-                        let sum = [calc, -calc];
-                        for (let i = 0; i < sum.length; i++) {
-                            let angle = direct + sum[i];
-                            preObj = this.createObj(item, angle);
-                            let nears = this.preplaces[1].length ? this.preplaces[1].some(pos => s4.getDist(pos, preObj, 0, 0) < pos.scale + preObj.scale) : false;
-                            if (nears) {
+                        for (let i = 0; i < 2; i++) {
+                            let angle = direct + (i === 0 ? calc : -calc);
+                            px = Ai.x2 + off * Math.cos(angle);
+                            py = Ai.y2 + off * Math.sin(angle);
+                            if (this.overlapsPlanned(px, py, item.scale)) {
                                 continue;
                             }
-                            let renears = this.preplaces[0].length ? this.preplaces[0].some(pos => s4.getDist(pos, preObj, 0, 0) < pos.scale + preObj.scale) : false;
-                            if (renears) {
-                                continue;
-                            }
-                            let canPlace = s6.checkItemLocation(preObj.x, preObj.y, preObj.scale, 0.6, preObj.id, false);
-                            if (canPlace) {
+                            if (s6.checkItemLocation(px, py, item.scale, 0.6, item.id, false)) {
                                 angles.push(angle);
-                                this.preplaces[1].push(preObj);
+                                this.preplaces[1].push(this.createObj(item, angle));
                             }
                         }
                     } else {
                         if (type) {
                             return [];
                         }
-                        preObj = this.createObj(item, direct);
-                        let nears = this.preplaces[1].length ? this.preplaces[1].some(pos => s4.getDist(pos, preObj, 0, 0) < pos.scale + preObj.scale) : false;
-                        if (nears) {
+                        if (this.overlapsPlanned(px, py, item.scale)) {
                             return [];
                         }
-                        let renears = this.preplaces[0].length ? this.preplaces[0].some(pos => s4.getDist(pos, preObj, 0, 0) < pos.scale + preObj.scale) : false;
-                        if (renears) {
-                            return [];
-                        }
-                        let canPlace = s6.checkItemLocation(preObj.x, preObj.y, preObj.scale, 0.6, preObj.id, false);
-                        if (canPlace) {
+                        if (s6.checkItemLocation(px, py, item.scale, 0.6, item.id, false)) {
                             angles.push(direct);
-                            this.preplaces[1].push(preObj);
+                            this.preplaces[1].push(this.createObj(item, direct));
                         }
                     }
                     return angles;
@@ -14843,7 +14887,10 @@ let serverID;
             AN.push(new eK(ci.x, ci.y, ci.dir, ci.buildIndex, ci.weaponIndex, ci.weaponVariant, ci.skinColor, ci.scale, ci.name));
         }
         function Vc(ci) {
-            As = ci.teams;
+            // B17: keep the clan list when the packet has none.
+            if (ci && Array.isArray(ci.teams)) {
+                As = ci.teams;
+            }
         }
         function VF(ci) {
             AT = {};
@@ -14862,10 +14909,21 @@ let serverID;
         }
         function VH(ci, cC) {
             // B13: a player without a numeric id or a finite position is not added.
-            if (!Array.isArray(ci) || typeof ci[1] !== "number" || !isFinite(ci[3]) || !isFinite(ci[4])) {
+            if (!Array.isArray(ci) || typeof ci[1] !== "number" || !Number.isFinite(ci[3]) || !Number.isFinite(ci[4])) {
                 return;
             }
             let cK = Ax(ci[0]);
+            // B19: players are found by sid in every update; another entry with this
+            // sid (one whose "left" packet was missed, or a reused sid) would shadow
+            // the new one, e.g. your own player would never move. Drop it.
+            for (let ck = Ae.length - 1; ck >= 0; ck--) {
+                if (Ae[ck].sid === ci[1] && Ae[ck] !== cK) {
+                    if (Ae[ck] === Ag) {
+                        Ag = undefined;
+                    }
+                    Ae.splice(ck, 1);
+                }
+            }
             if (!cK) {
                 cK = new ed(ci[0], ci[1], r, s4, sf, s6, Ae, AA, s5, s8, s9);
                 Ae.push(cK);
@@ -15085,7 +15143,7 @@ let serverID;
         function VK(ci, cC) {
             AK = AM(ci);
             // B13: health must be a number.
-            if (AK && isFinite(cC)) {
+            if (AK && Number.isFinite(cC)) {
                 let ck = cC - AK.health;
                 // An update without a change is not a hit: it used to reset your
                 // heal timer and the enemy's shame window and log a 0 damage hit.
@@ -15395,7 +15453,7 @@ let serverID;
             for (let cC = 0; cC < ci.length;) {
                 AK = AM(ci[cC]);
                 // B13: a player record without a finite position is skipped.
-                if (AK && isFinite(ci[cC + 1]) && isFinite(ci[cC + 2])) {
+                if (AK && Number.isFinite(ci[cC + 1]) && Number.isFinite(ci[cC + 2])) {
                     AK.t1 = AK.t2 === undefined ? fU.lastTick : AK.t2;
                     AK.t2 = fU.lastTick;
                     AK.oldPos.x2 = AK.x2;
@@ -15414,15 +15472,18 @@ let serverID;
                     AK.d1 = AK.d2 === undefined ? ci[cC + 3] : AK.d2;
                     AK.d2 = ci[cC + 3];
                     AK.dt = 0;
-                    AK.buildIndex = ci[cC + 4];
-                    AK.weaponIndex = ci[cC + 5];
-                    AK.weaponVariant = ci[cC + 6];
+                    // B14: ids this script doesn't know (a bad packet, or a modded server's
+                    // own weapons/items/hats) used to break every later weapon lookup and
+                    // the whole render frame. Unknown = no held item, previous weapon, no hat.
+                    AK.buildIndex = ci[cC + 4] >= 0 && s5.list[ci[cC + 4]] ? ci[cC + 4] : -1;
+                    AK.weaponIndex = s5.weapons[ci[cC + 5]] ? ci[cC + 5] : s5.weapons[AK.weaponIndex] ? AK.weaponIndex : 0;
+                    AK.weaponVariant = r.weaponVariants[ci[cC + 6]] ? ci[cC + 6] : 0;
                     AK.team = ci[cC + 7];
                     AK.isLeader = ci[cC + 8];
                     AK.oldSkinIndex = AK.skinIndex;
                     AK.oldTailIndex = AK.tailIndex;
-                    AK.skinIndex = ci[cC + 9];
-                    AK.tailIndex = ci[cC + 10];
+                    AK.skinIndex = roboticsHatById.has(ci[cC + 9]) ? ci[cC + 9] : 0;
+                    AK.tailIndex = roboticsTailById.has(ci[cC + 10]) ? ci[cC + 10] : 0;
                     AK.iconIndex = ci[cC + 11];
                     AK.zIndex = ci[cC + 12];
                     AK.visible = true;
@@ -16126,6 +16187,10 @@ let serverID;
             VO.removeChild(VI);
         }
         function Va(ci) {
+            // B17: the leaderboard needs a list.
+            if (!Array.isArray(ci)) {
+                return;
+            }
             s4.removeAllChildren(b);
             let cC = 1;
             let cK = ci[2];
@@ -16164,7 +16229,8 @@ let serverID;
             }
             for (let cC = 0; cC < ci.length;) {
                 // B13: skip objects without a numeric id, a finite position or size.
-                if (typeof ci[cC] === "number" && isFinite(ci[cC + 1]) && isFinite(ci[cC + 2]) && isFinite(ci[cC + 4])) {
+                // B16: and buildings of a type this script doesn't know (they broke every frame).
+                if (typeof ci[cC] === "number" && Number.isFinite(ci[cC + 1]) && Number.isFinite(ci[cC + 2]) && Number.isFinite(ci[cC + 4]) && (ci[cC + 6] == null || ci[cC + 6] < 0 || s5.list[ci[cC + 6]])) {
                     s6.add(ci[cC], ci[cC + 1], ci[cC + 2], ci[cC + 3], ci[cC + 4], ci[cC + 5], s5.list[ci[cC + 6]], true, ci[cC + 7] >= 0 ? {
                         sid: ci[cC + 7]
                     } : null);
@@ -16194,7 +16260,8 @@ let serverID;
                         AK.health = ci[cd + 5];
                         AK.dt = 0;
                         AK.visible = true;
-                    } else {
+                    } else if (sA.aiTypes[ci[cd + 1]] && Number.isFinite(ci[cd + 2]) && Number.isFinite(ci[cd + 3])) {
+                        // B16: only animal types this script knows, at a finite position.
                         AK = sA.spawn(ci[cd + 2], ci[cd + 3], ci[cd + 4], ci[cd + 1]);
                         AK.x2 = AK.x;
                         AK.y2 = AK.y;
@@ -16219,7 +16286,7 @@ let serverID;
         }
         function Vw(ci, cC, cK) {
             AK = AM(ci);
-            if (AK) {
+            if (AK && s5.weapons[cK]) {
                 AK.startAnim(cC, cK);
                 AK.gatherIndex = cK;
                 AK.gathering = 1;
@@ -16265,7 +16332,9 @@ let serverID;
             }
         }
         function Vh(ci, cC, cK) {
-            if (Ai) {
+            // B18: this wrote any key the packet named onto your player (items,
+            // weapons, x2, __proto__...). Only numeric stats are set now.
+            if (Ai && typeof ci === "string" && ci.indexOf("__") !== 0 && typeof cC === "number" && isFinite(cC) && (Ai[ci] === undefined || typeof Ai[ci] === "number")) {
                 Ai[ci] = cC;
                 if (ci == "points") {
                     if (fu.autoBuy) {
@@ -16279,6 +16348,18 @@ let serverID;
             }
         }
         function VP(ci, cC) {
+            // B15: weapons must be a list starting with a known primary (unknown
+            // secondaries are dropped); items must be a list.
+            if (ci && cC) {
+                if (!Array.isArray(ci) || !s5.weapons[ci[0]]) {
+                    return;
+                }
+                if (ci.length > 1 && !s5.weapons[ci[1]]) {
+                    ci = [ci[0]];
+                }
+            } else if (ci && !Array.isArray(ci)) {
+                return;
+            }
             if (ci) {
                 if (cC) {
                     Ai.weapons = ci;
@@ -16309,7 +16390,7 @@ let serverID;
         // shooter lookup for the next tick (sW).
         function Vq(ci, cC, cK, cd, ck, cQ, cg, cp) {
             // B13: a projectile needs a position, a direction and a known type.
-            if (!isFinite(ci) || !isFinite(cC) || !isFinite(cK) || !s5.projectiles[cQ]) {
+            if (!Number.isFinite(ci) || !Number.isFinite(cC) || !Number.isFinite(cK) || !s5.projectiles[cQ]) {
                 return;
             }
             let cW = sf.addProjectile(ci, cC, cK, cd, ck, cQ, cg);
@@ -16351,7 +16432,8 @@ let serverID;
             }
         }
         function r0(ci) {
-            AV = ci;
+            // B17: alliance members must be a list (isTeamObject searches it for every object).
+            AV = Array.isArray(ci) ? ci : [];
         }
         function r1(ci, cC, cK) {
             if (cK) {

@@ -73,8 +73,13 @@ for (let i = 0; i < ROUNDS; i++) {
     if (fails > failsBefore) handlerFail[type] = (handlerFail[type] || 0) + fails - failsBefore;
     failsBefore = fails;
 }
+if (process.env.DETAIL) {
+    const g = new Map();
+    for (const w of env.failures()) { const k = w.replace(/\(x\d+\)/, "").replace(/packet \S+:/, "packet:").slice(0, 260); g.set(k, (g.get(k) || 0) + 1); }
+    for (const [k, v] of [...g].sort((a, b) => b[1] - a[1])) console.log(String(v).padStart(5) + "  " + k);
+}
 T.ok(thrown === 0, "no exception escapes the packet handler or the frame loop in " + ROUNDS + " packets (" + thrownSamples.join(" | ") + ")");
-console.log("  handler failures caught per packet type (logged, game keeps running):", JSON.stringify(handlerFail));
+T.ok(Object.keys(handlerFail).length === 0, "malformed packets are dropped at the boundary, no handler throws: " + JSON.stringify(handlerFail));
 
 // A normal game afterwards: respawn and play, with no new failures.
 const before = env.failures().length;
@@ -84,8 +89,9 @@ for (let t = 0; t < 60; t++) { serverTick(env, world, t); env.frame(); }
 const after = env.failures().slice(before);
 T.ok(after.length === 0, "a normal game after the fuzz runs clean (" + after.slice(0, 2).join(" | ") + ")");
 T.ok(rb.AX && rb.Ai && rb.Ai.sid === 1, "state is sane after the fuzz: alive as sid 1");
-T.ok(Number.isFinite(rb.Ai.x2) && Number.isFinite(rb.Ai.y2), "your position is finite");
+T.ok(Number.isFinite(rb.Ai.x2) && Number.isFinite(rb.Ai.y2), "your position is finite (" + rb.Ai.x2 + ", " + rb.Ai.y2 + ", id " + rb.Ai.id + ", visible " + rb.Ai.visible + ", players with sid 1: " + rb.Ae.filter(p => p.sid === 1).length + ")");
 T.ok(rb.Ae.every(p => p && typeof p.sid === "number"), "every player entry is a player");
-T.ok([...rb.roboticsGrid.cells.values()].every(c => c.every(o => Number.isFinite(o.x) && Number.isFinite(o.y))), "every object in the grid has a finite position");
+const badObjects = [...rb.roboticsGrid.cells.values()].flat().filter(o => !Number.isFinite(o.x) || !Number.isFinite(o.y));
+T.ok(badObjects.length === 0, "every object in the grid has a finite position" + badObjects.slice(0, 2).map(o => " [sid " + o.sid + " " + o.x + "," + o.y + " scale " + o.scale + " " + (o.name || "natural " + o.type) + "]").join(""));
 T.ok(rb.roboticsLimiter.count <= rb.roboticsPacketBudget().perSecond, "the packet limit held during the fuzz");
 T.done();

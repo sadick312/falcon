@@ -11,23 +11,29 @@ if (process.argv[2] === "--child") {
     const toggles = ["autoPlace", "autoReplace", "autoPrePlace", "antiTrap", "safeAntiSpikeTick", "breakSpikeSwitch", "breakTrapSwitch", "safeWalk", "spikeTick",
         "predictTick", "placeVis", "anti1tick", "hammerBreakerOptimisation", "gradedAutoPlace", "knockbackHits", "knockbackInsta", "velocityHits", "projectileSync",
         "smartAntiInsta", "smartHats", "patternRec", "turretGearKB", "barbKB", "hudReloads", "hudThreat", "hudDanger", "hudPredict", "hudProjectiles", "autoTurret"];
-    const env = await createRobotics({ storage: Object.fromEntries(toggles.map(t => [t, "true"])), seed: 7 });
-    const ws = await env.connect();
+    // Two configurations: the graded (Falcon) placer and modules, and the legacy placer path.
+    const configs = [toggles, toggles.filter(t => t !== "gradedAutoPlace" && t !== "autoTurret")];
     const out = [];
-    for (const seed of [12345, 999]) {
-        const world = spawnWorld(env, { seed });
-        for (let t = 0; t < 250; t++) {
-            serverTick(env, world, t);
-            for (let f = 0; f < 3; f++) { env.clock.t += 20; env.frame(); }
-            const rb = env.rb;
-            out.push("T" + t + " " + rb.fU.tick + " " + (rb.AQ && rb.AQ.sid) + " " + rb.sc.isTrue + " " + rb.Ad.length + " " + (rb.Ai && rb.Ai.damageThreat));
+    let failures = 0;
+    for (const config of configs) {
+        const env = await createRobotics({ storage: Object.fromEntries(config.map(t => [t, "true"])), seed: 7 });
+        const ws = await env.connect();
+        for (const seed of [12345, 999]) {
+            const world = spawnWorld(env, { seed });
+            for (let t = 0; t < 250; t++) {
+                serverTick(env, world, t);
+                for (let f = 0; f < 3; f++) { env.clock.t += 20; env.frame(); }
+                const rb = env.rb;
+                out.push("T" + t + " " + rb.fU.tick + " " + (rb.AQ && rb.AQ.sid) + " " + rb.sc.isTrue + " " + rb.Ad.length + " " + (rb.Ai && rb.Ai.damageThreat));
+            }
+            env.server("P", []);
+            for (let t = 0; t < 10; t++) { env.advance(111); env.frame(); }
+            env.server("C", [1]);
         }
-        env.server("P", []);
-        for (let t = 0; t < 10; t++) { env.advance(111); env.frame(); }
-        env.server("C", [1]);
+        for (const d of ws.out) out.push(Buffer.from(d).toString("base64"));
+        failures += env.failures().length;
     }
-    for (const d of ws.out) out.push(Buffer.from(d).toString("base64"));
-    process.stdout.write(JSON.stringify({ lines: out, failures: env.failures().length }));
+    process.stdout.write(JSON.stringify({ lines: out, failures }));
 } else {
     const run = file => {
         const r = spawnSync(process.execPath, [path.join(HERE, "compare.mjs"), "--child"], { env: { ...process.env, ROBOTICS_SCRIPT: file }, encoding: "utf8", maxBuffer: 1 << 28 });
