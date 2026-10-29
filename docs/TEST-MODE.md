@@ -97,6 +97,10 @@ The numbers in that run come from the fake world, not the game. Only the sequenc
 5. Watch the progress bar and the current test name. Results appear in the table as each test finishes.
 6. **Stop** (or **F9**) ends the run at any point and sends `\c a`. Dying also stops it.
 7. **Copy results** copies the table as tab-separated text, ready to paste into Discord or a spreadsheet.
+8. **Compare versions:** each *full* run is saved for the client version it ran on. Switch the launcher to the other
+   version (v1.8.2 ↔ v1.6.9), inject again and run the same tests. The **Version comparison** table under the results then
+   shows both side by side, and Copy results includes it. A stopped run is not saved, so it can't replace a good one.
+   Both versions live on sandbox.moomodding.io, so they share the same saved data.
 
 | Test | What it does | What it records |
 |---|---|---|

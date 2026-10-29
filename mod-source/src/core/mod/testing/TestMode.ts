@@ -47,7 +47,11 @@ export const TEST_CONFIG = {
         "autoGrind", "autoBreak", "autoHeal", "defensiveHatSwitching", "safeWalk", "walkBreaker", "defensiveKB"
     ],
     stopKey: "F9",
-    scenarioStorageKey: "falcon-testmode-scenarios"
+    scenarioStorageKey: "falcon-testmode-scenarios",
+    /** Last run per client version. v1.8.2 and v1.6.9 share the sandbox.moomodding.io origin, so both land here. */
+    resultsStorageKey: "falcon-testmode-results",
+    /** Versions shown first in the comparison table; any other saved version is added after them. */
+    compareVersions: ["1.8.2", "1.6.9"]
 } as const;
 
 export type ScenarioId = "dps" | "kill" | "tier" | "defense" | "building" | "perf";
@@ -67,6 +71,19 @@ export interface TestResult {
     test: string;
     setup: string;
     result: string;
+}
+
+export interface SavedRun {
+    version: string;
+    date: string;
+    results: TestResult[];
+}
+
+export interface ComparisonRow {
+    test: string;
+    setup: string;
+    /** Result per version, "" when that version's run didn't include this row. */
+    byVersion: string[];
 }
 
 interface TestRun {
@@ -210,12 +227,66 @@ export default class TestMode {
         const { reported } = Endpoints.version;
         const lines = [`Falcon Test Mode results (client v${reported}, ${new Date().toLocaleString()})`, "Test\tSetup\tResult"];
         for (const r of this.results) lines.push(`${r.test}\t${r.setup}\t${r.result}`);
+
+        const { versions, rows } = this.comparison();
+        if (versions.length > 1) {
+            const runs = this.savedRuns();
+            lines.push("", "Version comparison (last run on each)", ["Test", "Setup", ...versions.map(v => `v${v} (${runs[v].date})`)].join("\t"));
+            for (const row of rows) lines.push([row.test, row.setup, ...row.byVersion.map(r => r || "-")].join("\t"));
+        }
+
         return lines.join("\n");
+    }
+
+    // ── Saved runs and version comparison ──
+
+    static savedRuns(): Record<string, SavedRun> {
+        try {
+            const saved = JSON.parse(localStorage.getItem(TEST_CONFIG.resultsStorageKey) ?? "null");
+            return saved && typeof saved === "object" ? saved : {};
+        } catch {
+            return {};
+        }
+    }
+
+    private static saveRun() {
+        if (!this.results.length) return;
+
+        const runs = this.savedRuns();
+        const version = Endpoints.version.reported;
+        runs[version] = { version, date: new Date().toLocaleString(), results: this.results.slice() };
+
+        try {
+            localStorage.setItem(TEST_CONFIG.resultsStorageKey, JSON.stringify(runs));
+        } catch { /* storage unavailable: the comparison only covers this session */ }
+    }
+
+    /** Rows matched by test + setup across the last saved run of every version. */
+    static comparison(): { versions: string[]; rows: ComparisonRow[] } {
+        const runs = this.savedRuns();
+        const versions = [
+            ...TEST_CONFIG.compareVersions.filter(v => runs[v]),
+            ...Object.keys(runs).filter(v => !(TEST_CONFIG.compareVersions as readonly string[]).includes(v))
+        ];
+
+        const rows = new Map<string, ComparisonRow>();
+        versions.forEach((version, column) => {
+            for (const r of runs[version].results) {
+                const key = `${r.test}\u0000${r.setup}`;
+                let row = rows.get(key);
+                if (!row) rows.set(key, row = { test: r.test, setup: r.setup, byVersion: versions.map(() => "") });
+                row.byVersion[column] = r.result;
+            }
+        });
+
+        return { versions, rows: [...rows.values()] };
     }
 
     // ── Execution ──
 
     private static async execute(runs: TestRun[]) {
+        let completed = false;
+
         try {
             for (const run of runs) {
                 this.checkStop();
@@ -228,7 +299,8 @@ export default class TestMode {
                 this.emit();
             }
 
-            this.notice = "Done.";
+            completed = true;
+            this.notice = "Done. Saved for the version comparison.";
         } catch (err) {
             if (!(err instanceof StopSignal)) {
                 console.error("[Falcon] Test Mode failed.", err);
@@ -238,6 +310,8 @@ export default class TestMode {
             }
         } finally {
             await this.cleanUp();
+            // Only full runs replace a version's saved results, so a stopped run can't wipe a good one.
+            if (completed) this.saveRun();
             this.running = false;
             this.currentName = "";
             this.emit();

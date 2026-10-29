@@ -11,6 +11,8 @@ interface TestModeView {
     table: HTMLTableSectionElement;
     checkboxes: HTMLInputElement[];
     shownResults: number;
+    compareHolder: HTMLDivElement;
+    compareShownFor: string;
 }
 
 let view: TestModeView | null = null;
@@ -34,6 +36,55 @@ function copyText(text: string) {
     document.execCommand("copy");
     area.remove();
     return Promise.resolve();
+}
+
+function cell(row: HTMLTableRowElement, text: string, header = false) {
+    const elem = header ? document.createElement("th") : row.insertCell();
+    if (header) row.appendChild(elem);
+    elem.textContent = text;
+    elem.style.textAlign = "left";
+    elem.style.padding = "3px 6px";
+    if (!header) elem.style.borderTop = "1px solid var(--border-color)";
+}
+
+/** Side-by-side table of the last full run on each client version. Rebuilt only when a saved run changes. */
+function drawComparison(holder: HTMLDivElement) {
+    const { versions, rows } = TestMode.comparison();
+    const runs = TestMode.savedRuns();
+    holder.textContent = "";
+
+    const title = document.createElement("div");
+    title.className = "menuItemLabel";
+    title.textContent = "Version comparison";
+    holder.appendChild(title);
+
+    const note = document.createElement("div");
+    note.className = "menuItemDescription";
+    note.textContent = versions.length > 1
+        ? "Last full run on each version. Run again on a version to replace its column."
+        : versions.length === 1
+            ? `Saved a full run on v${versions[0]}. Switch the launcher to the other version, run Test Mode again, and both show up here.`
+            : "Finish a full run on v1.8.2 and on v1.6.9 to compare them here.";
+    holder.appendChild(note);
+
+    if (!versions.length) return;
+
+    const table = document.createElement("table");
+    table.style.cssText = "width:100%;border-collapse:collapse;font-size:12px;color:var(--generic-white)";
+    const head = table.createTHead().insertRow();
+    cell(head, "Test", true);
+    cell(head, "Setup", true);
+    for (const v of versions) cell(head, `v${v} (${runs[v].date})`, true);
+
+    const body = table.createTBody();
+    for (const r of rows) {
+        const row = body.insertRow();
+        cell(row, r.test);
+        cell(row, r.setup);
+        for (const result of r.byVersion) cell(row, result || "-");
+    }
+
+    holder.appendChild(table);
 }
 
 /** Updates the open Test Mode tab in place. Does nothing when the tab isn't on screen. */
@@ -70,6 +121,14 @@ function refresh() {
     }
 
     view.shownResults = results.length;
+
+    // The saved runs only change when a run finishes, so key the rebuild on their dates.
+    const runs = TestMode.savedRuns();
+    const shownFor = Object.keys(runs).map(v => `${v}@${runs[v].date}`).join("|");
+    if (shownFor !== view.compareShownFor) {
+        view.compareShownFor = shownFor;
+        drawComparison(view.compareHolder);
+    }
 }
 
 export default function drawTestMode() {
@@ -156,7 +215,11 @@ export default function drawTestMode() {
     const body = table.createTBody();
     root.appendChild(table);
 
+    const compareHolder = document.createElement("div");
+    compareHolder.style.cssText = "display:flex;flex-direction:column;row-gap:6px;margin-top:8px";
+    root.appendChild(compareHolder);
+
     Menu.contentElement.appendChild(root);
-    view = { root, startButton, stopButton, status, bar, table: body, checkboxes, shownResults: 0 };
+    view = { root, startButton, stopButton, status, bar, table: body, checkboxes, shownResults: 0, compareHolder, compareShownFor: "-" };
     refresh();
 }
