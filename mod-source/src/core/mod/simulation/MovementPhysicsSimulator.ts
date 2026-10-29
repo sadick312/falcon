@@ -94,6 +94,33 @@ export default class MovementPhysicsSimulator {
     static readonly PLAYER_DECELERATION = Math.pow(0.993, ScriptConfig.SERVER_UPDATE_SPEED);
     private static internalTmpObjects: Readonly<GameObjectSimulationState>[] = [];
 
+    /**
+     * Objects for "place" actions, reused across simulate() calls instead of building a GameObject for every
+     * candidate angle the graders try. A GameObject's fields depend only on its item id, and getSimulationState()
+     * rewrites the whole state, so reusing one only needs a new position and owner. Slot i serves the i-th place
+     * action of a simulate() call; placePoolIds[i] is the item id the slot was built for.
+     */
+    private static placePool: GameObject[] = [];
+    private static placePoolIds: number[] = [];
+    private static placePoolIndex = 0;
+
+    private static getPlacedObject(id: number, x: number, y: number, ownerSID: number) {
+        const slot = this.placePoolIndex++;
+        let gameObject = this.placePool[slot];
+
+        if (!gameObject || this.placePoolIds[slot] !== id) {
+            const item = items.list[id];
+            gameObject = this.placePool[slot] = new GameObject(x, y, 0, item.scale, item.type!, id, ownerSID);
+            this.placePoolIds[slot] = id;
+            return gameObject;
+        }
+
+        gameObject.x = x;
+        gameObject.y = y;
+        gameObject.ownerSID = ownerSID;
+        return gameObject;
+    }
+
     private static collisionMap: number[] = [];
     private static collisionMarker = 1;
 
@@ -166,8 +193,7 @@ export default class MovementPhysicsSimulator {
                     this.damageVictim(victim, action.damage, res, options);
             } else if (action.type === "place") {
                 const data = action.placementData!;
-                const item = items.list[data.id];
-                const gameObject = new GameObject(data.pos.x, data.pos.y, 0, item.scale, item.type!, data.id, data.ownerSID);
+                const gameObject = this.getPlacedObject(data.id, data.pos.x, data.pos.y, data.ownerSID);
                 this.internalTmpObjects.push(gameObject.getSimulationState());
             } else if (action.type === "damage") {
                 this.damageVictim(victim, action.damage, res, options);
@@ -388,6 +414,7 @@ export default class MovementPhysicsSimulator {
         const gameObjects = this.getGameObjects();
         const gameObjectsLength = gameObjects.length;
         internalTmpObjects.length = 0;
+        this.placePoolIndex = 0;
 
         victim = (victim instanceof Player ? victim.getSimulationState() : victim) as PlayerSimulationState;
         let actionsIndex = 0;

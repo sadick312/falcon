@@ -474,7 +474,9 @@ export default class TestMode {
     }
 
     private static perfText(s: ReturnType<typeof PerfMonitor.snapshot>) {
-        return `${s.fps} FPS, tick ${s.tickAvgMs.toFixed(2)} ms avg / ${s.tickMaxMs.toFixed(2)} max, frame ${s.frameAvgMs.toFixed(2)} ms, ping ${s.ping} ms`;
+        const slowest = s.sections[0];
+        return `${s.fps} FPS, tick ${s.tickAvgMs.toFixed(2)} ms avg / ${s.tickMaxMs.toFixed(2)} max, frame ${s.frameAvgMs.toFixed(2)} ms, ping ${s.ping} ms` +
+            (slowest ? `, slowest part: ${slowest.name} ${slowest.avgMs.toFixed(2)} ms` : "");
     }
 
     private static restoreModules(saved: Map<string, unknown>) {

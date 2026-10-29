@@ -71,6 +71,17 @@ These counts follow exactly from the code. For real timings, run Test Mode's Per
 | Activity list DOM writes | 1 + k writes, O(k²) parsing | 0 if unchanged, else 1 | 9 writes → 0 or 1 |
 | Camera lerp (per frame) | P + A (all animals ever seen) | P + visible animals | grows over a session → stays flat |
 
+| Spike grader placement sim (per candidate angle) | new `GameObject` each time | reused from a pool | 0.067 → 0.009 µs, no garbage (offline benchmark, 200k runs) |
+
+### Second pass
+- **Pooled placement objects.** The spike grader simulates every candidate angle with a "place" action, and each one used to
+  build a new `GameObject`. They now come from a small pool in `MovementPhysicsSimulator` (one slot per place action in a
+  simulation, rebuilt only if the item changes). Each call is tiny either way; the gain is less garbage collection during fights.
+- **Per-section tick timing.** `ModManager.main` is timed in 7 parts (prepare, defense scan, objects, attack, defense response,
+  placement, finish). The performance panel shows the 3 slowest, and Test Mode's Performance result names the slowest one.
+  The rest of the tick code already reuses its buffers (simulation results, weapon fetches, object pools), so the next
+  optimization should go wherever this breakdown points in a real fight.
+
 | Live measurement (fill in from Test Mode → Performance) | v1.8.2 before | v1.8.2 after |
 |---|---|---|
 | FPS, Falcon modules on, in your base | | |

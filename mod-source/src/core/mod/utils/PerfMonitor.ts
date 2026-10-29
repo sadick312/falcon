@@ -11,6 +11,19 @@ export const PERF_CONFIG = {
     toggleKey: "F8"
 } as const;
 
+/** Parts of ModManager.main, timed separately so the panel shows where a tick's time goes. */
+export const TICK_SECTION = {
+    PREPARE: 0,
+    DEFENSE_SCAN: 1,
+    OBJECTS: 2,
+    ATTACK: 3,
+    DEFENSE_RESPONSE: 4,
+    PLACEMENT: 5,
+    FINISH: 6
+} as const;
+
+const TICK_SECTION_NAMES = ["prepare", "defense scan", "objects", "attack", "defense response", "placement", "finish"];
+
 class RingBuffer {
     private values: Float64Array;
     private index = 0;
@@ -43,6 +56,11 @@ class RingBuffer {
     }
 }
 
+export interface SectionTiming {
+    name: string;
+    avgMs: number;
+}
+
 export interface PerfSnapshot {
     fps: number;
     ping: number;
@@ -51,6 +69,8 @@ export interface PerfSnapshot {
     frameAvgMs: number;
     frameMaxMs: number;
     nearbyObjects: number;
+    /** Tick sections, slowest first. */
+    sections: SectionTiming[];
 }
 
 /**
@@ -60,11 +80,19 @@ export interface PerfSnapshot {
 export default class PerfMonitor {
     private static tickTimes = new RingBuffer(PERF_CONFIG.windowSize);
     private static frameTimes = new RingBuffer(PERF_CONFIG.windowSize);
+    private static sectionTimes = TICK_SECTION_NAMES.map(() => new RingBuffer(PERF_CONFIG.windowSize));
 
     static fps = 0;
     private static panel: HTMLDivElement | null = null;
     private static lastPanelUpdate = 0;
     private static nearbyBuffer: unknown[] = [];
+
+    /** Records the time since `since` for a tick section and returns now, to chain into the next section. */
+    static lap(section: number, since: number) {
+        const now = performance.now();
+        this.sectionTimes[section].push(now - since);
+        return now;
+    }
 
     static recordTick(ms: number) {
         this.tickTimes.push(ms);
@@ -84,6 +112,7 @@ export default class PerfMonitor {
     static reset() {
         this.tickTimes.clear();
         this.frameTimes.clear();
+        for (const times of this.sectionTimes) times.clear();
     }
 
     static snapshot(): PerfSnapshot {
@@ -103,7 +132,10 @@ export default class PerfMonitor {
             tickMaxMs: this.tickTimes.max(),
             frameAvgMs: this.frameTimes.average(),
             frameMaxMs: this.frameTimes.max(),
-            nearbyObjects
+            nearbyObjects,
+            sections: this.sectionTimes
+                .map((times, i) => ({ name: TICK_SECTION_NAMES[i], avgMs: times.average() }))
+                .sort((a, b) => b.avgMs - a.avgMs)
         };
     }
 
@@ -136,6 +168,7 @@ export default class PerfMonitor {
             `FPS ${s.fps}  ping ${s.ping} ms\n` +
             `tick ${s.tickAvgMs.toFixed(2)} ms avg, ${s.tickMaxMs.toFixed(2)} max\n` +
             `frame ${s.frameAvgMs.toFixed(2)} ms avg, ${s.frameMaxMs.toFixed(2)} max\n` +
-            `objects nearby ${s.nearbyObjects}`;
+            `objects nearby ${s.nearbyObjects}\n` +
+            `slowest: ${s.sections.slice(0, 3).map(t => `${t.name} ${t.avgMs.toFixed(2)}`).join(", ")}`;
     }
 }

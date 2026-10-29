@@ -25,7 +25,7 @@ import TurretManager from "@core/mod/defense/modules/TurretManager";
 import BreakerUtils from "@core/mod/defense/utils/BreakerUtils";
 import GameEventTracker from "@core/mod/utils/GameEventTracker";
 import TestMode from "@core/mod/testing/TestMode";
-import PerfMonitor from "@core/mod/utils/PerfMonitor";
+import PerfMonitor, { TICK_SECTION } from "@core/mod/utils/PerfMonitor";
 import PingTracker from "@core/mod/utils/PingTracker";
 import PacketBatcher from "@core/utils/PacketBatcher";
 import PacketTracker from "@core/utils/PacketTracker";
@@ -460,6 +460,7 @@ export default class ModManager {
 
     static main() {
         const startTime = performance.now();
+        let lap = startTime;
 
         // prep the tick
         this.preTick();
@@ -469,14 +470,17 @@ export default class ModManager {
 
         // not important but "player" inputs go first
         this.autoPlayMovement();
+        lap = PerfMonitor.lap(TICK_SECTION.PREPARE, lap);
 
         // important stuff
         AutoBreaker.preTick();
         DefenseSystem.start();
+        lap = PerfMonitor.lap(TICK_SECTION.DEFENSE_SCAN, lap);
 
         // important preprocessing
         this.updateObjects();
         PlacementSystem.AutoPlacer.preStart(Client.player);
+        lap = PerfMonitor.lap(TICK_SECTION.OBJECTS, lap);
 
         // less important stuff
         AutoPusher.main();
@@ -486,13 +490,16 @@ export default class ModManager {
 
         if (this.lastWeaponIndex === Client.weaponIndex) PacketTracker.free("WEAPON_SELECT", "ALL");
         this.lastWeaponIndex = Client.weaponIndex;
+        lap = PerfMonitor.lap(TICK_SECTION.ATTACK, lap);
 
         // respond to the threats while factoring in what the other modules are trying to do
         DefenseSystem.respond();
 
         // resolve all the important modules
         DefenseSystem.resolve();
+        lap = PerfMonitor.lap(TICK_SECTION.DEFENSE_RESPONSE, lap);
         PlacementSystem.main();
+        lap = PerfMonitor.lap(TICK_SECTION.PLACEMENT, lap);
 
         // do final actions and clean up
         DefenseSystem.conclude();
@@ -504,6 +511,7 @@ export default class ModManager {
         // prep the next tick
         PacketTracker.allocate();
         GameEventTracker.clean();
+        PerfMonitor.lap(TICK_SECTION.FINISH, lap);
         this.brainState.modBrainRuntime = performance.now() - startTime;
         PerfMonitor.recordTick(this.brainState.modBrainRuntime);
     }
