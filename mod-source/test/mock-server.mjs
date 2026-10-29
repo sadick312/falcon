@@ -90,6 +90,8 @@ function newPlayer(sid, name, x, y) {
 
 http.createServer().on("upgrade", (req, socket) => {
     let me = null, bot = null, timer = null, objects = [];
+    /** Enemy players added by \stress; they circle around me so Falcon's enemy logic has work to do. */
+    let extras = [];
     const stats = { packetsIn: 0, byType: {} };
     const send = wsAccept(req, socket, data => {
         let msg; try { msg = decode(data); } catch { log("bad msgpack"); return; }
@@ -158,6 +160,7 @@ http.createServer().on("upgrade", (req, socket) => {
             out("D", playerInit(bot), false);
             return;
         }
+        if (p[0] === "\\stress") { stress(parseInt(p[1]) || 200, parseInt(p[2]) || 4); return; }
         if (p[0] === "\\v") { me.weaponVariant = { n: 0, g: 1, d: 2, r: 3 }[p[1]] ?? parseInt(p[1]); return; }
         if (p[0] === "\\c") {
             if (p[1] !== "b") { objects = []; out("R", me.sid); }
@@ -165,6 +168,25 @@ http.createServer().on("upgrade", (req, socket) => {
             return;
         }
         whisper("unknown command");
+    }
+
+    /** \stress [objects] [enemies]: a ring of enemy-owned structures around me plus moving enemy players. */
+    function stress(count, enemyCount) {
+        const ids = [3, 6, 15, 10, 4, 7];
+        const batch = [];
+        for (let i = 0; i < count; i++) {
+            const ring = 120 + (i % 8) * 70, ang = (i / count) * Math.PI * 2 * 8;
+            const id = ids[i % ids.length];
+            const o = [nextObjSid++, Math.round(me.x + Math.cos(ang) * ring), Math.round(me.y + Math.sin(ang) * ring), 0, ITEM_SCALE[id] ?? 45, -1, id, 99];
+            objects.push(o); batch.push(...o);
+        }
+        out("H", batch);
+        for (let i = 0; i < enemyCount; i++) {
+            const e = newPlayer(10 + i, "Enemy" + i, me.x + 200, me.y);
+            e.weaponIndex = [5, 4, 3, 0][i % 4]; e.skinIndex = [7, 6, 0, 40][i % 4]; e.phase = i * 1.7;
+            extras.push(e); out("D", playerInit(e), false);
+        }
+        log("stress", count, "objects", enemyCount, "enemies");
     }
 
     function swing() {
@@ -210,6 +232,13 @@ http.createServer().on("upgrade", (req, socket) => {
         if (bot && bot.heal && bot.health < 100) { bot.health = Math.min(100, bot.health + 6); out("O", bot.sid, bot.health); }
         const flat = row(me);
         if (bot && bot.alive) flat.push(...row(bot));
+        const t = Date.now() / 1000;
+        for (const e of extras) {
+            e.x = Math.round(me.x + Math.cos(t + e.phase) * 160);
+            e.y = Math.round(me.y + Math.sin(t + e.phase) * 160);
+            e.dir = Math.atan2(me.y - e.y, me.x - e.x);
+            flat.push(...row(e));
+        }
         out("a", flat);
     }
 }).listen(1234, "127.0.0.1", () => console.log("game ws on 1234"));

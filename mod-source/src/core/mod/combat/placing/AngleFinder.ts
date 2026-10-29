@@ -103,7 +103,15 @@ export default class AngleFinder {
 
     static angleBuffer: Angle[] = Array.from({ length: this.HIGHEST_ANGLE_COUNT }, () => new Angle(0, 0, 0, 0, 0));
 
-    private static readonly MAX_INTERVALS = 30; // a estimate
+    /**
+     * Interval pairs each buffer can hold. Every object in reach adds up to 2 pairs (a wrapped arc splits in two),
+     * and a dense base puts well over 30 objects in reach. The old limit of 30 cut the object scan short on most
+     * calls there, so blocked angles were treated as free. 256 pairs is 2 KB per buffer.
+     */
+    private static readonly MAX_INTERVALS = 256;
+    /** Floats one computeInterval call can append to a buffer. */
+    private static readonly MAX_FLOATS_PER_OBJECT = 4;
+    private static warnedFull = false;
     private static tmpBuffer = new Float32Array(AngleFinder.MAX_INTERVALS * 2);
 
     private static data: FinderComputeContext = {
@@ -139,6 +147,12 @@ export default class AngleFinder {
             spikePreplaceSamplesIndex: 0
         }
     };
+
+    /** True when one more object could write past the end of a buffer (typed arrays drop those writes silently). */
+    private static isAnyBufferFull(ctx: FinderComputeContext) {
+        const limit = AngleFinder.MAX_INTERVALS * 2 - AngleFinder.MAX_FLOATS_PER_OBJECT;
+        return ctx.spike.rawIndex > limit || ctx.trap.rawIndex > limit || ctx.spike.openIndex > limit || ctx.trap.openIndex > limit;
+    }
 
     private static resetCtx(ctx: FinderComputeContext) {
         ctx.trap.rawIndex = 0;
@@ -541,8 +555,11 @@ export default class AngleFinder {
             const gameObject = blockableObjects[i];
             if (!gameObject || !gameObject.active || gameObject.isGhost) continue;
 
-            if (ctx.spike.rawIndex >= AngleFinder.MAX_INTERVALS * 2 || ctx.trap.rawIndex >= AngleFinder.MAX_INTERVALS * 2) {
-                console.log("raw interval has gone beyond 30 (basic fix: should increase the buffer)");
+            if (this.isAnyBufferFull(ctx)) {
+                if (!this.warnedFull) {
+                    this.warnedFull = true;
+                    console.warn(`[Falcon] Angle finder buffers are full (${AngleFinder.MAX_INTERVALS} intervals); ignoring further objects.`);
+                }
                 break;
             }
 

@@ -153,11 +153,30 @@ Live results after the fixes (mock server values, not real sandbox numbers):
 | DPS great hammer, bot healing | 210 dmg, 21 hits | 220 dmg, 22 hits |
 | Version detected, menu header, spawn, chat commands, F8 panel, cleanup `\c a` | OK | OK |
 
+### Third pass: measured under load
+The mock server's `\stress [objects] [enemies]` command (default 300 and 4) surrounds you with enemy structures and
+circling enemies. Each step of a tick was timed temporarily over 20 s of play (about 210 ticks):
+
+| | Before | After |
+|---|---|---|
+| Whole tick, avg | 5.06 ms | 2.21 ms |
+| Enemy placement angles (`updatePlacementAngles`) | 2.41 ms | 0.33 ms |
+| "raw interval has gone beyond 30" console lines | ~17,000 per minute | 0 |
+
+**Cause:** the angle finder's interval buffers held 30 intervals. In a dense base most calls ran out, logged a line, and
+stopped reading objects, so blocked angles counted as free. That broke placements near bases, and the logging itself
+cost time. The buffers now hold 256 intervals (2 KB each), the capacity check leaves room for a full object and also
+covers the pre-place buffers, and a full buffer warns once instead of on every call.
+
+Still not verified: Auto Place doesn't place anything against the mock bot, with this build or the previous one, so
+placement behavior needs a check in the real sandbox.
+
 ### Testing offline yourself
 1. `npm run inject:build`
 2. `npm run mock --workspace=mod-source`
 3. Open `http://localhost:8780/?v=1.8.2` (or `?v=1.6.9`). Press **Multiplayer**, then **Join Server** *without* picking a server;
-   that connects to the local server. Then type `\b Target` in chat or use the Testing tab.
+   that connects to the local server. Then type `\b Target` in chat or use the Testing tab. `\stress` adds a heavy scene
+   for checking performance with the F8 panel.
 
 The test page sets `localStorage["falcon-dev-profile"] = "moomodding"`. That key only works on localhost pages, and makes
 Falcon use its moomodding.io settings there.
