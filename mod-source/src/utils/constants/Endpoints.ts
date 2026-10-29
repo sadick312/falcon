@@ -1,9 +1,12 @@
+import { detectVersion } from "@constants/GameVersion";
+
 /**
  * Single source of truth for every network endpoint Falcon talks to.
  *
  * Falcon runs on two sites. The profile is picked from location.hostname at startup:
  * - "moomoo-sandbox": sandbox.moomoo.io (v1.9.0). Captcha + /join ticket, mixKey-encrypted packets.
- * - "moomodding":     sandbox.moomodding.io (v1.8.2). Fixed token the site itself sends, plain msgpack.
+ * - "moomodding":     sandbox.moomodding.io (v1.8.2 and v1.6.9 clients, one v1.8.2 server). Fixed token
+ *                     the site itself sends, plain msgpack. The client version is detected from the page.
  *
  * To change a value without rebuilding, set the `falcon-endpoint-overrides` key in localStorage
  * to a JSON object with any of the EndpointConfig keys.
@@ -37,12 +40,8 @@ export interface EndpointConfig {
     staticToken: string;
 }
 
-/** Game client version the site runs. "1.8.2" packet layouts are converted by LegacyPacketAdapter. */
-export type GameVersion = "1.9.0" | "1.8.2";
-
 interface HostProfile {
     mode: HostMode;
-    gameVersion: GameVersion;
     /** Page hostnames this profile is used on. */
     pageHosts: string[];
     /** Overridden origins must be https on this domain or a subdomain of it. */
@@ -55,7 +54,6 @@ interface HostProfile {
 const PROFILES: Record<HostMode, HostProfile> = {
     "moomoo-sandbox": {
         mode: "moomoo-sandbox",
-        gameVersion: "1.9.0",
         pageHosts: ["sandbox.moomoo.io"],
         trustedDomain: "moomoo.io",
         handshake: "ticket",
@@ -74,7 +72,6 @@ const PROFILES: Record<HostMode, HostProfile> = {
     },
     moomodding: {
         mode: "moomodding",
-        gameVersion: "1.8.2",
         pageHosts: ["sandbox.moomodding.io"],
         trustedDomain: "moomodding.io",
         handshake: "static",
@@ -104,6 +101,13 @@ function detectProfile(): HostProfile {
 }
 
 const profile = detectProfile();
+const detected = detectVersion(profile.mode === "moomodding");
+
+console.log(
+    `[Falcon] Client version ${detected.reported} (from ${detected.source}), ` +
+    `using the v${detected.profile.version} profile, ${detected.profile.wire} wire protocol` +
+    (detected.verified ? "." : ". This version is not verified; report problems with it.")
+);
 
 const OVERRIDE_KEY = "falcon-endpoint-overrides";
 const ORIGIN_KEYS: (keyof EndpointConfig)[] = ["apiOrigin", "gameOrigin", "protocolUrl"];
@@ -157,7 +161,8 @@ export const HANDSHAKE_TIMEOUT_MS = 10_000;
 const Endpoints = {
     config,
     mode: profile.mode,
-    gameVersion: profile.gameVersion,
+    /** Client version profile; decides the packet layout conversion and which features are available. */
+    version: detected,
     handshake: profile.handshake,
     serverListFormat: profile.serverListFormat,
 

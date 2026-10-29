@@ -23,7 +23,8 @@ Below are the instructions to download a local copy of the client.
 
 After changing mod code, run steps 2 and 3 again and reload the extension.
 
-The extension runs on sandbox.moomoo.io (v1.9.0) and on moomodding.io game pages (sandbox.moomodding.io, v1.8.2).
+The extension runs on sandbox.moomoo.io (v1.9.0) and on moomodding.io game pages (sandbox.moomodding.io, v1.8.2 and v1.6.9).
+Falcon detects the client version on load and shows it in the menu header; see [docs/VERSION-SUPPORT.md](docs/VERSION-SUPPORT.md).
 On moomodding.io, open a game from the launcher (or go to `https://sandbox.moomodding.io/?server=1:1`) and Falcon replaces it.
 
 ### Quick Inject build (moomodding.io, no extension)

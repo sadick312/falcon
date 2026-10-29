@@ -3,6 +3,7 @@ import { deathText } from "@core/Client";
 import GameEventTracker from "@core/mod/utils/GameEventTracker";
 import CustomEncoder from "@core/socket/CustomEncoder";
 import LegacyPacketAdapter from "@core/socket/LegacyPacketAdapter";
+import NativeWebSocket from "@core/socket/NativeWebSocket";
 import PlayerUpdateEvent from "@core/socket/events/core/PlayerUpdateEvent";
 import SocketListener from "@core/socket/SocketListener";
 import { MooMooProtocol } from "@core/utils/CaptchaManager";
@@ -33,7 +34,7 @@ export const respawnMainCard = getElem("respawn-page-main-card");
 
 export type MixKeyFunc = (key: Uint8Array, offset: number) => Uint8Array;
 
-export default class Socket extends WebSocket {
+export default class Socket extends NativeWebSocket {
     private handlers: {
         [K in EventKey]?: EventCallback<K>
     } = {};
@@ -45,8 +46,8 @@ export default class Socket extends WebSocket {
     isPrivateServer = false;
     /** Send plain msgpack instead of signed, encrypted packets. */
     private plainPackets = false;
-    /** Rewrites v1.8.2 packet layouts into the v1.9.0 ones the handlers expect. */
-    private legacyAdapter = Endpoints.gameVersion === "1.8.2" ? new LegacyPacketAdapter() : null;
+    /** Rewrites v1.8.2 packet layouts into the v1.9.0 ones the handlers expect (every moomodding.io client version). */
+    private legacyAdapter = Endpoints.version.profile.wire === "v1.8.2" ? new LegacyPacketAdapter() : null;
 
     private hasOpened = false;
     private handshakeDone = false;
@@ -254,7 +255,7 @@ export default class Socket extends WebSocket {
     sendMsg: SendMsgSignature = (type: any, arg1?: any, arg2?: any, arg3?: any) => {
         this.populateBuffer(arg1, arg2, arg3);
 
-        if (this.readyState !== WebSocket.OPEN) return;
+        if (this.readyState !== NativeWebSocket.OPEN) return;
         if (!this.manager.manage(type, this.DATA_BUFFER)) return;
 
         const artificialPing = Menu.getValue("artificialPing");

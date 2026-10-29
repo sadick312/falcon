@@ -1,3 +1,4 @@
+import Endpoints from "@constants/Endpoints";
 import drawNumberInput from "@menu/utils/drawNumberInput";
 import getElem from "@utils/dom/getElem";
 import "./menu.css";
@@ -1124,6 +1125,8 @@ export default class Menu {
     }
 
     static setValue(id: string, val: boolean) {
+        if (this.itemMap[id].disabled && val) return;
+
         if (typeof this.itemMap[id].status === "boolean") {
             this.itemMap[id].status = val;
             if (typeof this.itemMap[id].update === "function") this.itemMap[id].update();
@@ -1143,7 +1146,22 @@ export default class Menu {
             }
         }
 
+        this.applyVersionSupport();
         return true;
+    }
+
+    /** Switches off and locks the features the detected client version can't run, with the reason as their description. */
+    static applyVersionSupport() {
+        const { profile } = Endpoints.version;
+
+        for (const [id, reason] of Object.entries(profile.unsupportedFeatures)) {
+            const item = this.itemMap[id];
+            if (!item) continue;
+
+            if (typeof item.status === "boolean") item.status = false;
+            item.disabled = true;
+            item.description = `Not available on v${profile.version}: ${reason}`;
+        }
     }
 
     static loadFavorites() {
@@ -1222,8 +1240,14 @@ export default class Menu {
             <div style="pointer-events: none; margin-left: 3px;">
                 <div style="font-size: 34px; color: var(--generic-white);">FALCON</div>
                 <div style="color: var(--theme-primary); margin-top: -12px;">v1.0.0-pub</div>
+                <div id="menuClientVersion" style="color: var(--generic-white-2); font-size: 12px;"></div>
             </div>
         `;
+
+        const { reported, profile, verified } = Endpoints.version;
+        getElem("menuClientVersion").textContent = verified
+            ? `Game client v${reported}`
+            : `Game client v${reported} (unverified, using v${profile.version} rules)`;
 
         const closeMenuButton = document.createElement("div");
         closeMenuButton.id = "closeMenuButton";
