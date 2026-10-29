@@ -6,7 +6,8 @@ import Angle from "@core/mod/combat/placing/Angle";
 import { FinderOptions } from "@core/mod/combat/placing/AngleFinder";
 import ModManager from "@core/ModManager";
 import PacketTracker from "@core/utils/PacketTracker";
-import Placer, { PlacementTypes } from "@placing/utils/Placer";
+import Placer from "@placing/utils/Placer";
+import { PlacementTypes } from "@placing/utils/PlacementTypes";
 
 export class Replacement {
     x: number = -1000000;

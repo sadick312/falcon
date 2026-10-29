@@ -7,6 +7,7 @@ import AngleFinder, { FinderOptions } from "@core/mod/combat/placing/AngleFinder
 import { Preplacement } from "@core/mod/combat/placing/modules/AutoPlacer";
 import ModManager from "@core/ModManager";
 import { Replacement } from "@placing/modules/AutoReplacer";
+import { PlacementType, PlacementTypes } from "@placing/utils/PlacementTypes";
 import PlacerUtils from "@placing/utils/PlacerUtils";
 import getDistSq from "@utils/geometry/getDistSq";
 import withinDist from "@utils/geometry/withinDist";
@@ -18,15 +19,6 @@ interface RawPlacement {
     scale: number;
 }
 
-export const PlacementTypes = {
-    NORMAL: 1,
-    REPLACE: 2,
-    PREPLACE: 3,
-    RESERVED: 4,
-    PREDICTIVE: 5
-} as const;
-
-export type PlacementType = typeof PlacementTypes[keyof typeof PlacementTypes];
 
 export default abstract class Placer {
     protected shouldSkip(item: RawPlacement) {

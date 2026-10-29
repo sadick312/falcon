@@ -7,7 +7,8 @@ import PlayerUpdateEvent from "@core/socket/events/core/PlayerUpdateEvent";
 import PacketTracker from "@core/utils/PacketTracker";
 import Menu from "@menu/Menu";
 import Angle from "@placing/Angle";
-import Placer, { PlacementTypes } from "@placing/utils/Placer";
+import Placer from "@placing/utils/Placer";
+import { PlacementTypes } from "@placing/utils/PlacementTypes";
 import ScriptConfig from "@utils/config/ScriptConfig";
 
 export interface PreplacementQueue {

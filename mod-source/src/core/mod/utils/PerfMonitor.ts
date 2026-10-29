@@ -54,6 +54,10 @@ class RingBuffer {
     clear() {
         this.index = this.count = 0;
     }
+
+    get samples() {
+        return this.count;
+    }
 }
 
 export interface SectionTiming {
@@ -68,6 +72,8 @@ export interface PerfSnapshot {
     tickMaxMs: number;
     frameAvgMs: number;
     frameMaxMs: number;
+    /** Frames recorded in the window; 0 when the tab was hidden and the browser drew nothing. */
+    frameSamples: number;
     nearbyObjects: number;
     /** Tick sections, slowest first. */
     sections: SectionTiming[];
@@ -132,6 +138,7 @@ export default class PerfMonitor {
             tickMaxMs: this.tickTimes.max(),
             frameAvgMs: this.frameTimes.average(),
             frameMaxMs: this.frameTimes.max(),
+            frameSamples: this.frameTimes.samples,
             nearbyObjects,
             sections: this.sectionTimes
                 .map((times, i) => ({ name: TICK_SECTION_NAMES[i], avgMs: times.average() }))

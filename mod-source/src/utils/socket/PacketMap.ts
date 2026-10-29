@@ -1,5 +1,5 @@
 import PlayerInitType from "@constants/PlayerInitType";
-import { PlacementType } from "@placing/utils/Placer";
+import { PlacementType } from "@placing/utils/PlacementTypes";
 import { AllianceDataType } from "../types";
 
 const PacketMap = {

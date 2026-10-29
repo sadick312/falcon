@@ -6,6 +6,7 @@ import AttackQueuePool, { AttackAction } from "@core/mod/combat/core/AttackQueue
 import HatSystem from "@core/mod/defense/defense-modules/HatSystem";
 import AutoBreaker from "@core/mod/defense/modules/AutoBreaker";
 import ObjectBreaker from "@core/mod/defense/modules/ObjectBreaker";
+import TestMode from "@core/mod/testing/TestMode";
 import ModManager from "@core/ModManager";
 import Menu from "@menu/Menu";
 import AutoGrinder from "@placing/modules/AutoGrinder";
@@ -130,6 +131,13 @@ export default class CombatController {
             this.currentMode = "none";
             this.skinIndex = STORE_HAT_MAP.IGNORE;
             this.tailIndex = STORE_ACCESSORY_MAP.IGNORE;
+
+            // Test Mode measures one weapon at a time; nothing else may switch it during that run.
+            if (TestMode.forcedWeapon !== null) {
+                this.selectWeapon(TestMode.forcedWeapon, true);
+                activityList.push("testMode");
+                return;
+            }
 
             if (this.manageHitAction(AttackManager.currentAttackAction)) return;
 

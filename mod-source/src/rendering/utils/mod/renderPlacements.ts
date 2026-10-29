@@ -1,5 +1,5 @@
 import items from "@constants/items";
-import { PlacementTypes } from "@placing/utils/Placer";
+import { PlacementTypes } from "@placing/utils/PlacementTypes";
 import Client from "../../../core/Client";
 import Menu from "../../../core/menu/Menu";
 import CameraManager from "../../core/CameraManager";

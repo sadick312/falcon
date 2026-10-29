@@ -12,7 +12,7 @@ import AutoGrinder from "@placing/modules/AutoGrinder";
 import AutoMiller from "@placing/modules/AutoMiller";
 import AutoPlacer, { Preplacement } from "@placing/modules/AutoPlacer";
 import AutoReplacer, { Replacement } from "@placing/modules/AutoReplacer";
-import { PlacementType, PlacementTypes } from "@placing/utils/Placer";
+import { PlacementType, PlacementTypes } from "@placing/utils/PlacementTypes";
 import PlacerUtils from "@placing/utils/PlacerUtils";
 import PacketMap from "@root/utils/socket/PacketMap";
 import { Input } from "@ui/Hook";

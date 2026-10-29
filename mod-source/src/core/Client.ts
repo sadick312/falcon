@@ -9,7 +9,7 @@ import SocketListener from "@core/socket/SocketListener";
 import CaptchaManager from "@core/utils/CaptchaManager";
 import PacketTracker from "@core/utils/PacketTracker";
 import { AllianceDataType, AllianceNotifi, Point } from "@mod-types/index";
-import { PlacementType } from "@placing/utils/Placer";
+import { PlacementType } from "@placing/utils/PlacementTypes";
 import TaskScheduler from "@services/event-timer/TaskScheduler";
 import { resetScreenSize } from "@ui/Hook";
 import { loadingCirclePage, mainMenu, respawnPage } from "@ui/Loader";

@@ -128,7 +128,41 @@ tested for *your* side with the two weapons you own. Upgrade to other weapons an
 
 All delays and lists (bot name, command gap, durations, hats, tiers, loadouts) are in `TEST_CONFIG` at the top of `TestMode.ts`.
 
-## 6. Feature ideas
+## 6. Play-test results (real build, local server)
+
+The real Quick Inject build was played in the browser against `mod-source/test/mock-server.mjs`, a local server that speaks
+moomodding.io's v1.8.2 packets and runs a practice bot for the `\b`, `\c` and `\v` commands. It found and fixed:
+
+1. **Falcon didn't start at all** ("Class extends value undefined"). The Test Mode commit changed the order modules load in,
+   so `AutoPlacer` loaded before the `Placer` class it extends. Fixed by moving the `PlacementTypes` constants into
+   `placing/utils/PlacementTypes.ts`, a file with no imports, so nothing has to import `Placer.ts` just for constants.
+   Every build since `6da0810` had this bug; earlier ones didn't.
+2. **Test Mode measured the wrong weapon.** Falcon's own logic picks the great hammer (with polearm + hammer, "select best weapon"),
+   and a left click on the canvas turns on hammer spam. Test Mode now locks the weapon under test while it attacks, and pauses
+   hammer spam for the run, restoring it afterwards.
+3. **DPS read about 4× too low when the bot heals.** Damage was sampled once per tick, so a hit and a heal in the same tick
+   cancelled out. Damage is now counted from every health packet.
+4. **"frame 0.00 ms" when no frames were drawn** (hidden tab). The Performance test now says no frames were drawn.
+
+Live results after the fixes (mock server values, not real sandbox numbers):
+
+| Test | v1.8.2 | v1.6.9 |
+|---|---|---|
+| Time to kill, polearm, bot hat 0 / Soldier | 3 hits / 3 hits | 3 hits / 3 hits |
+| Time to kill, great hammer, bot hat 0 / Soldier | 10 hits / 14 hits | 10 hits / 14 hits |
+| DPS great hammer, bot healing | 210 dmg, 21 hits | 220 dmg, 22 hits |
+| Version detected, menu header, spawn, chat commands, F8 panel, cleanup `\c a` | OK | OK |
+
+### Testing offline yourself
+1. `npm run inject:build`
+2. `npm run mock --workspace=mod-source`
+3. Open `http://localhost:8780/?v=1.8.2` (or `?v=1.6.9`). Press **Multiplayer**, then **Join Server** *without* picking a server;
+   that connects to the local server. Then type `\b Target` in chat or use the Testing tab.
+
+The test page sets `localStorage["falcon-dev-profile"] = "moomodding"`. That key only works on localhost pages, and makes
+Falcon use its moomodding.io settings there.
+
+## 7. Feature ideas
 
 1. **Performance panel**: added.
 2. **Test Mode**: added.

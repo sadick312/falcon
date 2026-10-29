@@ -108,6 +108,12 @@ export default class TestMode {
     /** Aim override read by ModManager.getAttackDir; null when Test Mode isn't attacking. */
     static aim: number | null = null;
 
+    /**
+     * Weapon held while a weapon test attacks; CombatController keeps it instead of picking its own
+     * (left-click hammer spam, "select best weapon", reload swaps). null when no test owns the weapon.
+     */
+    static forcedWeapon: number | null = null;
+
     private static stopRequested = false;
     private static attacking = false;
     private static lastCommandAt = 0;
@@ -170,15 +176,6 @@ export default class TestMode {
                 this.botSid = bot.sid;
                 this.lastBotHealth = bot.health;
             }
-
-            if (this.attacking && bot.health < this.lastBotHealth) {
-                this.damage += this.lastBotHealth - bot.health;
-                this.hits++;
-                if (!this.firstDamageAt) this.firstDamageAt = performance.now();
-            }
-
-            if (this.attacking && bot.health <= 0 && !this.botDiedAt) this.botDiedAt = performance.now();
-            this.lastBotHealth = bot.health;
         } else if (this.attacking && this.firstDamageAt && !this.botDiedAt) {
             // A bot that took damage and vanished died.
             this.botDiedAt = performance.now();
@@ -190,6 +187,23 @@ export default class TestMode {
         } else {
             this.aim = null;
         }
+    }
+
+    /**
+     * Called for every UPDATE_HEALTH packet, before Falcon applies it. Damage is counted per packet: sampling the
+     * bot's health once per tick lost every hit that landed in the same tick as a heal.
+     */
+    static onHealthPacket(sid: number, health: number) {
+        if (!this.running || sid !== this.botSid) return;
+
+        const previous = this.lastBotHealth;
+        this.lastBotHealth = health;
+        if (!this.attacking || health >= previous) return;
+
+        this.damage += previous - health;
+        this.hits++;
+        if (!this.firstDamageAt) this.firstDamageAt = performance.now();
+        if (health <= 0 && !this.botDiedAt) this.botDiedAt = performance.now();
     }
 
     // ── Public controls ──
@@ -286,6 +300,8 @@ export default class TestMode {
 
     private static async execute(runs: TestRun[]) {
         let completed = false;
+        const tankSpam = CombatController.tankSpam;
+        CombatController.tankSpam = false;
 
         try {
             for (const run of runs) {
@@ -310,6 +326,7 @@ export default class TestMode {
             }
         } finally {
             await this.cleanUp();
+            CombatController.tankSpam = tankSpam;
             // Only full runs replace a version's saved results, so a stopped run can't wipe a good one.
             if (completed) this.saveRun();
             this.running = false;
@@ -321,6 +338,7 @@ export default class TestMode {
     private static async cleanUp() {
         this.attacking = false;
         this.aim = null;
+        this.forcedWeapon = null;
         this.stopRequested = false;
 
         try {
@@ -371,6 +389,7 @@ export default class TestMode {
         this.attacking = true;
         await this.sleep(TEST_CONFIG.dpsDurationMs);
         this.attacking = false;
+        this.forcedWeapon = null;
 
         const seconds = TEST_CONFIG.dpsDurationMs / 1000;
         const died = this.botDiedAt ? " (bot died, so this is a lower bound)" : "";
@@ -386,6 +405,7 @@ export default class TestMode {
         this.attacking = true;
         await this.waitFor(() => this.botDiedAt > 0, TEST_CONFIG.killTimeoutMs);
         this.attacking = false;
+        this.forcedWeapon = null;
 
         const setup = `${this.weaponName(slot)}, bot hat ${botHat}${setupExtra}`;
         if (!this.botDiedAt) {
@@ -475,6 +495,7 @@ export default class TestMode {
 
     private static perfText(s: ReturnType<typeof PerfMonitor.snapshot>) {
         const slowest = s.sections[0];
+        if (!s.frameSamples) return `no frames drawn (game tab hidden?), tick ${s.tickAvgMs.toFixed(2)} ms avg / ${s.tickMaxMs.toFixed(2)} max, ping ${s.ping} ms`;
         return `${s.fps} FPS, tick ${s.tickAvgMs.toFixed(2)} ms avg / ${s.tickMaxMs.toFixed(2)} max, frame ${s.frameAvgMs.toFixed(2)} ms, ping ${s.ping} ms` +
             (slowest ? `, slowest part: ${slowest.name} ${slowest.avgMs.toFixed(2)} ms` : "");
     }
@@ -559,7 +580,9 @@ export default class TestMode {
 
     private static selectSlot(slot: number) {
         const id = Client.player.weapons[slot];
-        if (typeof id === "number") CombatController.selectWeapon(id);
+        if (typeof id !== "number") return;
+        CombatController.selectWeapon(id);
+        this.forcedWeapon = id;
     }
 
     private static resetDamage() {

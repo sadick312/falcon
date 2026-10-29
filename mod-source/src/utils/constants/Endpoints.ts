@@ -91,8 +91,19 @@ const PROFILES: Record<HostMode, HostProfile> = {
     }
 };
 
+/** localStorage key that picks a profile on a localhost page, e.g. "moomodding" to test against a local moomodding server. */
+const DEV_PROFILE_KEY = "falcon-dev-profile";
+
 function detectProfile(): HostProfile {
     const host = location.hostname;
+
+    if (host === "localhost" || host === "127.0.0.1") {
+        try {
+            const dev = localStorage.getItem(DEV_PROFILE_KEY) as HostMode | null;
+            if (dev && PROFILES[dev]) return PROFILES[dev];
+        } catch { /* storage unavailable */ }
+    }
+
     for (const profile of Object.values(PROFILES)) {
         if (profile.pageHosts.includes(host)) return profile;
     }

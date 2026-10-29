@@ -23,6 +23,7 @@ import LoadAiEvent from "@core/socket/events/core/LoadAiEvent";
 import PlayerUpdateEvent from "@core/socket/events/core/PlayerUpdateEvent";
 import StoreItemsUpdateEvent from "@core/socket/events/core/StoreItemsUpdateEvent";
 import FakeSocket from "@core/socket/FakeSocket";
+import TestMode from "@core/mod/testing/TestMode";
 import Socket, { respawnMainCard } from "@core/socket/Socket";
 import PacketBatcher from "@core/utils/PacketBatcher";
 import Menu, { ChatLog } from "@menu/Menu";
@@ -143,7 +144,10 @@ export default class SocketListener {
         this.socket.on(PacketMap.SERVER_TO_CLIENT.GATHER_ANIMATION, (sid, didHit, index) => gatherAnimationEvent.run(sid, didHit, index));
 
         const healthUpdateEvent = new HealthUpdateEvent(this.socket);
-        this.socket.on(PacketMap.SERVER_TO_CLIENT.UPDATE_HEALTH, (sid, health) => healthUpdateEvent.run(sid, health));
+        this.socket.on(PacketMap.SERVER_TO_CLIENT.UPDATE_HEALTH, (sid, health) => {
+            TestMode.onHealthPacket(sid, health);
+            healthUpdateEvent.run(sid, health);
+        });
 
         const storeItemsUpdateEvent = new StoreItemsUpdateEvent(this.socket);
         this.socket.on(PacketMap.SERVER_TO_CLIENT.UPDATE_STORE_ITEMS, (type, id, index) => storeItemsUpdateEvent.run(type, id, index));
