@@ -1,5 +1,6 @@
 import Client, { pingDisplay } from "@core/Client";
 import PacketReplayer, { pauseIcon } from "@core/PacketReplayer";
+import PerfMonitor from "@core/mod/utils/PerfMonitor";
 import PacketBatcher from "@core/utils/PacketBatcher";
 import Menu from "@menu/Menu";
 import CameraManager from "@rendering/core/CameraManager";
@@ -88,6 +89,7 @@ export default class RendererSystem {
     }
 
     static renderGame() {
+        const frameStart = performance.now();
         const now = Date.now();
         let delta = Client.mode === "replay" && PacketReplayer.isPaused ? 0 : now - this.lastUpdate;
 
@@ -184,6 +186,7 @@ export default class RendererSystem {
                 if (pauseMaterialIcon) pauseMaterialIcon.innerHTML = "play_arrow";
             }
 
+            PerfMonitor.recordFrame(performance.now() - frameStart, this.fps);
             requestAnimationFrame(() => this.renderGame());
         }
     }

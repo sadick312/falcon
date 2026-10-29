@@ -11,6 +11,7 @@ import drawMenuSelect from "./utils/drawMenuSelect";
 import drawMenuSlider from "./utils/drawMenuSlider";
 import drawMenuToggle from "./utils/drawMenuToggle";
 import drawSavedConfigs from "./utils/drawSavedConfigs";
+import drawTestMode from "./utils/drawTestMode";
 
 interface IMenuTab {
     label: string;
@@ -26,7 +27,7 @@ export interface IMenuItem {
     label: string;
     description?: string;
     id: string;
-    type: "toggle" | "select" | "number" | "slider" | "paragraph" | "group" | "chat-log" | "saved-configs" | "config-ui";
+    type: "toggle" | "select" | "number" | "slider" | "paragraph" | "group" | "chat-log" | "saved-configs" | "config-ui" | "test-mode";
     settings?: IMenuItem[];
     icon?: string;
     options?: IMenuOptions[];
@@ -51,6 +52,7 @@ interface IMenuContent {
     console: IMenuItem[];
     configs: IMenuItem[];
     experimentals: IMenuItem[];
+    testing: IMenuItem[];
     credits: IMenuItem[];
 }
 
@@ -194,6 +196,9 @@ const menuTabs: IMenuTab[] = [{
         </g>
     </svg>
     `
+}, {
+    label: "Testing",
+    icon: GEAR_ICON
 }, {
     label: "Credits",
     icon: `
@@ -957,6 +962,13 @@ export const menuContent: IMenuContent = {
             status: true,
             type: "toggle"
         }, {
+            label: "Performance Panel",
+            id: "perfPanel",
+            description: "Shows FPS, ping, ms per tick and ms per frame in the top right. Toggle with F8.",
+            icon: PACKAGE_ICON,
+            status: false,
+            type: "toggle"
+        }, {
             label: "Show Activity",
             id: "showActivity",
             description: "Displays a live list of active modules and behaviors.",
@@ -1090,6 +1102,11 @@ export const menuContent: IMenuContent = {
         type: "toggle",
         neverSave: true,
         status: false
+    }],
+    testing: [{
+        label: "",
+        id: "",
+        type: "test-mode"
     }],
     credits: [{
         label: "",
@@ -1411,6 +1428,7 @@ export default class Menu {
                 else if (item.type === "chat-log") drawChatLog();
                 else if (item.type === "config-ui") drawConfigUI();
                 else if (item.type === "saved-configs") drawSavedConfigs();
+                else if (item.type === "test-mode") drawTestMode();
             }
         } else {
             const noItemsElem = document.createElement("div");

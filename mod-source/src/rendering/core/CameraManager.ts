@@ -55,6 +55,9 @@ export default class CameraManager {
         for (let i = 0; i < totalLen; i++) {
             const entity = players[i] || ais.all[i - playersLen];
 
+            // Hidden AIs are snapped back into place (forcePos) when they reappear, so skip them here.
+            if (!entity.isPlayer && !entity.visible) continue;
+
             if (entity.forcePos) {
                 entity.render_position.x = entity.real_position.x;
                 entity.render_position.y = entity.real_position.y;

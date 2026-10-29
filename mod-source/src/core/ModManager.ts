@@ -24,6 +24,8 @@ import ObjectBreaker from "@core/mod/defense/modules/ObjectBreaker";
 import TurretManager from "@core/mod/defense/modules/TurretManager";
 import BreakerUtils from "@core/mod/defense/utils/BreakerUtils";
 import GameEventTracker from "@core/mod/utils/GameEventTracker";
+import TestMode from "@core/mod/testing/TestMode";
+import PerfMonitor from "@core/mod/utils/PerfMonitor";
 import PingTracker from "@core/mod/utils/PingTracker";
 import PacketBatcher from "@core/utils/PacketBatcher";
 import PacketTracker from "@core/utils/PacketTracker";
@@ -142,6 +144,8 @@ export default class ModManager {
             const nearestEnemy = this.enemyData.nearest;
             const trapAim = nearestEnemy && nearestEnemy.trap ? getDir(nearestEnemy.trap, player.real_position) : 0;
             return typeof action.customAim !== "undefined" ? action.customAim : type === "nearest" ? this.enemyData.angle : trapAim;
+        } else if (TestMode.aim !== null) {
+            return TestMode.aim;
         } else if (CombatController.currentMode === "autobreak" || CombatController.currentMode === "autobreakspike") {
             return AutoBreaker.aimAngle;
         } else if (CombatController.currentMode === "object breaking" || CombatController.currentMode === "pit object breaking") {
@@ -163,11 +167,53 @@ export default class ModManager {
         }
     }
 
+    /** Per-player weapon numbers for updateObjects, refilled once per tick (indexed like the visible player list). */
+    private static objectHitCache = {
+        primaryRange: [] as number[],
+        secondaryRange: [] as number[],
+        primaryDamage: [] as number[],
+        secondaryDamage: [] as number[]
+    };
+
+    /**
+     * Fills objectHitCache. Weapon data and object damage depend only on the player, so they are computed
+     * once per player here instead of once per (object, player) pair inside the object loop.
+     */
+    private static cachePlayerObjectDamage(players: Player[]) {
+        const cache = this.objectHitCache;
+
+        for (let j = 0; j < players.length; j++) {
+            const player = players[j];
+            const primary = PlayerCombatManager.fetch(player, 0);
+            const primaryWpn = items.weapons[primary.id];
+            const primaryReady = primary.reload + ScriptConfig.SERVER_UPDATE_SPEED / primaryWpn.speed >= 1;
+
+            // fetch() hands out buffers from a ring, so read everything out before the next call.
+            const secondary = PlayerCombatManager.fetch(player, 1);
+            const secondaryWpn = items.weapons[secondary.id];
+            const secondaryReady = secondary.reload + ScriptConfig.SERVER_UPDATE_SPEED / secondaryWpn.speed >= 1;
+            const isGreatHammer = secondary.id === WEAPON_ID_MAP.GREAT_HAMMER;
+
+            cache.primaryRange[j] = primaryWpn.range;
+            cache.secondaryRange[j] = secondaryWpn.range;
+            cache.primaryDamage[j] = primaryReady ? BreakerUtils.getObjectDamage(player, 0) : 0;
+            cache.secondaryDamage[j] = isGreatHammer && secondaryReady ? BreakerUtils.getObjectDamage(player, 1) : 0;
+        }
+    }
+
     private static updateObjects() {
         const onRenderObjects = PotentialObjectManager.onRenderObjects;
         const closeObjects = ObjectManager.pool.closeObjects;
         const players = PlayerManager.players.visible.all;
+        const cache = this.objectHitCache;
         this.willBreakObjects.length = 0;
+
+        this.cachePlayerObjectDamage(players);
+
+        // My aim doesn't change inside this loop; read it once.
+        const myPosition = Client.player.real_position;
+        const aimDir = this.getAttackDir(true);
+        const mouseDir = Input.getAttackDir();
 
         const closeObjectsLength = closeObjects.length;
         const totalLength = closeObjectsLength + onRenderObjects.length;
@@ -186,37 +232,18 @@ export default class ModManager {
                     if (Client.isFriendly(gameObject.ownerSID ?? -1)) continue;
                     if (!Client.isTeam(player, gameObject.ownerSID ?? -1)) continue;
                 } else if (player.sid === Client.mySID) {
-                    const aimDir = this.getAttackDir(true);
-                    const mouseDir = Input.getAttackDir();
-                    const tmpDir = getDir(gameObject, player.real_position);
+                    const tmpDir = getDir(gameObject, myPosition);
 
                     const withinPrevIntentArc = typeof aimDir === "number" && getAngleDist(aimDir, tmpDir) <= ScriptConfig.GATHER_ANGLE;
                     const withinCurrentMouseArc = getAngleDist(mouseDir, tmpDir) <= ScriptConfig.GATHER_ANGLE;
                     if (!withinPrevIntentArc && !withinCurrentMouseArc) continue;
                 }
 
-                const primary = PlayerCombatManager.fetch(player, 0);
-                const secondary = PlayerCombatManager.fetch(player, 1);
+                const canPrimaryHit = BreakerUtils.getObjectAttackDistance(player, gameObject, cache.primaryRange[j]);
+                const canSecondaryHit = BreakerUtils.getObjectAttackDistance(player, gameObject, cache.secondaryRange[j]);
 
-                const primaryWpn = items.weapons[primary.id];
-                const secondaryWpn = items.weapons[secondary.id];
-
-                const primaryReloadPerTick = ScriptConfig.SERVER_UPDATE_SPEED / primaryWpn.speed;
-                const secondaryReloadPerTick = ScriptConfig.SERVER_UPDATE_SPEED / secondaryWpn.speed;
-
-                const primaryWillBeReloaded = primary.reload + primaryReloadPerTick >= 1;
-                const secondaryWillBeReloaded = secondary.reload + secondaryReloadPerTick >= 1;
-
-                const canPrimaryHit = BreakerUtils.getObjectAttackDistance(player, gameObject, primaryWpn.range);
-                const canSecondaryHit = BreakerUtils.getObjectAttackDistance(player, gameObject, secondaryWpn.range);
-                const isGreatHammer = secondary.id === WEAPON_ID_MAP.GREAT_HAMMER;
-
-                const primaryDamage = canPrimaryHit && primaryWillBeReloaded ?
-                    BreakerUtils.getObjectDamage(player, 0) : 0;
-
-                const secondaryDamage = canSecondaryHit && isGreatHammer && secondaryWillBeReloaded ?
-                    BreakerUtils.getObjectDamage(player, 1) : 0;
-
+                const primaryDamage = canPrimaryHit ? cache.primaryDamage[j] : 0;
+                const secondaryDamage = canSecondaryHit ? cache.secondaryDamage[j] : 0;
                 const weaponDamage = Math.max(primaryDamage, secondaryDamage);
 
                 if (Client.mySID === player.sid) gameObject.isBreaking = true;
@@ -349,15 +376,19 @@ export default class ModManager {
         attackState.confirm = false;
     }
 
+    private static lastActivityHTML = "";
+
+    /** Rewrites the activity list only when its text changed (it was cleared and rebuilt with += every tick). */
     private static updateBrainUI() {
-        activityListDisplay.innerHTML = "";
+        let html = "";
 
-        if (!Menu.getValue("showActivity"))
-            return;
-
-        for (let i = 0; i < this.activityList.length; i++) {
-            activityListDisplay.innerHTML += `<span>${this.activityList[i]}</span>`;
+        if (Menu.getValue("showActivity")) {
+            for (let i = 0; i < this.activityList.length; i++) html += `<span>${this.activityList[i]}</span>`;
         }
+
+        if (html === this.lastActivityHTML) return;
+        this.lastActivityHTML = html;
+        activityListDisplay.innerHTML = html;
     }
 
     private static postTick() {
@@ -451,6 +482,7 @@ export default class ModManager {
         AutoPusher.main();
         AttackManager.main();
         CombatController.main();
+        TestMode.onTick();
 
         if (this.lastWeaponIndex === Client.weaponIndex) PacketTracker.free("WEAPON_SELECT", "ALL");
         this.lastWeaponIndex = Client.weaponIndex;
@@ -473,5 +505,6 @@ export default class ModManager {
         PacketTracker.allocate();
         GameEventTracker.clean();
         this.brainState.modBrainRuntime = performance.now() - startTime;
+        PerfMonitor.recordTick(this.brainState.modBrainRuntime);
     }
 }

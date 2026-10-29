@@ -1,4 +1,4 @@
-import { ais } from "@constants/Ai";
+import Ai, { ais } from "@constants/Ai";
 import GameObject from "@constants/GameObject";
 import Player from "@constants/Player";
 import { STORE_HAT_MAP } from "@constants/store";
@@ -12,7 +12,47 @@ import getDistSq from "@utils/geometry/getDistSq";
 export default class TurretManager {
     private static readonly TURRET_RANGE_SQ = 700 * 700;
 
-    private static updatePlayer(player: Player, turret: GameObject) {
+    /**
+     * The entity this turret would aim at: the closest visible AI and the closest visible enemy player
+     * (no EMP Helmet), compared the same way as before. Computed once per shot instead of once per player,
+     * and without sorting ais.all in place (that list keeps per-entity indexes for O(1) removal).
+     */
+    private static findTarget(turret: GameObject): Player | Ai | undefined {
+        let closestAI: Ai | undefined;
+        let closestAiDistance = Infinity;
+        const allAis = ais.all;
+
+        for (let i = 0; i < allAis.length; i++) {
+            const ai = allAis[i];
+            if (!ai.visible) continue;
+
+            const dist = getDistSq(ai.real_position, turret);
+            if (dist < closestAiDistance) {
+                closestAiDistance = dist;
+                closestAI = ai;
+            }
+        }
+
+        let closestEnemy: Player | undefined;
+        let closestEnemyDistance = Infinity;
+        const players = PlayerManager.players.visible.all;
+
+        for (let i = 0; i < players.length; i++) {
+            const other = players[i];
+            if (Client.isTeam(other, turret.ownerSID ?? -1) || other.skinIndex === STORE_HAT_MAP.EMP_HELMET) continue;
+
+            const dist = getDistSq(other.real_position, turret);
+            if (dist < closestEnemyDistance) {
+                closestEnemyDistance = dist;
+                closestEnemy = other;
+            }
+        }
+
+        if (!isFinite(closestEnemyDistance) && !isFinite(closestAiDistance)) return undefined;
+        return !isFinite(closestAiDistance) ? closestEnemy : closestEnemyDistance >= closestAiDistance ? closestEnemy : closestAI;
+    }
+
+    private static updatePlayer(player: Player, turret: GameObject, target: Player | Ai | undefined) {
         if (getDistSq(player.real_position, turret) > this.TURRET_RANGE_SQ) return;
 
         if (player.sid === Client.mySID) {
@@ -23,18 +63,7 @@ export default class TurretManager {
             return;
         }
 
-        const closestAI = ais.all.sort((a, b) => getDistSq(a.real_position, turret) - getDistSq(b.real_position, turret))[0];
-        const closestEnemy = PlayerManager.players.visible.all
-            .filter((e) => !Client.isTeam(e, turret.ownerSID ?? -1) && e.skinIndex !== STORE_HAT_MAP.EMP_HELMET)
-            .sort((a, b) => getDistSq(a.real_position, turret) - getDistSq(b.real_position, turret))[0];
-
-        const closestEnemyDistance = closestEnemy ? getDistSq(closestEnemy.real_position, turret) : Infinity;
-        const closestAiDistance = closestAI ? getDistSq(closestAI.real_position, turret) : Infinity;
-        const closest = !isFinite(closestAiDistance) ? closestEnemy : closestEnemyDistance >= closestAiDistance ? closestEnemy : closestAI;
-
-        if (!isFinite(closestEnemyDistance) && !isFinite(closestAiDistance)) return;
-        if (!closest) return;
-        if (closest !== player) return;
+        if (!target || target !== player) return;
 
         const range = 1.5 * ScriptConfig.SERVER_UPDATE_SPEED;
         const rangeSq = range * range;
@@ -56,9 +85,10 @@ export default class TurretManager {
             if (gameObject.reload < 20) continue;
             gameObject.reload = 0;
 
-            this.updatePlayer(player, gameObject);
+            const target = nearby.length ? this.findTarget(gameObject) : undefined;
+            this.updatePlayer(player, gameObject, target);
             for (let j = 0; j < nearby.length; j++) {
-                this.updatePlayer(nearby[j], gameObject);
+                this.updatePlayer(nearby[j], gameObject, target);
             }
         }
     }

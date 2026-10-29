@@ -25,6 +25,10 @@ export default class DefenseUtils {
 
         for (let i = 0, len = playersLength + ais.all.length; i < len; i++) {
             const entity = playersVisible[i] || ais.all[i - playersLength];
+
+            // ais.all keeps every AI ever seen; one out of view sits at a stale position and must not block shots.
+            if (!entity.isPlayer && !entity.visible) continue;
+
             const isInvalidPlayer = entity.isPlayer && (
                 entity.sid === enemy.sid || entity.sid === player.sid ||
                 entity.skinIndex === STORE_HAT_MAP.EMP_HELMET ||

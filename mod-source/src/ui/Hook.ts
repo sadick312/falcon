@@ -3,6 +3,8 @@ import updateClanMenu, { allianceHolder } from "@core/events/updateClanMenu";
 import TextManager from "@core/logic/TextManager";
 import AttackManager from "@core/mod/combat/core/AttackManager";
 import CombatController from "@core/mod/combat/core/CombatController";
+import TestMode, { TEST_CONFIG } from "@core/mod/testing/TestMode";
+import PerfMonitor, { PERF_CONFIG } from "@core/mod/utils/PerfMonitor";
 import PacketReplayer from "@core/PacketReplayer";
 import Menu from "@menu/Menu";
 import AutoGrinder from "@placing/modules/AutoGrinder";
@@ -147,6 +149,10 @@ document.addEventListener("keydown", (event) => {
         } else {
             if (event.code === "KeyR") {
                 AttackManager.autoInstaToggle = !AttackManager.autoInstaToggle;
+            } else if (event.code === PERF_CONFIG.toggleKey) {
+                PerfMonitor.togglePanel();
+            } else if (event.code === TEST_CONFIG.stopKey) {
+                TestMode.stop();
             } else if (event.code === "Equal") {
                 resetScreenSize();
             } else if (event.code === "KeyE") {
