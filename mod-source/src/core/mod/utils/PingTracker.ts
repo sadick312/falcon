@@ -18,17 +18,6 @@ export default class PingTracker {
         return this.instantaneousPing;
     }
 
-    static getAveragePing() {
-        if (this.count === 0) return this.instantaneousPing;
-        let total = 0;
-
-        for (let i = 0; i < this.count; i++) {
-            total += this.pingHistory[i];
-        }
-
-        return total / this.count;
-    }
-
     private static sortBuffer = new Float64Array(5);
 
     /** Median of recent pings. A single Wi-Fi spike doesn't move it, unlike the current or average ping. */

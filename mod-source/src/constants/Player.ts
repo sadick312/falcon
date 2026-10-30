@@ -380,7 +380,7 @@ export default class Player implements Entity {
         const oHandDist = (this.buildIndex === -1) ? (weapon.hndD ?? 1) : 1;
 
         if (this.tailIndex > 0) {
-            RendererUtils.renderTail(this.tailIndex, mainContext, this);
+            RendererUtils.renderTail(this.tailIndex, mainContext);
         }
 
         // RENDER WEAPON BELOW HANDS:

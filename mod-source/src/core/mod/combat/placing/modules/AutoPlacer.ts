@@ -24,7 +24,6 @@ export class Preplacement {
     scale: number = 52;
     spikeTick = false;
     appleInsta = false;
-    shameGrind = false;
     predict = false;
 
     copyFrom(item: Angle) {
@@ -36,7 +35,6 @@ export class Preplacement {
         this.appleInsta = item.appleInsta;
         this.scale = item.scale;
         this.predict = item.predict;
-        this.shameGrind = item.shameGrind;
     }
 }
 

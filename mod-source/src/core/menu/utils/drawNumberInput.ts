@@ -5,7 +5,7 @@ import drawItemLabel from "@menu/utils/drawItemLabel";
 export default function drawNumberInput(item: IMenuItem, contentElement: HTMLElement) {
     const isInDropdownContent = contentElement !== Menu.contentElement;
 
-    const body = drawItemBody(item);
+    const body = drawItemBody();
     body.style.pointerEvents = "none";
 
     const iconHolderElem = document.createElement("div");

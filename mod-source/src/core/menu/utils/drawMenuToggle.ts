@@ -6,7 +6,7 @@ import drawItemLabel from "./drawItemLabel";
 export default function drawMenuToggle(item: IMenuItem, contentElement: HTMLElement, isNested: boolean) {
     const isInDropdownContent = contentElement !== Menu.contentElement;
 
-    const body = drawItemBody(item);
+    const body = drawItemBody();
     body.classList.add("menuToggle");
 
     const toggle = document.createElement("div");

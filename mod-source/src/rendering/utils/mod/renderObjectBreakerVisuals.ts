@@ -12,7 +12,7 @@ function isBreakingMode() {
         CombatController.currentMode === "autogrind" || CombatController.currentMode === "pit object breaking";
 }
 
-function getHexCode(obj: GameObject) {
+function getHexCode() {
     if (CombatController.currentMode === "object breaking")
         return "#e10000";
 
@@ -35,7 +35,7 @@ export default function renderObjectBreakerVisuals(gameObject: GameObject, mainC
     if (isObjectBreakingMode && gameObject.isBreaking && isWithinRange) {
         mainContext.save();
         mainContext.globalAlpha = 1;
-        mainContext.strokeStyle = getHexCode(gameObject);
+        mainContext.strokeStyle = getHexCode();
         mainContext.lineWidth = 5.5;
         RendererUtils.drawCircle(0, 0, mainContext, gameObject.scale, false, true);
         mainContext.restore();

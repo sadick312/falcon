@@ -290,22 +290,10 @@ export default class RendererUtils {
         return `#${toHex(darkR)}${toHex(darkG)}${toHex(darkB)}`;
     }
 
-    static drawPartialCircleStroke(
-        x: number,
-        y: number,
-        mainContext: CanvasRenderingContext2D,
-        radius: number,
-        percent: number
-    ) {
-        mainContext.beginPath();
-        mainContext.arc(x, y, radius, 0, Math.PI * 2 * percent);
-        mainContext.stroke();
-    }
-
     static accessSprites: Record<number, HTMLImageElement> = {};
     static accessPointers: Record<number, Accessory> = {};
 
-    static renderTail(id: number, mainContext: CanvasRenderingContext2D, owner: Player) {
+    static renderTail(id: number, mainContext: CanvasRenderingContext2D) {
         let tmpAccessory = this.accessSprites[id];
 
         if (!tmpAccessory) {
@@ -394,46 +382,6 @@ export default class RendererUtils {
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
-    }
-
-    static drawPartialPolygonStroke(
-        ctx: CanvasRenderingContext2D,
-        sides: number,
-        centerX: number,
-        centerY: number,
-        radius: number,
-        percent: number
-    ) {
-        if (sides < 3) {
-            throw new Error("Polygon must have at least 3 sides");
-        }
-
-        const angleStep = (2 * Math.PI) / sides;
-
-        ctx.beginPath();
-        for (let i = 0; i < sides; i++) {
-            const x = centerX + radius * Math.cos(i * angleStep - Math.PI / 2);
-            const y = centerY + radius * Math.sin(i * angleStep - Math.PI / 2);
-
-            if (i === 0) {
-                ctx.moveTo(x, y);
-            } else {
-                ctx.lineTo(x, y);
-            }
-        }
-        ctx.closePath();
-
-        if (percent < 1) {
-            const sideLength = Math.sqrt(2 * radius * radius * (1 - Math.cos(angleStep)));
-            const totalPerimeter = sideLength * sides;
-
-            ctx.setLineDash([totalPerimeter * percent, totalPerimeter]);
-        } else {
-            ctx.setLineDash([]);
-        }
-
-        ctx.stroke();
-        ctx.setLineDash([]);
     }
 
     static drawPolygon(ctx: CanvasRenderingContext2D, sides: number, centerX: number, centerY: number, radius: number, dontFill?: boolean, dontStroke?: boolean) {

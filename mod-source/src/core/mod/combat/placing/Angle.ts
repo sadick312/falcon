@@ -12,7 +12,6 @@ export default class Angle {
     reasons: string[] = [];
     spikeTick = false;
     appleInsta = false;
-    shameGrind = false;
     preplace = false;
     overlap = false;
     alignment = 0;
@@ -59,7 +58,6 @@ export default class Angle {
         this.reasons.length = 0;
         this.spikeTick = false;
         this.appleInsta = false;
-        this.shameGrind = false;
         this.preplace = isPreplacement;
     }
 }

@@ -66,12 +66,4 @@ export default class Vec2 {
             this.y + (other.y - this.y) * t
         );
     }
-
-    clone() {
-        return new Vec2(this.x, this.y);
-    }
-
-    equals(other: Vec2) {
-        return this.x === other.x && this.y === other.y;
-    }
 }
