@@ -1,4 +1,4 @@
-import Player from "@constants/Player";
+import Player from "@entities/Player";
 import PlacementSystem from "@core/mod/combat/core/PlacementSystem";
 import { FinderOptions } from "@core/mod/combat/placing/AngleFinder";
 import PingTracker from "@core/mod/utils/PingTracker";

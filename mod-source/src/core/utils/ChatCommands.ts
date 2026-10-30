@@ -1,10 +1,10 @@
-import { ChatMessage } from "@constants/Player";
+import { ChatMessage } from "@entities/Player";
 import Client from "@core/Client";
 import PingTracker from "@core/mod/utils/PingTracker";
 import SocketListener from "@core/socket/SocketListener";
 import PacketTracker from "@core/utils/PacketTracker";
 import Menu, { ChatLog } from "@menu/Menu";
-import drawChatLog from "@menu/utils/drawChatLog";
+import { addChatLog } from "@menu/utils/drawChatLog";
 
 interface ChatCommand {
     desc: string;
@@ -31,7 +31,7 @@ export default class ChatCommands {
         plog: {
             desc: "download the packet log",
             run: () => {
-                SocketListener.sendFplToDiscord(true);
+                SocketListener.exportPacketLog(true);
                 return "Downloading packet log.";
             }
         },
@@ -97,8 +97,7 @@ export default class ChatCommands {
     }
 
     private static reply(msg: string) {
-        Menu.chatLogs.push(new ChatLog(msg));
-        if (Menu.selectedTab === 5) drawChatLog();
+        addChatLog(new ChatLog(msg));
 
         const player = Client.player;
         if (!player) return;

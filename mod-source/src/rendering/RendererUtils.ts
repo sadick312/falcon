@@ -1,6 +1,6 @@
 import GameObject from "@constants/GameObject";
 import { ListItem, Weapon } from "@constants/items";
-import Player from "@constants/Player";
+import Player from "@entities/Player";
 import store, { Accessory, Hat } from "@constants/store";
 import RenderingConfig from "@rendering/RenderingConfig";
 import renderDottedCircle from "@rendering/utils/items/renderDottedCircle";

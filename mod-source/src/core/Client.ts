@@ -1,6 +1,6 @@
 import { LOCAL_SERVER_HOST } from "@constants/Endpoints";
 import GameObject from "@constants/GameObject";
-import Player from "@constants/Player";
+import Player from "@entities/Player";
 import PlayerManager from "@core/logic/players/PlayerManager";
 import { PlayerSimulationState } from "@core/mod/simulation/SimulationStates";
 import FakeSocket from "@core/socket/FakeSocket";

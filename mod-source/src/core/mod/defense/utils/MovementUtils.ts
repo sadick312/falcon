@@ -1,5 +1,5 @@
 import items from "@constants/items";
-import Player from "@constants/Player";
+import Player from "@entities/Player";
 import { accessoryMap, hatMap } from "@constants/store";
 import ScriptConfig from "@utils/config/ScriptConfig";
 

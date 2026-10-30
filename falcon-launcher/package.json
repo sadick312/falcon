@@ -12,7 +12,6 @@
         "@crxjs/vite-plugin": "^2.0.0-beta.33",
         "@types/chrome": "^0.2.2",
         "@types/node": "^26.6.5",
-        "typescript": "~6.0.2",
         "vite": "^8.1.4"
     }
 }

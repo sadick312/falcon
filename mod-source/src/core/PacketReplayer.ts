@@ -1,4 +1,4 @@
-import { ais } from "@constants/Ai";
+import { ais } from "@entities/Ai";
 import Client from "@core/Client";
 import ObjectManager from "@core/logic/ObjectManager";
 import PlayerManager from "@core/logic/players/PlayerManager";
@@ -6,12 +6,14 @@ import ProjectileManager from "@core/logic/ProjectileManager";
 import TextManager from "@core/logic/TextManager";
 import { ModBrainState } from "@core/ModManager";
 import Socket from "@core/socket/Socket";
-import { decode } from "@msgpack/msgpack";
+import { Decoder } from "@msgpack/msgpack";
 import RendererSystem from "@rendering/RendererSystem";
 import { PacketLog } from "@root/utils/socket/PacketLogging";
 import PacketMap, { MOOMOO_SERVER_TO_CLIENT_MAP } from "@root/utils/socket/PacketMap";
 import { packetReplayerOptionsPage } from "@ui/Loader";
 import getElem from "@utils/dom/getElem";
+
+const replayDecoder = new Decoder();
 
 export const packetReplayerUI = getElem("packet-replayer-ui");
 const brainStateDump = getElem("brain-state-dumper");
@@ -151,7 +153,7 @@ export default class PacketReplayer {
             offset += packetLength;
 
             let packetData: any = null;
-            const decoded = decode(packetRawBytes) as [string, any];
+            const decoded = replayDecoder.decode(packetRawBytes) as [string, any];
 
             packetData = {
                 type: decoded[0],
@@ -167,7 +169,7 @@ export default class PacketReplayer {
                 if (offset + brainLength > bytes.byteLength) break;
 
                 const brainRawBytes = new Uint8Array(bytes, offset, brainLength);
-                brainState = decode(brainRawBytes);
+                brainState = replayDecoder.decode(brainRawBytes);
                 offset += brainLength;
             }
 

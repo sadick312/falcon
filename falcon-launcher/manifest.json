@@ -15,8 +15,7 @@
     ],
     "host_permissions": [
         "*://sandbox.moomoo.io/*",
-        "*://moomodding.io/*",
-        "*://*.moomodding.io/*"
+        "*://sandbox.moomodding.io/*"
     ],
     "content_scripts": [
         {

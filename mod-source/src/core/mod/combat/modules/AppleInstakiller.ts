@@ -1,5 +1,5 @@
 import items, { LIST_ID_MAP, WEAPON_ID_MAP } from "@constants/items";
-import Player from "@constants/Player";
+import Player from "@entities/Player";
 import { STORE_HAT_MAP } from "@constants/store";
 import Client from "@core/Client";
 import PlayerCombatManager from "@core/logic/players/core/PlayerCombatManager";

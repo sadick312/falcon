@@ -1,12 +1,12 @@
-import Player from "@constants/Player";
+import Player from "@entities/Player";
 import { STORE_HAT_MAP } from "@constants/store";
 import Client from "@core/Client";
 import PlayerManager from "@core/logic/players/PlayerManager";
 import HatSystem from "@core/mod/defense/defense-modules/HatSystem";
 import ModManager from "@core/ModManager";
 import MessageHandler from "@core/socket/events/utils/MessageHandler";
-import Menu, { ChatLog } from "@menu/Menu";
-import drawChatLog from "@menu/utils/drawChatLog";
+import { ChatLog } from "@menu/Menu";
+import { addChatLog } from "@menu/utils/drawChatLog";
 import PacketMap from "@root/utils/socket/PacketMap";
 
 type HealthUpdatePacket = typeof PacketMap.SERVER_TO_CLIENT.UPDATE_HEALTH;
@@ -76,8 +76,7 @@ export default class HealthUpdateEvent extends MessageHandler<HealthUpdatePacket
 
         player.health = health;
         if (health <= 0 && !Client.isFriendly(sid)) {
-            Menu.chatLogs.push(new ChatLog(`${player.name} {${player.sid}} has died (${player.damages.join(",")})`, "death"));
-            if (Menu.selectedTab === 5) drawChatLog();
+            addChatLog(new ChatLog(`${player.name} {${player.sid}} has died (${player.damages.join(",")})`, "death"));
         }
     }
 }

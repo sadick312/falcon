@@ -25,6 +25,7 @@ import renderMinimap from "@rendering/utils/mod/renderMinimap";
 import renderOneTickLine from "@rendering/utils/mod/renderOneTickLine";
 import renderPathfindPath from "@rendering/utils/mod/renderPathfindPath";
 import renderPlacements from "@rendering/utils/mod/renderPlacements";
+import { profileEnd, profileStart } from "@services/profiler/Profiler";
 import getElem from "@utils/dom/getElem";
 
 CanvasRenderingContext2D.prototype.roundRect = function (x: number, y: number, width: number, height: number, radius: number): CanvasRenderingContext2D {
@@ -50,8 +51,7 @@ export default class RendererSystem {
     private static waterMult = 1;
     private static waterPlus = 0;
 
-    private static lastUpdate = Date.now();
-    private static lastSent = Date.now();
+    private static lastUpdate = performance.now();
 
     static fps = 0;
     private static fpsCount = 0;
@@ -60,19 +60,12 @@ export default class RendererSystem {
     private static updateFPS() {
         this.fpsCount++;
 
-        if (Date.now() - this.lastUpdateFrames >= 1e3) {
+        if (performance.now() - this.lastUpdateFrames >= 1e3) {
             this.fps = this.fpsCount;
-            this.lastUpdateFrames = Date.now();
+            this.lastUpdateFrames = performance.now();
             this.fpsCount = 0;
 
             pingDisplay.innerText = `Ping: ${Client.pingTime} ms | FPS: ${this.fps} | BWin: ${PacketBatcher.effectiveBatchWindow.toFixed(1)} ms | Jitter: ${PacketBatcher.tickJitter.toFixed(1)} ms`;
-        }
-    }
-
-    private static updateDirection(now: number) {
-        if (!this.lastSent || now - this.lastSent >= 200) {
-            this.lastSent = now;
-            //   Client.socket.sendMsg(PacketMap.MOOMOO.CLIENT_TO_SERVER.UPDATE_DIRECTION, Input.getAttackDir());
         }
     }
 
@@ -88,7 +81,7 @@ export default class RendererSystem {
     }
 
     static renderGame() {
-        const now = Date.now();
+        const now = performance.now();
         let delta = Client.mode === "replay" && PacketReplayer.isPaused ? 0 : now - this.lastUpdate;
 
         if (Client.mode === "replay" && !PacketReplayer.runForOneTick)
@@ -99,15 +92,13 @@ export default class RendererSystem {
         }
 
         this.lastUpdate = now;
+        const frameStart = __DEV__ ? profileStart() : 0;
 
         try {
             if (Client.mode === "replay")
                 PacketReplayer.update(delta);
 
             this.updateFPS();
-
-            const player = Client.player;
-            if (player) this.updateDirection(now);
 
             CameraManager.lerpEntities(delta);
             const buf = CameraManager.getOffset();
@@ -173,6 +164,8 @@ export default class RendererSystem {
 
             renderMinimap();
         } finally {
+            if (__DEV__) profileEnd("frame", frameStart);
+
             if (PacketReplayer.slowTime !== 0)
                 PacketReplayer.slowTime = 0;
 

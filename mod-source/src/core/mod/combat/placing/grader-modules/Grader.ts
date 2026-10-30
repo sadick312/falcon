@@ -1,5 +1,5 @@
 import GameObject from "@constants/GameObject";
-import Player from "@constants/Player";
+import Player from "@entities/Player";
 import Client from "@core/Client";
 import ObjectManager from "@core/logic/ObjectManager";
 import PotentialObjectManager from "@core/logic/PotentialObjectManager";

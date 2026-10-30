@@ -1,6 +1,6 @@
-import { ais } from "@constants/Ai";
+import { ais } from "@entities/Ai";
 import GameObject from "@constants/GameObject";
-import Player from "@constants/Player";
+import Player from "@entities/Player";
 import { STORE_HAT_MAP } from "@constants/store";
 import Client from "@core/Client";
 import ObjectManager from "@core/logic/ObjectManager";

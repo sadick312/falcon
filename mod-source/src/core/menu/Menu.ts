@@ -1,6 +1,8 @@
 import drawNumberInput from "@menu/utils/drawNumberInput";
 import getElem from "@utils/dom/getElem";
-import "./menu.css";
+import { profileEnd, profileStart } from "@services/profiler/Profiler";
+import readJson from "@utils/storage/readJson";
+import "./menuStyle";
 import Stack from "./misc/Stack";
 import drawChatLog from "./utils/drawChatLog";
 import drawConfigUI from "./utils/drawConfigUI";
@@ -41,6 +43,9 @@ export interface IMenuItem {
     update?: () => void;
 }
 
+/** "falcon-configs" in localStorage: config name -> saved item statuses (undefined once deleted). */
+export type SavedConfigs = Record<string, Record<string, unknown> | undefined>;
+
 interface IMenuContent {
     favorites: IMenuItem[];
     combat: IMenuItem[];
@@ -53,14 +58,9 @@ interface IMenuContent {
     credits: IMenuItem[];
 }
 
-const GEAR_ICON = `
-<svg viewBox="0 0 512 512" width="15.5" height="15.5">
-    <path fill="REPLACE_WITH_COLOR" d="M-42 197.1c15.9-15.7 34.2-23.6 56.3-25.3C34.4 171.4 56.2 178 71 192c.7.7 1.3 1.4 2 2.1 16.8 16.6 25.6 36.1 26 60-.5 18.5-7.7 37.4-20.7 50.7-.8.8-1.5 1.5-2.3 2.3-16.2 16.1-36.4 24.8-59.2 25.3-19.3-.6-39.7-6.7-53.9-20.4-1-1-1-1-1.9-1.9-15.7-15.5-25.6-34.5-26-57 .5-19.8 6.7-39.3 20.7-53.8.8-.7 1.5-1.5 2.3-2.2ZM0 0C-7.9-.1-13.5-.8-17.2 7c-.3.7-.5 1.4-.8 2.1-.7 1.3-.7 1.3-1.3 2.5-.5 1.2-.5 1.2-1 2.3-.4.9-.8 1.8-1.1 2.6-.4 1-.8 1.9-1.2 2.8-3.4 7.9-6.7 15.9-9.9 23.9-.5 1.2-1 2.5-1.4 3.7C-36.7 54-39.4 61-41.5 68.3c-.2.6-.3 1.2-.5 1.8-2 0-2 0-4.4.9-1.1.4-2.1.8-3.1 1.2-2.2.9-4.5 1.9-6.8 2.8-1.1.5-2.3 1-3.4 1.4-1.1.5-2.2.9-3.3 1.4-5.4 2.2-9.6 4-15.3 2.3-1.3-.6-2.5-1.1-3.7-1.6-1.3-.6-2.7-1.2-4.1-1.8-3.7-1.6-7.5-3.2-11.2-4.8-1.2-.5-1.2-.5-2.4-1-7.3-3-14.6-6-22.1-8.8-1.3-.4-2.6-.9-3.9-1.4-1.2-.5-2.5-1-3.7-1.4-1.2-.5-2.4-.9-3.5-1.3-3.1-1.1-3.1-1.1-6.1-1.9-4.3-.3-6.1-.8-9.4 2-2.3 2.8-2.3 2.8-4.1 4.3-5.7 4.8-11.1 10-16.4 15.2-1.2 1.2-2.4 2.4-3.6 3.5-1.8 1.8-3.6 3.5-5.4 5.3-.6.5-1.1 1.1-1.7 1.6-2.1 2-3.7 3.8-5.4 6.1-.5 3.2-.2 5.3.7 8.4.3.8.6 1.6.9 2.4.4.9.8 1.9 1.1 2.8.5 1 .9 2 1.3 3.1 2.9 7.1 5.9 14.1 9.1 21.1.4.8.7 1.6 1.1 2.3 1.8 4 3.6 7.9 5.5 11.8.7 1.5 1.4 3 2.1 4.5.5 1.1.5 1.1 1 2.1 2.6 5.4 5.1 10.8 3.6 16.9-.3.7-.6 1.4-.9 2.1-.4.8-.8 1.6-1.1 2.4-.8 1.6-1.5 3.2-2.2 4.9-.4.8-.8 1.6-1.1 2.4-1.8 4-3.3 8-4.6 12.1-.2.6-.3 1.1-.5 1.7-3 0-3 0-5 .6-.8.3-1.6.6-2.3.9-1 .4-1.8.7-2.7 1.1-1 .3-2 .7-2.9 1.1-8 3.2-16 6.4-23.9 9.8-1.3.5-2.5 1-3.6 1.5-10.1 4.3-19.9 9-29.6 14-.1 6.8-.2 13.6-.2 20.4-.1 3.5-.1 7-.1 10.5-.1 3.4-.1 6.8-.2 10.2 0 1.3 0 2.6 0 3.9 0 1.3 0 2.5-.1 3.8 0 1.2 0 2.3 0 3.5 0 1.6 0 1.6 0 3.1.6 2.6.6 2.6 3 4.3.9.5 1.7.9 2.6 1.3 2.3 1.1 2.3 1.1 7.1 3.2 1 .4 1.9.9 2.8 1.3 9.5 4.1 19.1 7.8 28.8 11.3 2.4.9 4.9 1.7 7.4 2.6 2.3.9 4.6 1.7 6.9 2.6 3.2 1.1 6.4 2.2 9.6 3.5 3.2 2 4.4 3.8 5.7 7.3.2.7.4 1.5.6 2.2.5 1.4 1 2.8 1.5 4.2.5 1.6 1 3.2 1.6 4.8 1.6 3.1 3.1 6.2 4.3 9.5.2 7.1.2 7.1-2.9 13.8-.9 1.8-1.9 3.6-2.8 5.5-.9 2-1.8 4-2.7 6-3.3 6.7-6.2 13.5-9 20.5-.8 1.9-1.6 3.9-2.4 5.8-1.2 2.9-2.3 5.8-3.4 8.8-.4 1-.7 2-1.1 3.1-1.1 2.5-2 4.7-2.4 7.5.8 4.6.8 4.6 9.6 12.7 1.1.9 2.2 1.9 3.3 3 4.8 4.7 9.8 9.2 15 13.7 2.9 2.5 5.6 5.2 8.2 8 2.1 2.3 2.1 2.3 4.3 4.1 4 .5 7.3-.7 11-2 .8-.3 1.6-.6 2.4-.9 10.3-3.9 20.4-8.3 30.6-12.7 3.9-1.8 7.8-3.5 11.8-5.2.9-.4 1.8-.8 2.8-1.2.9-.4 1.7-.8 2.6-1.2 1.3-.6 1.3-.6 2.5-1.1 1.4-.6 2.8-1.2 4.3-1.7 8.9-2.2 18.8 2.2 26.8 6.1 13 12.3 13 12.3 18.3 30 2.2 7 4.8 13.5 7.9 20.1.5 1.2 1 2.3 1.6 3.4 1.3 2.9 2.6 5.7 4 8.6.4.9.9 1.9 1.4 2.8.9 2.2 1.9 4.2 3.2 6.3C-10 504-10 504-1.7 504.2c1.2 0 2.5-.1 3.7-.1 3.3 0 6.6.1 9.8 0 3.5 0 6.9 0 10.3 0 2.7 0 5.4.1 8.1 0 1.3 0 2.5 0 3.8 0 4.5.1 8.7.2 13-1 2-1.9 3-3.5 4.2-6 .3-.7.5-1.4.8-2 .4-.9.9-1.8 1.3-2.6.3-.8.7-1.5 1-2.3.4-.9.8-1.7 1.1-2.6.6-1.4.6-1.4 1.2-2.8 3.4-7.9 6.7-15.9 9.9-23.9.5-1.2 1-2.4 1.4-3.6 2.8-7.1 5.5-14.2 7.6-21.5.2-.6.3-1.2.5-1.7 2 0 2 0 4.4-.9 1.1-.5 2.1-.9 3.1-1.3 2.2-.9 4.5-1.8 6.8-2.8 1.1-.5 2.3-.9 3.4-1.4 1.7-.7 1.7-.7 3.3-1.4 1-.4 2.1-.8 3.1-1.2 5.2-1.8 8.7-2.5 13.9-.2 1.4.6 2.8 1.2 4.1 1.8.9.3 1.6.7 2.4 1 14.7 6.4 29.7 12.4 44.8 17.8 1 .4 1.9.7 2.8 1 4 1.5 7.3 3.1 11.5 1.7.8-.8 1.6-1.4 2.4-2.1 6.2-5 6.2-5 19-17.7 1.3-1.3 2.7-2.6 4-3.9 2-2 4-3.9 6-5.9.7-.6 1.3-1.2 1.9-1.9 2.3-2.1 4.4-4.1 6.1-6.6.5-3.3.2-5.3-.7-8.5-.3-.8-.6-1.6-.9-2.4-.4-.9-.8-1.8-1.1-2.8-.7-1.5-.7-1.5-1.3-3-2.9-7.1-5.9-14.2-9.1-21.2-.6-1.1-.6-1.1-1.1-2.3-1.8-3.9-3.6-7.9-5.5-11.8-.7-1.5-1.4-3-2.1-4.5-.3-.7-.6-1.4-1-2.1-2.6-5.4-5.1-10.8-3.6-16.8.3-.8.6-1.5.9-2.2.4-.8.8-1.6 1.1-2.4.8-1.6 1.5-3.2 2.2-4.8.6-1.3.6-1.3 1.1-2.4 1.8-4 3.3-8.1 4.6-12.2.2-.6.3-1.1.5-1.6 3 0 3 0 5-.7.8-.3 1.6-.6 2.3-.9 1-.3 1.8-.7 2.7-1 1-.4 2-.8 2.9-1.2 8-3.2 16-6.4 23.9-9.8 1.3-.5 2.5-1 3.6-1.5 10.1-4.3 19.9-9 29.6-13.9.1-6.9.2-13.7.2-20.5.1-3.5.1-7 .1-10.4.1-3.5.1-6.9.2-10.3 0-1.3 0-2.6 0-3.9 0-1.2 0-2.5.1-3.8 0-1.2 0-2.3 0-3.5 0-1 0-2.1 0-3.1-.6-2.5-.6-2.5-3-4.3-.9-.4-1.7-.8-2.6-1.2-2.1-1-2.1-1-6.3-2.9-.8-.4-1.7-.7-2.5-1.1-10.8-4.6-21.8-8.7-32.8-12.8-2-.7-3.9-1.4-5.9-2.2-1.8-.7-3.7-1.4-5.5-2-3.2-1-6.4-2.1-9.5-3.4-4-2.6-5.3-5.9-7.1-10.2-.3-1.1-.7-2.2-1.1-3.2-.8-2.2-1.6-4.3-2.4-6.4-2.7-7.9-3.7-13.1-.1-20.9.9-1.9 1.7-3.8 2.6-5.7.5-1 .9-2.1 1.4-3.1 3.1-6.9 6-13.8 8.8-20.8.6-1.5 1.3-3.1 1.9-4.6 1.8-4.4 3.5-8.7 5.1-13 .7-1.9.7-1.9 1.4-3.7 1.1-2.6 2-4.9 2.5-7.7-.9-4.5-.9-4.5-9.7-12.5-1.1-1-2.2-2-3.3-3-4.9-4.7-9.8-9.3-15-13.7-2.9-2.6-5.5-5.2-8-8.1-2-2.4-2-2.4-4.5-4-5.9-.1-5.9-.1-17 4.3-1.2.4-2.4.9-3.5 1.4-11.8 4.6-23.5 9.6-35 14.8-.7.3-1.4.6-2.1 1-1.3.5-2.6 1.1-3.9 1.7-2.1 1-4.3 1.9-6.5 2.8-8.6 2.6-19-2.4-26.8-6.2-13-12.2-13-12.2-18.3-30C62.7 37 60.1 30.4 57 23.8c-.5-1.2-1-2.3-1.6-3.4-1.3-2.8-2.6-5.7-4-8.6-.4-.9-.9-1.8-1.4-2.7-.9-2.3-1.9-4.3-3.2-6.4C44 .1 44 .1 35.7 0 34.5 0 33.2 0 32 0c-3.3 0-6.6 0-9.8 0-3.5 0-6.9.1-10.3 0C9.2 0 6.5 0 3.8 0 2.5 0 1.3 0 0 0Z" transform="translate(239,3.9375)"/>
-</svg>
-`;
-
-const GEAR_ICON_2 = `
-<svg viewBox="0 0 512 512" width="22" height="22">
+/** The settings gear at a given size (the menu used 15.5 and 22). */
+const gearIcon = (size: number) => `
+<svg viewBox="0 0 512 512" width="${size}" height="${size}">
     <path fill="REPLACE_WITH_COLOR" d="M-42 197.1c15.9-15.7 34.2-23.6 56.3-25.3C34.4 171.4 56.2 178 71 192c.7.7 1.3 1.4 2 2.1 16.8 16.6 25.6 36.1 26 60-.5 18.5-7.7 37.4-20.7 50.7-.8.8-1.5 1.5-2.3 2.3-16.2 16.1-36.4 24.8-59.2 25.3-19.3-.6-39.7-6.7-53.9-20.4-1-1-1-1-1.9-1.9-15.7-15.5-25.6-34.5-26-57 .5-19.8 6.7-39.3 20.7-53.8.8-.7 1.5-1.5 2.3-2.2ZM0 0C-7.9-.1-13.5-.8-17.2 7c-.3.7-.5 1.4-.8 2.1-.7 1.3-.7 1.3-1.3 2.5-.5 1.2-.5 1.2-1 2.3-.4.9-.8 1.8-1.1 2.6-.4 1-.8 1.9-1.2 2.8-3.4 7.9-6.7 15.9-9.9 23.9-.5 1.2-1 2.5-1.4 3.7C-36.7 54-39.4 61-41.5 68.3c-.2.6-.3 1.2-.5 1.8-2 0-2 0-4.4.9-1.1.4-2.1.8-3.1 1.2-2.2.9-4.5 1.9-6.8 2.8-1.1.5-2.3 1-3.4 1.4-1.1.5-2.2.9-3.3 1.4-5.4 2.2-9.6 4-15.3 2.3-1.3-.6-2.5-1.1-3.7-1.6-1.3-.6-2.7-1.2-4.1-1.8-3.7-1.6-7.5-3.2-11.2-4.8-1.2-.5-1.2-.5-2.4-1-7.3-3-14.6-6-22.1-8.8-1.3-.4-2.6-.9-3.9-1.4-1.2-.5-2.5-1-3.7-1.4-1.2-.5-2.4-.9-3.5-1.3-3.1-1.1-3.1-1.1-6.1-1.9-4.3-.3-6.1-.8-9.4 2-2.3 2.8-2.3 2.8-4.1 4.3-5.7 4.8-11.1 10-16.4 15.2-1.2 1.2-2.4 2.4-3.6 3.5-1.8 1.8-3.6 3.5-5.4 5.3-.6.5-1.1 1.1-1.7 1.6-2.1 2-3.7 3.8-5.4 6.1-.5 3.2-.2 5.3.7 8.4.3.8.6 1.6.9 2.4.4.9.8 1.9 1.1 2.8.5 1 .9 2 1.3 3.1 2.9 7.1 5.9 14.1 9.1 21.1.4.8.7 1.6 1.1 2.3 1.8 4 3.6 7.9 5.5 11.8.7 1.5 1.4 3 2.1 4.5.5 1.1.5 1.1 1 2.1 2.6 5.4 5.1 10.8 3.6 16.9-.3.7-.6 1.4-.9 2.1-.4.8-.8 1.6-1.1 2.4-.8 1.6-1.5 3.2-2.2 4.9-.4.8-.8 1.6-1.1 2.4-1.8 4-3.3 8-4.6 12.1-.2.6-.3 1.1-.5 1.7-3 0-3 0-5 .6-.8.3-1.6.6-2.3.9-1 .4-1.8.7-2.7 1.1-1 .3-2 .7-2.9 1.1-8 3.2-16 6.4-23.9 9.8-1.3.5-2.5 1-3.6 1.5-10.1 4.3-19.9 9-29.6 14-.1 6.8-.2 13.6-.2 20.4-.1 3.5-.1 7-.1 10.5-.1 3.4-.1 6.8-.2 10.2 0 1.3 0 2.6 0 3.9 0 1.3 0 2.5-.1 3.8 0 1.2 0 2.3 0 3.5 0 1.6 0 1.6 0 3.1.6 2.6.6 2.6 3 4.3.9.5 1.7.9 2.6 1.3 2.3 1.1 2.3 1.1 7.1 3.2 1 .4 1.9.9 2.8 1.3 9.5 4.1 19.1 7.8 28.8 11.3 2.4.9 4.9 1.7 7.4 2.6 2.3.9 4.6 1.7 6.9 2.6 3.2 1.1 6.4 2.2 9.6 3.5 3.2 2 4.4 3.8 5.7 7.3.2.7.4 1.5.6 2.2.5 1.4 1 2.8 1.5 4.2.5 1.6 1 3.2 1.6 4.8 1.6 3.1 3.1 6.2 4.3 9.5.2 7.1.2 7.1-2.9 13.8-.9 1.8-1.9 3.6-2.8 5.5-.9 2-1.8 4-2.7 6-3.3 6.7-6.2 13.5-9 20.5-.8 1.9-1.6 3.9-2.4 5.8-1.2 2.9-2.3 5.8-3.4 8.8-.4 1-.7 2-1.1 3.1-1.1 2.5-2 4.7-2.4 7.5.8 4.6.8 4.6 9.6 12.7 1.1.9 2.2 1.9 3.3 3 4.8 4.7 9.8 9.2 15 13.7 2.9 2.5 5.6 5.2 8.2 8 2.1 2.3 2.1 2.3 4.3 4.1 4 .5 7.3-.7 11-2 .8-.3 1.6-.6 2.4-.9 10.3-3.9 20.4-8.3 30.6-12.7 3.9-1.8 7.8-3.5 11.8-5.2.9-.4 1.8-.8 2.8-1.2.9-.4 1.7-.8 2.6-1.2 1.3-.6 1.3-.6 2.5-1.1 1.4-.6 2.8-1.2 4.3-1.7 8.9-2.2 18.8 2.2 26.8 6.1 13 12.3 13 12.3 18.3 30 2.2 7 4.8 13.5 7.9 20.1.5 1.2 1 2.3 1.6 3.4 1.3 2.9 2.6 5.7 4 8.6.4.9.9 1.9 1.4 2.8.9 2.2 1.9 4.2 3.2 6.3C-10 504-10 504-1.7 504.2c1.2 0 2.5-.1 3.7-.1 3.3 0 6.6.1 9.8 0 3.5 0 6.9 0 10.3 0 2.7 0 5.4.1 8.1 0 1.3 0 2.5 0 3.8 0 4.5.1 8.7.2 13-1 2-1.9 3-3.5 4.2-6 .3-.7.5-1.4.8-2 .4-.9.9-1.8 1.3-2.6.3-.8.7-1.5 1-2.3.4-.9.8-1.7 1.1-2.6.6-1.4.6-1.4 1.2-2.8 3.4-7.9 6.7-15.9 9.9-23.9.5-1.2 1-2.4 1.4-3.6 2.8-7.1 5.5-14.2 7.6-21.5.2-.6.3-1.2.5-1.7 2 0 2 0 4.4-.9 1.1-.5 2.1-.9 3.1-1.3 2.2-.9 4.5-1.8 6.8-2.8 1.1-.5 2.3-.9 3.4-1.4 1.7-.7 1.7-.7 3.3-1.4 1-.4 2.1-.8 3.1-1.2 5.2-1.8 8.7-2.5 13.9-.2 1.4.6 2.8 1.2 4.1 1.8.9.3 1.6.7 2.4 1 14.7 6.4 29.7 12.4 44.8 17.8 1 .4 1.9.7 2.8 1 4 1.5 7.3 3.1 11.5 1.7.8-.8 1.6-1.4 2.4-2.1 6.2-5 6.2-5 19-17.7 1.3-1.3 2.7-2.6 4-3.9 2-2 4-3.9 6-5.9.7-.6 1.3-1.2 1.9-1.9 2.3-2.1 4.4-4.1 6.1-6.6.5-3.3.2-5.3-.7-8.5-.3-.8-.6-1.6-.9-2.4-.4-.9-.8-1.8-1.1-2.8-.7-1.5-.7-1.5-1.3-3-2.9-7.1-5.9-14.2-9.1-21.2-.6-1.1-.6-1.1-1.1-2.3-1.8-3.9-3.6-7.9-5.5-11.8-.7-1.5-1.4-3-2.1-4.5-.3-.7-.6-1.4-1-2.1-2.6-5.4-5.1-10.8-3.6-16.8.3-.8.6-1.5.9-2.2.4-.8.8-1.6 1.1-2.4.8-1.6 1.5-3.2 2.2-4.8.6-1.3.6-1.3 1.1-2.4 1.8-4 3.3-8.1 4.6-12.2.2-.6.3-1.1.5-1.6 3 0 3 0 5-.7.8-.3 1.6-.6 2.3-.9 1-.3 1.8-.7 2.7-1 1-.4 2-.8 2.9-1.2 8-3.2 16-6.4 23.9-9.8 1.3-.5 2.5-1 3.6-1.5 10.1-4.3 19.9-9 29.6-13.9.1-6.9.2-13.7.2-20.5.1-3.5.1-7 .1-10.4.1-3.5.1-6.9.2-10.3 0-1.3 0-2.6 0-3.9 0-1.2 0-2.5.1-3.8 0-1.2 0-2.3 0-3.5 0-1 0-2.1 0-3.1-.6-2.5-.6-2.5-3-4.3-.9-.4-1.7-.8-2.6-1.2-2.1-1-2.1-1-6.3-2.9-.8-.4-1.7-.7-2.5-1.1-10.8-4.6-21.8-8.7-32.8-12.8-2-.7-3.9-1.4-5.9-2.2-1.8-.7-3.7-1.4-5.5-2-3.2-1-6.4-2.1-9.5-3.4-4-2.6-5.3-5.9-7.1-10.2-.3-1.1-.7-2.2-1.1-3.2-.8-2.2-1.6-4.3-2.4-6.4-2.7-7.9-3.7-13.1-.1-20.9.9-1.9 1.7-3.8 2.6-5.7.5-1 .9-2.1 1.4-3.1 3.1-6.9 6-13.8 8.8-20.8.6-1.5 1.3-3.1 1.9-4.6 1.8-4.4 3.5-8.7 5.1-13 .7-1.9.7-1.9 1.4-3.7 1.1-2.6 2-4.9 2.5-7.7-.9-4.5-.9-4.5-9.7-12.5-1.1-1-2.2-2-3.3-3-4.9-4.7-9.8-9.3-15-13.7-2.9-2.6-5.5-5.2-8-8.1-2-2.4-2-2.4-4.5-4-5.9-.1-5.9-.1-17 4.3-1.2.4-2.4.9-3.5 1.4-11.8 4.6-23.5 9.6-35 14.8-.7.3-1.4.6-2.1 1-1.3.5-2.6 1.1-3.9 1.7-2.1 1-4.3 1.9-6.5 2.8-8.6 2.6-19-2.4-26.8-6.2-13-12.2-13-12.2-18.3-30C62.7 37 60.1 30.4 57 23.8c-.5-1.2-1-2.3-1.6-3.4-1.3-2.8-2.6-5.7-4-8.6-.4-.9-.9-1.8-1.4-2.7-.9-2.3-1.9-4.3-3.2-6.4C44 .1 44 .1 35.7 0 34.5 0 33.2 0 32 0c-3.3 0-6.6 0-9.8 0-3.5 0-6.9.1-10.3 0C9.2 0 6.5 0 3.8 0 2.5 0 1.3 0 0 0Z" transform="translate(239,3.9375)"/>
 </svg>
 `;
@@ -183,7 +183,7 @@ const menuTabs: IMenuTab[] = [{
     icon: CONSOLE_ICON
 }, {
     label: "Configs",
-    icon: GEAR_ICON
+    icon: gearIcon(15.5)
 }, {
     label: "Experimentals",
     icon: `
@@ -1053,7 +1053,7 @@ export const menuContent: IMenuContent = {
         id: "improvementLogging",
         type: "toggle",
         description: "Allows the platform to automatically track and send anonymous logic and performance data to help make improvements.",
-        icon: GEAR_ICON_2,
+        icon: gearIcon(22),
         settings: [{
             label: "Download Local Copy",
             description: "Downloads a local FPL file as well upon death instead of only sending it to the webhook.",
@@ -1067,7 +1067,7 @@ export const menuContent: IMenuContent = {
         id: "autoSaveSettings",
         type: "toggle",
         status: false,
-        icon: GEAR_ICON_2
+        icon: gearIcon(22)
     }, {
         label: "",
         id: "",
@@ -1095,11 +1095,6 @@ export const menuContent: IMenuContent = {
         id: "",
         description: `By using this software, you acknowledge that the developers and anyone associated with this software are not responsible or liable for any direct, indirect, incidental, consequential, or other damages, losses, or issues of any kind arising from its use, including but not limited to data loss, system crashes, or other malfunctions.`,
         type: "paragraph"
-    }, {
-        id: "",
-        label: "",
-        type: "paragraph",
-        description: `The falcon is a medium-sized bird of prey known worldwide for its extraordinary speed, sharp vision, and exceptional hunting precision, belonging to the genus Falco within the family Falconidae, a group of raptors that has fascinated humanity for thousands of years due to their aerial prowess, predatory dominance, and unique biological adaptations. These magnificent birds feature long, slender, pointed wings and streamlined, muscular bodies designed specifically for high-speed, highly agile flight, allowing them to perform astonishing maneuvers, rapid direction changes, and dramatic stoop dives that leave prey with virtually no time to react or escape. Unlike true hawks and eagles, which typically rely on their powerful feet and crushing talons to subdue and kill their victims, falcons possess a distinct notch on the edge of their upper beak known as a tomial tooth, a specialized anatomical adaptation that enables them to cleanly and rapidly sever the neck vertebra of their captured prey, typically consisting of smaller birds, rodents, bats, and large insects. Among the diverse members of this genus, the peregrine falcon (Falco peregrinus) stands as the undeniable king of speed, universally celebrated as the fastest member of the animal kingdom on Earth, capable of reaching breathtaking diving speeds well in excess of 200 miles per hour (320 kilometers per hour) when plummeting from immense altitudes to strike unsuspecting birds mid-air with devastating force. Beyond their unbelievable kinetic performance, falcons are equipped with some of the most advanced optical systems found anywhere in nature, possessing large, forward-facing eyes with a high concentration of photoreceptor cells and dual foveas, granting them a visual acuity estimated to be up to eight times sharper than that of a human, which allows them to spot tiny targets and track subtle movements across vast distances, open fields, or dense urban landscapes with microscopic detail. Their plumage varies widely depending on the specific species, age, and geographic habitat, ranging from the slate-gray uppers and barred underparts of the peregrine to the sandy, mottled browns of the desert-dwelling lanner falcon and the bright, colorful rufous tones of the diminutive American kestrel, yet almost all species share signature facial markings such as dark vertical malar stripes—often referred to as "mustaches"—which are believed to reduce sun glare during intense aerial pursuits, much like the black paint worn by modern athletes under their eyes. Geographically, falcons represent one of the most widely distributed avian families on the planet, occupying every continent except Antarctica, thriving in an incredible range of environments that includes arctic tundras, arid deserts, lush grasslands, rugged mountain ranges, coastal cliffs, dense woodlands, and increasingly, bustling metropolitan cities where towering skyscrapers and concrete bridges serve as artificial cliff sides for nesting while abundance of urban pigeons provides an endless food supply. Their breeding and nesting behavior is similarly unique; most falcon species do not construct elaborate stick nests of their own, choosing instead to lay their eggs on bare rock ledges, scrape hollows on cliff faces, hollow tree cavities, abandoned nests built by crows or hawks, or man-made nest boxes provided by conservationists. Female falcons are generally noticeably larger and heavier than their male counterparts—a phenomenon known as reverse sexual dimorphism—which allows the pair to hunt different sizes of prey within their shared territory, thereby maximizing their food gathering efficiency while raising their hungry nestlings, known as eyasses, who depend on both parents for intense feeding, thermal protection, and flight training during their early weeks of life. Throughout human history, the falcon has held a deeply symbolic and functional relationship with civilization, most famously demonstrated through the ancient art of falconry, a traditional practice originating over four thousand years ago in the steppes of Central Asia and the Middle East, where humans trained these wild raptors to hunt alongside them in a partnership built on trust, precise conditioning, and mutual benefit rather than force or coercion. In ancient Egypt, the falcon was revered as a divine creature, personified by Horus, the sky god depicted with a falcon's head whose eyes represented the sun and the moon, symbolizing protection, kingship, and celestial power, while in medieval European feudal societies, owning and flying specific falcon species was strictly dictated by social rank, with noble gyrfalcons reserved for kings and smaller kestrels assigned to servants and priests. Despite their historical prominence and natural dominance, many falcon populations faced catastrophic declines in the mid-twentieth century due to human activity, particularly the widespread agricultural use of synthetic chemical pesticides like DDT, which accumulated up the food chain, caused severe eggshell thinning, and led to devastating reproductive failures that brought species like the peregrine falcon dangerously close to total extinction across North America and Europe. Fortunately, thanks to landmark environmental legislation, the total banning of DDT, and groundbreaking international conservation initiatives—including captive breeding programs, artificial nest monitoring, and reintroduction efforts led by organizations such as The Peregrine Fund—falcon populations experienced one of the most miraculous wildlife recoveries in modern history, ultimately leading to their removal from endangered species lists and cementing their status as a global symbol of successful wildlife management and ecological resilience. Today, these apex aerial predators continue to thrive across both wild wilderness areas and modern urban centers, continuing to captivate researchers, birdwatchers, and communities worldwide with their unmatched flight mechanics, fierce predatory intelligence, rich cultural legacy, and sheer physical beauty as they command the open skies with effortless mastery.`
     }]
 };
 
@@ -1132,25 +1127,19 @@ export default class Menu {
         this.saveSettings();
     }
 
-    static async loadSettings(customSettings?: string) {
-        const data: Record<string, any> = customSettings || (localStorage.getItem("falcon-settings") ? JSON.parse(localStorage.getItem("falcon-settings")!) : {});
+    static async loadSettings(customSettings?: Record<string, unknown>) {
+        const data = customSettings ?? readJson<Record<string, unknown>>("falcon-settings", {});
 
         for (const id in data) {
-            if (typeof this.itemMap[id] !== undefined) {
-                try {
-                    this.itemMap[id].status = data[id];
-                } catch (error) { }
-            }
+            // Own keys only: `in` would also match inherited names such as "__proto__".
+            if (Object.hasOwn(this.itemMap, id)) this.itemMap[id].status = data[id];
         }
 
         return true;
     }
 
     static loadFavorites() {
-        const favorites = localStorage.getItem("falcon-favorites");
-        if (!favorites) return;
-
-        const allFavorites = JSON.parse(favorites);
+        const allFavorites = readJson<unknown>("falcon-favorites", null);
         if (!Array.isArray(allFavorites)) return;
 
         for (const id in this.itemMap) {
@@ -1368,6 +1357,8 @@ export default class Menu {
     private static oldItems: IMenuItem[] = [];
 
     static renderItems(items: IMenuItem[], contentElement?: HTMLElement, tabIndex?: number, isNested: boolean = false) {
+        // Nested calls draw dropdowns inside an outer render; time only the outer one.
+        const drawStart = __DEV__ && !isNested ? profileStart() : 0;
         contentElement = contentElement ?? this.contentElement;
         contentElement.innerHTML = "";
 
@@ -1394,6 +1385,8 @@ export default class Menu {
             noItemsElem.innerHTML = tabIndex === 0 ? "You haven't favorited any toggles just yet." : "There are no items in this tab yet.<br>Please check back in a future update.";
             contentElement.appendChild(noItemsElem);
         }
+
+        if (__DEV__ && !isNested) profileEnd("menu", drawStart);
     }
 
     static selectedTab = 1;

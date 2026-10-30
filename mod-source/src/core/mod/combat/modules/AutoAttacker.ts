@@ -1,5 +1,5 @@
 import items from "@constants/items";
-import Player from "@constants/Player";
+import Player from "@entities/Player";
 import Client from "@core/Client";
 import PlayerCombatManager, { WeaponFetchData } from "@core/logic/players/core/PlayerCombatManager";
 import PlayerStateManager from "@core/logic/players/core/PlayerStateManager";

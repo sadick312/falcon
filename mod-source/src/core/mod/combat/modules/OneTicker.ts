@@ -1,7 +1,7 @@
 import CombatModule from "@combat-utils/CombatModule";
 import CombatUtils from "@combat-utils/CombatUtils";
 import items, { WEAPON_ID_MAP, WEAPON_VARIANT_MAP } from "@constants/items";
-import Player from "@constants/Player";
+import Player from "@entities/Player";
 import { STORE_ACCESSORY_MAP, STORE_HAT_ID, STORE_HAT_MAP } from "@constants/store";
 import Client from "@core/Client";
 import PlayerCombatManager from "@core/logic/players/core/PlayerCombatManager";

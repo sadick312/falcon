@@ -1,4 +1,4 @@
-import { ais } from "@constants/Ai";
+import { ais } from "@entities/Ai";
 import Client from "@core/Client";
 import PlayerManager from "@core/logic/players/PlayerManager";
 import { Point } from "@mod-types/index";

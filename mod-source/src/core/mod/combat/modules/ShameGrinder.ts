@@ -1,6 +1,6 @@
 import CombatModule from "@combat-utils/CombatModule";
 import items from "@constants/items";
-import Player from "@constants/Player";
+import Player from "@entities/Player";
 import PlacementSystem from "@core/mod/combat/core/PlacementSystem";
 import Angle from "@placing/Angle";
 import withinDist from "@utils/geometry/withinDist";

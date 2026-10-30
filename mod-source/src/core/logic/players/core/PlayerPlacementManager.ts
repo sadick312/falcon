@@ -1,5 +1,5 @@
 import items, { WEAPON_ID_MAP } from "@constants/items";
-import Player from "@constants/Player";
+import Player from "@entities/Player";
 import Client from "@core/Client";
 import PotentialObjectManager from "@core/logic/PotentialObjectManager";
 import AngleFinder, { FinderOptions } from "@placing/AngleFinder";

@@ -1,4 +1,4 @@
-import { ais } from "@constants/Ai";
+import { ais } from "@entities/Ai";
 import Client from "@core/Client";
 import ModManager from "@core/ModManager";
 import MessageHandler from "@core/socket/events/utils/MessageHandler";

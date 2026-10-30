@@ -1,8 +1,8 @@
 import EntityHandler from "@constants/EntityHandler";
 import items, { WEAPON_ID_MAP, WEAPON_VARIANT_MAP } from "@constants/items";
-import Player from "@constants/Player";
-import Projectile from "@constants/Projectile";
-import SimulationProjectile from "@constants/SimulationProjectile";
+import Player from "@entities/Player";
+import Projectile from "@entities/Projectile";
+import SimulationProjectile from "@entities/SimulationProjectile";
 import Client from "@core/Client";
 import ObjectManager from "@core/logic/ObjectManager";
 import PlayerManager from "@core/logic/players/PlayerManager";

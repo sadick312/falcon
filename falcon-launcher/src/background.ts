@@ -1,3 +1,5 @@
+import { prepareGamePage, startFalconClient } from "./gameLoader";
+
 (function () {
     // Game pages Falcon replaces. Keep in sync with content_scripts in manifest.json and the
     // profiles in mod-source/src/utils/constants/Endpoints.ts.
@@ -11,39 +13,14 @@
         }
     }
 
-    async function registerCspBypassRule() {
-        const RULE_ID = 9999;
+    // Earlier versions stripped the game pages' CSP header with dynamic rule 9999. Neither game host sends
+    // one, and the bundle is now injected as a file (exempt from page CSP), so the rule only needs removing.
+    // Chrome keeps dynamic rules across extension updates, so clear it explicitly.
+    const LEGACY_CSP_RULE_ID = 9999;
 
-        const rule: chrome.declarativeNetRequest.Rule = {
-            id: RULE_ID,
-            priority: 1,
-            action: {
-                type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
-                responseHeaders: [
-                    {
-                        header: "content-security-policy",
-                        operation: chrome.declarativeNetRequest.HeaderOperation.REMOVE
-                    }
-                ]
-            },
-            condition: {
-                requestDomains: GAME_HOSTS,
-                resourceTypes: [
-                    chrome.declarativeNetRequest.ResourceType.MAIN_FRAME,
-                    chrome.declarativeNetRequest.ResourceType.SUB_FRAME
-                ]
-            }
-        };
-
-        await chrome.declarativeNetRequest.updateDynamicRules({
-            removeRuleIds: [RULE_ID],
-            addRules: [rule]
-        });
+    function removeLegacyCspRule() {
+        chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds: [LEGACY_CSP_RULE_ID] }).catch(console.error);
     }
-
-    chrome.runtime.onStartup.addListener(() => {
-        registerCspBypassRule().catch(console.error);
-    });
 
     async function fetchAsset(path: string) {
         const response = await fetch(chrome.runtime.getURL(`mod/${path}`));
@@ -55,7 +32,7 @@
     }
 
     chrome.runtime.onInstalled.addListener((details) => {
-        registerCspBypassRule().catch(console.error);
+        removeLegacyCspRule();
 
         if (details.reason === "install") {
             chrome.tabs.create({
@@ -74,53 +51,35 @@
         if (!isGamePage(details.url)) return;
         if (details.frameId !== 0) return;
 
+        // documentIds pins every step to this page load, so a navigation in between can't receive half of it.
+        const target = { tabId: details.tabId, documentIds: [details.documentId] };
+
         Promise.all([
             fetchAsset("index.html"),
-            fetchAsset("style.css"),
-            fetchAsset("bundle.js")
-        ]).then(([htmlContent, cssContent, jsContent]) => {
-            chrome.scripting.executeScript({
-                target: { tabId: details.tabId, frameIds: [details.frameId] },
+            fetchAsset("style.css")
+        ]).then(async ([htmlContent, cssContent]) => {
+            // Same order as before: replace the page, wait for Turnstile, then run the bundle and start it.
+            await chrome.scripting.executeScript({
+                target,
                 injectImmediately: true,
                 world: "MAIN",
-                func: injectDynamicLoader,
-                args: [htmlContent, cssContent, jsContent]
+                func: prepareGamePage,
+                args: [htmlContent, cssContent, true]
+            });
+
+            await chrome.scripting.executeScript({
+                target,
+                injectImmediately: true,
+                world: "MAIN",
+                files: ["mod/bundle.js"]
+            });
+
+            await chrome.scripting.executeScript({
+                target,
+                injectImmediately: true,
+                world: "MAIN",
+                func: startFalconClient
             });
         }).catch(console.error);
     });
-
-    function injectDynamicLoader(htmlContent: string, cssContent: string, jsContent: string) {
-        (window as any).oldHTML = document.documentElement.innerHTML;
-        document.documentElement.innerHTML = htmlContent;
-
-        const styleElement = document.createElement("style");
-        styleElement.innerHTML = cssContent;
-        document.head.appendChild(styleElement);
-
-        const turnstile = document.createElement("script");
-        turnstile.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
-        document.head.appendChild(turnstile);
-
-        turnstile.onload = async () => {
-            const runtimeScript = document.createElement("script");
-            runtimeScript.innerText = jsContent;
-            document.head.appendChild(runtimeScript);
-
-            if (typeof (window as any).initFalconClient === "function") {
-                (window as any).initFalconClient();
-                delete (window as any).initFalconClient;
-                runtimeScript.remove();
-                return;
-            }
-
-            let interval = setInterval(() => {
-                if (typeof (window as any).initFalconClient === "function") {
-                    clearInterval(interval);
-                    (window as any).initFalconClient();
-                    delete (window as any).initFalconClient;
-                    runtimeScript.remove();
-                }
-            }, 500);
-        };
-    }
 })();

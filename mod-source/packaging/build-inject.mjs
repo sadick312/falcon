@@ -4,6 +4,8 @@
 import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
+// The extension's page-side loader steps; Node 24 strips the TypeScript types on import.
+import { prepareGamePage, startFalconClient } from "../../falcon-launcher/src/gameLoader.ts";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
@@ -13,8 +15,8 @@ const htmlPath = path.join(root, "..", "public", "index.html");
 const cssPath = path.join(root, "..", "public", "style.css");
 const outPath = path.join(root, "dist", "falcon-quick-inject.js");
 
-// Same steps as injectDynamicLoader in falcon-launcher/src/background.ts, minus the Turnstile script:
-// moomodding.io has no captcha. Works whether it runs before or after DOMContentLoaded.
+// Uses the same prepareGamePage/startFalconClient as the extension, without Turnstile (moomodding.io has
+// no captcha) and with the bundle run as an inline script. Works before or after DOMContentLoaded.
 const template = `/* Falcon Quick Inject build. Paste into moomodding.io > Quick Inject ("Bundle Replacement"),
    or run it in the console of a sandbox.moomodding.io game page. */
 (function () {
@@ -26,27 +28,19 @@ const template = `/* Falcon Quick Inject build. Paste into moomodding.io > Quick
     var css = __CSS__;
     var js = __JS__;
 
-    function boot() {
-        window.oldHTML = document.documentElement.innerHTML;
-        document.documentElement.innerHTML = html;
+    var prepareGamePage = __PREPARE__;
+    var startFalconClient = __START__;
 
-        var style = document.createElement("style");
-        style.textContent = css;
-        document.head.appendChild(style);
+    function boot() {
+        // Without Turnstile this finishes synchronously; the returned promise is already resolved.
+        prepareGamePage(html, css, false);
 
         var runtime = document.createElement("script");
         runtime.textContent = js;
         document.head.appendChild(runtime);
         runtime.remove();
 
-        var init = window.initFalconClient;
-        if (typeof init !== "function") {
-            console.error("[Falcon] The bundle did not define initFalconClient.");
-            return;
-        }
-
-        delete window.initFalconClient;
-        init();
+        startFalconClient();
     }
 
     if (document.readyState === "loading") {
@@ -73,7 +67,10 @@ async function run() {
     ]);
 
     // Function replacers so "$" sequences in the inlined sources are not treated as patterns.
+    // Loader functions first, so a placeholder-like string inside the bundle can't be replaced.
     const output = template
+        .replace("__PREPARE__", () => prepareGamePage.toString())
+        .replace("__START__", () => startFalconClient.toString())
         .replace("__HTML__", () => JSON.stringify(html))
         .replace("__CSS__", () => JSON.stringify(css))
         .replace("__JS__", () => JSON.stringify(js));

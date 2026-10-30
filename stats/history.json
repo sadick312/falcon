@@ -1,0 +1,2495 @@
+[
+  {
+    "date": "2026-10-30T12:51:23.074Z",
+    "commit": "f187a05",
+    "dirty": false,
+    "label": "baseline: HEAD before review fixes",
+    "build": {
+      "modMs": 961,
+      "modOk": true,
+      "extMs": 2981,
+      "extOk": true
+    },
+    "bundle": {
+      "raw": 1141205,
+      "gzip": 242579,
+      "top": [
+        {
+          "name": "emojione (npm)",
+          "bytes": 653375,
+          "pct": 57.3
+        },
+        {
+          "name": "src/core/menu/Menu.ts",
+          "bytes": 127648,
+          "pct": 11.2
+        },
+        {
+          "name": "src/ui/data/AllTemporaryObjects.ts",
+          "bytes": 27881,
+          "pct": 2.4
+        },
+        {
+          "name": "@msgpack/msgpack (npm)",
+          "bytes": 21659,
+          "pct": 1.9
+        },
+        {
+          "name": "src/core/mod/defense/DefenseSystem.ts",
+          "bytes": 13256,
+          "pct": 1.2
+        },
+        {
+          "name": "src/core/menu/menu.css",
+          "bytes": 10022,
+          "pct": 0.9
+        },
+        {
+          "name": "src/utils/constants/items.ts",
+          "bytes": 9505,
+          "pct": 0.8
+        },
+        {
+          "name": "src/core/socket/SocketListener.ts",
+          "bytes": 8433,
+          "pct": 0.7
+        },
+        {
+          "name": "src/rendering/RendererUtils.ts",
+          "bytes": 7811,
+          "pct": 0.7
+        },
+        {
+          "name": "src/constants/Player.ts",
+          "bytes": 7811,
+          "pct": 0.7
+        },
+        {
+          "name": "src/core/PacketReplayer.ts",
+          "bytes": 7354,
+          "pct": 0.6
+        },
+        {
+          "name": "src/core/mod/combat/placing/AngleFinder.ts",
+          "bytes": 7322,
+          "pct": 0.6
+        },
+        {
+          "name": "src/core/ModManager.ts",
+          "bytes": 7167,
+          "pct": 0.6
+        },
+        {
+          "name": "@noble/hashes (npm)",
+          "bytes": 7148,
+          "pct": 0.6
+        },
+        {
+          "name": "src/utils/constants/store.ts",
+          "bytes": 7067,
+          "pct": 0.6
+        }
+      ]
+    },
+    "typecheck": {
+      "errors": {
+        "mod-source": 0,
+        "falcon-launcher": 0
+      },
+      "any": 54,
+      "tsIgnore": 0
+    },
+    "code": {
+      "workspaces": {
+        "mod-source": {
+          "files": 191,
+          "lines": 25028
+        },
+        "falcon-launcher": {
+          "files": 3,
+          "lines": 274
+        }
+      },
+      "largest": [
+        {
+          "file": "mod-source/src/ui/data/AllTemporaryObjects.ts",
+          "lines": 2183
+        },
+        {
+          "file": "mod-source/src/core/menu/Menu.ts",
+          "lines": 1496
+        },
+        {
+          "file": "mod-source/src/utils/constants/items.ts",
+          "lines": 896
+        },
+        {
+          "file": "mod-source/src/core/mod/defense/DefenseSystem.ts",
+          "lines": 807
+        },
+        {
+          "file": "mod-source/src/utils/constants/store.ts",
+          "lines": 624
+        },
+        {
+          "file": "mod-source/src/core/mod/combat/placing/AngleFinder.ts",
+          "lines": 615
+        },
+        {
+          "file": "mod-source/src/rendering/RendererUtils.ts",
+          "lines": 553
+        },
+        {
+          "file": "mod-source/src/constants/Player.ts",
+          "lines": 526
+        },
+        {
+          "file": "mod-source/src/core/socket/SocketListener.ts",
+          "lines": 497
+        },
+        {
+          "file": "mod-source/src/core/menu/menu.css",
+          "lines": 496
+        }
+      ]
+    },
+    "imports": {
+      "files": 186,
+      "topModules": [
+        {
+          "module": "mod-source/src/core/Client.ts",
+          "count": 83
+        },
+        {
+          "module": "mod-source/src/core/menu/Menu.ts",
+          "count": 63
+        },
+        {
+          "module": "mod-source/src/utils/constants/items.ts",
+          "count": 58
+        },
+        {
+          "module": "mod-source/src/core/ModManager.ts",
+          "count": 46
+        },
+        {
+          "module": "mod-source/src/constants/Player.ts",
+          "count": 44
+        },
+        {
+          "module": "mod-source/src/utils/constants/store.ts",
+          "count": 37
+        },
+        {
+          "module": "mod-source/src/utils/utils/config/ScriptConfig.ts",
+          "count": 35
+        },
+        {
+          "module": "mod-source/src/utils/constants/GameObject.ts",
+          "count": 31
+        },
+        {
+          "module": "mod-source/src/core/logic/ObjectManager.ts",
+          "count": 31
+        },
+        {
+          "module": "mod-source/src/utils/socket/PacketMap.ts",
+          "count": 28
+        },
+        {
+          "module": "mod-source/src/utils/utils/geometry/withinDist.ts",
+          "count": 28
+        },
+        {
+          "module": "mod-source/src/core/mod/combat/core/AttackManager.ts",
+          "count": 26
+        },
+        {
+          "module": "mod-source/src/core/logic/players/core/PlayerCombatManager.ts",
+          "count": 23
+        },
+        {
+          "module": "mod-source/src/utils/utils/geometry/getDistSq.ts",
+          "count": 21
+        },
+        {
+          "module": "mod-source/src/rendering/RendererUtils.ts",
+          "count": 20
+        }
+      ],
+      "packages": [
+        {
+          "name": "@msgpack/msgpack",
+          "count": 4
+        },
+        {
+          "name": "@noble/hashes",
+          "count": 2
+        },
+        {
+          "name": "emojione",
+          "count": 1
+        }
+      ]
+    },
+    "circular": {
+      "groups": 2,
+      "files": 135,
+      "mutualPairs": 102,
+      "examples": [
+        {
+          "size": 123,
+          "cycle": [
+            "mod-source/src/constants/Ai.ts",
+            "mod-source/src/rendering/RendererUtils.ts",
+            "mod-source/src/constants/Player.ts",
+            "mod-source/src/rendering/utils/core/renderProjectiles.ts",
+            "mod-source/src/rendering/core/CameraManager.ts",
+            "mod-source/src/constants/Ai.ts"
+          ]
+        },
+        {
+          "size": 12,
+          "cycle": [
+            "mod-source/src/core/menu/Menu.ts",
+            "mod-source/src/core/menu/utils/drawNumberInput.ts",
+            "mod-source/src/core/menu/Menu.ts"
+          ]
+        }
+      ]
+    },
+    "deps": {
+      "outdated": [
+        {
+          "name": "@crxjs/vite-plugin",
+          "current": "2.7.1",
+          "wanted": "2.7.1",
+          "latest": "3.0.0",
+          "dependent": "falcon-launcher",
+          "majorBehind": true
+        },
+        {
+          "name": "@types/chrome",
+          "current": "0.2.9",
+          "wanted": "0.2.9",
+          "latest": "0.3.7",
+          "dependent": "falcon-launcher",
+          "majorBehind": false
+        },
+        {
+          "name": "@types/node",
+          "current": "26.6.5",
+          "wanted": "26.6.6",
+          "latest": "26.6.6",
+          "dependent": "falcon-launcher",
+          "majorBehind": false
+        },
+        {
+          "name": "esbuild",
+          "current": "0.27.7",
+          "wanted": "0.27.7",
+          "latest": "0.28.2",
+          "dependent": "mod-source",
+          "majorBehind": false
+        },
+        {
+          "name": "typescript",
+          "current": "6.0.3",
+          "wanted": "6.0.3",
+          "latest": "7.0.2",
+          "dependent": "falcon-launcher",
+          "majorBehind": true
+        }
+      ],
+      "audit": {
+        "info": 0,
+        "low": 2,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 2
+      }
+    },
+    "methods": {
+      "any": "typescript-ast",
+      "imports": "typescript-resolve"
+    }
+  },
+  {
+    "date": "2026-10-30T12:51:33.845Z",
+    "commit": "f187a05",
+    "dirty": true,
+    "label": "top-5 review fixes (uncommitted)",
+    "build": {
+      "modMs": 1117,
+      "modOk": true,
+      "extMs": 2275,
+      "extOk": true
+    },
+    "bundle": {
+      "raw": 1141232,
+      "gzip": 242614,
+      "top": [
+        {
+          "name": "emojione (npm)",
+          "bytes": 653375,
+          "pct": 57.3
+        },
+        {
+          "name": "src/core/menu/Menu.ts",
+          "bytes": 127648,
+          "pct": 11.2
+        },
+        {
+          "name": "src/ui/data/AllTemporaryObjects.ts",
+          "bytes": 27881,
+          "pct": 2.4
+        },
+        {
+          "name": "@msgpack/msgpack (npm)",
+          "bytes": 21520,
+          "pct": 1.9
+        },
+        {
+          "name": "src/core/mod/defense/DefenseSystem.ts",
+          "bytes": 13256,
+          "pct": 1.2
+        },
+        {
+          "name": "src/core/menu/menu.css",
+          "bytes": 10022,
+          "pct": 0.9
+        },
+        {
+          "name": "src/utils/constants/items.ts",
+          "bytes": 9505,
+          "pct": 0.8
+        },
+        {
+          "name": "src/core/socket/SocketListener.ts",
+          "bytes": 8453,
+          "pct": 0.7
+        },
+        {
+          "name": "src/rendering/RendererUtils.ts",
+          "bytes": 7811,
+          "pct": 0.7
+        },
+        {
+          "name": "src/constants/Player.ts",
+          "bytes": 7811,
+          "pct": 0.7
+        },
+        {
+          "name": "src/core/PacketReplayer.ts",
+          "bytes": 7381,
+          "pct": 0.6
+        },
+        {
+          "name": "src/core/mod/combat/placing/AngleFinder.ts",
+          "bytes": 7322,
+          "pct": 0.6
+        },
+        {
+          "name": "src/core/ModManager.ts",
+          "bytes": 7167,
+          "pct": 0.6
+        },
+        {
+          "name": "@noble/hashes (npm)",
+          "bytes": 7148,
+          "pct": 0.6
+        },
+        {
+          "name": "src/utils/constants/store.ts",
+          "bytes": 7067,
+          "pct": 0.6
+        }
+      ]
+    },
+    "typecheck": {
+      "errors": {
+        "mod-source": 0,
+        "falcon-launcher": 0
+      },
+      "any": 50,
+      "tsIgnore": 0
+    },
+    "code": {
+      "workspaces": {
+        "mod-source": {
+          "files": 191,
+          "lines": 25041
+        },
+        "falcon-launcher": {
+          "files": 3,
+          "lines": 292
+        }
+      },
+      "largest": [
+        {
+          "file": "mod-source/src/ui/data/AllTemporaryObjects.ts",
+          "lines": 2183
+        },
+        {
+          "file": "mod-source/src/core/menu/Menu.ts",
+          "lines": 1496
+        },
+        {
+          "file": "mod-source/src/utils/constants/items.ts",
+          "lines": 896
+        },
+        {
+          "file": "mod-source/src/core/mod/defense/DefenseSystem.ts",
+          "lines": 807
+        },
+        {
+          "file": "mod-source/src/utils/constants/store.ts",
+          "lines": 624
+        },
+        {
+          "file": "mod-source/src/core/mod/combat/placing/AngleFinder.ts",
+          "lines": 615
+        },
+        {
+          "file": "mod-source/src/rendering/RendererUtils.ts",
+          "lines": 553
+        },
+        {
+          "file": "mod-source/src/constants/Player.ts",
+          "lines": 526
+        },
+        {
+          "file": "mod-source/src/core/socket/SocketListener.ts",
+          "lines": 499
+        },
+        {
+          "file": "mod-source/src/core/menu/menu.css",
+          "lines": 496
+        }
+      ]
+    },
+    "imports": {
+      "files": 186,
+      "topModules": [
+        {
+          "module": "mod-source/src/core/Client.ts",
+          "count": 83
+        },
+        {
+          "module": "mod-source/src/core/menu/Menu.ts",
+          "count": 63
+        },
+        {
+          "module": "mod-source/src/utils/constants/items.ts",
+          "count": 58
+        },
+        {
+          "module": "mod-source/src/core/ModManager.ts",
+          "count": 46
+        },
+        {
+          "module": "mod-source/src/constants/Player.ts",
+          "count": 44
+        },
+        {
+          "module": "mod-source/src/utils/constants/store.ts",
+          "count": 37
+        },
+        {
+          "module": "mod-source/src/utils/utils/config/ScriptConfig.ts",
+          "count": 35
+        },
+        {
+          "module": "mod-source/src/utils/constants/GameObject.ts",
+          "count": 31
+        },
+        {
+          "module": "mod-source/src/core/logic/ObjectManager.ts",
+          "count": 31
+        },
+        {
+          "module": "mod-source/src/utils/socket/PacketMap.ts",
+          "count": 28
+        },
+        {
+          "module": "mod-source/src/utils/utils/geometry/withinDist.ts",
+          "count": 28
+        },
+        {
+          "module": "mod-source/src/core/mod/combat/core/AttackManager.ts",
+          "count": 26
+        },
+        {
+          "module": "mod-source/src/core/logic/players/core/PlayerCombatManager.ts",
+          "count": 23
+        },
+        {
+          "module": "mod-source/src/utils/utils/geometry/getDistSq.ts",
+          "count": 21
+        },
+        {
+          "module": "mod-source/src/rendering/RendererUtils.ts",
+          "count": 20
+        }
+      ],
+      "packages": [
+        {
+          "name": "@msgpack/msgpack",
+          "count": 4
+        },
+        {
+          "name": "@noble/hashes",
+          "count": 2
+        },
+        {
+          "name": "emojione",
+          "count": 1
+        }
+      ]
+    },
+    "circular": {
+      "groups": 2,
+      "files": 135,
+      "mutualPairs": 102,
+      "examples": [
+        {
+          "size": 123,
+          "cycle": [
+            "mod-source/src/constants/Ai.ts",
+            "mod-source/src/rendering/RendererUtils.ts",
+            "mod-source/src/constants/Player.ts",
+            "mod-source/src/rendering/utils/core/renderProjectiles.ts",
+            "mod-source/src/rendering/core/CameraManager.ts",
+            "mod-source/src/constants/Ai.ts"
+          ]
+        },
+        {
+          "size": 12,
+          "cycle": [
+            "mod-source/src/core/menu/Menu.ts",
+            "mod-source/src/core/menu/utils/drawNumberInput.ts",
+            "mod-source/src/core/menu/Menu.ts"
+          ]
+        }
+      ]
+    },
+    "deps": {
+      "outdated": [
+        {
+          "name": "@crxjs/vite-plugin",
+          "current": "2.7.1",
+          "wanted": "2.7.1",
+          "latest": "3.0.0",
+          "dependent": "falcon-launcher",
+          "majorBehind": true
+        },
+        {
+          "name": "@types/chrome",
+          "current": "0.2.9",
+          "wanted": "0.2.9",
+          "latest": "0.3.7",
+          "dependent": "falcon-launcher",
+          "majorBehind": false
+        },
+        {
+          "name": "@types/node",
+          "current": "26.6.5",
+          "wanted": "26.6.6",
+          "latest": "26.6.6",
+          "dependent": "falcon-launcher",
+          "majorBehind": false
+        },
+        {
+          "name": "esbuild",
+          "current": "0.27.7",
+          "wanted": "0.27.7",
+          "latest": "0.28.2",
+          "dependent": "mod-source",
+          "majorBehind": false
+        },
+        {
+          "name": "typescript",
+          "current": "6.0.3",
+          "wanted": "6.0.3",
+          "latest": "7.0.2",
+          "dependent": "falcon-launcher",
+          "majorBehind": true
+        }
+      ],
+      "audit": {
+        "info": 0,
+        "low": 2,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 2
+      }
+    },
+    "methods": {
+      "any": "typescript-ast",
+      "imports": "typescript-resolve"
+    }
+  },
+  {
+    "date": "2026-10-30T12:54:51.731Z",
+    "commit": "f187a05",
+    "dirty": true,
+    "label": "batch 1: security",
+    "build": {
+      "modMs": 1006,
+      "modOk": true,
+      "extMs": 2297,
+      "extOk": true
+    },
+    "bundle": {
+      "raw": 1141234,
+      "gzip": 242615,
+      "top": [
+        {
+          "name": "emojione (npm)",
+          "bytes": 653375,
+          "pct": 57.3
+        },
+        {
+          "name": "src/core/menu/Menu.ts",
+          "bytes": 127648,
+          "pct": 11.2
+        },
+        {
+          "name": "src/ui/data/AllTemporaryObjects.ts",
+          "bytes": 27881,
+          "pct": 2.4
+        },
+        {
+          "name": "@msgpack/msgpack (npm)",
+          "bytes": 21520,
+          "pct": 1.9
+        },
+        {
+          "name": "src/core/mod/defense/DefenseSystem.ts",
+          "bytes": 13256,
+          "pct": 1.2
+        },
+        {
+          "name": "src/core/menu/menu.css",
+          "bytes": 10022,
+          "pct": 0.9
+        },
+        {
+          "name": "src/utils/constants/items.ts",
+          "bytes": 9505,
+          "pct": 0.8
+        },
+        {
+          "name": "src/core/socket/SocketListener.ts",
+          "bytes": 8453,
+          "pct": 0.7
+        },
+        {
+          "name": "src/rendering/RendererUtils.ts",
+          "bytes": 7811,
+          "pct": 0.7
+        },
+        {
+          "name": "src/constants/Player.ts",
+          "bytes": 7811,
+          "pct": 0.7
+        },
+        {
+          "name": "src/core/PacketReplayer.ts",
+          "bytes": 7381,
+          "pct": 0.6
+        },
+        {
+          "name": "src/core/mod/combat/placing/AngleFinder.ts",
+          "bytes": 7322,
+          "pct": 0.6
+        },
+        {
+          "name": "src/core/ModManager.ts",
+          "bytes": 7167,
+          "pct": 0.6
+        },
+        {
+          "name": "@noble/hashes (npm)",
+          "bytes": 7148,
+          "pct": 0.6
+        },
+        {
+          "name": "src/utils/constants/store.ts",
+          "bytes": 7067,
+          "pct": 0.6
+        }
+      ]
+    },
+    "typecheck": {
+      "errors": {
+        "mod-source": 0,
+        "falcon-launcher": 0
+      },
+      "any": 50,
+      "tsIgnore": 0
+    },
+    "code": {
+      "workspaces": {
+        "mod-source": {
+          "files": 191,
+          "lines": 25041
+        },
+        "falcon-launcher": {
+          "files": 3,
+          "lines": 274
+        }
+      },
+      "largest": [
+        {
+          "file": "mod-source/src/ui/data/AllTemporaryObjects.ts",
+          "lines": 2183
+        },
+        {
+          "file": "mod-source/src/core/menu/Menu.ts",
+          "lines": 1496
+        },
+        {
+          "file": "mod-source/src/utils/constants/items.ts",
+          "lines": 896
+        },
+        {
+          "file": "mod-source/src/core/mod/defense/DefenseSystem.ts",
+          "lines": 807
+        },
+        {
+          "file": "mod-source/src/utils/constants/store.ts",
+          "lines": 624
+        },
+        {
+          "file": "mod-source/src/core/mod/combat/placing/AngleFinder.ts",
+          "lines": 615
+        },
+        {
+          "file": "mod-source/src/rendering/RendererUtils.ts",
+          "lines": 553
+        },
+        {
+          "file": "mod-source/src/constants/Player.ts",
+          "lines": 526
+        },
+        {
+          "file": "mod-source/src/core/socket/SocketListener.ts",
+          "lines": 499
+        },
+        {
+          "file": "mod-source/src/core/menu/menu.css",
+          "lines": 496
+        }
+      ]
+    },
+    "imports": {
+      "files": 186,
+      "topModules": [
+        {
+          "module": "mod-source/src/core/Client.ts",
+          "count": 83
+        },
+        {
+          "module": "mod-source/src/core/menu/Menu.ts",
+          "count": 63
+        },
+        {
+          "module": "mod-source/src/utils/constants/items.ts",
+          "count": 58
+        },
+        {
+          "module": "mod-source/src/core/ModManager.ts",
+          "count": 46
+        },
+        {
+          "module": "mod-source/src/constants/Player.ts",
+          "count": 44
+        },
+        {
+          "module": "mod-source/src/utils/constants/store.ts",
+          "count": 37
+        },
+        {
+          "module": "mod-source/src/utils/utils/config/ScriptConfig.ts",
+          "count": 35
+        },
+        {
+          "module": "mod-source/src/utils/constants/GameObject.ts",
+          "count": 31
+        },
+        {
+          "module": "mod-source/src/core/logic/ObjectManager.ts",
+          "count": 31
+        },
+        {
+          "module": "mod-source/src/utils/socket/PacketMap.ts",
+          "count": 28
+        },
+        {
+          "module": "mod-source/src/utils/utils/geometry/withinDist.ts",
+          "count": 28
+        },
+        {
+          "module": "mod-source/src/core/mod/combat/core/AttackManager.ts",
+          "count": 26
+        },
+        {
+          "module": "mod-source/src/core/logic/players/core/PlayerCombatManager.ts",
+          "count": 23
+        },
+        {
+          "module": "mod-source/src/utils/utils/geometry/getDistSq.ts",
+          "count": 21
+        },
+        {
+          "module": "mod-source/src/rendering/RendererUtils.ts",
+          "count": 20
+        }
+      ],
+      "packages": [
+        {
+          "name": "@msgpack/msgpack",
+          "count": 4
+        },
+        {
+          "name": "@noble/hashes",
+          "count": 2
+        },
+        {
+          "name": "emojione",
+          "count": 1
+        }
+      ]
+    },
+    "circular": {
+      "groups": 2,
+      "files": 135,
+      "mutualPairs": 102,
+      "examples": [
+        {
+          "size": 123,
+          "cycle": [
+            "mod-source/src/constants/Ai.ts",
+            "mod-source/src/rendering/RendererUtils.ts",
+            "mod-source/src/constants/Player.ts",
+            "mod-source/src/rendering/utils/core/renderProjectiles.ts",
+            "mod-source/src/rendering/core/CameraManager.ts",
+            "mod-source/src/constants/Ai.ts"
+          ]
+        },
+        {
+          "size": 12,
+          "cycle": [
+            "mod-source/src/core/menu/Menu.ts",
+            "mod-source/src/core/menu/utils/drawNumberInput.ts",
+            "mod-source/src/core/menu/Menu.ts"
+          ]
+        }
+      ]
+    },
+    "deps": {
+      "outdated": [
+        {
+          "name": "@crxjs/vite-plugin",
+          "current": "2.7.1",
+          "wanted": "2.7.1",
+          "latest": "3.0.0",
+          "dependent": "falcon-launcher",
+          "majorBehind": true
+        },
+        {
+          "name": "@types/chrome",
+          "current": "0.2.9",
+          "wanted": "0.2.9",
+          "latest": "0.3.7",
+          "dependent": "falcon-launcher",
+          "majorBehind": false
+        },
+        {
+          "name": "@types/node",
+          "current": "26.6.5",
+          "wanted": "26.6.6",
+          "latest": "26.6.6",
+          "dependent": "falcon-launcher",
+          "majorBehind": false
+        },
+        {
+          "name": "esbuild",
+          "current": "0.27.7",
+          "wanted": "0.27.7",
+          "latest": "0.28.2",
+          "dependent": "mod-source",
+          "majorBehind": false
+        },
+        {
+          "name": "typescript",
+          "current": "6.0.3",
+          "wanted": "6.0.3",
+          "latest": "7.0.2",
+          "dependent": "falcon-launcher",
+          "majorBehind": true
+        }
+      ],
+      "audit": {
+        "info": 0,
+        "low": 2,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 2
+      }
+    },
+    "methods": {
+      "any": "typescript-ast",
+      "imports": "typescript-resolve"
+    }
+  },
+  {
+    "date": "2026-10-30T13:10:01.710Z",
+    "commit": "f187a05",
+    "dirty": true,
+    "label": "batch 2: build and tooling",
+    "build": {
+      "modMs": 1130,
+      "modOk": true,
+      "extMs": 1624,
+      "extOk": true
+    },
+    "bundle": {
+      "raw": 644435,
+      "gzip": 180985,
+      "top": [
+        {
+          "name": "src/utils/utils/text/emojiShortnames.json",
+          "bytes": 156341,
+          "pct": 24.3
+        },
+        {
+          "name": "src/core/menu/Menu.ts",
+          "bytes": 127658,
+          "pct": 19.8
+        },
+        {
+          "name": "src/ui/data/AllTemporaryObjects.ts",
+          "bytes": 27881,
+          "pct": 4.3
+        },
+        {
+          "name": "@msgpack/msgpack (npm)",
+          "bytes": 21520,
+          "pct": 3.3
+        },
+        {
+          "name": "src/core/mod/defense/DefenseSystem.ts",
+          "bytes": 13256,
+          "pct": 2.1
+        },
+        {
+          "name": "src/core/menu/menu.css",
+          "bytes": 9748,
+          "pct": 1.5
+        },
+        {
+          "name": "src/utils/constants/items.ts",
+          "bytes": 9505,
+          "pct": 1.5
+        },
+        {
+          "name": "src/core/socket/SocketListener.ts",
+          "bytes": 8424,
+          "pct": 1.3
+        },
+        {
+          "name": "src/rendering/RendererUtils.ts",
+          "bytes": 7811,
+          "pct": 1.2
+        },
+        {
+          "name": "src/constants/Player.ts",
+          "bytes": 7811,
+          "pct": 1.2
+        },
+        {
+          "name": "src/core/PacketReplayer.ts",
+          "bytes": 7381,
+          "pct": 1.1
+        },
+        {
+          "name": "src/core/mod/combat/placing/AngleFinder.ts",
+          "bytes": 7322,
+          "pct": 1.1
+        },
+        {
+          "name": "src/core/ModManager.ts",
+          "bytes": 7167,
+          "pct": 1.1
+        },
+        {
+          "name": "@noble/hashes (npm)",
+          "bytes": 7148,
+          "pct": 1.1
+        },
+        {
+          "name": "src/utils/constants/store.ts",
+          "bytes": 7067,
+          "pct": 1.1
+        }
+      ]
+    },
+    "typecheck": {
+      "errors": {
+        "mod-source": 0,
+        "falcon-launcher": 0
+      },
+      "any": 50,
+      "tsIgnore": 0
+    },
+    "code": {
+      "workspaces": {
+        "mod-source": {
+          "files": 194,
+          "lines": 25080
+        },
+        "falcon-launcher": {
+          "files": 3,
+          "lines": 274
+        }
+      },
+      "largest": [
+        {
+          "file": "mod-source/src/ui/data/AllTemporaryObjects.ts",
+          "lines": 2183
+        },
+        {
+          "file": "mod-source/src/core/menu/Menu.ts",
+          "lines": 1496
+        },
+        {
+          "file": "mod-source/src/utils/constants/items.ts",
+          "lines": 896
+        },
+        {
+          "file": "mod-source/src/core/mod/defense/DefenseSystem.ts",
+          "lines": 807
+        },
+        {
+          "file": "mod-source/src/utils/constants/store.ts",
+          "lines": 624
+        },
+        {
+          "file": "mod-source/src/core/mod/combat/placing/AngleFinder.ts",
+          "lines": 615
+        },
+        {
+          "file": "mod-source/src/rendering/RendererUtils.ts",
+          "lines": 553
+        },
+        {
+          "file": "mod-source/src/constants/Player.ts",
+          "lines": 526
+        },
+        {
+          "file": "mod-source/src/core/socket/SocketListener.ts",
+          "lines": 499
+        },
+        {
+          "file": "mod-source/src/core/menu/menu.css",
+          "lines": 496
+        }
+      ]
+    },
+    "imports": {
+      "files": 183,
+      "topModules": [
+        {
+          "module": "mod-source/src/core/Client.ts",
+          "count": 83
+        },
+        {
+          "module": "mod-source/src/core/menu/Menu.ts",
+          "count": 61
+        },
+        {
+          "module": "mod-source/src/utils/constants/items.ts",
+          "count": 51
+        },
+        {
+          "module": "mod-source/src/core/ModManager.ts",
+          "count": 45
+        },
+        {
+          "module": "mod-source/src/utils/constants/store.ts",
+          "count": 37
+        },
+        {
+          "module": "mod-source/src/utils/utils/config/ScriptConfig.ts",
+          "count": 35
+        },
+        {
+          "module": "mod-source/src/core/logic/ObjectManager.ts",
+          "count": 31
+        },
+        {
+          "module": "mod-source/src/utils/utils/geometry/withinDist.ts",
+          "count": 28
+        },
+        {
+          "module": "mod-source/src/core/mod/combat/core/AttackManager.ts",
+          "count": 26
+        },
+        {
+          "module": "mod-source/src/utils/socket/PacketMap.ts",
+          "count": 22
+        },
+        {
+          "module": "mod-source/src/core/logic/players/core/PlayerCombatManager.ts",
+          "count": 21
+        },
+        {
+          "module": "mod-source/src/utils/utils/geometry/getDistSq.ts",
+          "count": 21
+        },
+        {
+          "module": "mod-source/src/rendering/RendererUtils.ts",
+          "count": 20
+        },
+        {
+          "module": "mod-source/src/utils/utils/dom/getElem.ts",
+          "count": 19
+        },
+        {
+          "module": "mod-source/src/core/mod/combat/utils/CombatUtils.ts",
+          "count": 19
+        }
+      ],
+      "packages": [
+        {
+          "name": "@msgpack/msgpack",
+          "count": 4
+        },
+        {
+          "name": "@noble/hashes",
+          "count": 1
+        }
+      ]
+    },
+    "circular": {
+      "groups": 3,
+      "files": 118,
+      "mutualPairs": 92,
+      "examples": [
+        {
+          "size": 102,
+          "cycle": [
+            "mod-source/src/constants/Player.ts",
+            "mod-source/src/core/mod/simulation/MovementPhysicsSimulator.ts",
+            "mod-source/src/constants/Player.ts"
+          ]
+        },
+        {
+          "size": 10,
+          "cycle": [
+            "mod-source/src/core/menu/Menu.ts",
+            "mod-source/src/core/menu/utils/drawNumberInput.ts",
+            "mod-source/src/core/menu/Menu.ts"
+          ]
+        },
+        {
+          "size": 6,
+          "cycle": [
+            "mod-source/src/rendering/RendererUtils.ts",
+            "mod-source/src/rendering/utils/items/renderDottedCircle.ts",
+            "mod-source/src/rendering/RendererUtils.ts"
+          ]
+        }
+      ]
+    },
+    "deps": {
+      "outdated": [
+        {
+          "name": "@crxjs/vite-plugin",
+          "current": "2.7.1",
+          "wanted": "2.7.1",
+          "latest": "3.0.0",
+          "dependent": "falcon-launcher",
+          "majorBehind": true
+        },
+        {
+          "name": "@types/chrome",
+          "current": "0.2.9",
+          "wanted": "0.2.9",
+          "latest": "0.3.7",
+          "dependent": "falcon-launcher",
+          "majorBehind": false
+        },
+        {
+          "name": "@types/node",
+          "current": "26.6.5",
+          "wanted": "26.6.6",
+          "latest": "26.6.6",
+          "dependent": "falcon-launcher",
+          "majorBehind": false
+        },
+        {
+          "name": "esbuild",
+          "current": "0.27.7",
+          "wanted": "0.27.7",
+          "latest": "0.28.2",
+          "dependent": "mod-source",
+          "majorBehind": false
+        }
+      ],
+      "audit": {
+        "info": 0,
+        "low": 2,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 2
+      }
+    },
+    "methods": {
+      "any": "scanner",
+      "imports": "esbuild-metafile"
+    }
+  },
+  {
+    "date": "2026-10-30T13:15:54.622Z",
+    "commit": "f187a05",
+    "dirty": true,
+    "label": "batch 3: correctness",
+    "methods": {
+      "any": "scanner",
+      "imports": "esbuild-metafile"
+    },
+    "build": {
+      "modMs": 1135,
+      "modOk": true,
+      "extMs": 1714,
+      "extOk": true
+    },
+    "bundle": {
+      "raw": 644358,
+      "gzip": 181004,
+      "top": [
+        {
+          "name": "src/utils/utils/text/emojiShortnames.json",
+          "bytes": 156341,
+          "pct": 24.3
+        },
+        {
+          "name": "src/core/menu/Menu.ts",
+          "bytes": 127532,
+          "pct": 19.8
+        },
+        {
+          "name": "src/ui/data/AllTemporaryObjects.ts",
+          "bytes": 27881,
+          "pct": 4.3
+        },
+        {
+          "name": "@msgpack/msgpack (npm)",
+          "bytes": 21520,
+          "pct": 3.3
+        },
+        {
+          "name": "src/core/mod/defense/DefenseSystem.ts",
+          "bytes": 13256,
+          "pct": 2.1
+        },
+        {
+          "name": "src/core/menu/menu.css",
+          "bytes": 9748,
+          "pct": 1.5
+        },
+        {
+          "name": "src/utils/constants/items.ts",
+          "bytes": 9505,
+          "pct": 1.5
+        },
+        {
+          "name": "src/core/socket/SocketListener.ts",
+          "bytes": 8424,
+          "pct": 1.3
+        },
+        {
+          "name": "src/rendering/RendererUtils.ts",
+          "bytes": 7811,
+          "pct": 1.2
+        },
+        {
+          "name": "src/constants/Player.ts",
+          "bytes": 7811,
+          "pct": 1.2
+        },
+        {
+          "name": "src/core/PacketReplayer.ts",
+          "bytes": 7381,
+          "pct": 1.1
+        },
+        {
+          "name": "src/core/mod/combat/placing/AngleFinder.ts",
+          "bytes": 7322,
+          "pct": 1.1
+        },
+        {
+          "name": "src/core/ModManager.ts",
+          "bytes": 7167,
+          "pct": 1.1
+        },
+        {
+          "name": "@noble/hashes (npm)",
+          "bytes": 7148,
+          "pct": 1.1
+        },
+        {
+          "name": "src/utils/constants/store.ts",
+          "bytes": 7067,
+          "pct": 1.1
+        }
+      ]
+    },
+    "typecheck": {
+      "errors": {
+        "mod-source": 0,
+        "falcon-launcher": 0
+      },
+      "any": 49,
+      "tsIgnore": 0
+    },
+    "code": {
+      "workspaces": {
+        "mod-source": {
+          "files": 195,
+          "lines": 25093
+        },
+        "falcon-launcher": {
+          "files": 3,
+          "lines": 274
+        }
+      },
+      "largest": [
+        {
+          "file": "mod-source/src/ui/data/AllTemporaryObjects.ts",
+          "lines": 2183
+        },
+        {
+          "file": "mod-source/src/core/menu/Menu.ts",
+          "lines": 1494
+        },
+        {
+          "file": "mod-source/src/utils/constants/items.ts",
+          "lines": 896
+        },
+        {
+          "file": "mod-source/src/core/mod/defense/DefenseSystem.ts",
+          "lines": 807
+        },
+        {
+          "file": "mod-source/src/utils/constants/store.ts",
+          "lines": 624
+        },
+        {
+          "file": "mod-source/src/core/mod/combat/placing/AngleFinder.ts",
+          "lines": 615
+        },
+        {
+          "file": "mod-source/src/rendering/RendererUtils.ts",
+          "lines": 553
+        },
+        {
+          "file": "mod-source/src/constants/Player.ts",
+          "lines": 526
+        },
+        {
+          "file": "mod-source/src/core/socket/SocketListener.ts",
+          "lines": 499
+        },
+        {
+          "file": "mod-source/src/core/menu/menu.css",
+          "lines": 496
+        }
+      ]
+    },
+    "imports": {
+      "files": 184,
+      "topModules": [
+        {
+          "module": "mod-source/src/core/Client.ts",
+          "count": 83
+        },
+        {
+          "module": "mod-source/src/core/menu/Menu.ts",
+          "count": 61
+        },
+        {
+          "module": "mod-source/src/utils/constants/items.ts",
+          "count": 51
+        },
+        {
+          "module": "mod-source/src/core/ModManager.ts",
+          "count": 45
+        },
+        {
+          "module": "mod-source/src/utils/constants/store.ts",
+          "count": 37
+        },
+        {
+          "module": "mod-source/src/utils/utils/config/ScriptConfig.ts",
+          "count": 35
+        },
+        {
+          "module": "mod-source/src/core/logic/ObjectManager.ts",
+          "count": 31
+        },
+        {
+          "module": "mod-source/src/utils/utils/geometry/withinDist.ts",
+          "count": 28
+        },
+        {
+          "module": "mod-source/src/core/mod/combat/core/AttackManager.ts",
+          "count": 26
+        },
+        {
+          "module": "mod-source/src/utils/socket/PacketMap.ts",
+          "count": 22
+        },
+        {
+          "module": "mod-source/src/core/logic/players/core/PlayerCombatManager.ts",
+          "count": 21
+        },
+        {
+          "module": "mod-source/src/utils/utils/geometry/getDistSq.ts",
+          "count": 21
+        },
+        {
+          "module": "mod-source/src/rendering/RendererUtils.ts",
+          "count": 20
+        },
+        {
+          "module": "mod-source/src/utils/utils/dom/getElem.ts",
+          "count": 19
+        },
+        {
+          "module": "mod-source/src/core/mod/combat/utils/CombatUtils.ts",
+          "count": 19
+        }
+      ],
+      "packages": [
+        {
+          "name": "@msgpack/msgpack",
+          "count": 4
+        },
+        {
+          "name": "@noble/hashes",
+          "count": 1
+        }
+      ]
+    },
+    "circular": {
+      "groups": 3,
+      "files": 118,
+      "mutualPairs": 92,
+      "examples": [
+        {
+          "size": 102,
+          "cycle": [
+            "mod-source/src/constants/Player.ts",
+            "mod-source/src/core/mod/simulation/MovementPhysicsSimulator.ts",
+            "mod-source/src/constants/Player.ts"
+          ]
+        },
+        {
+          "size": 10,
+          "cycle": [
+            "mod-source/src/core/menu/Menu.ts",
+            "mod-source/src/core/menu/utils/drawNumberInput.ts",
+            "mod-source/src/core/menu/Menu.ts"
+          ]
+        },
+        {
+          "size": 6,
+          "cycle": [
+            "mod-source/src/rendering/RendererUtils.ts",
+            "mod-source/src/rendering/utils/items/renderDottedCircle.ts",
+            "mod-source/src/rendering/RendererUtils.ts"
+          ]
+        }
+      ]
+    },
+    "deps": {
+      "outdated": [
+        {
+          "name": "@crxjs/vite-plugin",
+          "current": "2.7.1",
+          "wanted": "2.7.1",
+          "latest": "3.0.0",
+          "dependent": "falcon-launcher",
+          "majorBehind": true
+        },
+        {
+          "name": "@types/chrome",
+          "current": "0.2.9",
+          "wanted": "0.2.9",
+          "latest": "0.3.7",
+          "dependent": "falcon-launcher",
+          "majorBehind": false
+        },
+        {
+          "name": "@types/node",
+          "current": "26.6.5",
+          "wanted": "26.6.6",
+          "latest": "26.6.6",
+          "dependent": "falcon-launcher",
+          "majorBehind": false
+        },
+        {
+          "name": "esbuild",
+          "current": "0.27.7",
+          "wanted": "0.27.7",
+          "latest": "0.28.2",
+          "dependent": "mod-source",
+          "majorBehind": false
+        }
+      ],
+      "audit": {
+        "info": 0,
+        "low": 2,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "date": "2026-10-30T13:21:38.409Z",
+    "commit": "f187a05",
+    "dirty": true,
+    "label": "batch 4: performance",
+    "methods": {
+      "any": "scanner",
+      "imports": "esbuild-metafile"
+    },
+    "build": {
+      "modMs": 1280,
+      "modOk": true,
+      "extMs": 1870,
+      "extOk": true
+    },
+    "bundle": {
+      "raw": 644262,
+      "gzip": 181037,
+      "top": [
+        {
+          "name": "src/utils/utils/text/emojiShortnames.json",
+          "bytes": 156341,
+          "pct": 24.3
+        },
+        {
+          "name": "src/core/menu/Menu.ts",
+          "bytes": 127532,
+          "pct": 19.8
+        },
+        {
+          "name": "src/ui/data/AllTemporaryObjects.ts",
+          "bytes": 27881,
+          "pct": 4.3
+        },
+        {
+          "name": "@msgpack/msgpack (npm)",
+          "bytes": 21520,
+          "pct": 3.3
+        },
+        {
+          "name": "src/core/mod/defense/DefenseSystem.ts",
+          "bytes": 13256,
+          "pct": 2.1
+        },
+        {
+          "name": "src/core/menu/menu.css",
+          "bytes": 9748,
+          "pct": 1.5
+        },
+        {
+          "name": "src/utils/constants/items.ts",
+          "bytes": 9505,
+          "pct": 1.5
+        },
+        {
+          "name": "src/core/socket/SocketListener.ts",
+          "bytes": 8205,
+          "pct": 1.3
+        },
+        {
+          "name": "src/rendering/RendererUtils.ts",
+          "bytes": 7811,
+          "pct": 1.2
+        },
+        {
+          "name": "src/constants/Player.ts",
+          "bytes": 7811,
+          "pct": 1.2
+        },
+        {
+          "name": "src/core/PacketReplayer.ts",
+          "bytes": 7381,
+          "pct": 1.1
+        },
+        {
+          "name": "src/core/mod/combat/placing/AngleFinder.ts",
+          "bytes": 7322,
+          "pct": 1.1
+        },
+        {
+          "name": "src/core/ModManager.ts",
+          "bytes": 7167,
+          "pct": 1.1
+        },
+        {
+          "name": "@noble/hashes (npm)",
+          "bytes": 7148,
+          "pct": 1.1
+        },
+        {
+          "name": "src/utils/constants/store.ts",
+          "bytes": 7067,
+          "pct": 1.1
+        }
+      ]
+    },
+    "typecheck": {
+      "errors": {
+        "mod-source": 0,
+        "falcon-launcher": 0
+      },
+      "any": 49,
+      "tsIgnore": 0
+    },
+    "code": {
+      "workspaces": {
+        "mod-source": {
+          "files": 195,
+          "lines": 25126
+        },
+        "falcon-launcher": {
+          "files": 3,
+          "lines": 274
+        }
+      },
+      "largest": [
+        {
+          "file": "mod-source/src/ui/data/AllTemporaryObjects.ts",
+          "lines": 2183
+        },
+        {
+          "file": "mod-source/src/core/menu/Menu.ts",
+          "lines": 1494
+        },
+        {
+          "file": "mod-source/src/utils/constants/items.ts",
+          "lines": 896
+        },
+        {
+          "file": "mod-source/src/core/mod/defense/DefenseSystem.ts",
+          "lines": 807
+        },
+        {
+          "file": "mod-source/src/utils/constants/store.ts",
+          "lines": 624
+        },
+        {
+          "file": "mod-source/src/core/mod/combat/placing/AngleFinder.ts",
+          "lines": 615
+        },
+        {
+          "file": "mod-source/src/rendering/RendererUtils.ts",
+          "lines": 553
+        },
+        {
+          "file": "mod-source/src/constants/Player.ts",
+          "lines": 526
+        },
+        {
+          "file": "mod-source/src/core/menu/menu.css",
+          "lines": 496
+        },
+        {
+          "file": "mod-source/src/core/socket/SocketListener.ts",
+          "lines": 490
+        }
+      ]
+    },
+    "imports": {
+      "files": 184,
+      "topModules": [
+        {
+          "module": "mod-source/src/core/Client.ts",
+          "count": 83
+        },
+        {
+          "module": "mod-source/src/core/menu/Menu.ts",
+          "count": 61
+        },
+        {
+          "module": "mod-source/src/utils/constants/items.ts",
+          "count": 51
+        },
+        {
+          "module": "mod-source/src/core/ModManager.ts",
+          "count": 45
+        },
+        {
+          "module": "mod-source/src/utils/constants/store.ts",
+          "count": 37
+        },
+        {
+          "module": "mod-source/src/utils/utils/config/ScriptConfig.ts",
+          "count": 35
+        },
+        {
+          "module": "mod-source/src/core/logic/ObjectManager.ts",
+          "count": 31
+        },
+        {
+          "module": "mod-source/src/utils/utils/geometry/withinDist.ts",
+          "count": 28
+        },
+        {
+          "module": "mod-source/src/core/mod/combat/core/AttackManager.ts",
+          "count": 26
+        },
+        {
+          "module": "mod-source/src/utils/socket/PacketMap.ts",
+          "count": 22
+        },
+        {
+          "module": "mod-source/src/core/logic/players/core/PlayerCombatManager.ts",
+          "count": 21
+        },
+        {
+          "module": "mod-source/src/utils/utils/geometry/getDistSq.ts",
+          "count": 21
+        },
+        {
+          "module": "mod-source/src/rendering/RendererUtils.ts",
+          "count": 20
+        },
+        {
+          "module": "mod-source/src/utils/utils/dom/getElem.ts",
+          "count": 19
+        },
+        {
+          "module": "mod-source/src/core/mod/combat/utils/CombatUtils.ts",
+          "count": 19
+        }
+      ],
+      "packages": [
+        {
+          "name": "@msgpack/msgpack",
+          "count": 4
+        },
+        {
+          "name": "@noble/hashes",
+          "count": 1
+        }
+      ]
+    },
+    "circular": {
+      "groups": 3,
+      "files": 118,
+      "mutualPairs": 92,
+      "examples": [
+        {
+          "size": 102,
+          "cycle": [
+            "mod-source/src/constants/Player.ts",
+            "mod-source/src/core/mod/simulation/MovementPhysicsSimulator.ts",
+            "mod-source/src/constants/Player.ts"
+          ]
+        },
+        {
+          "size": 10,
+          "cycle": [
+            "mod-source/src/core/menu/Menu.ts",
+            "mod-source/src/core/menu/utils/drawNumberInput.ts",
+            "mod-source/src/core/menu/Menu.ts"
+          ]
+        },
+        {
+          "size": 6,
+          "cycle": [
+            "mod-source/src/rendering/RendererUtils.ts",
+            "mod-source/src/rendering/utils/items/renderDottedCircle.ts",
+            "mod-source/src/rendering/RendererUtils.ts"
+          ]
+        }
+      ]
+    },
+    "deps": {
+      "outdated": [
+        {
+          "name": "@crxjs/vite-plugin",
+          "current": "2.7.1",
+          "wanted": "2.7.1",
+          "latest": "3.0.0",
+          "dependent": "falcon-launcher",
+          "majorBehind": true
+        },
+        {
+          "name": "@types/chrome",
+          "current": "0.2.9",
+          "wanted": "0.2.9",
+          "latest": "0.3.7",
+          "dependent": "falcon-launcher",
+          "majorBehind": false
+        },
+        {
+          "name": "@types/node",
+          "current": "26.6.5",
+          "wanted": "26.6.6",
+          "latest": "26.6.6",
+          "dependent": "falcon-launcher",
+          "majorBehind": false
+        },
+        {
+          "name": "esbuild",
+          "current": "0.27.7",
+          "wanted": "0.27.7",
+          "latest": "0.28.2",
+          "dependent": "mod-source",
+          "majorBehind": false
+        }
+      ],
+      "audit": {
+        "info": 0,
+        "low": 2,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "date": "2026-10-30T13:29:51.081Z",
+    "commit": "f187a05",
+    "dirty": true,
+    "label": "batch 5: maintainability",
+    "methods": {
+      "any": "scanner",
+      "imports": "esbuild-metafile"
+    },
+    "build": {
+      "modMs": 1160,
+      "modOk": true,
+      "extMs": 1752,
+      "extOk": true
+    },
+    "bundle": {
+      "raw": 633117,
+      "gzip": 178022,
+      "top": [
+        {
+          "name": "src/utils/utils/text/emojiShortnames.json",
+          "bytes": 156341,
+          "pct": 24.7
+        },
+        {
+          "name": "src/core/menu/Menu.ts",
+          "bytes": 116435,
+          "pct": 18.4
+        },
+        {
+          "name": "src/ui/data/AllTemporaryObjects.ts",
+          "bytes": 27881,
+          "pct": 4.4
+        },
+        {
+          "name": "@msgpack/msgpack (npm)",
+          "bytes": 21520,
+          "pct": 3.4
+        },
+        {
+          "name": "src/core/mod/defense/DefenseSystem.ts",
+          "bytes": 13256,
+          "pct": 2.1
+        },
+        {
+          "name": "src/core/menu/menu.css",
+          "bytes": 9748,
+          "pct": 1.5
+        },
+        {
+          "name": "src/utils/constants/items.ts",
+          "bytes": 9505,
+          "pct": 1.5
+        },
+        {
+          "name": "src/core/socket/SocketListener.ts",
+          "bytes": 8274,
+          "pct": 1.3
+        },
+        {
+          "name": "src/rendering/RendererUtils.ts",
+          "bytes": 7811,
+          "pct": 1.2
+        },
+        {
+          "name": "src/constants/Player.ts",
+          "bytes": 7811,
+          "pct": 1.2
+        },
+        {
+          "name": "src/core/PacketReplayer.ts",
+          "bytes": 7381,
+          "pct": 1.2
+        },
+        {
+          "name": "src/core/mod/combat/placing/AngleFinder.ts",
+          "bytes": 7322,
+          "pct": 1.2
+        },
+        {
+          "name": "src/core/ModManager.ts",
+          "bytes": 7167,
+          "pct": 1.1
+        },
+        {
+          "name": "@noble/hashes (npm)",
+          "bytes": 7148,
+          "pct": 1.1
+        },
+        {
+          "name": "src/utils/constants/store.ts",
+          "bytes": 7067,
+          "pct": 1.1
+        }
+      ]
+    },
+    "typecheck": {
+      "errors": {
+        "mod-source": 0,
+        "falcon-launcher": 0
+      },
+      "any": 35,
+      "tsIgnore": 0
+    },
+    "code": {
+      "workspaces": {
+        "mod-source": {
+          "files": 195,
+          "lines": 25124
+        },
+        "falcon-launcher": {
+          "files": 5,
+          "lines": 298
+        }
+      },
+      "largest": [
+        {
+          "file": "mod-source/src/ui/data/AllTemporaryObjects.ts",
+          "lines": 2183
+        },
+        {
+          "file": "mod-source/src/core/menu/Menu.ts",
+          "lines": 1484
+        },
+        {
+          "file": "mod-source/src/utils/constants/items.ts",
+          "lines": 896
+        },
+        {
+          "file": "mod-source/src/core/mod/defense/DefenseSystem.ts",
+          "lines": 807
+        },
+        {
+          "file": "mod-source/src/utils/constants/store.ts",
+          "lines": 624
+        },
+        {
+          "file": "mod-source/src/core/mod/combat/placing/AngleFinder.ts",
+          "lines": 615
+        },
+        {
+          "file": "mod-source/src/rendering/RendererUtils.ts",
+          "lines": 553
+        },
+        {
+          "file": "mod-source/src/constants/Player.ts",
+          "lines": 526
+        },
+        {
+          "file": "mod-source/src/core/menu/menu.css",
+          "lines": 496
+        },
+        {
+          "file": "mod-source/src/core/socket/SocketListener.ts",
+          "lines": 496
+        }
+      ]
+    },
+    "imports": {
+      "files": 184,
+      "topModules": [
+        {
+          "module": "mod-source/src/core/Client.ts",
+          "count": 83
+        },
+        {
+          "module": "mod-source/src/core/menu/Menu.ts",
+          "count": 61
+        },
+        {
+          "module": "mod-source/src/utils/constants/items.ts",
+          "count": 51
+        },
+        {
+          "module": "mod-source/src/core/ModManager.ts",
+          "count": 45
+        },
+        {
+          "module": "mod-source/src/utils/constants/store.ts",
+          "count": 37
+        },
+        {
+          "module": "mod-source/src/utils/utils/config/ScriptConfig.ts",
+          "count": 35
+        },
+        {
+          "module": "mod-source/src/core/logic/ObjectManager.ts",
+          "count": 31
+        },
+        {
+          "module": "mod-source/src/utils/utils/geometry/withinDist.ts",
+          "count": 28
+        },
+        {
+          "module": "mod-source/src/core/mod/combat/core/AttackManager.ts",
+          "count": 26
+        },
+        {
+          "module": "mod-source/src/utils/socket/PacketMap.ts",
+          "count": 22
+        },
+        {
+          "module": "mod-source/src/core/logic/players/core/PlayerCombatManager.ts",
+          "count": 21
+        },
+        {
+          "module": "mod-source/src/utils/utils/geometry/getDistSq.ts",
+          "count": 21
+        },
+        {
+          "module": "mod-source/src/rendering/RendererUtils.ts",
+          "count": 20
+        },
+        {
+          "module": "mod-source/src/utils/utils/dom/getElem.ts",
+          "count": 19
+        },
+        {
+          "module": "mod-source/src/core/mod/combat/utils/CombatUtils.ts",
+          "count": 19
+        }
+      ],
+      "packages": [
+        {
+          "name": "@msgpack/msgpack",
+          "count": 4
+        },
+        {
+          "name": "@noble/hashes",
+          "count": 1
+        }
+      ]
+    },
+    "circular": {
+      "groups": 3,
+      "files": 118,
+      "mutualPairs": 91,
+      "examples": [
+        {
+          "size": 102,
+          "cycle": [
+            "mod-source/src/constants/Player.ts",
+            "mod-source/src/core/mod/simulation/MovementPhysicsSimulator.ts",
+            "mod-source/src/constants/Player.ts"
+          ]
+        },
+        {
+          "size": 10,
+          "cycle": [
+            "mod-source/src/core/menu/Menu.ts",
+            "mod-source/src/core/menu/utils/drawNumberInput.ts",
+            "mod-source/src/core/menu/Menu.ts"
+          ]
+        },
+        {
+          "size": 6,
+          "cycle": [
+            "mod-source/src/rendering/RendererUtils.ts",
+            "mod-source/src/rendering/utils/items/renderDottedCircle.ts",
+            "mod-source/src/rendering/RendererUtils.ts"
+          ]
+        }
+      ]
+    },
+    "deps": {
+      "outdated": [
+        {
+          "name": "@crxjs/vite-plugin",
+          "current": "2.7.1",
+          "wanted": "2.7.1",
+          "latest": "3.0.0",
+          "dependent": "falcon-launcher",
+          "majorBehind": true
+        },
+        {
+          "name": "@types/chrome",
+          "current": "0.2.9",
+          "wanted": "0.2.9",
+          "latest": "0.3.7",
+          "dependent": "falcon-launcher",
+          "majorBehind": false
+        },
+        {
+          "name": "@types/node",
+          "current": "26.6.5",
+          "wanted": "26.6.6",
+          "latest": "26.6.6",
+          "dependent": "falcon-launcher",
+          "majorBehind": false
+        },
+        {
+          "name": "esbuild",
+          "current": "0.27.7",
+          "wanted": "0.27.7",
+          "latest": "0.28.2",
+          "dependent": "mod-source",
+          "majorBehind": false
+        }
+      ],
+      "audit": {
+        "info": 0,
+        "low": 2,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "date": "2026-10-30T13:37:24.292Z",
+    "commit": "f187a05",
+    "dirty": true,
+    "label": "batch 6: analytics (final)",
+    "methods": {
+      "any": "scanner",
+      "imports": "esbuild-metafile"
+    },
+    "build": {
+      "modMs": 1176,
+      "modOk": true,
+      "extMs": 1745,
+      "extOk": true
+    },
+    "bundle": {
+      "raw": 633173,
+      "gzip": 178042,
+      "top": [
+        {
+          "name": "src/utils/utils/text/emojiShortnames.json",
+          "bytes": 156341,
+          "pct": 24.7
+        },
+        {
+          "name": "src/core/menu/Menu.ts",
+          "bytes": 116440,
+          "pct": 18.4
+        },
+        {
+          "name": "src/ui/data/AllTemporaryObjects.ts",
+          "bytes": 27881,
+          "pct": 4.4
+        },
+        {
+          "name": "@msgpack/msgpack (npm)",
+          "bytes": 21520,
+          "pct": 3.4
+        },
+        {
+          "name": "src/core/mod/defense/DefenseSystem.ts",
+          "bytes": 13256,
+          "pct": 2.1
+        },
+        {
+          "name": "src/core/menu/menu.css",
+          "bytes": 9748,
+          "pct": 1.5
+        },
+        {
+          "name": "src/utils/constants/items.ts",
+          "bytes": 9505,
+          "pct": 1.5
+        },
+        {
+          "name": "src/core/socket/SocketListener.ts",
+          "bytes": 8274,
+          "pct": 1.3
+        },
+        {
+          "name": "src/rendering/RendererUtils.ts",
+          "bytes": 7811,
+          "pct": 1.2
+        },
+        {
+          "name": "src/constants/Player.ts",
+          "bytes": 7811,
+          "pct": 1.2
+        },
+        {
+          "name": "src/core/PacketReplayer.ts",
+          "bytes": 7381,
+          "pct": 1.2
+        },
+        {
+          "name": "src/core/mod/combat/placing/AngleFinder.ts",
+          "bytes": 7322,
+          "pct": 1.2
+        },
+        {
+          "name": "src/core/ModManager.ts",
+          "bytes": 7167,
+          "pct": 1.1
+        },
+        {
+          "name": "@noble/hashes (npm)",
+          "bytes": 7148,
+          "pct": 1.1
+        },
+        {
+          "name": "src/utils/constants/store.ts",
+          "bytes": 7067,
+          "pct": 1.1
+        }
+      ]
+    },
+    "typecheck": {
+      "errors": {
+        "mod-source": 0,
+        "falcon-launcher": 0
+      },
+      "any": 35,
+      "tsIgnore": 0
+    },
+    "code": {
+      "workspaces": {
+        "mod-source": {
+          "files": 196,
+          "lines": 25207
+        },
+        "falcon-launcher": {
+          "files": 5,
+          "lines": 298
+        }
+      },
+      "largest": [
+        {
+          "file": "mod-source/src/ui/data/AllTemporaryObjects.ts",
+          "lines": 2183
+        },
+        {
+          "file": "mod-source/src/core/menu/Menu.ts",
+          "lines": 1489
+        },
+        {
+          "file": "mod-source/src/utils/constants/items.ts",
+          "lines": 896
+        },
+        {
+          "file": "mod-source/src/core/mod/defense/DefenseSystem.ts",
+          "lines": 807
+        },
+        {
+          "file": "mod-source/src/utils/constants/store.ts",
+          "lines": 624
+        },
+        {
+          "file": "mod-source/src/core/mod/combat/placing/AngleFinder.ts",
+          "lines": 615
+        },
+        {
+          "file": "mod-source/src/rendering/RendererUtils.ts",
+          "lines": 553
+        },
+        {
+          "file": "mod-source/src/constants/Player.ts",
+          "lines": 526
+        },
+        {
+          "file": "mod-source/src/core/menu/menu.css",
+          "lines": 496
+        },
+        {
+          "file": "mod-source/src/core/socket/SocketListener.ts",
+          "lines": 496
+        }
+      ]
+    },
+    "imports": {
+      "files": 185,
+      "topModules": [
+        {
+          "module": "mod-source/src/core/Client.ts",
+          "count": 83
+        },
+        {
+          "module": "mod-source/src/core/menu/Menu.ts",
+          "count": 61
+        },
+        {
+          "module": "mod-source/src/utils/constants/items.ts",
+          "count": 51
+        },
+        {
+          "module": "mod-source/src/core/ModManager.ts",
+          "count": 45
+        },
+        {
+          "module": "mod-source/src/utils/constants/store.ts",
+          "count": 37
+        },
+        {
+          "module": "mod-source/src/utils/utils/config/ScriptConfig.ts",
+          "count": 35
+        },
+        {
+          "module": "mod-source/src/core/logic/ObjectManager.ts",
+          "count": 31
+        },
+        {
+          "module": "mod-source/src/utils/utils/geometry/withinDist.ts",
+          "count": 28
+        },
+        {
+          "module": "mod-source/src/core/mod/combat/core/AttackManager.ts",
+          "count": 26
+        },
+        {
+          "module": "mod-source/src/utils/socket/PacketMap.ts",
+          "count": 22
+        },
+        {
+          "module": "mod-source/src/core/logic/players/core/PlayerCombatManager.ts",
+          "count": 21
+        },
+        {
+          "module": "mod-source/src/utils/utils/geometry/getDistSq.ts",
+          "count": 21
+        },
+        {
+          "module": "mod-source/src/rendering/RendererUtils.ts",
+          "count": 20
+        },
+        {
+          "module": "mod-source/src/utils/utils/dom/getElem.ts",
+          "count": 19
+        },
+        {
+          "module": "mod-source/src/core/mod/combat/utils/CombatUtils.ts",
+          "count": 19
+        }
+      ],
+      "packages": [
+        {
+          "name": "@msgpack/msgpack",
+          "count": 4
+        },
+        {
+          "name": "@noble/hashes",
+          "count": 1
+        }
+      ]
+    },
+    "circular": {
+      "groups": 3,
+      "files": 118,
+      "mutualPairs": 91,
+      "examples": [
+        {
+          "size": 102,
+          "cycle": [
+            "mod-source/src/constants/Player.ts",
+            "mod-source/src/core/mod/simulation/MovementPhysicsSimulator.ts",
+            "mod-source/src/constants/Player.ts"
+          ]
+        },
+        {
+          "size": 10,
+          "cycle": [
+            "mod-source/src/core/menu/Menu.ts",
+            "mod-source/src/core/menu/utils/drawNumberInput.ts",
+            "mod-source/src/core/menu/Menu.ts"
+          ]
+        },
+        {
+          "size": 6,
+          "cycle": [
+            "mod-source/src/rendering/RendererUtils.ts",
+            "mod-source/src/rendering/utils/items/renderDottedCircle.ts",
+            "mod-source/src/rendering/RendererUtils.ts"
+          ]
+        }
+      ]
+    },
+    "deps": {
+      "outdated": [
+        {
+          "name": "@crxjs/vite-plugin",
+          "current": "2.7.1",
+          "wanted": "2.7.1",
+          "latest": "3.0.0",
+          "dependent": "falcon-launcher",
+          "majorBehind": true
+        },
+        {
+          "name": "@types/chrome",
+          "current": "0.2.9",
+          "wanted": "0.2.9",
+          "latest": "0.3.7",
+          "dependent": "falcon-launcher",
+          "majorBehind": false
+        },
+        {
+          "name": "@types/node",
+          "current": "26.6.5",
+          "wanted": "26.6.6",
+          "latest": "26.6.6",
+          "dependent": "falcon-launcher",
+          "majorBehind": false
+        },
+        {
+          "name": "esbuild",
+          "current": "0.27.7",
+          "wanted": "0.27.7",
+          "latest": "0.28.2",
+          "dependent": "mod-source",
+          "majorBehind": false
+        }
+      ],
+      "audit": {
+        "info": 0,
+        "low": 2,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 2
+      }
+    }
+  }
+]

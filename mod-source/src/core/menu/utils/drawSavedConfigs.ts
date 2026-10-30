@@ -1,4 +1,5 @@
-import Menu, { menuContent } from "../Menu";
+import readJson from "@utils/storage/readJson";
+import Menu, { menuContent, SavedConfigs } from "../Menu";
 import drawItemBody from "./drawItemBody";
 
 const ICON = `
@@ -8,7 +9,7 @@ const ICON = `
 `;
 
 export default async function drawSavedConfigs() {
-    const savedConfigs = localStorage.getItem("falcon-configs") ? JSON.parse(localStorage.getItem("falcon-configs")!) : {};
+    const savedConfigs = readJson<SavedConfigs>("falcon-configs", {});
 
     for (const key in savedConfigs) {
         if (!savedConfigs[key]) continue;
@@ -29,7 +30,7 @@ export default async function drawSavedConfigs() {
         name.style.marginLeft = "7px";
         name.classList.add("menuItemLabel");
         labelHolder.appendChild(name);
-        name.innerHTML = `Load '${key}' Config`;
+        name.textContent = `Load '${key}' Config`;
 
         body.appendChild(labelHolder);
 

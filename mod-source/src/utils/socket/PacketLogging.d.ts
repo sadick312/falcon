@@ -1,4 +1,5 @@
 import { ModBrainState } from "@root/core/ModManager";
+import { MOOMOO_SERVER_TO_CLIENT_MAP } from "@root/utils/socket/PacketMap";
 
 export type IncomingServerPackets = {
     [K in keyof MOOMOO_SERVER_TO_CLIENT_MAP]: {

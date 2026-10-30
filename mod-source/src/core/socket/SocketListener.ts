@@ -1,4 +1,4 @@
-import Player, { ChatMessage } from "@constants/Player";
+import Player, { ChatMessage } from "@entities/Player";
 import Client, { deathText, pingDisplay } from "@core/Client";
 import updateClanMenu, { allianceHolder } from "@core/events/updateClanMenu";
 import updateItems from "@core/events/updateItems";
@@ -23,10 +23,10 @@ import LoadAiEvent from "@core/socket/events/core/LoadAiEvent";
 import PlayerUpdateEvent from "@core/socket/events/core/PlayerUpdateEvent";
 import StoreItemsUpdateEvent from "@core/socket/events/core/StoreItemsUpdateEvent";
 import FakeSocket from "@core/socket/FakeSocket";
-import Socket, { respawnMainCard } from "@core/socket/Socket";
+import Socket, { respawnMainCard, socketHooks } from "@core/socket/Socket";
 import PacketBatcher from "@core/utils/PacketBatcher";
 import Menu, { ChatLog } from "@menu/Menu";
-import drawChatLog from "@menu/utils/drawChatLog";
+import { addChatLog } from "@menu/utils/drawChatLog";
 import CameraManager from "@rendering/core/CameraManager";
 import RendererSystem from "@rendering/RendererSystem";
 import { IncomingServerPackets } from "@root/utils/socket/PacketLogging";
@@ -37,7 +37,7 @@ import { gameUI, loadingCirclePage, respawnPage } from "@ui/Loader";
 import ScriptConfig from "@utils/config/ScriptConfig";
 import getElem from "@utils/dom/getElem";
 import kFormat from "@utils/math/kFormat";
-import * as emojione from "emojione";
+import shortnameToUnicode from "@utils/text/shortnameToUnicode";
 
 const ageBar = getElem("age-bar");
 const ageDisplay = getElem("age-display");
@@ -62,7 +62,9 @@ export default class SocketListener {
         this.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.PING_SOCKET);
     }
 
-    static logPacket(type: keyof MOOMOO_SERVER_TO_CLIENT_MAP, typedData: any[]) {
+    static logPacket(type: keyof MOOMOO_SERVER_TO_CLIENT_MAP, typedData: unknown) {
+        if (!PacketRecorder.shouldRecord(type)) return;
+
         PacketRecorder.add(type, {
             timestamp: performance.now(),
             brainState: type === PacketMap.SERVER_TO_CLIENT.UPDATE_PLAYERS ? ModManager.brainState : undefined,
@@ -94,7 +96,8 @@ export default class SocketListener {
         }
     }
 
-    static sendFplToDiscord(manual: boolean = false) {
+    /** Downloads the last ~15s of packets as an .fpl file (always when manual; on death, depending on the logging toggles). */
+    static exportPacketLog(manual: boolean = false) {
         if (this.socket instanceof FakeSocket) return;
 
         const now = new Date();
@@ -106,7 +109,7 @@ export default class SocketListener {
         if (!buffer) return;
 
         if (!Menu.getValue("improvementLogging") || Menu.getValue("improvementLoggingLCopy") || ScriptConfig.IS_DEVELOPMENT_MODE || manual) {
-            const blob = new Blob([buffer as any], { type: "application/octet-stream" });
+            const blob = new Blob([buffer], { type: "application/octet-stream" });
             const url = URL.createObjectURL(blob);
 
             const link = document.createElement("a");
@@ -202,8 +205,7 @@ export default class SocketListener {
             const player = PlayerManager.get(id);
 
             if (player) {
-                Menu.chatLogs.push(new ChatLog(`${player.name} {${player.sid}} has left the game`, "leave"));
-                if (Menu.selectedTab === 5) drawChatLog();
+                addChatLog(new ChatLog(`${player.name} {${player.sid}} has left the game`, "leave"));
                 PlayerManager.remove(player);
 
                 const allySet = Client.allianceMap.get(player.team);
@@ -308,8 +310,7 @@ export default class SocketListener {
                 updatePlayerValue();
                 updateItems(null, false);
             } else {
-                Menu.chatLogs.push(new ChatLog(`encountered ${tmpPlayer.name} {${tmpPlayer.sid}}`, "encounter"));
-                if (Menu.selectedTab === 5) drawChatLog();
+                addChatLog(new ChatLog(`encountered ${tmpPlayer.name} {${tmpPlayer.sid}}`, "encounter"));
             }
         });
 
@@ -321,20 +322,13 @@ export default class SocketListener {
             const player = PlayerManager.get(sid);
 
             if (player) {
-                msg = emojione.shortnameToUnicode(msg);
+                msg = shortnameToUnicode(msg);
                 msg = msg.replace(/\/shrug|\/shrg|\/shurg|\/shrgu/g, "¯\\_(ツ)_/¯");
 
                 player.chatMessages.unshift(new ChatMessage(msg));
 
                 if (!/@@@@@/g.test(msg) && msg.trim()) {
-                    if (Menu.chatLogs.length > 500) {
-                        Menu.chatLogs.length = 0;
-                        Menu.chatLogs.push(new ChatLog(`Automatically cleared chat log.`));
-                    }
-
-                    Menu.chatLogs.push(new ChatLog(`${player.name} {${player.sid}} - ${msg}`));
-
-                    if (Menu.selectedTab === 5) drawChatLog();
+                    addChatLog(new ChatLog(`${player.name} {${player.sid}} - ${msg}`));
                 }
 
                 if (player.chatMessages.length > 3) player.chatMessages.length = 3;
@@ -467,7 +461,7 @@ export default class SocketListener {
             deathText.style.display = "flex";
 
             setTimeout(() => {
-                if (!document.documentElement.hasAttribute("uhohboring")) this.sendFplToDiscord();
+                if (!document.documentElement.hasAttribute("uhohboring")) this.exportPacketLog();
             }, 1e3);
 
             if (Client.mode === "normal") setTimeout(() => {
@@ -495,3 +489,7 @@ export default class SocketListener {
         this.socket.on(PacketMap.CUSTOM_PACKETS.SERVER_TO_CLIENT.VALUE_PEEK, (data) => { });
     }
 }
+
+// Socket calls these instead of importing this module (see socketHooks in Socket.ts).
+socketHooks.onDispatch = (type, data) => SocketListener.logPacket(type, data);
+socketHooks.onClose = () => SocketListener.stopPinging();
