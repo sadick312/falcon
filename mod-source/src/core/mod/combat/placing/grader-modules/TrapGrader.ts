@@ -1,4 +1,4 @@
-import Player from "@constants/Player";
+import Player from "@entities/Player";
 import Angle from "@core/mod/combat/placing/Angle";
 import Grader from "@core/mod/combat/placing/grader-modules/Grader";
 import getAngleDist from "@utils/angle/getAngleDist";

@@ -1,7 +1,12 @@
 {
-    "extends": "../tsconfig.json",
+    "extends": "../tsconfig.base.json",
     "compilerOptions": {
         "target": "es2025",
+        // esbuild bundles this workspace, so resolve imports the way a bundler does.
+        "module": "esnext",
+        "moduleResolution": "bundler",
+        "resolveJsonModule": true,
+        "esModuleInterop": true,
         "paths": {
             "@combat-modules/*": [
                 "./src/core/mod/combat/modules/*"
@@ -19,19 +24,19 @@
                 "./src/core/menu/*"
             ],
             "@core/*": [
-                "./src/utils/socket/*",
                 "./src/core/*"
             ],
             "@utils/*": [
-                "./src/utils/utils/*",
-                "./src/utils"
+                "./src/utils/utils/*"
             ],
             "@mod-types/*": [
                 "./src/utils/types/*"
             ],
             "@constants/*": [
-                "./src/constants/*",
                 "./src/utils/constants/*"
+            ],
+            "@entities/*": [
+                "./src/constants/*"
             ],
             "@ui/*": [
                 "./src/ui/*"
@@ -49,10 +54,9 @@
         "types": [
             "cloudflare-turnstile",
             "./src/types"
-        ],
+        ]
     },
     "include": [
-        "src/**/*",
-        "**/*"
+        "src"
     ]
 }

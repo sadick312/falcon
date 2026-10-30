@@ -1,4 +1,4 @@
-import Player from "@constants/Player";
+import Player from "@entities/Player";
 import { STORE_HAT_MAP } from "@constants/store";
 import Client from "@core/Client";
 import PlayerCombatManager from "@core/logic/players/core/PlayerCombatManager";
@@ -8,7 +8,7 @@ import AutoPusher from "@core/mod/combat/core/AutoPusher";
 import PushSpikeMethod, { PushStrikeContext } from "@core/mod/combat/modules/push-strikes/utils/PushStrikeMethod";
 import GameEventTracker from "@core/mod/utils/GameEventTracker";
 import ModManager from "@core/ModManager";
-import PacketMap from "@core/PacketMap";
+import PacketMap from "@root/utils/socket/PacketMap";
 import withinDist from "@utils/geometry/withinDist";
 
 interface PredictiveHitData {

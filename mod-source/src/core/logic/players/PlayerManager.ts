@@ -1,5 +1,5 @@
 import EntityHandler from "@constants/EntityHandler";
-import Player from "@constants/Player";
+import Player from "@entities/Player";
 import PlayerEntityHandler from "@core/logic/players/PlayerEntityHandler";
 
 interface IPlayers {

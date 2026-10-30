@@ -1,5 +1,5 @@
 import items, { WEAPON_ID_MAP, WEAPON_VARIANT_MAP } from "@constants/items";
-import Player from "@constants/Player";
+import Player from "@entities/Player";
 import ModManager from "@core/ModManager";
 import ScriptConfig from "@utils/config/ScriptConfig";
 

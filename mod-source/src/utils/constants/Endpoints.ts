@@ -8,6 +8,7 @@
  * To change a value without rebuilding, set the `falcon-endpoint-overrides` key in localStorage
  * to a JSON object with any of the EndpointConfig keys.
  */
+import readJson from "@utils/storage/readJson";
 
 export type HostMode = "moomoo-sandbox" | "moomodding";
 
@@ -138,10 +139,9 @@ function loadConfig(): EndpointConfig {
     const config = { ...profile.defaults };
 
     try {
-        const raw = localStorage.getItem(OVERRIDE_KEY);
-        if (!raw) return config;
+        const overrides = readJson<Partial<EndpointConfig> | null>(OVERRIDE_KEY, null);
+        if (!overrides || typeof overrides !== "object") return config;
 
-        const overrides = JSON.parse(raw) as Partial<EndpointConfig>;
         for (const key of Object.keys(config) as (keyof EndpointConfig)[]) {
             const value = overrides[key];
             if (typeof value !== "string" || value === "") continue;

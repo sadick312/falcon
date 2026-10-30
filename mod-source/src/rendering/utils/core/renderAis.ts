@@ -1,4 +1,4 @@
-import { ais } from "@constants/Ai";
+import { ais } from "@entities/Ai";
 import CameraManager from "@rendering/core/CameraManager";
 import { mainContext } from "@rendering/RendererSystem";
 import renderAI from "@rendering/utils/core/renderAI";

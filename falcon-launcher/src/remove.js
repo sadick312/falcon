@@ -11,9 +11,9 @@ const observer = new MutationObserver((mutations) => {
     }
 });
 
+// Only added nodes matter; attribute and text changes produced records the callback ignored.
+// Not disconnected on DOMContentLoaded: the game page adds scripts after that, and this still removes them.
 observer.observe(document, {
-    attributes: true,
-    characterData: true,
     childList: true,
     subtree: true
 });

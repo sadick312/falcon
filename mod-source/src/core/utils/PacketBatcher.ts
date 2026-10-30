@@ -131,7 +131,8 @@ export default class PacketBatcher {
     }
 
     static add<K extends keyof MOOMOO_SERVER_TO_CLIENT_MAP>(type: K, data: MOOMOO_SERVER_TO_CLIENT_MAP[K]) {
-        this.buffer.push({ type, data });
+        // TypeScript cannot match a generic K to one member of the union, but { type: K, data: Map[K] } is one.
+        this.buffer.push({ type, data } as IncomingServerPackets);
         this.lastPacketCollected = performance.now();
 
         if (!this.isPolling) {

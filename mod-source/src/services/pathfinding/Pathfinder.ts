@@ -1,5 +1,5 @@
 import GameObject from "@constants/GameObject";
-import Player from "@constants/Player.js";
+import Player from "@entities/Player";
 import Client from "@core/Client.js";
 import ObjectManager from "@core/logic/ObjectManager.js";
 import PlayerManager from "@core/logic/players/PlayerManager.js";

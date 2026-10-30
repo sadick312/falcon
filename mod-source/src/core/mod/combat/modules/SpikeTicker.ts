@@ -1,4 +1,4 @@
-import Player from "@constants/Player";
+import Player from "@entities/Player";
 import { STORE_ACCESSORY_MAP } from "@constants/store";
 import Client from "@core/Client";
 import AttackManager from "@core/mod/combat/core/AttackManager";

@@ -9,4 +9,7 @@ deployment/
 mod-configs.json
 mod-settings.json
 NOTES.md
-gitignore/
+# Release package: attach it to a GitHub Release instead of committing it.
+Falcon-Update.zip
+stats/*
+!stats/history.json

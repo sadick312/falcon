@@ -1,5 +1,5 @@
-import { ais } from "@constants/Ai";
-import Player from "@constants/Player";
+import { ais } from "@entities/Ai";
+import Player from "@entities/Player";
 import Client from "@core/Client";
 import PlayerManager from "@core/logic/players/PlayerManager";
 import AttackManager from "@core/mod/combat/core/AttackManager";

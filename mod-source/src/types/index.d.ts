@@ -1,3 +1,6 @@
+/** Set by the esbuild define: true in development builds (build --dev, watch), false in production. */
+declare const __DEV__: boolean;
+
 declare global {
     interface HTMLImageElement {
         isLoaded: boolean;

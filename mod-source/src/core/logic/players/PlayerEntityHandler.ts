@@ -1,4 +1,4 @@
-import Player from "@constants/Player";
+import Player from "@entities/Player";
 
 export default class PlayerEntityHandler {
     private playersIdMap: Map<string, Player> = new Map();

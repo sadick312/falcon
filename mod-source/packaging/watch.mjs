@@ -1,22 +1,14 @@
 import * as esbuild from "esbuild";
-import cssModulesPlugin from "esbuild-plugin-inline-css";
-import inlineWorkerPlugin from "esbuild-plugin-inline-worker";
+import { createBuildOptions } from "./esbuild.config.mjs";
 
+// Watch builds are development builds: __DEV__ is true, so the opt-in profiler is available.
 async function run() {
-    const ctx = await esbuild.context({
-        entryPoints: ["src/index.ts"],
-        bundle: true,
-        minify: true,
-        minifySyntax: true,
-        platform: "browser",
-        plugins: [cssModulesPlugin(), inlineWorkerPlugin({
-            format: "iife"
-        })],
-        outfile: "dist/bundle.js",
-    });
-
-    ctx.watch();
-    console.log("Watching source files and bundling code...");
+    const ctx = await esbuild.context(createBuildOptions({ dev: true }));
+    await ctx.watch();
+    console.log("Watching source files and bundling code (development)...");
 }
 
-run();
+run().catch((err) => {
+    console.error(err.message ?? err);
+    process.exit(1);
+});

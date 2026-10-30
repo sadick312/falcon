@@ -1,4 +1,4 @@
-import { encode } from "@msgpack/msgpack";
+import { Encoder } from "@msgpack/msgpack";
 import PacketMap, { MOOMOO_CLIENT_TO_SERVER_MAP } from "@root/utils/socket/PacketMap";
 
 export default class CustomEncoder {
@@ -7,6 +7,8 @@ export default class CustomEncoder {
 
     private static TEMP_ARRAY: any[] = [null, null, null];
     private static textEncoder = new TextEncoder();
+    /** Reused for every outgoing packet; Encoder.encode returns a copy, so callers can keep the bytes. */
+    private static msgpackEncoder = new Encoder();
 
     private static stringByteCache: Record<string, Uint8Array> = {};
     private static packetDataLength = {
@@ -93,6 +95,6 @@ export default class CustomEncoder {
             this.TEMP_ARRAY.length = 2;
         }
 
-        return encode(this.TEMP_ARRAY);
+        return this.msgpackEncoder.encode(this.TEMP_ARRAY);
     }
 }

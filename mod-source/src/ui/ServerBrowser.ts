@@ -4,6 +4,7 @@ import { fetchJson, NetworkError } from "@services/network/Http";
 import { showConnectionNotice } from "@ui/ConnectionError";
 import { mainMenu } from "@ui/Loader";
 import getElem from "@utils/dom/getElem";
+import readJson from "@utils/storage/readJson";
 
 export const serverBrowserPage = getElem<"div">("server-browser-page");
 const connectToServerBtn = getElem<"button">("connection-server-btn");
@@ -319,13 +320,10 @@ export default class ServerBrowser {
 
     /** Last server joined on this site, or null. Ignores entries saved on the other site or in the old "key:region:name" format. */
     static getRecent(): { key: string; region: string } | null {
-        try {
-            const saved = JSON.parse(localStorage.getItem(RECENT_SERVER_KEY) ?? "null");
-            if (saved?.mode === Endpoints.mode && typeof saved.key === "string" && typeof saved.region === "string") {
-                return { key: saved.key, region: saved.region };
-            }
-        } catch {
-            // old format or corrupt value
+        // readJson returns null for the old format or a corrupt value.
+        const saved = readJson<{ mode?: unknown; key?: unknown; region?: unknown } | null>(RECENT_SERVER_KEY, null);
+        if (saved?.mode === Endpoints.mode && typeof saved.key === "string" && typeof saved.region === "string") {
+            return { key: saved.key, region: saved.region };
         }
 
         return null;

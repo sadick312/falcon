@@ -1,5 +1,5 @@
 import { ListItem } from "@constants/items";
-import Player from "@constants/Player";
+import Player from "@entities/Player";
 import ObjectManager from "@core/logic/ObjectManager";
 import getDir from "@utils/angle/getDir";
 import getDist from "@utils/geometry/getDist";

@@ -1,5 +1,5 @@
 import GameObject from "@constants/GameObject";
-import Player from "@constants/Player";
+import Player from "@entities/Player";
 import { WeaponFetchData } from "@core/logic/players/core/PlayerCombatManager";
 
 export interface PushStrikeContext {

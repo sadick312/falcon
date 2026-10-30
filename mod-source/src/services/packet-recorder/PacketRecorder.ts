@@ -1,5 +1,5 @@
 import Client from "@core/Client";
-import { encode } from "@msgpack/msgpack";
+import { Encoder } from "@msgpack/msgpack";
 import { PacketLog } from "@root/utils/socket/PacketLogging";
 import PacketMap from "@root/utils/socket/PacketMap";
 
@@ -17,7 +17,12 @@ export default class PacketRecorder {
         PacketMap.SERVER_TO_CLIENT.UPDATE_STORE_ITEMS
     ]);
 
+    /**
+     * Keyed by packet type, or by player id for ADD_PLAYER logs. Ids are ~20-character socket ids, so they
+     * can't clash with the one-letter packet types; one map keeps the export's insertion order.
+     */
     private static permanentData = new Map<string, PacketLog>();
+    private static encoder = new Encoder();
     private static timeSlots: PacketLog[][] = Array.from({ length: PacketRecorder.TOTAL_SLOTS }, () => []);
 
     private static slotIndex = 0;
@@ -68,7 +73,7 @@ export default class PacketRecorder {
                     const y = data[j + 2];
 
                     const playerId = this.sidToIdMap[sid];
-                    const logData = this.permanentData.get(`player_${playerId}`);
+                    const logData = this.permanentData.get(playerId);
                     if (!logData) continue;
 
                     logData.packetData.data[3] = x;
@@ -105,13 +110,14 @@ export default class PacketRecorder {
                     }
                 }
             } else if (packet.type === PacketMap.SERVER_TO_CLIENT.ADD_PLAYER) {
-                const playerId = packet.data[0];
-                this.permanentData.set(`player_${playerId}`, log);
+                // data[0] is the whole PlayerInitType array here, so this key never matches a player id
+                // lookup (as with the old `player_${data[0]}` key); kept as is so exports don't change.
+                this.permanentData.set(String(packet.data[0]), log);
             } else if (packet.type === PacketMap.SERVER_TO_CLIENT.REMOVE_PLAYER) {
                 const playerId = packet.data[0];
                 const playerSid = this.idToSidMap[playerId];
 
-                this.permanentData.delete(`player_${playerId}`);
+                this.permanentData.delete(playerId);
                 delete this.idToSidMap[playerId];
                 delete this.sidToIdMap[playerSid];
             } else if (packet.type === PacketMap.SERVER_TO_CLIENT.LOAD_GAME_OBJECT) {
@@ -131,15 +137,16 @@ export default class PacketRecorder {
     }
 
     private static idToSidMap: Record<string, number> = {};
-    private static sidToIdMap: Record<string, number> = {};
+    private static sidToIdMap: Record<number, string> = {};
+
+    /** False when add() would drop the packet, so callers can skip building the log object. */
+    static shouldRecord(packetId: string) {
+        return this.isInitialized && !this.IGNORED_PACKETS.has(packetId);
+    }
 
     static add(packetId: string, log: PacketLog) {
-        if (!this.isInitialized) return;
+        if (!this.shouldRecord(packetId)) return;
         this.advanceSlots(log.timestamp);
-
-        if (this.IGNORED_PACKETS.has(packetId)) {
-            return;
-        }
 
         if (!this.PERMANENT_PACKETS.has(packetId)) {
             this.timeSlots[this.slotIndex].push(log);
@@ -160,12 +167,12 @@ export default class PacketRecorder {
                 log.timestamp = performance.now() - 15e3;
             }
 
-            if (this.permanentData.has(`player_${playerId}`)) {
+            if (this.permanentData.has(playerId)) {
                 this.timeSlots[this.slotIndex].push(log);
                 return;
             }
 
-            this.permanentData.set(`player_${playerId}`, log);
+            this.permanentData.set(playerId, log);
         } else if (type === PacketMap.SERVER_TO_CLIENT.SET_UP_GAME) {
             this.permanentData.set(PacketMap.SERVER_TO_CLIENT.SET_UP_GAME, log);
         } else if (type === PacketMap.SERVER_TO_CLIENT.SET_INIT_DATA) {
@@ -177,7 +184,7 @@ export default class PacketRecorder {
         }
     }
 
-    static compileBinaryLog(): Uint8Array | null {
+    static compileBinaryLog(): Uint8Array<ArrayBuffer> | null {
         this.advanceSlots(performance.now());
 
         const historicalPackets = [
@@ -208,7 +215,7 @@ export default class PacketRecorder {
             chunks.push(timestampBuf);
             totalLength += 8;
 
-            const packetBuffer = new Uint8Array(encode([packet.packetData.type, packet.packetData.data]));
+            const packetBuffer = this.encoder.encode([packet.packetData.type, packet.packetData.data]);
             const packetLengthBuf = new Uint8Array(4);
             new DataView(packetLengthBuf.buffer).setInt32(0, packetBuffer.length, true);
 
@@ -216,7 +223,7 @@ export default class PacketRecorder {
             totalLength += 4 + packetBuffer.length;
 
             if (packet.brainState) {
-                const brainBuffer = new Uint8Array(encode(packet.brainState));
+                const brainBuffer = this.encoder.encode(packet.brainState);
 
                 const brainLengthBuf = new Uint8Array(4);
                 new DataView(brainLengthBuf.buffer).setInt32(0, brainBuffer.length, true);

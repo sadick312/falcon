@@ -1,4 +1,4 @@
-import Ai, { ais } from "@constants/Ai";
+import Ai, { ais } from "@entities/Ai";
 import aiTypes from "@constants/aiTypes";
 import Client from "@core/Client";
 import TextManager from "@core/logic/TextManager";

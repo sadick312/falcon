@@ -1,4 +1,4 @@
-import Player from "@constants/Player";
+import Player from "@entities/Player";
 import Angle from "@core/mod/combat/placing/Angle";
 import { PreplacementQueue } from "@core/mod/combat/placing/modules/AutoPlacer";
 import { Replacement } from "@placing/modules/AutoReplacer";

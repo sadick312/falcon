@@ -1,4 +1,4 @@
-import Ai from "@constants/Ai";
+import Ai from "@entities/Ai";
 
 const aiSprites: Record<number, HTMLImageElement> = {};
 

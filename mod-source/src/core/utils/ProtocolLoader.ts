@@ -20,7 +20,7 @@ function importMapFrom(root: ParentNode): string | null {
 
 /** The launcher stores the official page's HTML in window.oldHTML before replacing the document. */
 function findProtocolPath(): string | null {
-    const oldHTML = (window as any).oldHTML;
+    const oldHTML = window.oldHTML;
 
     if (typeof oldHTML === "string") {
         const fromParsed = importMapFrom(new DOMParser().parseFromString(oldHTML, "text/html"));

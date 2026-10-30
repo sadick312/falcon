@@ -4,15 +4,15 @@ import GameEventTracker from "@core/mod/utils/GameEventTracker";
 import CustomEncoder from "@core/socket/CustomEncoder";
 import LegacyPacketAdapter from "@core/socket/LegacyPacketAdapter";
 import PlayerUpdateEvent from "@core/socket/events/core/PlayerUpdateEvent";
-import SocketListener from "@core/socket/SocketListener";
 import { MooMooProtocol } from "@core/utils/CaptchaManager";
 import PacketBatcher from "@core/utils/PacketBatcher";
 import PacketManager from "@core/utils/PacketManager";
 import PacketTracker from "@core/utils/PacketTracker";
 import Menu from "@menu/Menu";
-import { decode } from "@msgpack/msgpack";
+import { Decoder } from "@msgpack/msgpack";
 import PacketMap, { knownServerPackets, MOOMOO_CLIENT_TO_SERVER_MAP, MOOMOO_SERVER_TO_CLIENT_MAP } from "@root/utils/socket/PacketMap";
 import TaskScheduler from "@services/event-timer/TaskScheduler";
+import { profileEnd, profileStart } from "@services/profiler/Profiler";
 import PacketRecorder from "@services/packet-recorder/PacketRecorder";
 import { showConnectionError } from "@ui/ConnectionError";
 import { enterGameBtn } from "@ui/Hook";
@@ -30,6 +30,18 @@ export type SendMsgSignature = <K extends keyof MOOMOO_CLIENT_TO_SERVER_MAP>(
 const disconnectedPage = getElem("disconnected-page");
 const disconnectedReason = getElem("disconnected-reason");
 export const respawnMainCard = getElem("respawn-page-main-card");
+
+// msgpack's decode() builds a new Decoder per call; reuse one for every server message.
+const decoder = new Decoder();
+
+/**
+ * Filled in by SocketListener when it loads (before any socket exists), so this module doesn't import
+ * SocketListener back. That import made Socket <-> SocketListener a circular dependency.
+ */
+export const socketHooks = {
+    onDispatch: (_type: keyof MOOMOO_SERVER_TO_CLIENT_MAP, _data: unknown) => { },
+    onClose: () => { }
+};
 
 export type MixKeyFunc = (key: Uint8Array, offset: number) => Uint8Array;
 
@@ -74,7 +86,7 @@ export default class Socket extends WebSocket {
 
     private onClose(ev: CloseEvent) {
         this.clearHandshakeTimer();
-        SocketListener.stopPinging();
+        socketHooks.onClose();
 
         if (this.errorShown) return;
         const code = `code ${ev.code}`;
@@ -128,7 +140,7 @@ export default class Socket extends WebSocket {
         return (isNaN(parsedAmt) ? 20 : parsedAmt) / 2;
     }
 
-    processPacket(type: any, data: any[]) {
+    processPacket(type: keyof MOOMOO_SERVER_TO_CLIENT_MAP, data: unknown) {
         const delay = this.getArtificialDelay();
 
         if (!delay) {
@@ -146,8 +158,10 @@ export default class Socket extends WebSocket {
         this.manager.maskIncoming(bytes);
 
         let parsed: any[];
+        const decodeStart = __DEV__ ? profileStart() : 0;
         try {
-            parsed = decode(bytes) as any[];
+            parsed = decoder.decode(bytes) as any[];
+            if (__DEV__) profileEnd("decode", decodeStart);
         } catch (err) {
             console.warn("[Falcon] Dropped a server message that is not valid msgpack.", err);
             return;
@@ -201,7 +215,7 @@ export default class Socket extends WebSocket {
         type: K,
         data: unknown
     ) {
-        SocketListener.logPacket(type, data as any[]);
+        socketHooks.onDispatch(type, data);
 
         const callback = this.handlers[type];
         if (!callback) return;
@@ -246,7 +260,7 @@ export default class Socket extends WebSocket {
         return len;
     }
 
-    private sendActualMsg(type: any) {
+    private sendActualMsg(type: keyof MOOMOO_CLIENT_TO_SERVER_MAP) {
         if (this.plainPackets) {
             const binary = CustomEncoder.encode(type, type, this.DATA_BUFFER);
             PacketTracker.add();
@@ -257,7 +271,7 @@ export default class Socket extends WebSocket {
         this.sendEncrypted(type, this.DATA_BUFFER);
     }
 
-    sendMsg: SendMsgSignature = (type: any, arg1?: any, arg2?: any, arg3?: any) => {
+    sendMsg: SendMsgSignature = (type: keyof MOOMOO_CLIENT_TO_SERVER_MAP, arg1?: any, arg2?: any, arg3?: any) => {
         this.populateBuffer(arg1, arg2, arg3);
 
         if (this.readyState !== WebSocket.OPEN) return;
@@ -282,7 +296,7 @@ export default class Socket extends WebSocket {
 
     private binaryPacketBuffer = new Uint8Array(1024);
 
-    private sendEncrypted(type: any, data: any[]) {
+    private sendEncrypted(type: keyof MOOMOO_CLIENT_TO_SERVER_MAP, data: unknown[]) {
         const encryptPacketId = this.manager.tables?.c2s.encrypt[type];
         if (encryptPacketId === undefined) return;
 
@@ -290,7 +304,7 @@ export default class Socket extends WebSocket {
         const packetData = CustomEncoder.encode(type, encryptPacketId, data, currentSequence);
         const binaryLength = PacketManager.PACKET_PADDING + packetData.length;
         const bufferSlice = this.binaryPacketBuffer.subarray(0, binaryLength);
-        const signatureBuff = this.manager.getPacketSignature(packetData as any);
+        const signatureBuff = this.manager.getPacketSignature(packetData);
 
         const signature = signatureBuff[0];
         const signatureUint = signatureBuff[1];

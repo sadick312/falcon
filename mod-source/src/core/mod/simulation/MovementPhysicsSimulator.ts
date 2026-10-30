@@ -1,6 +1,6 @@
 import GameObject from "@constants/GameObject";
 import items from "@constants/items";
-import Player from "@constants/Player";
+import Player from "@entities/Player";
 import { accessoryMap, hatMap, STORE_HAT_MAP } from "@constants/store";
 import Client from "@core/Client";
 import ObjectManager from "@core/logic/ObjectManager";

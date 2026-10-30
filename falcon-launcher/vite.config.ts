@@ -21,6 +21,11 @@ function copyModAssets(): Plugin {
 
                 this.emitFile({ type: "asset", fileName, source: readFileSync(source) });
             }
+
+            // bundle.js ends with a sourceMappingURL comment; ship the map next to it so DevTools can use it.
+            const sourceMap = `${modAssets["mod/bundle.js"]}.map`;
+            if (existsSync(sourceMap))
+                this.emitFile({ type: "asset", fileName: "mod/bundle.js.map", source: readFileSync(sourceMap) });
         }
     };
 }
@@ -36,7 +41,8 @@ export default defineConfig({
         port: 5173,
         strictPort: true,
         cors: {
-            origin: /chrome-extension:\/\//,
+            // Extension IDs are 32 characters from a-p.
+            origin: /^chrome-extension:\/\/[a-p]{32}$/,
         },
         hmr: {
             port: 5173,
@@ -48,8 +54,5 @@ export default defineConfig({
                 dashboard: resolve(__dirname, "index.html")
             }
         }
-    },
-    legacy: {
-        skipWebSocketTokenCheck: true,
     },
 })

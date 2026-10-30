@@ -1,5 +1,5 @@
 import items, { IProjectile } from "@constants/items";
-import Projectile from "@constants/Projectile";
+import Projectile from "@entities/Projectile";
 import ProjectileManager from "@core/logic/ProjectileManager";
 import ModManager from "@core/ModManager";
 import CameraManager from "@rendering/core/CameraManager";

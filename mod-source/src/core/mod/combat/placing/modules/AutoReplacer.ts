@@ -1,6 +1,6 @@
 import CombatUtils from "@combat-utils/CombatUtils";
 import GameObject from "@constants/GameObject";
-import Player from "@constants/Player";
+import Player from "@entities/Player";
 import AttackManager from "@core/mod/combat/core/AttackManager";
 import Angle from "@core/mod/combat/placing/Angle";
 import { FinderOptions } from "@core/mod/combat/placing/AngleFinder";

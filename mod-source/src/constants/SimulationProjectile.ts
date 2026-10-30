@@ -1,7 +1,7 @@
 import { Entity } from "@constants/Entity";
 import GameObject from "@constants/GameObject";
 import items from "@constants/items";
-import Player from "@constants/Player";
+import Player from "@entities/Player";
 import Client from "@core/Client";
 import ObjectManager from "@core/logic/ObjectManager";
 import PlayerManager from "@core/logic/players/PlayerManager";

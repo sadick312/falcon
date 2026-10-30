@@ -1,5 +1,5 @@
 import items, { LIST_ID_MAP } from "@constants/items";
-import Player from "@constants/Player";
+import Player from "@entities/Player";
 import Client from "@core/Client";
 import PlacementSystem from "@core/mod/combat/core/PlacementSystem";
 import Angle from "@core/mod/combat/placing/Angle";

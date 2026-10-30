@@ -1,7 +1,7 @@
 import CombatModule from "@combat-utils/CombatModule";
 import CombatUtils from "@combat-utils/CombatUtils";
 import items from "@constants/items";
-import Player from "@constants/Player";
+import Player from "@entities/Player";
 import { STORE_ACCESSORY_MAP } from "@constants/store";
 import Client from "@core/Client";
 import PlayerCombatManager from "@core/logic/players/core/PlayerCombatManager";
