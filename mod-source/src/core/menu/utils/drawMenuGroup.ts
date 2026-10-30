@@ -5,7 +5,7 @@ import drawItemLabel from "./drawItemLabel";
 export default function drawMenuGroup(item: IMenuItem, contentElement: HTMLElement) {
     if (!item.settings) return;
 
-    const body = drawItemBody(item);
+    const body = drawItemBody();
     body.classList.add("menuGroup");
 
     const iconHolderElem = document.createElement("div");

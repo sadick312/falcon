@@ -27,7 +27,6 @@ export default class PacketRecorder {
 
     private static slotIndex = 0;
     private static lastSlotTime = 0;
-    private static intervalId: number | null = null;
     private static isInitialized = false;
 
     static init() {
@@ -35,7 +34,7 @@ export default class PacketRecorder {
 
         this.isInitialized = true;
         this.lastSlotTime = performance.now();
-        this.intervalId = window.setInterval(() => this.advanceSlots(performance.now()), 1000);
+        window.setInterval(() => this.advanceSlots(performance.now()), 1000);
     }
 
     private static advanceSlots(now: number) {
@@ -51,12 +50,6 @@ export default class PacketRecorder {
 
         this.slotIndex = (this.slotIndex + elapsed) % this.timeSlots.length;
         this.lastSlotTime += elapsed * 1e3;
-    }
-
-    static destroy() {
-        if (typeof this.intervalId !== "number") return;
-        clearInterval(this.intervalId);
-        this.intervalId = null;
     }
 
     private static updatePermanentData(packetData: PacketLog[]) {

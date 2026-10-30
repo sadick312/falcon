@@ -1,13 +1,9 @@
 import items, { WEAPON_ID_MAP } from "@constants/items";
 import Player from "@entities/Player";
-import { STORE_ACCESSORY_MAP, STORE_HAT_MAP } from "@constants/store";
+import { STORE_ACCESSORY_MAP } from "@constants/store";
 import Client from "@core/Client";
 import ObjectManager from "@core/logic/ObjectManager";
-import MovementUtils from "@core/mod/defense/utils/MovementUtils";
-import { Point } from "@mod-types/index";
 import { PlayerSimulationState } from "@simulation/SimulationStates";
-import getDir from "@utils/angle/getDir";
-import ScriptConfig from "@utils/config/ScriptConfig";
 import lineInRect from "@utils/geometry/lineInRect";
 
 export default class CombatUtils {
@@ -59,39 +55,6 @@ export default class CombatUtils {
         const dy = posA.y - posB.y;
 
         return (dx * dx + dy * dy) <= (totalRange * totalRange);
-    }
-
-    static projectKnockback(
-        player: Player, source: Player,
-        force: number, ignore: boolean = false,
-        factorFriction: boolean = false
-    ): Point | undefined {
-        if (player.trap) return;
-
-        const delta = ScriptConfig.SERVER_UPDATE_SPEED;
-        const playerPos = player.real_position;
-        const dir = getDir(playerPos, source.real_position);
-        const totalForce = (Number(ignore) * .3) + force;
-        const totalDelta = totalForce * delta;
-
-        let accelX = Math.cos(dir) * totalDelta;
-        let accelY = Math.sin(dir) * totalDelta;
-
-        if (factorFriction) {
-            const frictionMult = MovementUtils.getFrictionMult(accelX, accelY, delta);
-
-            accelX *= frictionMult;
-            accelY *= frictionMult;
-        }
-
-        return {
-            x: playerPos.x + accelX,
-            y: playerPos.y + accelY
-        };
-    }
-
-    static soldierRound(player: Player, dmg: number) {
-        return player.skinIndex === STORE_HAT_MAP.SOLDIER_HELMET ? dmg * .75 : dmg;
     }
 
     static canAttack(victim: Player, attacker: Player, weaponId: number) {

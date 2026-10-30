@@ -11,7 +11,6 @@ export type Interval = [start: number, end: number];
 export default class IntervalHelper {
     private static readonly MAX_INTERVALS = 64;
     public static readonly intervalBuffer: Interval[] = Array.from({ length: IntervalHelper.MAX_INTERVALS }, () => [0, 0]);
-    public static intervalBufferLength = 0;
 
     public static readonly computeBuffer: Interval[] = Array.from({ length: 2 }, () => [0, 0]);
     public static computeBufferLength = 0;
@@ -49,7 +48,6 @@ export default class IntervalHelper {
             }
         }
 
-        IntervalHelper.intervalBufferLength = resultCount;
         return resultCount;
     }
 

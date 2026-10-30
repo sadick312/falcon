@@ -6,7 +6,7 @@ export default function drawMenuSelect(item: IMenuItem, contentElement: HTMLElem
     if (!item.options) return;
     const isInDropdownContent = contentElement !== Menu.contentElement;
 
-    const body = drawItemBody(item);
+    const body = drawItemBody();
     body.style.pointerEvents = "none";
 
     const iconHolderElem = document.createElement("div");

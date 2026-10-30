@@ -3,7 +3,7 @@ import drawItemBody from "./drawItemBody";
 import drawItemLabel from "./drawItemLabel";
 
 export default function drawMenuSlider(item: IMenuItem, contentElement: HTMLElement) {
-    const body = drawItemBody(item);
+    const body = drawItemBody();
     body.style.pointerEvents = "none";
 
     const iconHolderElem = document.createElement("div");

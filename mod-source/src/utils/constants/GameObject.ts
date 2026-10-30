@@ -160,26 +160,6 @@ export default class GameObject implements Entity {
         return this.simulationState;
     }
 
-    getSimulationStateClone(): GameObjectSimulationState {
-        return {
-            active: this.isGhost ? false : this.active,
-            sid: this.sid,
-            x: this.x,
-            y: this.y,
-            type: this.type,
-            dmg: this.dmg,
-            teleport: this.teleport,
-            boostSpeed: this.boostSpeed,
-            scale: this.getScale(),
-            trap: this.trap,
-            health: this.health,
-            ignoreCollision: this.ignoreCollision,
-            dir: this.dir,
-            ownerSID: this.ownerSID,
-            willBreak: this.willBreak
-        };
-    }
-
     update(delta: number) {
         if (this.xWiggle) this.xWiggle *= Math.pow(0.99, delta);
         if (this.yWiggle) this.yWiggle *= Math.pow(0.99, delta);

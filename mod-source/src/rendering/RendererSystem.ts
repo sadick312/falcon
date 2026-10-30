@@ -110,10 +110,10 @@ export default class RendererSystem {
 
             mainContext.globalAlpha = 1;
             mainContext.fillStyle = "#dbc666";
-            renderWaterBodies(xOffset, yOffset, mainContext, RendererUtils.riverPadding);
+            renderWaterBodies(yOffset, mainContext, RendererUtils.riverPadding);
 
             mainContext.fillStyle = "#91b2db";
-            renderWaterBodies(xOffset, yOffset, mainContext, (this.waterMult - 1) * 250);
+            renderWaterBodies(yOffset, mainContext, (this.waterMult - 1) * 250);
 
             renderGrid(xOffset, yOffset);
 

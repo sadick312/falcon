@@ -7,7 +7,6 @@ import AutoPusherStriker from "@combat-modules/AutoPushStriker";
 import BarbarianKnockbacker from "@combat-modules/BarbarianKnockbacker";
 import OneTicker from "@combat-modules/OneTicker";
 import ProjectileSyncer from "@combat-modules/ProjectileSyncer";
-import ShameGrinder from "@combat-modules/ShameGrinder";
 import SpikeTicker from "@combat-modules/SpikeTicker";
 import TurretAPAssister from "@combat-modules/TurretAPAssister";
 import TurretGearKnockbacker from "@combat-modules/TurretGearKnockbacker";
@@ -33,7 +32,6 @@ export default class AttackManager {
     private static attackQueue: Readonly<AttackQueue>[] = [];
 
     static spikeTicker = new SpikeTicker();
-    static shameGrinder = new ShameGrinder();
     static appleInstakiller = new AppleInstakiller();
     static antiBuller = new AntiBuller();
     static oneTicker = new OneTicker();
@@ -50,7 +48,6 @@ export default class AttackManager {
         new AutoMeleeSyncer(),
         new TurretGearKnockbacker(),
         new BarbarianKnockbacker(),
-        this.shameGrinder,
         this.appleInstakiller,
         this.spikeTicker,
         this.oneTicker

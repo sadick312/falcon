@@ -335,7 +335,7 @@ export default class SocketListener {
             }
         });
 
-        this.socket.on(PacketMap.SERVER_TO_CLIENT.UPDATE_PLAYER_VALUE, (index, value, updateView) => {
+        this.socket.on(PacketMap.SERVER_TO_CLIENT.UPDATE_PLAYER_VALUE, (index, value) => {
             const player = Client.player;
 
             if (player) {
@@ -485,8 +485,6 @@ export default class SocketListener {
             const gameObject = ObjectManager.getObject(sid);
             if (gameObject) gameObject.health = health;
         });
-
-        this.socket.on(PacketMap.CUSTOM_PACKETS.SERVER_TO_CLIENT.VALUE_PEEK, (data) => { });
     }
 }
 

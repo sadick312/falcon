@@ -15,6 +15,7 @@ export default class FakeSocket {
         (this.handlers as any)[event] = callback;
     }
 
-    sendMsg<K extends keyof MOOMOO_CLIENT_TO_SERVER_MAP>(type: K, ...data: MOOMOO_CLIENT_TO_SERVER_MAP[K]) {
+    // Replays never send; the parameters only keep the same signature as Socket.sendMsg.
+    sendMsg<K extends keyof MOOMOO_CLIENT_TO_SERVER_MAP>(_type: K, ..._data: MOOMOO_CLIENT_TO_SERVER_MAP[K]) {
     }
 }

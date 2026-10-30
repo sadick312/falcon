@@ -2,7 +2,6 @@ import CombatUtils from "@combat-utils/CombatUtils";
 import GameObject from "@constants/GameObject";
 import items, { WEAPON_ID_MAP } from "@constants/items";
 import Player from "@entities/Player";
-import { STORE_HAT_MAP } from "@constants/store";
 import Client from "@core/Client";
 import ObjectManager from "@core/logic/ObjectManager";
 import PlayerCombatManager from "@core/logic/players/core/PlayerCombatManager";
@@ -422,14 +421,6 @@ export default class ModManager {
         }
 
         Client.lastMoveDir = null;
-    }
-
-    static hasDoneHatResponse() {
-        if (DefenseSystem.skinIndex !== STORE_HAT_MAP.IGNORE) return true;
-        if (AttackManager.currentAttackAction) return true;
-        if (CombatController.currentMode !== "autobreak" && CombatController.currentMode !== "none") return true;
-        if (HatSystem.sentHatPacket) return true;
-        return false;
     }
 
     private static lastWeaponIndex = 0;

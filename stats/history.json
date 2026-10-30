@@ -2491,5 +2491,537 @@
         "total": 2
       }
     }
+  },
+  {
+    "date": "2026-10-30T13:54:16.772Z",
+    "commit": "524546c",
+    "dirty": false,
+    "label": "before dead-code cleanup",
+    "methods": {
+      "any": "scanner",
+      "imports": "esbuild-metafile"
+    },
+    "build": {
+      "modMs": 1033,
+      "modOk": true,
+      "extMs": 1410,
+      "extOk": true
+    },
+    "bundle": {
+      "raw": 633173,
+      "gzip": 178042,
+      "top": [
+        {
+          "name": "src/utils/utils/text/emojiShortnames.json",
+          "bytes": 156341,
+          "pct": 24.7
+        },
+        {
+          "name": "src/core/menu/Menu.ts",
+          "bytes": 116440,
+          "pct": 18.4
+        },
+        {
+          "name": "src/ui/data/AllTemporaryObjects.ts",
+          "bytes": 27881,
+          "pct": 4.4
+        },
+        {
+          "name": "@msgpack/msgpack (npm)",
+          "bytes": 21520,
+          "pct": 3.4
+        },
+        {
+          "name": "src/core/mod/defense/DefenseSystem.ts",
+          "bytes": 13256,
+          "pct": 2.1
+        },
+        {
+          "name": "src/core/menu/menu.css",
+          "bytes": 9748,
+          "pct": 1.5
+        },
+        {
+          "name": "src/utils/constants/items.ts",
+          "bytes": 9505,
+          "pct": 1.5
+        },
+        {
+          "name": "src/core/socket/SocketListener.ts",
+          "bytes": 8274,
+          "pct": 1.3
+        },
+        {
+          "name": "src/rendering/RendererUtils.ts",
+          "bytes": 7811,
+          "pct": 1.2
+        },
+        {
+          "name": "src/constants/Player.ts",
+          "bytes": 7811,
+          "pct": 1.2
+        },
+        {
+          "name": "src/core/PacketReplayer.ts",
+          "bytes": 7381,
+          "pct": 1.2
+        },
+        {
+          "name": "src/core/mod/combat/placing/AngleFinder.ts",
+          "bytes": 7322,
+          "pct": 1.2
+        },
+        {
+          "name": "src/core/ModManager.ts",
+          "bytes": 7167,
+          "pct": 1.1
+        },
+        {
+          "name": "@noble/hashes (npm)",
+          "bytes": 7148,
+          "pct": 1.1
+        },
+        {
+          "name": "src/utils/constants/store.ts",
+          "bytes": 7067,
+          "pct": 1.1
+        }
+      ]
+    },
+    "typecheck": {
+      "errors": {
+        "mod-source": 0,
+        "falcon-launcher": 0
+      },
+      "any": 35,
+      "tsIgnore": 0
+    },
+    "code": {
+      "workspaces": {
+        "mod-source": {
+          "files": 196,
+          "lines": 25207
+        },
+        "falcon-launcher": {
+          "files": 5,
+          "lines": 298
+        }
+      },
+      "largest": [
+        {
+          "file": "mod-source/src/ui/data/AllTemporaryObjects.ts",
+          "lines": 2183
+        },
+        {
+          "file": "mod-source/src/core/menu/Menu.ts",
+          "lines": 1489
+        },
+        {
+          "file": "mod-source/src/utils/constants/items.ts",
+          "lines": 896
+        },
+        {
+          "file": "mod-source/src/core/mod/defense/DefenseSystem.ts",
+          "lines": 807
+        },
+        {
+          "file": "mod-source/src/utils/constants/store.ts",
+          "lines": 624
+        },
+        {
+          "file": "mod-source/src/core/mod/combat/placing/AngleFinder.ts",
+          "lines": 615
+        },
+        {
+          "file": "mod-source/src/rendering/RendererUtils.ts",
+          "lines": 553
+        },
+        {
+          "file": "mod-source/src/constants/Player.ts",
+          "lines": 526
+        },
+        {
+          "file": "mod-source/src/core/menu/menu.css",
+          "lines": 496
+        },
+        {
+          "file": "mod-source/src/core/socket/SocketListener.ts",
+          "lines": 496
+        }
+      ]
+    },
+    "imports": {
+      "files": 185,
+      "topModules": [
+        {
+          "module": "mod-source/src/core/Client.ts",
+          "count": 83
+        },
+        {
+          "module": "mod-source/src/core/menu/Menu.ts",
+          "count": 61
+        },
+        {
+          "module": "mod-source/src/utils/constants/items.ts",
+          "count": 51
+        },
+        {
+          "module": "mod-source/src/core/ModManager.ts",
+          "count": 45
+        },
+        {
+          "module": "mod-source/src/utils/constants/store.ts",
+          "count": 37
+        },
+        {
+          "module": "mod-source/src/utils/utils/config/ScriptConfig.ts",
+          "count": 35
+        },
+        {
+          "module": "mod-source/src/core/logic/ObjectManager.ts",
+          "count": 31
+        },
+        {
+          "module": "mod-source/src/utils/utils/geometry/withinDist.ts",
+          "count": 28
+        },
+        {
+          "module": "mod-source/src/core/mod/combat/core/AttackManager.ts",
+          "count": 26
+        },
+        {
+          "module": "mod-source/src/utils/socket/PacketMap.ts",
+          "count": 22
+        },
+        {
+          "module": "mod-source/src/core/logic/players/core/PlayerCombatManager.ts",
+          "count": 21
+        },
+        {
+          "module": "mod-source/src/utils/utils/geometry/getDistSq.ts",
+          "count": 21
+        },
+        {
+          "module": "mod-source/src/rendering/RendererUtils.ts",
+          "count": 20
+        },
+        {
+          "module": "mod-source/src/utils/utils/dom/getElem.ts",
+          "count": 19
+        },
+        {
+          "module": "mod-source/src/core/mod/combat/utils/CombatUtils.ts",
+          "count": 19
+        }
+      ],
+      "packages": [
+        {
+          "name": "@msgpack/msgpack",
+          "count": 4
+        },
+        {
+          "name": "@noble/hashes",
+          "count": 1
+        }
+      ]
+    },
+    "circular": {
+      "groups": 3,
+      "files": 118,
+      "mutualPairs": 91,
+      "examples": [
+        {
+          "size": 102,
+          "cycle": [
+            "mod-source/src/constants/Player.ts",
+            "mod-source/src/core/mod/simulation/MovementPhysicsSimulator.ts",
+            "mod-source/src/constants/Player.ts"
+          ]
+        },
+        {
+          "size": 10,
+          "cycle": [
+            "mod-source/src/core/menu/Menu.ts",
+            "mod-source/src/core/menu/utils/drawNumberInput.ts",
+            "mod-source/src/core/menu/Menu.ts"
+          ]
+        },
+        {
+          "size": 6,
+          "cycle": [
+            "mod-source/src/rendering/RendererUtils.ts",
+            "mod-source/src/rendering/utils/items/renderDottedCircle.ts",
+            "mod-source/src/rendering/RendererUtils.ts"
+          ]
+        }
+      ]
+    },
+    "deps": null
+  },
+  {
+    "date": "2026-10-30T13:59:46.459Z",
+    "commit": "524546c",
+    "dirty": true,
+    "label": "dead-code cleanup",
+    "methods": {
+      "any": "scanner",
+      "imports": "esbuild-metafile"
+    },
+    "build": {
+      "modMs": 1009,
+      "modOk": true,
+      "extMs": 1497,
+      "extOk": true
+    },
+    "bundle": {
+      "raw": 630640,
+      "gzip": 177224,
+      "top": [
+        {
+          "name": "src/utils/utils/text/emojiShortnames.json",
+          "bytes": 156341,
+          "pct": 24.8
+        },
+        {
+          "name": "src/core/menu/Menu.ts",
+          "bytes": 116440,
+          "pct": 18.5
+        },
+        {
+          "name": "src/ui/data/AllTemporaryObjects.ts",
+          "bytes": 27881,
+          "pct": 4.4
+        },
+        {
+          "name": "@msgpack/msgpack (npm)",
+          "bytes": 21520,
+          "pct": 3.4
+        },
+        {
+          "name": "src/core/mod/defense/DefenseSystem.ts",
+          "bytes": 13251,
+          "pct": 2.1
+        },
+        {
+          "name": "src/core/menu/menu.css",
+          "bytes": 9748,
+          "pct": 1.5
+        },
+        {
+          "name": "src/utils/constants/items.ts",
+          "bytes": 9506,
+          "pct": 1.5
+        },
+        {
+          "name": "src/core/socket/SocketListener.ts",
+          "bytes": 8205,
+          "pct": 1.3
+        },
+        {
+          "name": "src/constants/Player.ts",
+          "bytes": 7807,
+          "pct": 1.2
+        },
+        {
+          "name": "src/core/PacketReplayer.ts",
+          "bytes": 7381,
+          "pct": 1.2
+        },
+        {
+          "name": "src/rendering/RendererUtils.ts",
+          "bytes": 7320,
+          "pct": 1.2
+        },
+        {
+          "name": "src/core/mod/combat/placing/AngleFinder.ts",
+          "bytes": 7317,
+          "pct": 1.2
+        },
+        {
+          "name": "@noble/hashes (npm)",
+          "bytes": 7148,
+          "pct": 1.1
+        },
+        {
+          "name": "src/utils/constants/store.ts",
+          "bytes": 7067,
+          "pct": 1.1
+        },
+        {
+          "name": "src/core/ModManager.ts",
+          "bytes": 7006,
+          "pct": 1.1
+        }
+      ]
+    },
+    "typecheck": {
+      "errors": {
+        "mod-source": 0,
+        "falcon-launcher": 0
+      },
+      "any": 35,
+      "tsIgnore": 0
+    },
+    "code": {
+      "workspaces": {
+        "mod-source": {
+          "files": 195,
+          "lines": 24986
+        },
+        "falcon-launcher": {
+          "files": 5,
+          "lines": 298
+        }
+      },
+      "largest": [
+        {
+          "file": "mod-source/src/ui/data/AllTemporaryObjects.ts",
+          "lines": 2183
+        },
+        {
+          "file": "mod-source/src/core/menu/Menu.ts",
+          "lines": 1473
+        },
+        {
+          "file": "mod-source/src/utils/constants/items.ts",
+          "lines": 896
+        },
+        {
+          "file": "mod-source/src/core/mod/defense/DefenseSystem.ts",
+          "lines": 807
+        },
+        {
+          "file": "mod-source/src/utils/constants/store.ts",
+          "lines": 624
+        },
+        {
+          "file": "mod-source/src/core/mod/combat/placing/AngleFinder.ts",
+          "lines": 615
+        },
+        {
+          "file": "mod-source/src/constants/Player.ts",
+          "lines": 526
+        },
+        {
+          "file": "mod-source/src/rendering/RendererUtils.ts",
+          "lines": 501
+        },
+        {
+          "file": "mod-source/src/core/menu/menu.css",
+          "lines": 496
+        },
+        {
+          "file": "mod-source/src/core/socket/SocketListener.ts",
+          "lines": 494
+        }
+      ]
+    },
+    "imports": {
+      "files": 184,
+      "topModules": [
+        {
+          "module": "mod-source/src/core/Client.ts",
+          "count": 83
+        },
+        {
+          "module": "mod-source/src/core/menu/Menu.ts",
+          "count": 61
+        },
+        {
+          "module": "mod-source/src/utils/constants/items.ts",
+          "count": 49
+        },
+        {
+          "module": "mod-source/src/core/ModManager.ts",
+          "count": 45
+        },
+        {
+          "module": "mod-source/src/utils/constants/store.ts",
+          "count": 35
+        },
+        {
+          "module": "mod-source/src/utils/utils/config/ScriptConfig.ts",
+          "count": 33
+        },
+        {
+          "module": "mod-source/src/core/logic/ObjectManager.ts",
+          "count": 31
+        },
+        {
+          "module": "mod-source/src/utils/utils/geometry/withinDist.ts",
+          "count": 27
+        },
+        {
+          "module": "mod-source/src/core/mod/combat/core/AttackManager.ts",
+          "count": 26
+        },
+        {
+          "module": "mod-source/src/utils/socket/PacketMap.ts",
+          "count": 22
+        },
+        {
+          "module": "mod-source/src/core/logic/players/core/PlayerCombatManager.ts",
+          "count": 21
+        },
+        {
+          "module": "mod-source/src/utils/utils/geometry/getDistSq.ts",
+          "count": 21
+        },
+        {
+          "module": "mod-source/src/rendering/RendererUtils.ts",
+          "count": 20
+        },
+        {
+          "module": "mod-source/src/utils/utils/dom/getElem.ts",
+          "count": 19
+        },
+        {
+          "module": "mod-source/src/core/mod/combat/utils/CombatUtils.ts",
+          "count": 19
+        }
+      ],
+      "packages": [
+        {
+          "name": "@msgpack/msgpack",
+          "count": 4
+        },
+        {
+          "name": "@noble/hashes",
+          "count": 1
+        }
+      ]
+    },
+    "circular": {
+      "groups": 3,
+      "files": 117,
+      "mutualPairs": 91,
+      "examples": [
+        {
+          "size": 101,
+          "cycle": [
+            "mod-source/src/constants/Player.ts",
+            "mod-source/src/core/mod/simulation/MovementPhysicsSimulator.ts",
+            "mod-source/src/constants/Player.ts"
+          ]
+        },
+        {
+          "size": 10,
+          "cycle": [
+            "mod-source/src/core/menu/Menu.ts",
+            "mod-source/src/core/menu/utils/drawNumberInput.ts",
+            "mod-source/src/core/menu/Menu.ts"
+          ]
+        },
+        {
+          "size": 6,
+          "cycle": [
+            "mod-source/src/rendering/RendererUtils.ts",
+            "mod-source/src/rendering/utils/items/renderDottedCircle.ts",
+            "mod-source/src/rendering/RendererUtils.ts"
+          ]
+        }
+      ]
+    },
+    "deps": null
   }
 ]
