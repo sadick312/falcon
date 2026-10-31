@@ -188,7 +188,8 @@ export default class SocketListener {
         });
 
         this.socket.on(PacketMap.SERVER_TO_CLIENT.SET_ALLIANCE_PLAYERS, (data) => {
-            Client.alliancePlayers = data;
+            // Every tick reads and truncates this list; a non-array here would make each later tick throw.
+            Client.alliancePlayers = Array.isArray(data) ? data : [];
             if (allianceHolder.style.display === "flex") updateClanMenu();
         });
 
