@@ -745,6 +745,7 @@ export default class DefenseSystem {
 
     static forceSoldierTicks = 0;
 
+    /** Phase 1 of the tick: works out how much damage we could take this tick and from what. */
     static start() {
         this.skinIndex = STORE_HAT_MAP.IGNORE;
         PacketTracker.adjustFoodAllocation(Client.player.items[0]);
@@ -763,6 +764,10 @@ export default class DefenseSystem {
         }
     }
 
+    /**
+     * Phase 2, after the attack modules have chosen: decides whether soldier/EMP are still allowed (not while
+     * attacking or auto-breaking with tank gear) and heals through AutoHealer.
+     */
     static respond() {
         const isAutoBreakingImportant = CombatController.currentMode === "autobreak" || CombatController.currentMode === "autobreakspike";
         const doesAutoBreakWantTank = CombatController.skinIndex === STORE_HAT_MAP.TANK_GEAR;
@@ -782,6 +787,7 @@ export default class DefenseSystem {
         PacketTracker.free("FOOD", "ALL");
     }
 
+    /** Phase 3: sends this tick's hat and movement packets. */
     static resolve() {
         const start = __DEV__ ? profileStart() : 0;
         HatSystem.main();
@@ -794,6 +800,7 @@ export default class DefenseSystem {
         PacketTracker.free("MOVE", "ALL");
     }
 
+    /** Phase 4: clears the per-tick threat state for the next tick. */
     static conclude() {
         Client.player.damages.length = 0;
         this.alreadyHealed = false;
