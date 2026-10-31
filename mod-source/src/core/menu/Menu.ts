@@ -1210,7 +1210,7 @@ export default class Menu {
                 if (item.type === "toggle") drawMenuToggle(item, contentElement, isNested);
                 else if (item.type === "select") drawMenuSelect(item, contentElement);
                 else if (item.type === "slider") drawMenuSlider(item, contentElement);
-                else if (item.type === "paragraph") drawMenuParagraph(item), contentElement;
+                else if (item.type === "paragraph") drawMenuParagraph(item, contentElement);
                 else if (item.type === "group") drawMenuGroup(item, contentElement);
                 else if (item.type === "number") drawNumberInput(item, contentElement);
                 else if (item.type === "chat-log") drawChatLog();

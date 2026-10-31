@@ -1,11 +1,11 @@
 import Menu, { IMenuItem } from "../Menu";
 import drawItemBody from "./drawItemBody";
 
-export default function drawMenuParagraph(item: IMenuItem) {
+export default function drawMenuParagraph(item: IMenuItem, contentElement: HTMLElement = Menu.contentElement) {
     const body = drawItemBody();
     body.style.pointerEvents = "none";
     body.style.color = "var(--generic-white)";
     body.style.fontSize = "13px";
     body.innerHTML = item.description || "";
-    Menu.contentElement.appendChild(body);
+    contentElement.appendChild(body);
 }
