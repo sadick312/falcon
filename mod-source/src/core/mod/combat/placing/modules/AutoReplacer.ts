@@ -52,7 +52,7 @@ export default class AutoReplacer extends Placer {
 
         let isSpikeTick = false;
         const totalActions = PacketTracker.request("PLACE", 4);
-        let len = Math.min(bestAngles.length, totalActions);
+        const len = Math.min(bestAngles.length, totalActions);
 
         if (peek) {
             this.peekAngles.length = len;

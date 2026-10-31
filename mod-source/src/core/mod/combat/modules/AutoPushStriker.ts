@@ -44,7 +44,7 @@ export default class AutoPusherStriker extends CombatModule {
         const isHighDmg = primaryId === WEAPON_ID_MAP.POLEARM || primaryId === WEAPON_ID_MAP.KATANA;
         const primary = PlayerCombatManager.fetch(player, 0);
 
-        let attackMethod: AutoPushStrikeTypes = "disabled";
+        let attackMethod: AutoPushStrikeTypes;
 
         if (isDaggers) {
             attackMethod = (["7shame", "bullspam", "disabled"][daggerMethod] ?? "disabled") as AutoPushStrikeTypes;

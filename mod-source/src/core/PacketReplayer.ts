@@ -152,10 +152,8 @@ export default class PacketReplayer {
             const packetRawBytes = new Uint8Array(bytes, offset, packetLength);
             offset += packetLength;
 
-            let packetData: any = null;
             const decoded = replayDecoder.decode(packetRawBytes) as [string, any];
-
-            packetData = {
+            const packetData = {
                 type: decoded[0],
                 data: decoded[1]
             };

@@ -148,7 +148,6 @@ export default class AutoPlacer extends Placer {
         let hasPreplacements = false;
 
         const currentIndex = this.preplacementsBufferHead;
-        let preplacementInformalCount = 0;
         let requirePadding = 0;
         let offset = 0;
 
@@ -174,7 +173,6 @@ export default class AutoPlacer extends Placer {
 
             if (item.preplace || item.predict) {
                 hasPreplacements = true;
-                preplacementInformalCount++;
                 this.updatePreplacement(currentIndex, item);
                 continue;
             }

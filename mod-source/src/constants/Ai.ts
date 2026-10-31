@@ -27,7 +27,7 @@ export default class Ai implements Entity {
 
     deltaTime: number = 0;
 
-    isPlayer: false = false;
+    isPlayer = false as const;
 
     forcePos: boolean = false;
     visible: boolean = false;

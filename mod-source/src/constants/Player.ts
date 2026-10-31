@@ -120,7 +120,7 @@ export default class Player implements Entity {
     skinColor = 0;
 
     nameScale = 0;
-    isPlayer: true = true;
+    isPlayer = true as const;
 
     chatMessages: ChatMessage[] = [];
 

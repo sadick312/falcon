@@ -52,7 +52,7 @@ export default class GameObject implements Entity {
     ownerSID: number | undefined;
     reload = 1;
 
-    isGameObject: true = true;
+    isGameObject = true as const;
 
     health: number;
     maxHealth: number;

@@ -102,7 +102,7 @@ export const itemRenderers: Record<string, (obj: GameObject | ListItem, ctx: Can
 
         let tmpX = -(obj.scale / 2);
 
-        for (var i = 0; i < tmpCount; ++i) {
+        for (let i = 0; i < tmpCount; ++i) {
             RendererUtils.drawRect(ctx, tmpX - (tmpW / 2), 0, tmpW, obj.scale * 2);
             tmpX += tmpS / tmpCount;
         }
@@ -177,7 +177,7 @@ export const resRenderers: Record<number, (obj: GameObject, ctx: CanvasRendering
             const berries = 4;
             const rotVal = Math.PI * 2 / berries;
 
-            for (var i = 0; i < berries; ++i) {
+            for (let i = 0; i < berries; ++i) {
                 const tmpRange = randInt(obj.scale / 3.5, obj.scale / 2.3);
 
                 RendererUtils.drawCircle(

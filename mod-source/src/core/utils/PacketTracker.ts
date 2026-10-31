@@ -89,7 +89,7 @@ export default class PacketTracker {
 
     static free(type: keyof AllocationPool, amount: number | "ALL") {
         if (!this.isInitialized) return;
-        let totalCost = 0;
+        let totalCost: number;
 
         if (amount === "ALL") {
             totalCost = this.preallocationPool[type];
@@ -113,7 +113,7 @@ export default class PacketTracker {
         const unitCost = PacketAllocationPool[type];
 
         const currentUsage = this.getCurrent() + this.currentBaseline + this.reservedPackets;
-        let maxAllowedCost = this.maxCapacity - currentUsage;
+        const maxAllowedCost = this.maxCapacity - currentUsage;
         if (maxAllowedCost < unitCost) return 0;
 
         amount = Math.min(amount, Math.floor(maxAllowedCost / unitCost));

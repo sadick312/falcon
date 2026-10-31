@@ -70,8 +70,8 @@ export default class AutoMeleeSyncer extends CombatModule {
             if (enemy.sid === meleeSyncTarget) continue;
 
             const enemyPositionalSpot = PlayerStateManager.placementMap.get(enemy.sid)!;
-            let allyRangeDecrement = 1;
-            let myRangeDecrement = 1;
+            const allyRangeDecrement = 1;
+            const myRangeDecrement = 1;
 
             const canPartnerHit = CombatUtils.getCombatDistance(partner, enemy, items.weapons[partnerPrimary.id].range - allyRangeDecrement, partnerPositionalSpot < enemyPositionalSpot);
             const canWeHit = CombatUtils.getCombatDistance(player, enemy, items.weapons[ourPrimary.id].range - myRangeDecrement, myPositionalSpot < enemyPositionalSpot);
