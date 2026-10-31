@@ -70,6 +70,8 @@ export default class Socket extends NativeWebSocket {
     private hasOpened = false;
     private handshakeDone = false;
     private errorShown = false;
+    /** Reason from the server's DISCONNECT packet, shown when the socket closes. */
+    private serverReason: string | null = null;
     private handshakeTimer: number | undefined;
 
     constructor(url: string, socketProtocol: MooMooProtocol | null) {
@@ -97,12 +99,14 @@ export default class Socket extends NativeWebSocket {
 
         if (this.errorShown) return;
         const code = `code ${ev.code}`;
+        // A reason the server sent in a DISCONNECT packet beats the close frame's (usually empty) one.
+        const reason = this.serverReason ?? ev.reason;
 
         // The browser gives no detail for failed connections, only code 1006.
         if (!this.hasOpened) {
-            showConnectionError("socket-open", `${code}${ev.reason ? `, ${ev.reason}` : ""}. The server refused or could not be reached (bad/expired ticket, wrong host, or build id mismatch).`);
+            showConnectionError("socket-open", `${code}${reason ? `, ${reason}` : ""}. The server refused or could not be reached (bad/expired ticket, wrong host, or build id mismatch).`);
         } else if (!this.handshakeDone) {
-            showConnectionError("handshake", `${code}${ev.reason ? `, ${ev.reason}` : ""}. Closed before the server sent its init packet.`);
+            showConnectionError("handshake", `${code}${reason ? `, ${reason}` : ""}. Closed before the server sent its init packet.`);
         } else {
             respawnPage.style.display = "flex";
             disconnectedPage.style.display = "flex";
@@ -110,7 +114,7 @@ export default class Socket extends NativeWebSocket {
             deathText.style.display = "none";
             gameUI.style.display = "none";
 
-            disconnectedReason.innerText = ev.reason ? `${ev.reason} (${code})` : `No reason provided (${code})`;
+            disconnectedReason.innerText = reason ? `${reason} (${code})` : `No reason provided (${code})`;
         }
     }
 
@@ -201,6 +205,15 @@ export default class Socket extends NativeWebSocket {
 
         if (!knownServerPackets.has(parsed[0])) {
             this.logUnknownPacket(parsed[0], parsed[1]);
+            return;
+        }
+
+        if (parsed[0] === PacketMap.SERVER_TO_CLIENT.DISCONNECT) {
+            // The server's reason for ending the connection; it closes right after. Handled here rather than
+            // batched, so the reason is known when onclose shows the disconnected screen. The game closes too.
+            const reason = Array.isArray(parsed[1]) ? parsed[1][0] : undefined;
+            this.serverReason = typeof reason === "string" && reason ? reason : null;
+            this.close();
             return;
         }
 

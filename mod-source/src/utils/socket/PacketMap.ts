@@ -148,6 +148,7 @@ export interface MOOMOO_SERVER_TO_CLIENT_MAP {
         isYou: boolean
     ];
     "I": [data: number[], hidden: number[]];
+    "B": [reason: string];
     "E": [id: string];
     "Q": [sid: number];
     "R": [ownerSID: number];
