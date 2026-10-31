@@ -50,6 +50,9 @@ export default defineConfig({
         include: ["mod-source/test/**/*.test.ts"],
         setupFiles: ["mod-source/test/setup.ts"],
         restoreMocks: true,
+        // The first test in a file imports the whole mod into jsdom, which can take over the 5 s default on a busy
+        // machine (the replay test runs alongside the others).
+        testTimeout: 30_000,
         coverage: {
             provider: "v8",
             include: ["mod-source/src/**/*.ts"],
