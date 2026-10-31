@@ -107,7 +107,7 @@ export default class PacketBatcher {
         if (!Client.player || !Client.isAlive) return;
 
         const interval = this.getFakeUpdateThreshold();
-        this.watchdogTimer = setTimeout(() => {
+        this.watchdogTimer = window.setTimeout(() => {
             this.checkAndEmitFakeUpdate(performance.now());
         }, interval);
     }

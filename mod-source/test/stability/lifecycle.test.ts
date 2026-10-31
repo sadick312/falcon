@@ -1,6 +1,10 @@
 // State that must not leak or go stale: lists only the renderer cleans up, reused projectile ids, and what runs
 // while we're dead.
+import type { PlacementType } from "@placing/utils/Placer";
 import { describe, expect, it, vi } from "vitest";
+
+// A value import of Placer here would load it before the modules that complete its import cycle.
+const NORMAL: PlacementType = 1;
 
 describe("lists the renderer cleans up", () => {
     it("caps floating texts, dropping the oldest, so a hidden tab can't grow the map", async () => {
@@ -20,7 +24,7 @@ describe("lists the renderer cleans up", () => {
         Client.markers.length = 0;
 
         // Nothing renders in this test, so no marker ever becomes inactive (like Render Placements being off).
-        for (let i = 0; i < 1000; i++) PlacementSystem.addMarkerRaw(i, i, 0, 15, 0);
+        for (let i = 0; i < 1000; i++) PlacementSystem.addMarkerRaw(i, i, 0, 15, NORMAL);
 
         expect(Client.markers).toHaveLength(256);
         expect(Client.markers.some(marker => marker.x === 999)).toBe(true);
@@ -31,10 +35,10 @@ describe("lists the renderer cleans up", () => {
         const { default: PlacementSystem } = await import("@core/mod/combat/core/PlacementSystem");
         Client.markers.length = 0;
 
-        PlacementSystem.addMarkerRaw(1, 1, 0, 15, 0);
-        PlacementSystem.addMarkerRaw(2, 2, 0, 15, 0);
+        PlacementSystem.addMarkerRaw(1, 1, 0, 15, NORMAL);
+        PlacementSystem.addMarkerRaw(2, 2, 0, 15, NORMAL);
         Client.markers[0].active = false;
-        PlacementSystem.addMarkerRaw(3, 3, 0, 15, 0);
+        PlacementSystem.addMarkerRaw(3, 3, 0, 15, NORMAL);
 
         expect(Client.markers.map(marker => marker.x)).toEqual([3, 2]);
     });
