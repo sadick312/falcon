@@ -1,11 +1,9 @@
+import { GAME_V182 } from "@constants/gameVersion";
 import PacketMap from "@root/utils/socket/PacketMap";
 
-/** Values per player in a v1.8.2 UPDATE_PLAYERS packet. */
-const LEGACY_PLAYER_STRIDE = 13;
-/** Values per ai in a v1.8.2 LOAD_AI packet. */
-const LEGACY_AI_STRIDE = 7;
-/** buildIndex, weaponIndex, weaponVariant, team, isLeader, skinIndex, tailIndex, iconIndex, zIndex */
-const ATTRIBUTE_COUNT = 9;
+const LEGACY_PLAYER_STRIDE = GAME_V182.playerStride;
+const LEGACY_AI_STRIDE = GAME_V182.aiStride;
+const ATTRIBUTE_COUNT = GAME_V182.attributeCount;
 
 /**
  * Converts the v1.8.2 packets whose layout changed in v1.9.0 into the v1.9.0 layout the

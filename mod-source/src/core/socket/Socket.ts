@@ -1,4 +1,5 @@
 import Endpoints, { HANDSHAKE_TIMEOUT_MS } from "@constants/Endpoints";
+import { GAME_V182 } from "@constants/gameVersion";
 import { deathText } from "@core/Client";
 import GameEventTracker from "@core/mod/utils/GameEventTracker";
 import CustomEncoder from "@core/socket/CustomEncoder";
@@ -10,7 +11,7 @@ import PacketManager from "@core/utils/PacketManager";
 import PacketTracker from "@core/utils/PacketTracker";
 import Menu from "@menu/Menu";
 import { Decoder } from "@msgpack/msgpack";
-import PacketMap, { knownServerPackets, LEGACY_CIPHER_MODE, MOOMOO_CLIENT_TO_SERVER_MAP, MOOMOO_SERVER_TO_CLIENT_MAP } from "@root/utils/socket/PacketMap";
+import PacketMap, { knownServerPackets, MOOMOO_CLIENT_TO_SERVER_MAP, MOOMOO_SERVER_TO_CLIENT_MAP } from "@root/utils/socket/PacketMap";
 import TaskScheduler from "@services/event-timer/TaskScheduler";
 import { profileEnd, profileStart } from "@services/profiler/Profiler";
 import PacketRecorder from "@services/packet-recorder/PacketRecorder";
@@ -65,7 +66,7 @@ export default class Socket extends NativeWebSocket {
     /** Send plain msgpack instead of signed, encrypted packets. */
     private plainPackets = false;
     /** Rewrites v1.8.2 packet layouts into the v1.9.0 ones the handlers expect. */
-    private legacyAdapter = Endpoints.gameVersion === "1.8.2" ? new LegacyPacketAdapter() : null;
+    private legacyAdapter = Endpoints.gameVersion === GAME_V182.version ? new LegacyPacketAdapter() : null;
 
     private hasOpened = false;
     private handshakeDone = false;
@@ -188,7 +189,7 @@ export default class Socket extends NativeWebSocket {
             // Plain servers send io-init with only an id; there is no cipher table to set up.
             if (this.socketProtocol) {
                 this.manager.init(id, seed, salt, this.socketProtocol);
-            } else if (this.legacyAdapter && mode === LEGACY_CIPHER_MODE && !this.isPrivateServer) {
+            } else if (this.legacyAdapter && mode === GAME_V182.cipherMode && !this.isPrivateServer) {
                 // v1.8.2 servers can turn on shuffled ids + signed packets; from here on, send them that way.
                 this.manager.initLegacy(seed, salt);
                 this.plainPackets = false;

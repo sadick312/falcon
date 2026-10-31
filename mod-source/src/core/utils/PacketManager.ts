@@ -4,10 +4,8 @@ import ChatCommands from "@core/utils/ChatCommands";
 import { MooMooProtocol } from "@core/utils/CaptchaManager";
 import { hmac } from "@noble/hashes/hmac.js";
 import { sha256 } from "@noble/hashes/sha2.js";
-import PacketMap, { clientToServerArr, LEGACY_CLIENT_TO_SERVER_ARR, LEGACY_SERVER_TO_CLIENT_ARR, serverToClientArr } from "@root/utils/socket/PacketMap";
-
-/** v1.8.2 has no protocol module; its cipher always uses this salt for the table seeds. */
-const LEGACY_TABLE_SALT = 1;
+import { GAME_V182 } from "@constants/gameVersion";
+import PacketMap, { clientToServerArr, serverToClientArr } from "@root/utils/socket/PacketMap";
 
 const profanityList = [
     "cunt", "whore", "fuck", "shit", "faggot", "nigger", "mohmoh", "moh ",
@@ -162,7 +160,7 @@ export default class PacketManager {
         this.sequence = 0;
         this.received = 0;
 
-        this.initTable(seed >>> 0, LEGACY_TABLE_SALT, LEGACY_CLIENT_TO_SERVER_ARR, LEGACY_SERVER_TO_CLIENT_ARR);
+        this.initTable(seed >>> 0, GAME_V182.cipherTableSalt, [...GAME_V182.clientToServer], [...GAME_V182.serverToClient]);
         this.salt = hexToBytes(salt);
         this.masks = undefined;
     }

@@ -8,6 +8,7 @@
  * To change a value without rebuilding, set the `falcon-endpoint-overrides` key in localStorage
  * to a JSON object with any of the EndpointConfig keys.
  */
+import { GAME_V182, GameVersion } from "@constants/gameVersion";
 import readJson from "@utils/storage/readJson";
 
 type HostMode = "moomoo-sandbox" | "moomodding";
@@ -37,9 +38,6 @@ interface EndpointConfig {
     /** Token sent as `?token=` by "static" handshakes. */
     staticToken: string;
 }
-
-/** Game client version the site runs. "1.8.2" packet layouts are converted by LegacyPacketAdapter. */
-type GameVersion = "1.9.0" | "1.8.2";
 
 interface HostProfile {
     mode: HostMode;
@@ -75,7 +73,8 @@ const PROFILES: Record<HostMode, HostProfile> = {
     },
     moomodding: {
         mode: "moomodding",
-        gameVersion: "1.8.2",
+        // "1.8.2" packet layouts are converted by LegacyPacketAdapter.
+        gameVersion: GAME_V182.version,
         pageHosts: ["sandbox.moomodding.io"],
         trustedDomain: "moomodding.io",
         handshake: "static",
@@ -89,8 +88,7 @@ const PROFILES: Record<HostMode, HostProfile> = {
             gameServerDomain: "",
             protocolUrl: "",
             turnstileSiteKey: "",
-            // The site's own hackfix.js answers its Turnstile stub with this fixed value; the server expects it.
-            staticToken: "cf:cf_token_moomodding"
+            staticToken: GAME_V182.socketToken
         }
     }
 };

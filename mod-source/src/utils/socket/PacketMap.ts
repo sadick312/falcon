@@ -101,19 +101,6 @@ for (const key in PacketMap.SERVER_TO_CLIENT) {
     }
 }
 
-/**
- * v1.8.2's packet lists, in the client's own order (its `bo` and `To` arrays). Its optional cipher shuffles
- * these, so the length and order must match the game exactly; they are the v1.9.0 lists without T, R, A, V / W, F.
- */
-export const LEGACY_CLIENT_TO_SERVER_ARR = ["M", "D", "9", "e", "F", "z", "H", "K", "L", "N", "b", "P", "Q", "c", "6", "S", "0"];
-export const LEGACY_SERVER_TO_CLIENT_ARR = [
-    "A", "B", "C", "D", "E", "a", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R",
-    "S", "T", "U", "V", "X", "Y", "Z", "g", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"
-];
-
-/** io-init's 4th value on v1.8.2 when the server wants shuffled packet ids and signed packets. */
-export const LEGACY_CIPHER_MODE = 1;
-
 export interface MOOMOO_CLIENT_TO_SERVER_MAP {
     "z": [id: number, isWeapon: boolean];
     "K": [id: 1];
