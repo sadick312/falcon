@@ -11,131 +11,23 @@
  *   BENCH_CPU=1       one extra run with V8's CPU profiler, for self time per function
  *   BENCH_BASELINE=1  save this run as the baseline the next runs are compared against
  *
- * Time is replayed from the recording's timestamps with fake timers, so timer- and clock-based logic runs the
- * same way on every run. Rendering is not part of a replay and isn't measured.
+ * The replay itself (fake timers, seeded Math.random, packet fingerprint) lives in replay.ts.
  */
-import { createHash } from "crypto";
 import fs from "fs";
 import { Session } from "inspector/promises";
 import path from "path";
-import { performance as realPerformance } from "perf_hooks";
-import { fileURLToPath } from "url";
-import { Decoder } from "@msgpack/msgpack";
-import { describe, expect, it, vi } from "vitest";
-import type { ProfileSummary } from "@services/profiler/Profiler";
+import { describe, expect, it } from "vitest";
+import { benchDir, Packet, readRecording, recordingsDir, replay as replayOnce } from "./replay";
 
-const benchDir = path.dirname(fileURLToPath(import.meta.url));
 const srcDir = path.join(benchDir, "..", "src");
 const resultsDir = path.join(benchDir, "results");
-const gamePage = fs.readFileSync(path.join(benchDir, "..", "..", "public", "index.html"), "utf8");
 
 const env = process.env;
 const RUNS = Math.max(1, Number(env.BENCH_RUNS ?? 5));
 const SETTINGS = env.BENCH_SETTINGS ? fs.readFileSync(env.BENCH_SETTINGS, "utf8") : null;
 
-interface Packet { time: number; type: string; data: unknown[] }
-
-/** The PacketRecorder.compileBinaryLog layout: f64 time, i32 length, msgpack [type, data], i32 length + brain state. */
-function readRecording(file: string): Packet[] {
-    const bytes = fs.readFileSync(file);
-    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-    const decoder = new Decoder();
-    const packets: Packet[] = [];
-
-    for (let offset = 0; offset + 12 <= bytes.length;) {
-        const time = view.getFloat64(offset, true);
-        const length = view.getInt32(offset + 8, true);
-        offset += 12;
-        const [type, data] = decoder.decode(bytes.subarray(offset, offset + length)) as [string, unknown[]];
-        offset += length;
-        offset += 4 + view.getInt32(offset, true);
-        packets.push({ time, type, data: Array.isArray(data) ? data : [] });
-    }
-
-    // Like PacketReplayer.start: permanent packets (time 0) first, the rest relative to the first real packet.
-    const start = packets.find(p => p.time > 0)?.time ?? 0;
-    for (const p of packets) p.time = p.time === 0 ? 0 : p.time - start;
-    return packets;
-}
-
-function seededRandom(seed: number) {
-    return () => {
-        seed = seed + 1831565813 | 0;
-        let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
-        t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
-        return ((t ^ t >>> 14) >>> 0) / 4294967296;
-    };
-}
-
-interface RunResult {
-    profile: Record<string, ProfileSummary>;
-    ticks: number;
-    fingerprint: string;
-    sentPackets: number;
-    errors: string[];
-}
-
-/** One replay in a fresh copy of every module, so no state carries over between runs. */
-async function replay(packets: Packet[]): Promise<RunResult> {
-    vi.resetModules();
-    document.documentElement.innerHTML = gamePage;
-    localStorage.clear();
-    if (SETTINGS) localStorage.setItem("falcon-settings", SETTINGS);
-
-    vi.useFakeTimers({ now: 0, toFake: ["performance", "Date", "setTimeout", "clearTimeout", "setInterval", "clearInterval", "requestAnimationFrame", "cancelAnimationFrame"] });
-    vi.spyOn(Math, "random").mockImplementation(seededRandom(1));
-
-    const errors: string[] = [];
-    const consoleError = vi.spyOn(console, "error").mockImplementation((...args) => { errors.push(args.map(String).join(" ")); });
-    vi.spyOn(console, "log").mockImplementation(() => { });
-
-    try {
-        const profiler = await import("@services/profiler/Profiler");
-        profiler.enableProfiler({ overlay: false, keepSamples: true, clock: () => realPerformance.now() });
-
-        // Same load order as the bundle, so the Socket <-> SocketListener cycle resolves.
-        await import("@core/socket/SocketListener");
-        // Loader.main's setup minus rendering: the menu loads the saved settings the modules read every tick.
-        const { default: Menu } = await import("@menu/Menu");
-        await Menu.init();
-        const { default: Client } = await import("@core/Client");
-        Client.mode = "replay";
-        await Client.connect();
-
-        const socket = Client.socket as unknown as { handlers: Record<string, (...args: unknown[]) => void>; sendMsg: (...args: unknown[]) => void };
-        const sent: unknown[] = [];
-        let tick = 0;
-        socket.sendMsg = (type, ...args) => { sent.push([tick, type, args]); };
-
-        let now = 0;
-        for (const packet of packets) {
-            if (packet.time > now) {
-                vi.advanceTimersByTime(packet.time - now);
-                now = packet.time;
-            }
-
-            const handler = socket.handlers[packet.type];
-            if (!handler) continue;
-
-            const start = profiler.profileStart();
-            try {
-                handler(...packet.data);
-            } catch (err) {
-                errors.push(`packet '${packet.type}': ${err instanceof Error ? err.message : String(err)}`);
-            }
-            profiler.profileEnd(`packet.${packet.type}`, start);
-            if (packet.type === "a") tick++;
-        }
-
-        const profile = profiler.profileSummary();
-        const fingerprint = createHash("sha256").update(JSON.stringify(sent)).digest("hex").slice(0, 16);
-        return { profile, ticks: profile.tick?.calls ?? 0, fingerprint, sentPackets: sent.length, errors };
-    } finally {
-        consoleError.mockRestore();
-        vi.useRealTimers();
-        vi.restoreAllMocks();
-    }
-}
+const replay = (packets: Packet[]) => replayOnce(packets, { settings: SETTINGS, profile: true });
+type RunResult = Awaited<ReturnType<typeof replay>>;
 
 /** The path relative to src, or "" for code outside it. Line numbers are of the transformed module, close to the source. */
 function srcFile(rawUrl: string) {
@@ -247,7 +139,7 @@ function printTable(title: string, rows: Row[], baseline?: Row[]) {
 }
 
 function findRecordings() {
-    const target = env.BENCH_RECORDINGS ?? path.join(benchDir, "recordings");
+    const target = env.BENCH_RECORDINGS ?? recordingsDir;
     if (!fs.existsSync(target)) return [];
     if (fs.statSync(target).isFile()) return [target];
     return fs.readdirSync(target).filter(f => f.endsWith(".fpl")).map(f => path.join(target, f));
