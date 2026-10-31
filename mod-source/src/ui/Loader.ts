@@ -2,6 +2,7 @@ import items from "@constants/items";
 import Client from "@core/Client";
 import ObjectManager from "@core/logic/ObjectManager";
 import PacketReplayer from "@core/PacketReplayer";
+import { checkGameVersion } from "@core/utils/GameVersionCheck";
 import CameraManager from "@rendering/core/CameraManager";
 import SpriteCache from "@rendering/core/SpriteCache";
 import RenderingConfig from "@rendering/RenderingConfig";
@@ -258,6 +259,7 @@ export default class Loader {
     }
 
     static async main() {
+        checkGameVersion();
         importTemporaryObjects();
         this.prepareUI();
 

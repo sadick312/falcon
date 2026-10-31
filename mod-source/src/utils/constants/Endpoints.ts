@@ -11,7 +11,7 @@
 import { GAME_V182, GameVersion } from "@constants/gameVersion";
 import readJson from "@utils/storage/readJson";
 
-type HostMode = "moomoo-sandbox" | "moomodding";
+export type HostMode = "moomoo-sandbox" | "moomodding";
 
 /**
  * "ticket": Turnstile captcha, POST /join for a ticket, protocol module + mixKey encryption.
