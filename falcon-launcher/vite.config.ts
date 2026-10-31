@@ -2,13 +2,13 @@ import { crx } from "@crxjs/vite-plugin";
 import { existsSync, readFileSync } from "fs";
 import { resolve } from "path";
 import { defineConfig, type Plugin } from "vite";
-import manifest from "./manifest.json";
+import manifest from "./manifest.json" with { type: "json" };
 
 // Files the background worker injects into the game page, copied into dist/mod/.
 const modAssets: Record<string, string> = {
-    "mod/bundle.js": resolve(__dirname, "../mod-source/dist/bundle.js"),
-    "mod/index.html": resolve(__dirname, "../public/index.html"),
-    "mod/style.css": resolve(__dirname, "../public/style.css")
+    "mod/bundle.js": resolve(import.meta.dirname, "../mod-source/dist/bundle.js"),
+    "mod/index.html": resolve(import.meta.dirname, "../public/index.html"),
+    "mod/style.css": resolve(import.meta.dirname, "../public/style.css")
 };
 
 function copyModAssets(): Plugin {
@@ -51,7 +51,7 @@ export default defineConfig({
     build: {
         rollupOptions: {
             input: {
-                dashboard: resolve(__dirname, "index.html")
+                dashboard: resolve(import.meta.dirname, "index.html")
             }
         }
     },
