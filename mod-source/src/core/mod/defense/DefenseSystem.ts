@@ -20,6 +20,7 @@ import PacketTracker from "@core/utils/PacketTracker";
 import Menu from "@menu/Menu";
 import { Point } from "@mod-types/index";
 import PacketMap from "@root/utils/socket/PacketMap";
+import { profileEnd, profileStart } from "@services/profiler/Profiler";
 import MovementPhysicsSimulator, { KnockbackSimAction, SimulationOptions } from "@simulation/MovementPhysicsSimulator";
 import getAngleDist from "@utils/angle/getAngleDist";
 import getDir from "@utils/angle/getDir";
@@ -781,7 +782,9 @@ export default class DefenseSystem {
     }
 
     static resolve() {
+        const start = __DEV__ ? profileStart() : 0;
         HatSystem.main();
+        if (__DEV__) profileEnd("fn.HatSystem.main", start);
         MovementManager.main();
 
         // Hats and movement are settled for this tick: a sent packet is already counted in the

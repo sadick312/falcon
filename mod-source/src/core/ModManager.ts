@@ -30,6 +30,7 @@ import Menu from "@menu/Menu";
 import { Point } from "@mod-types/index";
 import AutoGrinder from "@placing/modules/AutoGrinder";
 import PacketMap from "@root/utils/socket/PacketMap";
+import { profileEnd, profileLap, profileStart } from "@services/profiler/Profiler";
 import MovementPhysicsSimulator from "@simulation/MovementPhysicsSimulator";
 import { Input } from "@ui/Hook";
 import getAngleDist from "@utils/angle/getAngleDist";
@@ -243,7 +244,9 @@ export default class ModManager {
         this.brainState.realBatchWindow = PacketBatcher.realBatchWindow;
 
         HatSystem.sentHatPacket = false;
+        const start = __DEV__ ? profileStart() : 0;
         ObjectManager.pool.populate();
+        if (__DEV__) profileEnd("fn.ObjectPool.populate", start);
     }
 
     static nextTick(action: TickTask) {
@@ -329,18 +332,24 @@ export default class ModManager {
     }
 
     private static updateStates() {
+        let lap = __DEV__ ? profileStart() : 0;
         PlayerStateManager.updateState();
         TurretManager.updateReloads();
+        if (__DEV__) lap = profileLap("fn.PlayerStateManager+TurretManager", lap);
         this.updatePlacementAngles();
+        if (__DEV__) lap = profileLap("fn.updatePlacementAngles", lap);
         this.updatePredictedState();
+        if (__DEV__) lap = profileLap("fn.updatePredictedState", lap);
 
         ProjectileManager.update();
+        if (__DEV__) lap = profileLap("fn.ProjectileManager.update", lap);
 
         const player = Client.player;
         this.brainState.isTrapped = !!player.trap;
         this.brainState.wasTrapped = player.wasTrapped;
         PotentialObjectManager.update(player.real_position.x, player.real_position.y, 0);
         PotentialObjectManager.query();
+        if (__DEV__) profileLap("fn.PotentialObjectManager", lap);
     }
 
     static resolveAttackState() {
@@ -438,41 +447,57 @@ export default class ModManager {
         if (!Client.player) return;
 
         const startTime = performance.now();
+        // Dev builds only: time each step below (profiler overlay, replay benchmark). Dropped from production.
+        const tickStart = __DEV__ ? profileStart() : 0;
+        let lap = tickStart;
 
         // prep the tick
         this.preTick();
         this.resolveQueuedActions();
         this.updateStates();
         GameEventTracker.prepare();
+        if (__DEV__) lap = profileLap("tick.prepare", lap);
 
         // not important but "player" inputs go first
         this.autoPlayMovement();
+        if (__DEV__) lap = profileLap("tick.autoPlayMovement", lap);
 
         // important stuff
         AutoBreaker.preTick();
+        if (__DEV__) lap = profileLap("tick.AutoBreaker.preTick", lap);
         DefenseSystem.start();
+        if (__DEV__) lap = profileLap("tick.DefenseSystem.start", lap);
 
         // important preprocessing
         this.updateObjects();
+        if (__DEV__) lap = profileLap("tick.updateObjects", lap);
         PlacementSystem.AutoPlacer.preStart(Client.player);
+        if (__DEV__) lap = profileLap("tick.AutoPlacer.preStart", lap);
 
         // less important stuff
         AutoPusher.main();
+        if (__DEV__) lap = profileLap("tick.AutoPusher", lap);
         AttackManager.main();
+        if (__DEV__) lap = profileLap("tick.AttackManager", lap);
         CombatController.main();
+        if (__DEV__) lap = profileLap("tick.CombatController", lap);
 
         if (this.lastWeaponIndex === Client.weaponIndex) PacketTracker.free("WEAPON_SELECT", "ALL");
         this.lastWeaponIndex = Client.weaponIndex;
 
         // respond to the threats while factoring in what the other modules are trying to do
         DefenseSystem.respond();
+        if (__DEV__) lap = profileLap("tick.DefenseSystem.respond", lap);
 
         // resolve all the important modules
         DefenseSystem.resolve();
+        if (__DEV__) lap = profileLap("tick.DefenseSystem.resolve", lap);
         PlacementSystem.main();
+        if (__DEV__) lap = profileLap("tick.PlacementSystem", lap);
 
         // do final actions and clean up
         DefenseSystem.conclude();
+        if (__DEV__) lap = profileLap("tick.DefenseSystem.conclude", lap);
         CombatController.postTick();
         this.updateDirection();
         this.resolveAttackState();
@@ -481,6 +506,10 @@ export default class ModManager {
         // prep the next tick
         PacketTracker.allocate();
         GameEventTracker.clean();
+        if (__DEV__) {
+            profileLap("tick.finish", lap);
+            profileEnd("tick", tickStart);
+        }
         this.brainState.modBrainRuntime = performance.now() - startTime;
     }
 }

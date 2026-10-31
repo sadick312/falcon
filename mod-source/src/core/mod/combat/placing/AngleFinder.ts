@@ -9,6 +9,7 @@ import Angle from "@placing/Angle";
 import AngleGrader from "@placing/AngleGrader";
 import getDir from "@utils/angle/getDir";
 import normalizeAngle from "@utils/angle/normalizeAngle";
+import { profileEnd, profileStart } from "@services/profiler/Profiler";
 import ScriptConfig from "@utils/config/ScriptConfig";
 import getDistSq from "@utils/geometry/getDistSq";
 
@@ -522,6 +523,13 @@ export default class AngleFinder {
     }
 
     static compute(player: Player, options?: Readonly<FinderOptions>) {
+        const start = __DEV__ ? profileStart() : 0;
+        const count = this.computeAngles(player, options);
+        if (__DEV__) profileEnd("fn.AngleFinder.compute", start);
+        return count;
+    }
+
+    private static computeAngles(player: Player, options?: Readonly<FinderOptions>) {
         if (!options) options = AngleFinder.defaultOptions;
         const budget = this.convertToBudget(Menu.getValue("angleFinderLevel"), options);
 
@@ -609,7 +617,9 @@ export default class AngleFinder {
         const trapSamplesIndex = this.getSampleResponse[0];
         const trapPreplaceSamplesIndex = ctx.samples.trapPreplaceSamplesIndex = this.getSampleResponse[1];
 
+        const gradeStart = __DEV__ ? profileStart() : 0;
         this.gradeAll(playerPos, spikeItem, ctx.samples, spikeSamplesIndex, trapSamplesIndex, options);
+        if (__DEV__) profileEnd("fn.AngleFinder.graders", gradeStart);
         return spikeSamplesIndex + spikePreplaceSamplesIndex + trapSamplesIndex + trapPreplaceSamplesIndex;
     }
 }

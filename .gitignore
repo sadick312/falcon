@@ -13,3 +13,5 @@ NOTES.md
 Falcon-Update.zip
 stats/*
 !stats/history.json
+# Replay benchmark output (machine-specific)
+mod-source/bench/results/
