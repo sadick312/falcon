@@ -163,6 +163,34 @@ export default class ModManager {
         }
     }
 
+    /**
+     * Per visible player, what their weapons could do to an object this tick, filled once by updateObjects:
+     * range, and the object damage if the weapon will be reloaded (0 if not, or for a secondary that isn't a great hammer).
+     */
+    private static breakPotential = { primaryRange: [] as number[], primaryDamage: [] as number[], secondaryRange: [] as number[], secondaryDamage: [] as number[] };
+
+    private static updateBreakPotential(players: Player[]) {
+        const { primaryRange, primaryDamage, secondaryRange, secondaryDamage } = this.breakPotential;
+
+        for (let j = 0, len = players.length; j < len; j++) {
+            const player = players[j];
+            const primary = PlayerCombatManager.fetch(player, 0);
+            const secondary = PlayerCombatManager.fetch(player, 1);
+
+            const primaryWpn = items.weapons[primary.id];
+            const secondaryWpn = items.weapons[secondary.id];
+
+            const primaryWillBeReloaded = primary.reload + ScriptConfig.SERVER_UPDATE_SPEED / primaryWpn.speed >= 1;
+            const secondaryWillBeReloaded = secondary.reload + ScriptConfig.SERVER_UPDATE_SPEED / secondaryWpn.speed >= 1;
+            const isGreatHammer = secondary.id === WEAPON_ID_MAP.GREAT_HAMMER;
+
+            primaryRange[j] = primaryWpn.range;
+            secondaryRange[j] = secondaryWpn.range;
+            primaryDamage[j] = primaryWillBeReloaded ? BreakerUtils.getObjectDamage(player, 0) : 0;
+            secondaryDamage[j] = isGreatHammer && secondaryWillBeReloaded ? BreakerUtils.getObjectDamage(player, 1) : 0;
+        }
+    }
+
     private static updateObjects() {
         const onRenderObjects = PotentialObjectManager.onRenderObjects;
         const closeObjects = ObjectManager.pool.closeObjects;
@@ -175,6 +203,10 @@ export default class ModManager {
         // Both aims are the same for every object this tick, so work them out once instead of per object.
         const aimDir = this.getAttackDir(true);
         const mouseDir = Input.getAttackDir();
+
+        // Weapons, reloads and damage don't depend on the object, so work them out once per player.
+        this.updateBreakPotential(players);
+        const { primaryRange, primaryDamage, secondaryRange, secondaryDamage } = this.breakPotential;
 
         for (let i = 0; i < totalLength; i++) {
             const gameObject: GameObject | PotentialObject = closeObjects[i] ?? onRenderObjects[i - closeObjectsLength];
@@ -197,29 +229,9 @@ export default class ModManager {
                     if (!withinPrevIntentArc && !withinCurrentMouseArc) continue;
                 }
 
-                const primary = PlayerCombatManager.fetch(player, 0);
-                const secondary = PlayerCombatManager.fetch(player, 1);
-
-                const primaryWpn = items.weapons[primary.id];
-                const secondaryWpn = items.weapons[secondary.id];
-
-                const primaryReloadPerTick = ScriptConfig.SERVER_UPDATE_SPEED / primaryWpn.speed;
-                const secondaryReloadPerTick = ScriptConfig.SERVER_UPDATE_SPEED / secondaryWpn.speed;
-
-                const primaryWillBeReloaded = primary.reload + primaryReloadPerTick >= 1;
-                const secondaryWillBeReloaded = secondary.reload + secondaryReloadPerTick >= 1;
-
-                const canPrimaryHit = BreakerUtils.getObjectAttackDistance(player, gameObject, primaryWpn.range);
-                const canSecondaryHit = BreakerUtils.getObjectAttackDistance(player, gameObject, secondaryWpn.range);
-                const isGreatHammer = secondary.id === WEAPON_ID_MAP.GREAT_HAMMER;
-
-                const primaryDamage = canPrimaryHit && primaryWillBeReloaded ?
-                    BreakerUtils.getObjectDamage(player, 0) : 0;
-
-                const secondaryDamage = canSecondaryHit && isGreatHammer && secondaryWillBeReloaded ?
-                    BreakerUtils.getObjectDamage(player, 1) : 0;
-
-                const weaponDamage = Math.max(primaryDamage, secondaryDamage);
+                const primaryHitDamage = primaryDamage[j] && BreakerUtils.getObjectAttackDistance(player, gameObject, primaryRange[j]) ? primaryDamage[j] : 0;
+                const secondaryHitDamage = secondaryDamage[j] && BreakerUtils.getObjectAttackDistance(player, gameObject, secondaryRange[j]) ? secondaryDamage[j] : 0;
+                const weaponDamage = Math.max(primaryHitDamage, secondaryHitDamage);
 
                 if (Client.mySID === player.sid) gameObject.isBreaking = true;
                 if (weaponDamage <= 0) continue;
