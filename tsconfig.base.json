@@ -2,6 +2,9 @@
     // Settings shared by every workspace. Each workspace's tsconfig.json extends this one.
     "compilerOptions": {
         "strict": true,
+        "noImplicitReturns": true,
+        "noImplicitOverride": true,
+        "noFallthroughCasesInSwitch": true,
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true
     }

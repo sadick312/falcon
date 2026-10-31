@@ -205,10 +205,10 @@ export default class AutoBreaker {
         ModManager.brainState.breakerInternal.trapBreakFaster = trapBreakFaster;
 
         if (targetSpike.playerDamageDealt < fullGreatHammerHit) {
-            if (trap.playerDamageDealt >= fullGreatHammerHit) return false;
-            if (canEnemyReplaceTrap && canEnemyReplaceSpike && trapBreakFaster) return false;
-            if (!canEnemyReplaceTrap && canEnemyReplaceSpike && trapHitsUntilBreak === spikesHitsUntilBreak) return false;
-            if (shouldStayWithTrap) return false;
+            if (trap.playerDamageDealt >= fullGreatHammerHit) return;
+            if (canEnemyReplaceTrap && canEnemyReplaceSpike && trapBreakFaster) return;
+            if (!canEnemyReplaceTrap && canEnemyReplaceSpike && trapHitsUntilBreak === spikesHitsUntilBreak) return;
+            if (shouldStayWithTrap) return;
         }
 
         const midPoint = this.midPoint;
