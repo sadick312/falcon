@@ -384,6 +384,7 @@ export const menuContent: IMenuContent = {
             settings: [{
                 label: "Dagger Shame Strike Threshold",
                 id: "daggerShameStrikeThres",
+                description: "Shame Strike waits until the enemy's shame count reaches this number.",
                 type: "slider",
                 min: 2,
                 max: 7,
@@ -532,6 +533,7 @@ export const menuContent: IMenuContent = {
         settings: [{
             label: "Range",
             id: "autoPlaceRange",
+            description: "How close the nearest enemy must be before Auto Place starts placing traps.",
             type: "slider",
             min: 100,
             max: 1200,
@@ -605,6 +607,7 @@ export const menuContent: IMenuContent = {
         settings: [{
             label: "Range",
             id: "autoPushRange",
+            description: "How close a trapped enemy must be before Auto Push starts pushing them.",
             type: "slider",
             min: 100,
             max: 300,
@@ -759,6 +762,7 @@ export const menuContent: IMenuContent = {
             settings: [{
                 label: "Artificial Amount",
                 id: "artificialPingAmt",
+                description: "Extra delay added to your connection, in ms (half on sending, half on receiving).",
                 type: "slider",
                 min: 10,
                 step: 5,
@@ -1050,6 +1054,7 @@ export const menuContent: IMenuContent = {
         `,
         settings: [{
             id: "renderTurretReload",
+            description: "Shows a reload bar next to players while their Turret Gear is reloading.",
             label: "Render Turret Gear Reload",
             type: "toggle"
         }],
