@@ -71,6 +71,35 @@ describe("PacketRecorder -> PacketReplayer", () => {
         expect(health).toEqual([[1, 20]]);
         expect(packets.some((p) => p.packetData.type === S2C.SET_INIT_DATA)).toBe(true);
     });
+
+    // [id, sid, name, x, y, dir, health, maxHealth, scale, skinColor]
+    const addPlayer = (id: string, sid: number) => log(S2C.ADD_PLAYER, [[id, sid, "p", 100, 100, 0, 100, 100, 35, 0], false]);
+    const savedSpawns = (packets: PacketLog[]) => packets
+        .filter((p) => p.packetData.type === S2C.ADD_PLAYER)
+        .map((p) => (p.packetData.data as [unknown[]])[0]);
+
+    it("moves a player's saved spawn to where they were last seen once older packets age out", () => {
+        addPlayer("enemy", 7);
+        now += 100;
+        log(S2C.UPDATE_PLAYERS, [[7, 500, 600, 0], [], []]);
+        now += 20_000;
+        log(S2C.UPDATE_HEALTH, [7, 90]);
+
+        const [spawn] = savedSpawns(readLog(PacketRecorder.compileBinaryLog()!));
+        expect(spawn.slice(0, 5)).toEqual(["enemy", 7, "p", 500, 600]);
+    });
+
+    it("still forgets a player who left when an object kill came first in the same second", () => {
+        addPlayer("enemy", 7);
+        now += 100;
+        // No LOAD_GAME_OBJECT was recorded, so there is no saved object list for this kill to edit.
+        log(S2C.KILL_OBJECT, [123]);
+        log(S2C.REMOVE_PLAYER, ["enemy"]);
+        now += 20_000;
+        log(S2C.UPDATE_HEALTH, [1, 90]);
+
+        expect(savedSpawns(readLog(PacketRecorder.compileBinaryLog()!))).toEqual([]);
+    });
 });
 
 describe("PacketReplayer log parser", () => {
