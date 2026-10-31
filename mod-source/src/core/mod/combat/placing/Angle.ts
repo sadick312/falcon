@@ -51,9 +51,10 @@ export default class Angle {
         this.replace = false;
         this.predictBoost = 0;
 
-        this.spikePush.clear();
-        this.pitSpike.clear();
-        this.kill.clear();
+        // Set.clear() allocates a new backing table even when the set is already empty, and this runs for every candidate angle.
+        if (this.spikePush.size) this.spikePush.clear();
+        if (this.pitSpike.size) this.pitSpike.clear();
+        if (this.kill.size) this.kill.clear();
 
         this.reasons.length = 0;
         this.spikeTick = false;
