@@ -21,6 +21,13 @@ export interface IPlacePotential {
     range: number;
     onMeBufferIndex: number;
     allBufferIndex: number;
+    /** Bounding box of all[0..allBufferIndex), kept by PlayerPlacementManager as it writes them. */
+    allMinX: number;
+    allMaxX: number;
+    allMinY: number;
+    allMaxY: number;
+    /** Index in all of the point Grader.factorAngleAbuse last found in reach; only a hint for where to look first. */
+    allLastHit: number;
 }
 
 function renderPlayerWeapon(ctx: CanvasRenderingContext2D, weapon: Weapon, weaponVariant: number) {
@@ -168,7 +175,12 @@ export default class Player implements Entity {
         objectScale: 52,
         range: Infinity,
         onMeBufferIndex: 0,
-        allBufferIndex: 0
+        allBufferIndex: 0,
+        allMinX: Infinity,
+        allMaxX: -Infinity,
+        allMinY: Infinity,
+        allMaxY: -Infinity,
+        allLastHit: 0
     };
 
     profilingData = {
