@@ -1,0 +1,15 @@
+# Build output and generated files
+**/dist/
+coverage/
+stats/
+node_modules/
+# Other sessions' git worktrees
+.claude/
+mod-source/bench/recordings/
+mod-source/bench/results/
+package-lock.json
+# Data and the game page Falcon injects: formatted by hand, too large to reflow
+mod-source/src/ui/data/
+mod-source/src/core/menu/icons.ts
+public/
+*.fpl
