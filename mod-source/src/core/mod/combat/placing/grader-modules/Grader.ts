@@ -38,6 +38,9 @@ export default abstract class Grader {
         canAbuse: false
     };
 
+    /** The spikes and traps in range of the angle being prepared, reused between calls. */
+    private objectsInRange: GameObject[] = [];
+
     factorAngleAbuse(item: Angle, enemy: Player) {
         const scale = item.scale + enemy.placePotential.objectScale;
         const scaleSq = scale * scale;
@@ -156,8 +159,20 @@ export default abstract class Grader {
 
         let canAbuse = true;
 
+        // Which spikes and traps are in range depends only on the angle, so find them once for all enemies.
+        const objectsInRange = this.objectsInRange;
+        objectsInRange.length = 0;
+
         const spikesLength = allSpikes.length;
-        const totalLength = allSpikes.length + allTraps.length;
+        const totalLength = enemies.length ? allSpikes.length + allTraps.length : 0;
+
+        for (let i = 0; i < totalLength; i++) {
+            const gameObject = allSpikes[i] ?? allTraps[i - spikesLength];
+            if (!gameObject || !gameObject.active || gameObject.isGhost) continue;
+            if (withinDist(item, gameObject, 15 + item.scale + gameObject.scale)) objectsInRange.push(gameObject);
+        }
+
+        const inRangeLength = objectsInRange.length;
 
         for (let i = 0, len = enemies.length; i < len; i++) {
             const enemy = enemies[i];
@@ -174,12 +189,8 @@ export default abstract class Grader {
             let trapsNear = 0;
             let spikesNear = 0;
 
-            for (let i = 0; i < totalLength; i++) {
-                const gameObject = allSpikes[i] ?? allTraps[i - spikesLength];
-                if (!gameObject || !gameObject.active || gameObject.isGhost) continue;
-                // Only objects in range count, so test that before the team lookup.
-                if (!withinDist(item, gameObject, 15 + item.scale + gameObject.scale)) continue;
-
+            for (let i = 0; i < inRangeLength; i++) {
+                const gameObject = objectsInRange[i];
                 const isTeam = Client.isTeam(enemy, gameObject.ownerSID ?? -1);
                 const willBreak = item.preplace && gameObject.willBreak;
                 const isTrap = gameObject.trap && !isTeam && !willBreak;
