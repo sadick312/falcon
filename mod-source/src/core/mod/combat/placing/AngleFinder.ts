@@ -374,8 +374,8 @@ export default class AngleFinder {
         const validBudget = ((validWidth / totalWidth) * budget) | 0;
         const preplaceBudget = budget - validBudget;
 
-        let index = this.getSample(samples, valid, validIndex, validWidth, validBudget);
-        let preplaceIndex = this.getSample(preplaceSamples, other, otherIndex, preplaceWidth, preplaceBudget);
+        const index = this.getSample(samples, valid, validIndex, validWidth, validBudget);
+        const preplaceIndex = this.getSample(preplaceSamples, other, otherIndex, preplaceWidth, preplaceBudget);
 
         this.getSampleResponse[0] = index;
         this.getSampleResponse[1] = preplaceIndex;

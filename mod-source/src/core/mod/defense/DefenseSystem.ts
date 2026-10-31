@@ -332,7 +332,7 @@ export default class DefenseSystem {
         const secondaryKB = secondaryDamage > 0 || secondary.recentlyHit ? secondary.totalKnock : 0;
         const turretKB = turret.recentlyHit || turretDamage > 0 ? .3 : 0;
 
-        let kb = Math.max(primaryKB + turretKB, secondaryKB + turretKB);
+        const kb = Math.max(primaryKB + turretKB, secondaryKB + turretKB);
         const enemyPositionalSpot = PlayerStateManager.placementMap.get(enemy.sid)!;
         const vec1 = calculateKnockVector(enemy.real_position, kb);
         const vec2 = calculateKnockVector(enemy.next_position, kb);

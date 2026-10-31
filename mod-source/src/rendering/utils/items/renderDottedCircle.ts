@@ -12,7 +12,7 @@ export default function renderDottedCircle(obj: GameObject | ListItem, ctx: Canv
 
     ctx.fillStyle = dotColor;
 
-    for (var i = 0; i < chips; ++i) {
+    for (let i = 0; i < chips; ++i) {
         const tmpRange = randInt(obj.scale / 2.5, obj.scale / 1.7);
 
         RendererUtils.drawCircle(
