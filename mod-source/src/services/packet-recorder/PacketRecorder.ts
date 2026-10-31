@@ -123,7 +123,11 @@ export default class PacketRecorder {
                     const packetData = gameObjectsMap.packetData!;
 
                     if (packetData.type == PacketMap.SERVER_TO_CLIENT.LOAD_GAME_OBJECT) {
-                        packetData.data[0].push(...packet.data[0]);
+                        // A loop, not push(...list): spreading passes every number as an argument, which throws
+                        // once a packet holds more than about a hundred thousand of them.
+                        const saved = packetData.data[0];
+                        const added = packet.data[0];
+                        for (let j = 0; j < added.length; j++) saved.push(added[j]);
                     }
                 }
             }
