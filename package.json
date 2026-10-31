@@ -12,6 +12,8 @@
     "scripts": {
         "install:all": "npm install && npm install --prefix tools/lint",
         "build": "npm run inject:build && npm run ext:build",
+        "build:all": "npm run build",
+        "dev": "node scripts/dev.mjs",
         "mod:build": "npm run build --workspace=mod-source",
         "mod:build:dev": "npm run build:dev --workspace=mod-source",
         "mod:watch": "npm run watch --workspace=mod-source",

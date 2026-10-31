@@ -14,6 +14,10 @@ const modAssets: Record<string, string> = {
 function copyModAssets(): Plugin {
     return {
         name: "copy-mod-assets",
+        buildStart() {
+            // `vite build --watch` (npm run dev) rebuilds the extension when the mod bundle or page files change.
+            for (const source of Object.values(modAssets)) this.addWatchFile(source);
+        },
         generateBundle() {
             for (const [fileName, source] of Object.entries(modAssets)) {
                 if (!existsSync(source))
