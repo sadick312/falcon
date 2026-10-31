@@ -15,3 +15,4 @@ stats/*
 !stats/history.json
 # Replay benchmark output (machine-specific)
 mod-source/bench/results/
+mod-source/bench/.build/

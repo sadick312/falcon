@@ -5,18 +5,24 @@
  *
  * Time is replayed from the recording's timestamps with fake timers and Math.random is seeded, so every run of the
  * same code on the same recording sends the same packets. Rendering is not part of a replay.
+ *
+ * Two ways to load the mod: "modules" imports the source files through Vitest, which rewrites every imported name into
+ * a property lookup on a module object (slower in hot loops than the real bundle, but profiles point at source lines);
+ * "bundle" replays an esbuild bundle of bench-entry.ts (built by build-bundle.mjs) like the production one with
+ * __DEV__ on, for timings.
  */
 import { createHash, Hash } from "crypto";
 import fs from "fs";
 import path from "path";
 import { performance as realPerformance } from "perf_hooks";
-import { fileURLToPath } from "url";
+import { fileURLToPath, pathToFileURL } from "url";
 import { Decoder } from "@msgpack/msgpack";
 import { vi } from "vitest";
 import type { ProfileSummary } from "@services/profiler/Profiler";
 
 export const benchDir = path.dirname(fileURLToPath(import.meta.url));
 export const recordingsDir = path.join(benchDir, "recordings");
+export const bundlePath = path.join(benchDir, ".build", "bench-bundle.mjs");
 const gamePage = fs.readFileSync(path.join(benchDir, "..", "..", "public", "index.html"), "utf8");
 
 export interface Packet { time: number; type: string; data: unknown[] }
@@ -60,6 +66,31 @@ export interface ReplayOptions {
     profile?: boolean;
     /** Also hash every AngleFinder.compute result (each angle's position, grade and flags), not only sent packets. */
     traceAngles?: boolean;
+    /** How to load the mod (see the top of this file). Default "modules". */
+    mode?: "modules" | "bundle";
+}
+
+interface ModApi {
+    profiler: typeof import("@services/profiler/Profiler");
+    Menu: typeof import("@menu/Menu").default;
+    Client: typeof import("@core/Client").default;
+    AngleFinder: typeof import("@placing/AngleFinder").default;
+}
+
+async function loadMod(mode: "modules" | "bundle"): Promise<ModApi> {
+    if (mode === "bundle") {
+        // Built by build-bundle.mjs, the benchmark's globalSetup.
+        if (!fs.existsSync(bundlePath)) throw new Error(`${bundlePath} is missing; run the benchmark with \`npm run bench\`.`);
+        return await import(/* @vite-ignore */ pathToFileURL(bundlePath).href) as ModApi;
+    }
+
+    const profiler = await import("@services/profiler/Profiler");
+    // Same load order as the bundle, so the Socket <-> SocketListener cycle resolves.
+    await import("@core/socket/SocketListener");
+    const { default: Menu } = await import("@menu/Menu");
+    const { default: Client } = await import("@core/Client");
+    const { default: AngleFinder } = await import("@placing/AngleFinder");
+    return { profiler, Menu, Client, AngleFinder };
 }
 
 export interface ReplayResult {
@@ -107,22 +138,17 @@ export async function replay(packets: Packet[], options: ReplayOptions = {}): Pr
     vi.spyOn(console, "log").mockImplementation(() => { });
 
     try {
-        const profiler = await import("@services/profiler/Profiler");
+        const { profiler, Menu, Client, AngleFinder } = await loadMod(options.mode ?? "modules");
         if (options.profile) profiler.enableProfiler({ overlay: false, keepSamples: true, clock: () => realPerformance.now() });
 
-        // Same load order as the bundle, so the Socket <-> SocketListener cycle resolves.
-        await import("@core/socket/SocketListener");
         // Loader.main's setup minus rendering: the menu loads the saved settings the modules read every tick.
-        const { default: Menu } = await import("@menu/Menu");
         await Menu.init();
-        const { default: Client } = await import("@core/Client");
         Client.mode = "replay";
         await Client.connect();
 
         const angleHash = options.traceAngles ? createHash("sha256") : null;
         let angleComputes = 0;
         if (angleHash) {
-            const { default: AngleFinder } = await import("@placing/AngleFinder");
             const compute = AngleFinder.compute;
             AngleFinder.compute = function (...args: Parameters<typeof compute>) {
                 const count = compute.apply(this, args);
