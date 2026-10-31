@@ -30,7 +30,7 @@ export default function drawMenuSelect(item: IMenuItem, contentElement: HTMLElem
     for (const option of item.options) {
         const elem = document.createElement("option");
         elem.innerText = option.label;
-        elem.value = option.value;
+        elem.value = option.value as string;
         elem.selected = String(item.status) === String(option.value);
 
         selector.appendChild(elem);

@@ -6,7 +6,7 @@ export interface IMenuTab {
 
 export interface IMenuOptions {
     label: string;
-    value: any;
+    value: unknown;
 }
 
 export interface IMenuItem {
@@ -17,7 +17,7 @@ export interface IMenuItem {
     settings?: IMenuItem[];
     icon?: string;
     options?: IMenuOptions[];
-    status?: any;
+    status?: unknown;
     min?: number;
     max?: number;
     step?: number;

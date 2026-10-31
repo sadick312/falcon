@@ -112,6 +112,13 @@ export const LEGACY_SERVER_TO_CLIENT_ARR = [
 /** io-init's 4th value on v1.8.2 when the server wants shuffled packet ids and signed packets. */
 export const LEGACY_CIPHER_MODE = 1;
 
+/**
+ * A value decoded from a packet before its handler has looked at it. Each field's meaning depends on its
+ * position and the packet type, and the handlers check what they read, so this stays loose on purpose.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type WireValue = any;
+
 export interface MOOMOO_CLIENT_TO_SERVER_MAP {
     "z": [id: number, isWeapon: boolean];
     "K": [id: 1];
@@ -149,7 +156,7 @@ export interface MOOMOO_SERVER_TO_CLIENT_MAP {
     "E": [id: string];
     "Q": [sid: number];
     "R": [ownerSID: number];
-    "a": [positions: number[], attributes: any[], hidden: number[]];
+    "a": [positions: number[], attributes: WireValue[], hidden: number[]];
     "O": [sid: number, health: number];
     "9": [x: number, y: number];
     "g": [data: AllianceDataType];

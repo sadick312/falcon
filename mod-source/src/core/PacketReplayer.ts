@@ -152,7 +152,7 @@ export default class PacketReplayer {
             const packetRawBytes = new Uint8Array(bytes, offset, packetLength);
             offset += packetLength;
 
-            const decoded = replayDecoder.decode(packetRawBytes) as [string, any];
+            const decoded = replayDecoder.decode(packetRawBytes) as [string, unknown];
 
             const packetData = {
                 type: decoded[0],
@@ -163,7 +163,7 @@ export default class PacketReplayer {
             const brainLength = viewer.getInt32(offset, true);
             offset += 4;
 
-            let brainState: any = null;
+            let brainState: unknown = null;
             if (brainLength > 0) {
                 if (offset + brainLength > bytes.byteLength) break;
 

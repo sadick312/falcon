@@ -22,8 +22,8 @@ export default tseslint.config(
         rules: {
             // Same convention as TypeScript's noUnusedParameters: a leading underscore marks "unused on purpose".
             "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrors: "none" }],
-            // Existing `any`s are typed properly step by step; new ones show up as warnings.
-            "@typescript-eslint/no-explicit-any": "warn",
+            // Use a real type, `unknown`, or (for decoded packet data) WireValue from utils/socket/PacketMap.ts.
+            "@typescript-eslint/no-explicit-any": "error",
             // Class fields like `isPlayer: true = true` tag a type on purpose; `as const` would read worse there.
             "@typescript-eslint/prefer-as-const": "off"
         }

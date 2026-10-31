@@ -68,13 +68,14 @@ export default class ServerBrowser {
     private static renderId = 0;
     private static inflight?: Promise<GameServer[]>;
 
-    private static isServer(entry: any): entry is MooMooPublicServer | MooModdingServer {
-        return !!entry
-            && typeof entry.key === "string"
-            && typeof entry.region === "string"
-            && typeof entry.name === "string"
-            && typeof entry.playerCount === "number"
-            && (Endpoints.serverListFormat !== "moomodding" || typeof entry.ip === "string");
+    private static isServer(entry: unknown): entry is MooMooPublicServer | MooModdingServer {
+        const e = entry as Record<string, unknown> | null | undefined;
+        return !!e
+            && typeof e.key === "string"
+            && typeof e.region === "string"
+            && typeof e.name === "string"
+            && typeof e.playerCount === "number"
+            && (Endpoints.serverListFormat !== "moomodding" || typeof e.ip === "string");
     }
 
     private static normalize(entry: MooMooPublicServer | MooModdingServer): GameServer {

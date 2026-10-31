@@ -14,7 +14,7 @@ import FakeSocket from "@core/socket/FakeSocket";
 import SocketListener from "@core/socket/SocketListener";
 import Menu from "@menu/Menu";
 import CameraManager from "@rendering/core/CameraManager";
-import PacketMap from "@root/utils/socket/PacketMap";
+import PacketMap, { WireValue } from "@root/utils/socket/PacketMap";
 import getDir from "@utils/angle/getDir";
 import ScriptConfig from "@utils/config/ScriptConfig";
 import getDistSq from "@utils/geometry/getDistSq";
@@ -35,7 +35,7 @@ export default class PlayerUpdateEvent extends MessageHandler<UpdatePlayerPacket
         ModManager.enemyData.rangedInstaThreats = 0;
     }
 
-    private onTick(positions: any[], attributes: any[]) {
+    private onTick(positions: number[], attributes: WireValue[]) {
         const player = Client.player;
         PlayerStateManager.placementMap.clear();
 
@@ -248,7 +248,7 @@ export default class PlayerUpdateEvent extends MessageHandler<UpdatePlayerPacket
             ModManager.enemyData.angle = getDir(ModManager.enemyData.nearest.real_position, myPos);
     }
 
-    run(positions: number[], attributes: any[], hidden: any[]) {
+    run(positions: number[], attributes: WireValue[], hidden: number[]) {
         this.preTick();
         this.onTick(positions, attributes);
         this.postTick(hidden);

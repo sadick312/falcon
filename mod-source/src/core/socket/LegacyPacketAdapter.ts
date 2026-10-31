@@ -1,4 +1,4 @@
-import PacketMap from "@root/utils/socket/PacketMap";
+import PacketMap, { WireValue } from "@root/utils/socket/PacketMap";
 
 /** Values per player in a v1.8.2 UPDATE_PLAYERS packet. */
 const LEGACY_PLAYER_STRIDE = 13;
@@ -20,7 +20,7 @@ export default class LegacyPacketAdapter {
     private visibleAis = new Set<number>();
     private lastAttributes = new Map<number, number[]>();
 
-    adapt(type: string, data: any[] | undefined): any[] | undefined {
+    adapt(type: string, data: WireValue[] | undefined): WireValue[] | undefined {
         const first = Array.isArray(data) ? data[0] : undefined;
 
         switch (type) {

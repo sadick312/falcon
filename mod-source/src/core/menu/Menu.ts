@@ -40,6 +40,12 @@ export default class Menu {
 
     static currentItem: IMenuItem;
 
+    /**
+     * The current value of a setting: true/false for toggles, the chosen option's value for selects, a number or
+     * numeric string for sliders and number inputs. Loosely typed because every module reads its own settings
+     * through this; a test checks that every id passed here exists (test/menu/setting-ids.test.ts).
+     */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     static getValue(id: string): any {
         return this.itemMap[id]?.status;
     }

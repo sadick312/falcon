@@ -24,7 +24,7 @@ export default function drawNumberInput(item: IMenuItem, contentElement: HTMLEle
     const input = document.createElement("input");
     input.type = "number";
     input.classList.add("menuNumberInput");
-    input.value = item.status;
+    input.value = item.status as string;
     body.appendChild(input);
 
     if (typeof item.min === "number") input.min = String(item.min);

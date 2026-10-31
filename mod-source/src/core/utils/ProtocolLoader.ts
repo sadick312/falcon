@@ -34,11 +34,12 @@ function findProtocolPath(): string | null {
     return importMapFrom(document);
 }
 
-function isProtocol(mod: any): mod is MooMooProtocol {
-    return !!mod
-        && typeof mod.BUILD_ID === "string"
-        && typeof mod.BUILD_SALT === "number"
-        && typeof mod.mixKey === "function";
+function isProtocol(mod: unknown): mod is MooMooProtocol {
+    const m = mod as Record<string, unknown> | null | undefined;
+    return !!m
+        && typeof m.BUILD_ID === "string"
+        && typeof m.BUILD_SALT === "number"
+        && typeof m.mixKey === "function";
 }
 
 let cached: MooMooProtocol | undefined;

@@ -4,7 +4,7 @@ import ChatCommands from "@core/utils/ChatCommands";
 import { MooMooProtocol } from "@core/utils/CaptchaManager";
 import { hmac } from "@noble/hashes/hmac.js";
 import { sha256 } from "@noble/hashes/sha2.js";
-import PacketMap, { clientToServerArr, LEGACY_CLIENT_TO_SERVER_ARR, LEGACY_SERVER_TO_CLIENT_ARR, serverToClientArr } from "@root/utils/socket/PacketMap";
+import PacketMap, { clientToServerArr, LEGACY_CLIENT_TO_SERVER_ARR, LEGACY_SERVER_TO_CLIENT_ARR, serverToClientArr, WireValue } from "@root/utils/socket/PacketMap";
 
 /** v1.8.2 has no protocol module; its cipher always uses this salt for the table seeds. */
 const LEGACY_TABLE_SALT = 1;
@@ -194,7 +194,7 @@ export default class PacketManager {
         return this.packetSignBuffer;
     }
 
-    private data: Record<string, any> = {};
+    private data: Record<string, unknown> = {};
     private aimDirection: number = Infinity;
 
     /** Forget the last sent move/aim so the first ones after a (re)spawn are never dropped as duplicates. */
@@ -216,7 +216,7 @@ export default class PacketManager {
         return chatInput;
     }
 
-    manage(type: string, data: any[]) {
+    manage(type: string, data: WireValue[]) {
         if (type === PacketMap.CLIENT_TO_SERVER.SEND_CHAT) {
             const chatInput = data[0];
             if (typeof chatInput !== "string") return true;

@@ -8,7 +8,7 @@ export default abstract class MessageHandler<T extends keyof MOOMOO_SERVER_TO_CL
     ) {
     }
 
-    abstract run(...args: MOOMOO_SERVER_TO_CLIENT_MAP[T]): any;
+    abstract run(...args: MOOMOO_SERVER_TO_CLIENT_MAP[T]): void;
 
     protected sendMsg<K extends keyof MOOMOO_CLIENT_TO_SERVER_MAP>(type: K, ...data: MOOMOO_CLIENT_TO_SERVER_MAP[K]) {
         this.socket.sendMsg(type, ...data);

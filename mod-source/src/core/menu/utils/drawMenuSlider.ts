@@ -28,18 +28,18 @@ export default function drawMenuSlider(item: IMenuItem, contentElement: HTMLElem
     if (typeof item.step === "number") slider.step = String(item.step);
     if (typeof item.max === "number") slider.max = String(item.max);
 
-    slider.value = item.status;
+    slider.value = item.status as string;
     body.appendChild(slider);
 
     const sliderDisplay = document.createElement("div");
     sliderDisplay.style = "color: var(--theme-primary); font-size: 16px; width: 50px; margin-left: 10px; text-align: right;";
     body.appendChild(sliderDisplay);
 
-    sliderDisplay.innerText = item.status || "0";
+    sliderDisplay.innerText = (item.status as string) || "0";
 
     slider.addEventListener("input", () => {
         item.status = slider.value;
-        sliderDisplay.innerText = item.status;
+        sliderDisplay.innerText = item.status as string;
         Menu.saveSettings();
     });
 
