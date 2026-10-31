@@ -42,7 +42,8 @@ export default class AutoReplacer extends Placer {
 
     private peekAngles: Angle[] = [];
 
-    execute(player: Player, killedObject?: GameObject, peek?: boolean) {
+    /** With `peek`, returns the angles it would place at instead of placing; otherwise places and returns undefined. */
+    execute(player: Player, killedObject?: GameObject, peek?: boolean): Angle[] | undefined {
         this.replacementFinderOptions.obj = killedObject;
 
         const now = performance.now();
@@ -77,5 +78,6 @@ export default class AutoReplacer extends Placer {
         ModManager.activityList.push("autoReplace");
         const took = performance.now() - now;
         this.update(took.toFixed(2));
+        return undefined;
     }
 }

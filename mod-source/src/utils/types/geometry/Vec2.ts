@@ -19,7 +19,7 @@ export default class Vec2 {
 
     add(other: Vec2): Vec2;
     add(x: number, y: number): void;
-    add(a: Vec2 | number, b?: number) {
+    add(a: Vec2 | number, b?: number): Vec2 | void {
         if (typeof a !== "number") {
             return new Vec2(this.x + a.x, this.y + a.y);
         }
@@ -30,7 +30,7 @@ export default class Vec2 {
 
     sub(other: Vec2, target: Vec2): Vec2;
     sub(x: number, y: number): void;
-    sub(a: Vec2 | number, b: number | Vec2) {
+    sub(a: Vec2 | number, b: number | Vec2): Vec2 | void {
         if (typeof a !== "number" && typeof b !== "number") {
             b.copy(this.x - a.x, this.y - a.y);
             return b;

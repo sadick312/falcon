@@ -351,7 +351,7 @@ export default class AngleFinder {
         other = other ?? this.optionalDefaultOther;
         preplaceSamples = preplaceSamples ?? this.optionalDefaultOther;
 
-        if (validIndex < 2 && otherIndex < 2) return 0;
+        if (validIndex < 2 && otherIndex < 2) return;
 
         let validWidth = 0;
         let preplaceWidth = 0;
