@@ -216,14 +216,12 @@ export default class ModManager {
 
             for (let j = 0, player_len = players.length; j < player_len; j++) {
                 const player = players[j];
+                const isMe = player.sid === Client.mySID;
 
-                if (gameObject.isFakeObject) {
-                    if (player.sid === Client.mySID) continue;
-                    if (Client.isFriendly(gameObject.ownerSID ?? -1)) continue;
-                    if (!Client.isTeam(player, gameObject.ownerSID ?? -1)) continue;
-                } else if (player.sid === Client.mySID) {
+                if (isMe) {
+                    if (gameObject.isFakeObject) continue;
+
                     const tmpDir = getDir(gameObject, player.real_position);
-
                     const withinPrevIntentArc = typeof aimDir === "number" && getAngleDist(aimDir, tmpDir) <= ScriptConfig.GATHER_ANGLE;
                     const withinCurrentMouseArc = getAngleDist(mouseDir, tmpDir) <= ScriptConfig.GATHER_ANGLE;
                     if (!withinPrevIntentArc && !withinCurrentMouseArc) continue;
@@ -233,7 +231,14 @@ export default class ModManager {
                 const secondaryHitDamage = secondaryDamage[j] && BreakerUtils.getObjectAttackDistance(player, gameObject, secondaryRange[j]) ? secondaryDamage[j] : 0;
                 const weaponDamage = Math.max(primaryHitDamage, secondaryHitDamage);
 
-                if (Client.mySID === player.sid) gameObject.isBreaking = true;
+                if (isMe) {
+                    gameObject.isBreaking = true;
+                } else {
+                    // Another player only matters if they can damage it, so check that before the team lookups.
+                    if (weaponDamage <= 0) continue;
+                    if (gameObject.isFakeObject && (Client.isFriendly(gameObject.ownerSID ?? -1) || !Client.isTeam(player, gameObject.ownerSID ?? -1))) continue;
+                }
+
                 if (weaponDamage <= 0) continue;
 
                 gameObject.totalDamagePotential += weaponDamage;
@@ -241,7 +246,7 @@ export default class ModManager {
                 if (!gameObject.willBreak && !gameObject.isFakeObject) this.willBreakObjects.push(gameObject);
 
                 gameObject.willBreak = true;
-                if (Client.mySID === player.sid) break;
+                if (isMe) break;
             }
         }
     }
