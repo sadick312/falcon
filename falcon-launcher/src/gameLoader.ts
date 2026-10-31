@@ -67,9 +67,8 @@ export function showLoadError(message: string) {
     title.textContent = "Falcon could not start";
 
     const text = document.createElement("div");
-    text.textContent = `${message}
-
-Reload the page to try again. If it keeps happening, rebuild with "npm run build" and reload the extension in chrome://extensions.`;
+    text.textContent = `${message}\n\nReload the page to try again. If it keeps happening, rebuild with ` +
+        `"npm run build" and reload the extension in chrome://extensions.`;
 
     box.append(title, text);
     (document.body ?? document.documentElement).appendChild(box);
