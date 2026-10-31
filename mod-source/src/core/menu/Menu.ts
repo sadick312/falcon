@@ -1157,9 +1157,15 @@ export default class Menu {
     }
 
     static setValue(id: string, val: boolean) {
-        if (typeof this.itemMap[id].status === "boolean") {
-            this.itemMap[id].status = val;
-            if (typeof this.itemMap[id].update === "function") this.itemMap[id].update();
+        const item = this.itemMap[id];
+        if (!item) {
+            console.warn(`[Falcon] Menu.setValue: there is no setting called "${id}".`);
+            return;
+        }
+
+        if (typeof item.status === "boolean") {
+            item.status = val;
+            if (typeof item.update === "function") item.update();
         }
 
         this.saveSettings();
