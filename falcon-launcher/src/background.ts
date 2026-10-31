@@ -1,4 +1,4 @@
-import { prepareGamePage, startFalconClient } from "./gameLoader";
+import { prepareGamePage, showLoadError, startFalconClient } from "./gameLoader";
 
 (function () {
     // Game pages Falcon replaces. Keep in sync with content_scripts in manifest.json and the
@@ -22,13 +22,33 @@ import { prepareGamePage, startFalconClient } from "./gameLoader";
         chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds: [LEGACY_CSP_RULE_ID] }).catch(console.error);
     }
 
+    // Bundled files load from the extension itself, so this only trips if something is badly wrong.
+    const ASSET_TIMEOUT_MS = 10e3;
+
     async function fetchAsset(path: string) {
-        const response = await fetch(chrome.runtime.getURL(`mod/${path}`));
+        let response: Response;
+
+        try {
+            response = await fetch(chrome.runtime.getURL(`mod/${path}`), { signal: AbortSignal.timeout(ASSET_TIMEOUT_MS) });
+        } catch (err) {
+            const timedOut = err instanceof DOMException && err.name === "TimeoutError";
+            throw new Error(timedOut ? `Reading mod/${path} took longer than ${ASSET_TIMEOUT_MS / 1000}s.` : `Could not read mod/${path}: ${String(err)}`, { cause: err });
+        }
 
         if (!response.ok)
-            throw new Error(`failed to load bundled asset ${path}`);
+            throw new Error(`mod/${path} is missing from the extension (HTTP ${response.status}). Run "npm run build" and reload the extension.`);
 
         return response.text();
+    }
+
+    /** Logs the error in the extension's console and shows it on the game page. */
+    function reportLoadError(target: chrome.scripting.InjectionTarget, step: string, err: unknown) {
+        const message = `${step}: ${err instanceof Error ? err.message : String(err)}`;
+        console.error(`[Falcon] ${message}`);
+
+        chrome.scripting.executeScript({ target, world: "MAIN", func: showLoadError, args: [message] })
+            // The tab may have closed or navigated away; nothing more to do then.
+            .catch(() => { });
     }
 
     chrome.runtime.onInstalled.addListener((details) => {
@@ -54,11 +74,15 @@ import { prepareGamePage, startFalconClient } from "./gameLoader";
         // documentIds pins every step to this page load, so a navigation in between can't receive half of it.
         const target = { tabId: details.tabId, documentIds: [details.documentId] };
 
+        // Each step is named, so an error says which one failed.
+        let step = "Reading the page files";
+
         Promise.all([
             fetchAsset("index.html"),
             fetchAsset("style.css")
         ]).then(async ([htmlContent, cssContent]) => {
             // Same order as before: replace the page, wait for Turnstile, then run the bundle and start it.
+            step = "Replacing the game page";
             await chrome.scripting.executeScript({
                 target,
                 injectImmediately: true,
@@ -67,6 +91,7 @@ import { prepareGamePage, startFalconClient } from "./gameLoader";
                 args: [htmlContent, cssContent, true]
             });
 
+            step = "Running the mod bundle";
             await chrome.scripting.executeScript({
                 target,
                 injectImmediately: true,
@@ -74,12 +99,15 @@ import { prepareGamePage, startFalconClient } from "./gameLoader";
                 files: ["mod/bundle.js"]
             });
 
-            await chrome.scripting.executeScript({
+            step = "Starting the client";
+            const [started] = await chrome.scripting.executeScript({
                 target,
                 injectImmediately: true,
                 world: "MAIN",
                 func: startFalconClient
             });
-        }).catch(console.error);
+
+            if (started?.result) throw new Error(started.result);
+        }).catch((err) => reportLoadError(target, step, err));
     });
 })();
