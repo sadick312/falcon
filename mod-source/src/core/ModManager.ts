@@ -277,7 +277,8 @@ export default class ModManager {
         const player = Client.player;
         if (!player) return;
 
-        const myPositionalSpot = PlayerStateManager.placementMap.get(player.sid)!;
+        // Undefined on fake (empty) ticks, where update order is unknown, so the gold-tech knockback checks are skipped.
+        const myPositionalSpot = PlayerStateManager.placementMap.get(player.sid);
         const justAttacked = this.justAttacked;
         const nearbyEnemies = this.enemyData.nearby;
 
@@ -289,8 +290,11 @@ export default class ModManager {
             const wpn = items.weapons[wpnId];
             const tmpDir = getDir(player.real_position, otherPlayer.real_position);
 
+            const otherSpot = PlayerStateManager.placementMap.get(otherPlayer.sid);
+            if (myPositionalSpot === undefined || otherSpot === undefined) continue;
+
             if (!CombatUtils.getCombatDistance(otherPlayer, player, wpn.range - 1)) continue;
-            if (myPositionalSpot < PlayerStateManager.placementMap.get(otherPlayer.sid)!) continue;
+            if (myPositionalSpot < otherSpot) continue;
 
             const wpnGroup = wpnId < 9 ? 0 : 1;
             const isReloaded = otherPlayer.getReload(wpnGroup) === 1;
@@ -308,8 +312,11 @@ export default class ModManager {
             const wpn = items.weapons[wpnId];
             const tmpDir = getDir(player.real_position, otherPlayer.real_position);
 
+            const otherSpot = PlayerStateManager.placementMap.get(otherPlayer.sid);
+            if (myPositionalSpot === undefined || otherSpot === undefined) continue;
+
             if (!CombatUtils.getCombatDistance(otherPlayer, player, wpn.range - 1)) continue;
-            if (myPositionalSpot > PlayerStateManager.placementMap.get(otherPlayer.sid)!) continue;
+            if (myPositionalSpot > otherSpot) continue;
             if (getAngleDist(otherPlayer.d2, tmpDir) > ScriptConfig.GATHER_ANGLE) continue;
             this.applyKnockbackOnState(tmpDir, wpn.knock ?? 0);
         }
@@ -427,6 +434,9 @@ export default class ModManager {
     static justAttacked: Player[] = [];
 
     static main() {
+        // Every module below assumes we have spawned; updates can arrive before ADD_PLAYER.
+        if (!Client.player) return;
+
         const startTime = performance.now();
 
         // prep the tick

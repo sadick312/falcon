@@ -112,7 +112,8 @@ export default class PacketBatcher {
     }
 
     private static checkAndEmitFakeUpdate(now: number) {
-        if (!Client.player || !this.socket) return;
+        // Stop the watchdog loop once the socket is gone instead of faking ticks forever.
+        if (!Client.player || !this.socket || this.socket.readyState !== WebSocket.OPEN) return;
 
         const timeSinceLast = now - PlayerUpdateEvent.lastReceive;
         const threshold = this.getFakeUpdateThreshold();

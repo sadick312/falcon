@@ -23,9 +23,13 @@ export default class PlayerManager {
 
     static remove(player: Player) {
         this.players.handler.remove(player.id);
+        // Otherwise a player who left stays in the visible list as a ghost that the mod keeps targeting.
+        this.players.visible.remove(player.sid);
+        player.visible = false;
     }
 
     static removeAll() {
         this.players.handler.removeAll();
+        this.players.visible.removeAll();
     }
 }

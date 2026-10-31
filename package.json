@@ -17,7 +17,7 @@
         "stats": "node scripts/dev-stats.mjs",
         "stats:report": "node scripts/lib/report.mjs",
         "mod:build:dev": "npm run build:dev --workspace=mod-source",
-        "typecheck":"npm run typecheck --workspace=mod-source && npm exec --workspace=falcon-launcher -- tsc --noEmit",
+        "typecheck": "npm run typecheck --workspace=mod-source && npm exec --workspace=falcon-launcher -- tsc --noEmit",
         "inject:build": "npm run build --workspace=mod-source && npm run build:inject --workspace=mod-source"
     },
     "allowScripts": {
@@ -25,6 +25,9 @@
         "fsevents@2.3.3": true
     },
     "devDependencies": {
-        "typescript": "^7.0.2"
+        "@vitest/coverage-v8": "^5.0.5",
+        "jsdom": "^30.1.3",
+        "typescript": "^7.0.2",
+        "vitest": "^5.0.5"
     }
 }
