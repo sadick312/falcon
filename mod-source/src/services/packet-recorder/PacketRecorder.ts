@@ -58,26 +58,27 @@ export default class PacketRecorder {
             const packet = log.packetData!;
 
             if (packet.type === PacketMap.SERVER_TO_CLIENT.UPDATE_PLAYERS) {
-                const data = packet.data as any[];
+                // Logged after LegacyPacketAdapter, so always [positions (sid, x, y, dir) * n, attributes, hidden].
+                const positions = (packet.data as unknown[])[0];
+                if (!Array.isArray(positions)) continue;
 
-                for (let j = 0; j < data.length; j += 13) {
-                    const sid = data[j];
-                    const x = data[j + 1];
-                    const y = data[j + 2];
-
-                    const playerId = this.sidToIdMap[sid];
+                for (let j = 0; j + 3 < positions.length; j += 4) {
+                    const playerId = this.sidToIdMap[positions[j] as number];
                     const logData = this.permanentData.get(playerId);
-                    if (!logData) continue;
+                    if (!logData || logData.packetData.type !== PacketMap.SERVER_TO_CLIENT.ADD_PLAYER) continue;
 
-                    logData.packetData.data[3] = x;
-                    logData.packetData.data[4] = y;
+                    // Move the player's saved spawn (ADD_PLAYER [PlayerInitType, isYou]) to where they were last seen.
+                    const init = logData.packetData.data[0];
+                    init[3] = positions[j + 1];
+                    init[4] = positions[j + 2];
                 }
             } else if (packet.type === PacketMap.SERVER_TO_CLIENT.KILL_OBJECT) {
+                // continue, not return: the rest of this second's packets still need their bookkeeping.
                 const gameObjectsMap = this.permanentData.get(PacketMap.SERVER_TO_CLIENT.LOAD_GAME_OBJECT);
-                if (!gameObjectsMap) return;
+                if (!gameObjectsMap) continue;
 
                 const packetData = gameObjectsMap.packetData!;
-                if (packetData.type !== PacketMap.SERVER_TO_CLIENT.LOAD_GAME_OBJECT) return;
+                if (packetData.type !== PacketMap.SERVER_TO_CLIENT.LOAD_GAME_OBJECT) continue;
 
                 const gameObjects = packetData.data[0];
 
@@ -89,10 +90,10 @@ export default class PacketRecorder {
                 }
             } else if (packet.type === PacketMap.SERVER_TO_CLIENT.KILL_OBJECTS) {
                 const gameObjectsMap = this.permanentData.get(PacketMap.SERVER_TO_CLIENT.LOAD_GAME_OBJECT);
-                if (!gameObjectsMap) return;
+                if (!gameObjectsMap) continue;
 
                 const packetData = gameObjectsMap.packetData!;
-                if (packetData.type !== PacketMap.SERVER_TO_CLIENT.LOAD_GAME_OBJECT) return;
+                if (packetData.type !== PacketMap.SERVER_TO_CLIENT.LOAD_GAME_OBJECT) continue;
 
                 const gameObjects = packetData.data[0];
 
