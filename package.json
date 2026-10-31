@@ -16,6 +16,7 @@
         "ext:dev": "npm run dev --workspace=falcon-launcher",
         "stats": "node scripts/dev-stats.mjs",
         "stats:report": "node scripts/lib/report.mjs",
+        "bench": "vitest run --config vitest.bench.config.mts",
         "mod:build:dev": "npm run build:dev --workspace=mod-source",
         "typecheck": "npm run typecheck --workspace=mod-source && npm exec --workspace=falcon-launcher -- tsc --noEmit",
         "inject:build": "npm run build --workspace=mod-source && npm run build:inject --workspace=mod-source"
