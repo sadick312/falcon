@@ -10,7 +10,7 @@ import PacketManager from "@core/utils/PacketManager";
 import PacketTracker from "@core/utils/PacketTracker";
 import Menu from "@menu/Menu";
 import { Decoder } from "@msgpack/msgpack";
-import PacketMap, { knownServerPackets, MOOMOO_CLIENT_TO_SERVER_MAP, MOOMOO_SERVER_TO_CLIENT_MAP } from "@root/utils/socket/PacketMap";
+import PacketMap, { knownServerPackets, LEGACY_CIPHER_MODE, MOOMOO_CLIENT_TO_SERVER_MAP, MOOMOO_SERVER_TO_CLIENT_MAP } from "@root/utils/socket/PacketMap";
 import TaskScheduler from "@services/event-timer/TaskScheduler";
 import { profileEnd, profileStart } from "@services/profiler/Profiler";
 import PacketRecorder from "@services/packet-recorder/PacketRecorder";
@@ -45,7 +45,14 @@ export const socketHooks = {
 
 export type MixKeyFunc = (key: Uint8Array, offset: number) => Uint8Array;
 
-export default class Socket extends WebSocket {
+/**
+ * sandbox.moomodding.io's hackfix.js replaces window.WebSocket with a plain function that returns a native
+ * socket. Extending that wrapper hands back an object without Socket's methods, so extend the native class,
+ * which the wrapper still exposes as its prototype's constructor. Elsewhere this is just window.WebSocket.
+ */
+const NativeWebSocket = WebSocket.prototype.constructor as typeof WebSocket;
+
+export default class Socket extends NativeWebSocket {
     private handlers: {
         [K in EventKey]?: EventCallback<K>
     } = {};
@@ -173,9 +180,15 @@ export default class Socket extends WebSocket {
         }
 
         if (parsed[0] === "io-init") {
-            const [id, seed, salt] = parsed[1] as MOOMOO_SERVER_TO_CLIENT_MAP["io-init"];
+            const [id, seed, salt, mode] = parsed[1] as MOOMOO_SERVER_TO_CLIENT_MAP["io-init"];
             // Plain servers send io-init with only an id; there is no cipher table to set up.
-            if (this.socketProtocol) this.manager.init(id, seed, salt, this.socketProtocol);
+            if (this.socketProtocol) {
+                this.manager.init(id, seed, salt, this.socketProtocol);
+            } else if (this.legacyAdapter && mode === LEGACY_CIPHER_MODE && !this.isPrivateServer) {
+                // v1.8.2 servers can turn on shuffled ids + signed packets; from here on, send them that way.
+                this.manager.initLegacy(seed, salt);
+                this.plainPackets = false;
+            }
             this.handshakeDone = true;
             this.clearHandshakeTimer();
             return;
@@ -250,12 +263,13 @@ export default class Socket extends WebSocket {
     private DATA_BUFFER: any[] = [null, null, null];
 
     private populateBuffer(arg1?: any, arg2?: any, arg3?: any) {
-        let len = 0;
+        // Write every slot so a skipped (undefined) argument can't leave the previous packet's value behind.
+        const len = arg3 !== undefined ? 3 : arg2 !== undefined ? 2 : arg1 !== undefined ? 1 : 0;
 
-        if (arg1 !== undefined) { this.DATA_BUFFER[0] = arg1; len = 1; }
-        if (arg2 !== undefined) { this.DATA_BUFFER[1] = arg2; len = 2; }
-        if (arg3 !== undefined) { this.DATA_BUFFER[2] = arg3; len = 3; }
-
+        this.DATA_BUFFER.length = 3;
+        this.DATA_BUFFER[0] = arg1;
+        this.DATA_BUFFER[1] = arg2;
+        this.DATA_BUFFER[2] = arg3;
         this.DATA_BUFFER.length = len;
         return len;
     }
@@ -303,6 +317,7 @@ export default class Socket extends WebSocket {
         const currentSequence = ++this.manager.sequence;
         const packetData = CustomEncoder.encode(type, encryptPacketId, data, currentSequence);
         const binaryLength = PacketManager.PACKET_PADDING + packetData.length;
+        if (binaryLength > this.binaryPacketBuffer.length) this.binaryPacketBuffer = new Uint8Array(binaryLength * 2);
         const bufferSlice = this.binaryPacketBuffer.subarray(0, binaryLength);
         const signatureBuff = this.manager.getPacketSignature(packetData);
 

@@ -28,6 +28,9 @@ export default class ObjectManager {
     private static chunkSize = 1440;
 
     static add(sid: number, x: number, y: number, dir: number, scale: number, type: number, id: number, setSID: boolean, owner?: number) {
+        // A resent object would otherwise be skipped by gameObjects but pushed into its grid chunk a second time.
+        if (setSID && gameObjects.has(sid)) return;
+
         const gameObject = new GameObject(x, y, dir, scale, type, id, owner);
         if (setSID) gameObject.sid = sid;
 
@@ -37,7 +40,7 @@ export default class ObjectManager {
 
         if (owner !== undefined) {
             const player = PlayerManager.get(owner);
-            if (player) player.spikeId = id;
+            if (player && id >= LIST_ID_MAP.SPIKES && id <= LIST_ID_MAP.SPINNING_SPIKES) player.spikeId = id;
         }
 
         if (AutoPusher.currentPath.length && !gameObject.ignoreCollision) {
@@ -153,7 +156,7 @@ export default class ObjectManager {
         const gameObject = gameObjects.get(sid);
 
         if (gameObject) {
-            const playerTrap = Client.player.trap;
+            const playerTrap = Client.player?.trap;
             gameObject.active = false;
             gameObjects.remove(sid);
 
@@ -176,7 +179,7 @@ export default class ObjectManager {
                 }
             }
 
-            if (Menu.getValue("autoPlacing") && Menu.getValue("replacer") && ModManager.enemyData.nearest) {
+            if (Client.player && Menu.getValue("autoPlacing") && Menu.getValue("replacer") && ModManager.enemyData.nearest) {
                 const placementRange = parseInt(Menu.getValue("autoPlaceRange"));
                 const nearestEnemy = ModManager.enemyData.nearest;
                 const player = Client.player;
@@ -195,8 +198,10 @@ export default class ObjectManager {
 
     static removeAll(ownerSID?: number) {
         if (typeof ownerSID !== "number") {
+            for (const obj of gameObjects.all) obj.active = false;
             this.gridMap.clear();
             gameObjects.removeAll();
+            this.allTurrets.removeAll();
             return;
         }
 
@@ -207,6 +212,7 @@ export default class ObjectManager {
             const obj = allObjects[i];
 
             if (obj && obj.ownerSID === ownerSID) {
+                obj.active = false;
                 this.removeObjectFromChunks(obj);
                 gameObjects.remove(obj.sid);
 

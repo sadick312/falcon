@@ -4,7 +4,10 @@ import ChatCommands from "@core/utils/ChatCommands";
 import { MooMooProtocol } from "@core/utils/CaptchaManager";
 import { hmac } from "@noble/hashes/hmac.js";
 import { sha256 } from "@noble/hashes/sha2.js";
-import PacketMap, { clientToServerArr, serverToClientArr } from "@root/utils/socket/PacketMap";
+import PacketMap, { clientToServerArr, LEGACY_CLIENT_TO_SERVER_ARR, LEGACY_SERVER_TO_CLIENT_ARR, serverToClientArr } from "@root/utils/socket/PacketMap";
+
+/** v1.8.2 has no protocol module; its cipher always uses this salt for the table seeds. */
+const LEGACY_TABLE_SALT = 1;
 
 const profanityList = [
     "cunt", "whore", "fuck", "shit", "faggot", "nigger", "mohmoh", "moh ",
@@ -127,27 +130,41 @@ export default class PacketManager {
     private SIGNATURE_BUFFER = new Uint8Array(PacketManager.PACKET_PADDING);
 
     maskIncoming(bytes: Uint8Array) {
-        if (!this.tables || !this.tables.s2c) return;
+        // No masks before the handshake, on plain servers, or with v1.8.2's cipher (which only signs).
+        if (!this.masks) return;
 
         const sequence = ++this.received;
-        const seed = (this.masks!.s2c ^ Math.imul(sequence, 2654435761)) >>> 0;
+        const seed = (this.masks.s2c ^ Math.imul(sequence, 2654435761)) >>> 0;
         xorPacket(bytes, seed);
     }
 
     maskOutcoming(bytes: Uint8Array, signatureUint: number) {
-        if (!this.tables || !this.tables.c2s) return;
-        const seed = (this.masks!.c2s ^ signatureUint) >>> 0;
+        if (!this.masks) return;
+        const seed = (this.masks.c2s ^ signatureUint) >>> 0;
         xorPacket(bytes.subarray(PacketManager.PACKET_PADDING), seed);
     }
 
-    private initTable(seed: number, salt: number) {
+    private initTable(seed: number, salt: number, c2sArr = clientToServerArr, s2cArr = serverToClientArr) {
         const c2sSeedBase = (seed ^ Math.imul(salt, 2654435761)) >>> 0;
         const s2cSeedBase = (c2sSeedBase ^ 2246822507) >>> 0;
 
         this.tables = {
-            c2s: createCipherMap(clientToServerArr, c2sSeedBase),
-            s2c: createCipherMap(serverToClientArr, s2cSeedBase),
+            c2s: createCipherMap(c2sArr, c2sSeedBase),
+            s2c: createCipherMap(s2cArr, s2cSeedBase),
         };
+    }
+
+    /**
+     * v1.8.2's optional cipher (io-init mode 1): shuffled packet ids from its own packet lists, and each
+     * outgoing packet signed with HMAC-SHA256 keyed by the raw salt bytes. Nothing is XOR-masked.
+     */
+    initLegacy(seed: number, salt: string) {
+        this.sequence = 0;
+        this.received = 0;
+
+        this.initTable(seed >>> 0, LEGACY_TABLE_SALT, LEGACY_CLIENT_TO_SERVER_ARR, LEGACY_SERVER_TO_CLIENT_ARR);
+        this.salt = hexToBytes(salt);
+        this.masks = undefined;
     }
 
     init(_id: string, seed: number, salt: string, protocol: MooMooProtocol) {

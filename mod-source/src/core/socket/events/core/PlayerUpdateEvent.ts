@@ -90,7 +90,6 @@ export default class PlayerUpdateEvent extends MessageHandler<UpdatePlayerPacket
 
             const newTeam = attributes[i + 4];
             SocketListener.handleAllianceUpdates(player, newTeam);
-            player.team = newTeam;
 
             player.isLeader = attributes[i + 5];
             if (player.skinIndex !== STORE_HAT_MAP.SHAME) player.lastSkinIndex = player.skinIndex;
@@ -109,6 +108,8 @@ export default class PlayerUpdateEvent extends MessageHandler<UpdatePlayerPacket
             if (!player.clowned && player.skinIndex === STORE_HAT_MAP.SHAME) player.startShameTimer();
             player.clowned = player.skinIndex === STORE_HAT_MAP.SHAME;
         }
+
+        if (!player) return;
 
         if (player.team) {
             const allianceBucket = Client.allianceMap.get(player.team);
@@ -134,7 +135,7 @@ export default class PlayerUpdateEvent extends MessageHandler<UpdatePlayerPacket
         const players = PlayerManager.players.handler.all;
         const stackedText = Menu.getValue("stackedText");
         const allVisible = PlayerManager.players.visible.all;
-        const myPos = Client.player.real_position;
+        const myPos = Client.player?.real_position;
 
         for (let i = 0; i < hidden.length; i++) {
             const player = PlayerManager.get(hidden[i]);
@@ -168,7 +169,7 @@ export default class PlayerUpdateEvent extends MessageHandler<UpdatePlayerPacket
                 const pos = player.real_position;
                 const distanceSq = getDistSq(pos, myPos);
 
-                if (smallestDistance > getDistSq(pos, myPos)) {
+                if (smallestDistance > distanceSq) {
                     smallestDistance = distanceSq;
                     ModManager.enemyData.nearest = player;
                 }
@@ -243,8 +244,8 @@ export default class PlayerUpdateEvent extends MessageHandler<UpdatePlayerPacket
             player.damageTaken = 0;
         }
 
-        if (ModManager.enemyData.nearest)
-            ModManager.enemyData.angle = getDir(ModManager.enemyData.nearest.real_position, Client.player.real_position);
+        if (ModManager.enemyData.nearest && myPos)
+            ModManager.enemyData.angle = getDir(ModManager.enemyData.nearest.real_position, myPos);
     }
 
     run(positions: number[], attributes: any[], hidden: any[]) {

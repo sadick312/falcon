@@ -43,6 +43,23 @@ const ageBar = getElem("age-bar");
 const ageDisplay = getElem("age-display");
 const leaderboardData = getElem("leaderboard");
 
+/** Item group index (UPDATE_ITEM_COUNTS) -> the hotbar item ids whose count label shows it. */
+const itemCountElements = {
+    1: [19, 20, 21],
+    2: [22, 23, 24, 25],
+    3: [26, 27, 28],
+    4: [29],
+    5: [31],
+    6: [32],
+    7: [33],
+    8: [34],
+    9: [35],
+    10: [36],
+    11: [30],
+    12: [37],
+    13: [38]
+};
+
 export default class SocketListener {
     static isInitialized = false;
 
@@ -120,7 +137,8 @@ export default class SocketListener {
             link.click();
             link.remove();
 
-            URL.revokeObjectURL(url);
+            // Revoking in the same task can cancel the download in some browsers.
+            setTimeout(() => URL.revokeObjectURL(url), 1e3);
         }
     }
 
@@ -141,8 +159,9 @@ export default class SocketListener {
         this.socket = socket;
 
         if (socket instanceof Socket) {
-            this.pingSocket();
+            // Stop first: stopPinging() clears awaitingPong, which would make us ignore the reply to this first ping.
             this.stopPinging();
+            this.pingSocket();
             this.pingTimer = window.setInterval(() => this.pingSocket(), 1e3);
         }
 
@@ -210,7 +229,7 @@ export default class SocketListener {
 
                 const allySet = Client.allianceMap.get(player.team);
                 if (allySet) allySet.delete(player.sid);
-                if (player.isLeader) Client.allianceMap.delete(player.team);
+                if (player.isLeader || allySet?.size === 0) Client.allianceMap.delete(player.team);
             }
         });
 
@@ -238,6 +257,7 @@ export default class SocketListener {
 
         this.socket.on(PacketMap.SERVER_TO_CLIENT.UPDATE_AGE, (xp, mxp, age) => {
             const player = Client.player;
+            if (!player) return;
 
             if (xp != undefined) player.XP = xp;
             if (mxp != undefined) player.maxXP = mxp;
@@ -361,29 +381,14 @@ export default class SocketListener {
         });
 
         this.socket.on(PacketMap.SERVER_TO_CLIENT.UPDATE_ITEM_COUNTS, (index, value) => {
+            if (!Client.player) return;
             Client.player.itemCounts[index] = value;
 
-            const itemMapping = {
-                1: [19, 20, 21],
-                2: [22, 23, 24, 25],
-                3: [26, 27, 28],
-                4: [29],
-                5: [31],
-                6: [32],
-                7: [33],
-                8: [34],
-                9: [35],
-                10: [36],
-                11: [30],
-                12: [37],
-                13: [38]
-            };
-
-            const itemRanges = itemMapping[index as keyof typeof itemMapping];
+            const itemRanges = itemCountElements[index as keyof typeof itemCountElements];
             if (itemRanges) {
-                itemRanges.forEach(itemId => {
-                    getElem(`item-count-${itemId}`).innerHTML = `${value}`;
-                });
+                for (const itemId of itemRanges) {
+                    getElem(`item-count-${itemId}`).innerText = `${value}`;
+                }
             }
         });
 
@@ -450,7 +455,7 @@ export default class SocketListener {
             CombatController.attackState.confirm = false;
             CombatController.attackState.status = false;
 
-            Client.lastDeath = {
+            if (Client.player) Client.lastDeath = {
                 x: Client.player.render_position.x,
                 y: Client.player.render_position.y
             };
