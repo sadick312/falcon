@@ -10,7 +10,7 @@ export class NetworkError extends Error {
     }
 }
 
-export interface FetchJsonOptions {
+interface FetchJsonOptions {
     step: string;
     timeoutMs: number;
     retries?: number;

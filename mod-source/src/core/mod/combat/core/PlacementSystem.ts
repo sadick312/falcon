@@ -18,7 +18,7 @@ import PacketMap from "@root/utils/socket/PacketMap";
 import { Input } from "@ui/Hook";
 import getDistSq from "@utils/geometry/getDistSq";
 
-export class Placement {
+class Placement {
     tick: number = -1000000;
     angle: number = -1000000;
 

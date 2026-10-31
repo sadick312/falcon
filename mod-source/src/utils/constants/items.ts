@@ -1,4 +1,4 @@
-export interface ItemGroup {
+interface ItemGroup {
     id: number;
     name: string;
     place?: boolean;
@@ -88,7 +88,7 @@ export interface ListItem {
     pps?: number;
 }
 
-export interface Items {
+interface Items {
     groups: ItemGroup[];
     projectiles: IProjectile[];
     weapons: Weapon[];

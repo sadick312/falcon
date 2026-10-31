@@ -22,7 +22,7 @@ import getElem from "@utils/dom/getElem";
 type EventKey = keyof MOOMOO_SERVER_TO_CLIENT_MAP;
 type EventCallback<K extends EventKey> = (...args: MOOMOO_SERVER_TO_CLIENT_MAP[K]) => void;
 
-export type SendMsgSignature = <K extends keyof MOOMOO_CLIENT_TO_SERVER_MAP>(
+type SendMsgSignature = <K extends keyof MOOMOO_CLIENT_TO_SERVER_MAP>(
     type: K,
     ...args: MOOMOO_CLIENT_TO_SERVER_MAP[K]
 ) => void;

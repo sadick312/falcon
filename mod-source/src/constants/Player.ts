@@ -14,7 +14,7 @@ import { PlayerSimulationState } from "@simulation/SimulationStates";
 import ScriptConfig from "@utils/config/ScriptConfig";
 import lerp from "@utils/math/lerp";
 
-export interface IPlacePotential {
+interface IPlacePotential {
     onMe: Angle[];
     all: Angle[];
     objectScale: number;

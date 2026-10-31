@@ -1,4 +1,4 @@
-export type ConnectionStep =
+type ConnectionStep =
     | "server-list"
     | "protocol"
     | "captcha"

@@ -2,7 +2,7 @@ import Client from "@core/Client";
 import PacketMap from "@root/utils/socket/PacketMap";
 import getElem from "@utils/dom/getElem";
 
-export const allianceMenu = getElem<"div">("alliance-menu");
+const allianceMenu = getElem<"div">("alliance-menu");
 export const allianceHolder = getElem<"div">("alliance-holder");
 const allianceActionHolder = getElem<"div">("alliance-action-holder");
 

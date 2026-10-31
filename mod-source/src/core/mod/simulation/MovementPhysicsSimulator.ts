@@ -39,7 +39,7 @@ export interface DamageSimAction extends BaseSimAction {
     damage: number;
 }
 
-export type SimulationAction = DamageSimAction | KnockbackSimAction | PlacementSimAction;
+type SimulationAction = DamageSimAction | KnockbackSimAction | PlacementSimAction;
 
 export interface SimulationResult {
     spikesHit: number;
