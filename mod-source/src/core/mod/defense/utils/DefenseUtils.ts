@@ -70,30 +70,26 @@ export default class DefenseUtils {
         const projData = items.projectiles[projectileWeapon.id === STORE_HAT_MAP.TURRET_GEAR ? 1 : wpn.projectile!];
         const projRange = projData.range ?? 700;
 
+        // The rays are the same for every object.
+        const rayX = Math.cos(tmpDir) * projRange;
+        const rayY = Math.sin(tmpDir) * projRange;
+
         for (let i = 0, len = closeObjects.length; i < len; i++) {
             const gameObject = closeObjects[i];
-            const distSq = getDistSq(gameObject, enemyPos);
-            const tmpScale = gameObject.getScale() - .05;
-
             if (gameObject.ignoreCollision) continue;
 
-            const currentRaycast = lineInRect(
-                gameObject.x - tmpScale, gameObject.y - tmpScale,
-                gameObject.x + tmpScale, gameObject.y + tmpScale,
-                enemyPos.x, enemyPos.y,
-                enemyPos.x + Math.cos(tmpDir) * projRange,
-                enemyPos.y + Math.sin(tmpDir) * projRange
-            );
+            // Cheap tests before the raycasts.
+            if (projData.indx > gameObject.layer) continue;
+            if (playerDistSq <= getDistSq(gameObject, enemyPos)) continue;
 
-            const predRaycast = lineInRect(
-                gameObject.x - tmpScale, gameObject.y - tmpScale,
-                gameObject.x + tmpScale, gameObject.y + tmpScale,
-                enemyNextPos.x, enemyNextPos.y,
-                enemyNextPos.x + Math.cos(tmpDir) * projRange,
-                enemyNextPos.y + Math.sin(tmpDir) * projRange
-            );
+            const tmpScale = gameObject.getScale() - .05;
+            const minX = gameObject.x - tmpScale;
+            const minY = gameObject.y - tmpScale;
+            const maxX = gameObject.x + tmpScale;
+            const maxY = gameObject.y + tmpScale;
 
-            if (playerDistSq > distSq && projData.indx <= gameObject.layer && currentRaycast && predRaycast) {
+            const currentRaycast = lineInRect(minX, minY, maxX, maxY, enemyPos.x, enemyPos.y, enemyPos.x + rayX, enemyPos.y + rayY);
+            if (currentRaycast && lineInRect(minX, minY, maxX, maxY, enemyNextPos.x, enemyNextPos.y, enemyNextPos.x + rayX, enemyNextPos.y + rayY)) {
                 return false;
             }
         }
