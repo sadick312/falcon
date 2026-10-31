@@ -1,5 +1,5 @@
 
-export class Text {
+class Text {
     life: number = TextManager.LIFE;
     alpha: number = 1;
 

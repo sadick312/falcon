@@ -10,17 +10,17 @@
  */
 import readJson from "@utils/storage/readJson";
 
-export type HostMode = "moomoo-sandbox" | "moomodding";
+type HostMode = "moomoo-sandbox" | "moomodding";
 
 /**
  * "ticket": Turnstile captcha, POST /join for a ticket, protocol module + mixKey encryption.
  * "static": no join request; connect with `staticToken` and send plain msgpack.
  */
-export type HandshakeKind = "ticket" | "static";
+type HandshakeKind = "ticket" | "static";
 
-export type ServerListFormat = "moomoo" | "moomodding";
+type ServerListFormat = "moomoo" | "moomodding";
 
-export interface EndpointConfig {
+interface EndpointConfig {
     /** Origin of the REST API (server list + join). */
     apiOrigin: string;
     /** Origin of the official game page (serves the import map that points at the protocol module). */
@@ -39,7 +39,7 @@ export interface EndpointConfig {
 }
 
 /** Game client version the site runs. "1.8.2" packet layouts are converted by LegacyPacketAdapter. */
-export type GameVersion = "1.9.0" | "1.8.2";
+type GameVersion = "1.9.0" | "1.8.2";
 
 interface HostProfile {
     mode: HostMode;

@@ -3,7 +3,7 @@ import PingTracker from "@core/mod/utils/PingTracker";
 import Menu from "@menu/Menu";
 import ScriptConfig from "@utils/config/ScriptConfig";
 
-export const PacketAllocationPool = {
+const PacketAllocationPool = {
     ATTACK: 1,
     FOOD: 3,
     PLACE: 3,

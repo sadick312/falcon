@@ -2,7 +2,7 @@ import Menu, { ChatLog } from "../Menu";
 
 const CHAT_LOGGER_ID = "such_a_sigma_chat_logger";
 /** Oldest entries are dropped past this, one at a time. */
-export const MAX_CHAT_LOGS = 500;
+const MAX_CHAT_LOGS = 500;
 
 const CHAT_LOG_COLORS: Record<ChatLog["type"], string> = {
     chat: "var(--generic-white)",

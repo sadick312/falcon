@@ -13,7 +13,7 @@ import Menu from "@menu/Menu";
 import ScriptConfig from "@utils/config/ScriptConfig";
 import withinDist from "@utils/geometry/withinDist";
 
-export const gameObjects = new EntityHandler<GameObject>();
+const gameObjects = new EntityHandler<GameObject>();
 
 const riverWidth = 724;
 

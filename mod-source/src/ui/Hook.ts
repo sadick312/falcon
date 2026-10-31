@@ -46,7 +46,7 @@ function getMoveDir(): number | null {
 }
 
 const gameCanvas = getElem<"canvas">("game-canvas");
-export const chatInput = getElem<"input">("chat-input");
+const chatInput = getElem<"input">("chat-input");
 
 export class Input {
     static keys: Record<string | number, boolean> = {};
@@ -283,7 +283,7 @@ document.addEventListener("keyup", (event) => {
     }
 });
 
-export const nameInput = getElem<"input">("username-input");
+const nameInput = getElem<"input">("username-input");
 export const enterGameBtn = getElem<"button">("enter-game-btn");
 const allianceBtn = getElem<"button">("alliance-btn");
 
