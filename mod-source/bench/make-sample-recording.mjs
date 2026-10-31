@@ -2,7 +2,7 @@
 // (PacketRecorder.compileBinaryLog). It exists so the benchmark can run before you have a real recording;
 // its numbers say little about real games, so benchmark real .fpl files for decisions.
 //
-// Usage: node mod-source/bench/make-sample-recording.mjs [--name sample-synthetic] [--seconds 15] [--enemies 2] [--objects 40]
+// Usage: node mod-source/bench/make-sample-recording.mjs [--name sample-synthetic] [--seconds 15] [--enemies 2] [--objects 40] [--spikes 0] [--traps 0]
 // A longer, busier file (e.g. --name sample-busy --seconds 120 --enemies 6 --objects 160) lets the JIT warm up and
 // stresses the per-object and per-enemy loops.
 import { Encoder } from "@msgpack/msgpack";
@@ -18,6 +18,9 @@ const TICK_MS = 111;
 const DURATION_MS = Number(args.seconds ?? 15) * 1000;
 const ENEMIES = Number(args.enemies ?? 2);
 const OBJECTS = Number(args.objects ?? 40);
+// Extra enemy-owned spikes and traps scattered around the fight, like a base.
+const SPIKES = Number(args.spikes ?? 0);
+const TRAPS = Number(args.traps ?? 0);
 const ME = 1;
 const CENTER = { x: 5000, y: 5000 };
 
@@ -66,6 +69,12 @@ for (let i = 0; i < 8; i++) {
     objects.push(objectSid++, Math.round(CENTER.x + Math.cos(angle) * 130), Math.round(CENTER.y + Math.sin(angle) * 130), angle, 45, null, 6, 2);
 }
 objects.push(objectSid++, CENTER.x + 60, CENTER.y - 40, 0, 50, null, 15, Math.min(3, players.length));
+for (let i = 0; i < SPIKES + TRAPS; i++) {
+    const angle = random() * Math.PI * 2;
+    const dist = 90 + random() * 450;
+    const isTrap = i >= SPIKES;
+    objects.push(objectSid++, Math.round(CENTER.x + Math.cos(angle) * dist), Math.round(CENTER.y + Math.sin(angle) * dist), angle, isTrap ? 50 : 45, null, isTrap ? 15 : 6, 2 + (i % (players.length - 1)));
+}
 add(0, "H", [objects]);
 
 const lastAttributes = new Map();
@@ -118,4 +127,4 @@ for (const { time, type, data } of packets.sort((a, b) => a.time - b.time)) {
 
 fs.mkdirSync(outDir, { recursive: true });
 fs.writeFileSync(outPath, Buffer.concat(chunks));
-console.log(`Wrote ${path.relative(process.cwd(), outPath)} (${packets.length} packets, ${DURATION_MS / 1000} s, ${ENEMIES} enemies, ${OBJECTS} resources).`);
+console.log(`Wrote ${path.relative(process.cwd(), outPath)} (${packets.length} packets, ${DURATION_MS / 1000} s, ${ENEMIES} enemies, ${OBJECTS} resources, ${SPIKES} spikes, ${TRAPS} traps).`);

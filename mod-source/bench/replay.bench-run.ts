@@ -212,7 +212,7 @@ const median = (values: number[]) => {
 };
 const fmt = (n: number | undefined, digits = 3) => n === undefined ? "-" : n.toFixed(digits);
 
-interface Row { name: string; calls: number; avgMs: number; p95Ms: number; worstMs: number; msPerTick: number }
+interface Row { name: string; calls: number; avgMs: number; p95Ms: number; worstMs: number; msPerTick: number; /** The fastest run, less affected by other load on the machine than the median. */ minMsPerTick: number }
 
 function summarize(runs: RunResult[]): Row[] {
     const names = Object.keys(runs[0].profile);
@@ -226,7 +226,8 @@ function summarize(runs: RunResult[]): Row[] {
             avgMs: median(per.map(p => p.avgMs)),
             p95Ms: median(per.map(p => p.p95Ms ?? 0)),
             worstMs: Math.max(...per.map(p => p.worstMs)),
-            msPerTick: median(per.map(p => p.totalMs)) / ticks
+            msPerTick: median(per.map(p => p.totalMs)) / ticks,
+            minMsPerTick: Math.min(...per.map(p => p.totalMs)) / ticks
         };
     }).sort((a, b) => b.msPerTick - a.msPerTick);
 }
