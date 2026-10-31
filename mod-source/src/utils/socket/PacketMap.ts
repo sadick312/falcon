@@ -27,9 +27,11 @@ const PacketMap = {
         UPDATE_PLAYER_STATS: "V"
     },
 
+    /** Falcon-only packets. The server never sends them; Falcon logs them so replays can show its decisions. */
     CUSTOM_PACKETS: {
         SERVER_TO_CLIENT: {
-            ADD_PLACEMENT_MARKER: "Z",
+            // A name no game version uses. It was "Z" until v1.8.2 support: the game sends "Z" as the restart countdown.
+            ADD_PLACEMENT_MARKER: "falcon:marker",
             UPDATE_OBJECT_HEALTH: "p",
             VALUE_PEEK: "t"
         }
@@ -179,8 +181,10 @@ export interface MOOMOO_SERVER_TO_CLIENT_MAP {
     "Y": [sid: number, range: number];
     "7": [data: number[]];
 
+    "Z": [secondsLeft: number];
+
     // CUSTOM PACKETS:
-    "Z": [x: number, y: number, angle: number, id: number, placementType: PlacementType];
+    "falcon:marker": [x: number, y: number, angle: number, id: number, placementType: PlacementType];
     "p": [sid: number, health: number];
     "t": [data: number[]];
 

@@ -32,6 +32,7 @@ import RendererSystem from "@rendering/RendererSystem";
 import { IncomingServerPackets } from "@root/utils/socket/PacketLogging";
 import PacketMap, { MOOMOO_SERVER_TO_CLIENT_MAP } from "@root/utils/socket/PacketMap";
 import PacketRecorder from "@services/packet-recorder/PacketRecorder";
+import { showServerRestarting } from "@ui/ConnectionError";
 import { enterGameBtn } from "@ui/Hook";
 import { gameUI, loadingCirclePage, respawnPage } from "@ui/Loader";
 import ScriptConfig from "@utils/config/ScriptConfig";
@@ -481,6 +482,10 @@ export default class SocketListener {
 
         this.socket.on(PacketMap.SERVER_TO_CLIENT.UPDATE_ITEMS, (data, wpn) => {
             updateItems(data, wpn);
+        });
+
+        this.socket.on(PacketMap.SERVER_TO_CLIENT.SERVER_RESTARTING, (secondsLeft) => {
+            showServerRestarting(secondsLeft);
         });
 
         this.socket.on(PacketMap.CUSTOM_PACKETS.SERVER_TO_CLIENT.ADD_PLACEMENT_MARKER, (x, y, angle, id, placementType) => {

@@ -39,6 +39,26 @@ export function showConnectionError(step: ConnectionStep, detail: string) {
     if (reason) reason.innerText = `${STEP_LABELS[step]}: ${detail}`;
 }
 
+/** "Server restarting in m:ss", like the game's own countdown. The server repeats SERVER_RESTARTING while counting down. */
+export function showServerRestarting(secondsLeft: number) {
+    // The game ignores negative values too.
+    if (!(secondsLeft >= 0)) return;
+
+    let banner = document.getElementById("falcon-restart-notice");
+    if (!banner) {
+        banner = document.createElement("div");
+        banner.id = "falcon-restart-notice";
+        banner.style.cssText = "position:fixed;left:50%;top:16px;transform:translateX(-50%);z-index:99999;pointer-events:none;" +
+            "background:rgba(0,0,0,.6);color:#fff;padding:8px 14px;border-radius:8px;font:16px 'Hammersmith One',sans-serif;";
+        document.body.appendChild(banner);
+    }
+
+    const minutes = Math.floor(secondsLeft / 60);
+    const seconds = String(Math.floor(secondsLeft % 60)).padStart(2, "0");
+    banner.innerText = `Server restarting in ${minutes}:${seconds}`;
+    banner.style.display = "block";
+}
+
 let noticeTimer: number | undefined;
 
 /** Small non-blocking banner for failures that don't end anything (e.g. quick-connect lookup). */

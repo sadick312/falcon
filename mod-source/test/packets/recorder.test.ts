@@ -103,6 +103,17 @@ describe("PacketRecorder -> PacketReplayer", () => {
 });
 
 describe("PacketReplayer log parser", () => {
+    it("reads old recordings' 5-value \"Z\" as a placement marker and keeps the game's 1-value \"Z\"", () => {
+        // Before the rename, PlacementSystem logged its markers as "Z" with x, y, angle, item, placement type.
+        log("Z", [100, 200, 1.5, 6, 0]);
+        now += 100;
+        log(S2C.SERVER_RESTARTING, [65]);
+
+        const packets = readLog(PacketRecorder.compileBinaryLog()!).map(entry => entry.packetData);
+        expect(packets[0]).toEqual({ type: PacketMap.CUSTOM_PACKETS.SERVER_TO_CLIENT.ADD_PLACEMENT_MARKER, data: [100, 200, 1.5, 6, 0] });
+        expect(packets[1]).toEqual({ type: S2C.SERVER_RESTARTING, data: [65] });
+    });
+
     it("stops at a truncated log instead of throwing", () => {
         log(S2C.UPDATE_HEALTH, [1, 50]);
         log(S2C.UPDATE_HEALTH, [2, 60]);

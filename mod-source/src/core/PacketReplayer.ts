@@ -154,7 +154,11 @@ export default class PacketReplayer {
 
             const decoded = replayDecoder.decode(packetRawBytes) as [string, any];
             const packetData = {
-                type: decoded[0],
+                // Recordings made before the marker packet was renamed log it as a 5-value "Z"; the game's
+                // own "Z" (restart countdown) has one value.
+                type: decoded[0] === PacketMap.SERVER_TO_CLIENT.SERVER_RESTARTING && Array.isArray(decoded[1]) && decoded[1].length === 5
+                    ? PacketMap.CUSTOM_PACKETS.SERVER_TO_CLIENT.ADD_PLACEMENT_MARKER
+                    : decoded[0],
                 data: decoded[1]
             };
 
