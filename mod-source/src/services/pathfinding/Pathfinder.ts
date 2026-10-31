@@ -76,8 +76,26 @@ export default class Pathfinder {
         return this.OBJECT_BOUNDS_BUFFER;
     }
 
+    /**
+     * Requests in the order they were posted, each with its own grid origin. The worker answers one at a time,
+     * in order, so each reply belongs to the oldest pending request. (A `once` listener per request made every
+     * pending request take the first reply, and map it with its own, different origin.)
+     */
+    private static pending: { minX: number; minY: number; resolve: (path: Point[]) => void }[] = [];
+
     private static initWorker() {
         this.worker = new PathfindWorker();
+        this.worker.addEventListener("message", (ev) => {
+            const request = this.pending.shift();
+            if (!request) return;
+
+            const pathData = ev.data as { path: Point[], grid: Uint8Array };
+            const doubleSize = this.DOUBLE_CELL_SIZE;
+            request.resolve(pathData.path.map(p => ({
+                x: request.minX + (p.x * doubleSize),
+                y: request.minY + (p.y * doubleSize)
+            })));
+        });
     }
 
     private static PARSED_START_BUFFER = { x: 0, y: 0 };
@@ -151,20 +169,10 @@ export default class Pathfinder {
             }
         }
 
-        return new Promise((res) => {
-            const worker = this.worker;
+        return new Promise((resolve) => {
+            this.pending.push({ minX, minY, resolve });
 
-            worker.addEventListener("message", (ev) => {
-                const pathData = ev.data as { path: Point[], grid: Uint8Array };
-                const worldPath = pathData.path.map(p => ({
-                    x: minX + (p.x * doubleSize),
-                    y: minY + (p.y * doubleSize)
-                }));
-
-                res(worldPath);
-            }, { once: true });
-
-            worker.postMessage({
+            this.worker.postMessage({
                 grid,
                 xCells,
                 yCells,
