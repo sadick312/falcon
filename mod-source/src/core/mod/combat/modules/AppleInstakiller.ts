@@ -102,6 +102,4 @@ export default class AppleInstakiller extends CombatModule {
         attackAction.onSelect = () => PlacementSystem.blockTrapPlacement(enemyTrap, 2);
         AttackManager.addAttackQueue(attackAction);
     }
-
-    update() { }
 }

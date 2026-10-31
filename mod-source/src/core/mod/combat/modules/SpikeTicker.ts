@@ -24,6 +24,10 @@ export default class SpikeTicker extends CombatModule {
 
     consider = false;
 
+    override reset() {
+        this.consider = false;
+    }
+
     protected canExecute() {
         if (!this.consider) return false;
         if (AttackManager.isAttacking()) return false;
@@ -60,6 +64,4 @@ export default class SpikeTicker extends CombatModule {
         AttackManager.spikeTicker.consider = false;
         this.commit();
     }
-
-    update() { }
 }

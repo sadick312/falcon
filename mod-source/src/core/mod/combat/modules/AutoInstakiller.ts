@@ -292,6 +292,4 @@ export default class AutoInstakiller extends CombatModule {
         AttackManager.addAttackQueue(attackAction);
         AttackManager.autoInstaToggle = false;
     }
-
-    update() { }
 }

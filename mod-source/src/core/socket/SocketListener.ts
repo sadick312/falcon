@@ -10,6 +10,7 @@ import PlayerManager from "@core/logic/players/PlayerManager";
 import PotentialObjectManager from "@core/logic/PotentialObjectManager";
 import ProjectileManager from "@core/logic/ProjectileManager";
 import TextManager from "@core/logic/TextManager";
+import AttackManager from "@core/mod/combat/core/AttackManager";
 import CombatController from "@core/mod/combat/core/CombatController";
 import PlacementSystem from "@core/mod/combat/core/PlacementSystem";
 import AutoBuyer from "@core/mod/utils/AutoBuyer";
@@ -311,6 +312,7 @@ export default class SocketListener {
 
             if (isYou) {
                 Client.isAlive = true;
+                AttackManager.resetModules();
                 Client.upgradesObtained.clear();
                 Client.mySID = tmpPlayer.sid;
                 Client.player = tmpPlayer;

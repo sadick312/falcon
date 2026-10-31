@@ -85,7 +85,7 @@ export default class AutoPusherStriker extends CombatModule {
         }
     }
 
-    update() {
+    override update() {
         this.predictiveMethod.update();
     }
 }

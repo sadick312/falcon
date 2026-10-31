@@ -51,6 +51,4 @@ export default class ProjectileSyncer extends CombatModule {
         AttackManager.prepareBullHitSequence(attackAction.sequence, "projSync");
         AttackManager.addAttackQueue(attackAction);
     }
-
-    update() { }
 }

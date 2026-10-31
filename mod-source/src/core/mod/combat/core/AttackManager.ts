@@ -53,6 +53,11 @@ export default class AttackManager {
         this.oneTicker
     ];
 
+    /** Called when we spawn, so no module acts on something it remembered from the previous life. */
+    static resetModules() {
+        for (const module of this.modules) module.reset();
+    }
+
     static get currentAttackActions(): Readonly<AttackAction>[] {
         return this._currentAttackActions;
     }

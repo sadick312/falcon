@@ -85,6 +85,4 @@ export default class DefensiveKnockbacker extends DefenseModule {
         attackAction.sequence[0].skinData[0] = turretReload === 1 ? STORE_HAT_MAP.TURRET_GEAR : STORE_HAT_MAP.SOLDIER_HELMET;
         AttackManager.addAttackQueue(attackAction);
     }
-
-    update() { }
 }

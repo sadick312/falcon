@@ -28,6 +28,10 @@ export default class AntiBuller extends CombatModule {
 
     consider = false;
 
+    override reset() {
+        this.consider = false;
+    }
+
     private commit() {
         const attackAction = this.attackAction;
         AttackManager.prepareBullHitSequence(attackAction.sequence, "pAB");
@@ -116,6 +120,4 @@ export default class AntiBuller extends CombatModule {
         if (!consider) return;
         this.consider = true;
     }
-
-    update() { }
 }

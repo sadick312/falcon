@@ -105,3 +105,17 @@ describe("while we're dead", () => {
         }
     });
 });
+
+describe("attack modules", () => {
+    it("forget per-life flags when we spawn", async () => {
+        const { default: AttackManager } = await import("@core/mod/combat/core/AttackManager");
+        AttackManager.oneTicker.tapMode = true;
+        AttackManager.antiBuller.consider = true;
+        AttackManager.spikeTicker.consider = true;
+
+        AttackManager.resetModules();
+
+        expect([AttackManager.oneTicker.tapMode, AttackManager.antiBuller.consider, AttackManager.spikeTicker.consider])
+            .toEqual([false, false, false]);
+    });
+});

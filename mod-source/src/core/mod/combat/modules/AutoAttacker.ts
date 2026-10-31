@@ -102,6 +102,4 @@ export default class AutoAttacker extends CombatModule {
         AttackManager.prepareBullHitSequence(attackAction.sequence);
         AttackManager.addAttackQueue(attackAction);
     }
-
-    update() { }
 }

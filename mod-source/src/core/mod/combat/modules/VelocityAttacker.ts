@@ -70,6 +70,4 @@ export default class VelocityAttacker extends CombatModule {
         AttackManager.prepareBullHitSequence(attackAction.sequence, "velBullHit");
         AttackManager.addAttackQueue(attackAction);
     }
-
-    update() { }
 }

@@ -91,6 +91,4 @@ export default class AutoMeleeSyncer extends CombatModule {
         attackAction.sequence[0].customAim = Math.atan2(angleY, angleX);
         AttackManager.addAttackQueue(attackAction);
     }
-
-    update() { }
 }
