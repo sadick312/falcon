@@ -1,5 +1,5 @@
 // Settings, favorites and saved configs, through Menu and the real config UI.
-import Menu, { menuContent } from "@menu/Menu";
+import Menu, { menuContent, SETTINGS_VERSION } from "@menu/Menu";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
 const SETTINGS = "falcon-settings";
@@ -65,6 +65,64 @@ describe("settings", () => {
         expect(({} as Record<string, unknown>).polluted).toBeUndefined();
         expect(Menu.itemMap.noSuchItem).toBeUndefined();
         expect(Menu.getValue(TOGGLE)).toBe(false);
+    });
+});
+
+describe("settings versioning", () => {
+    const SLIDER = "autoPlaceRange";
+    const SELECT = "attackInPush:dagger_method";
+
+    it("saves the format version with the settings", async () => {
+        reset();
+        Menu.setValue("autoSaveSettings", true);
+        await Menu.saveSettings();
+        expect(JSON.parse(localStorage.getItem(SETTINGS)!).__version).toBe(SETTINGS_VERSION);
+    });
+
+    it("loads settings saved before versioning existed", async () => {
+        reset();
+        localStorage.setItem(SETTINGS, JSON.stringify({ [TOGGLE]: false, [SLIDER]: "650" }));
+        await Menu.loadSettings();
+        expect(Menu.getValue(TOGGLE)).toBe(false);
+        expect(Menu.getValue(SLIDER)).toBe("650");
+    });
+
+    it("keeps the default when a saved value doesn't fit its setting", async () => {
+        reset();
+        localStorage.setItem(SETTINGS, JSON.stringify({
+            __version: SETTINGS_VERSION,
+            [TOGGLE]: "yes",
+            [SLIDER]: "far",
+            [SELECT]: 99
+        }));
+        await Menu.loadSettings();
+        expect(Menu.getValue(TOGGLE)).toBe(initial[TOGGLE]);
+        expect(Menu.getValue(SLIDER)).toBe(initial[SLIDER]);
+        expect(Menu.getValue(SELECT)).toBe(initial[SELECT]);
+    });
+
+    it("accepts every value the menu itself stores: defaults, slider text and select option text", async () => {
+        reset();
+        const option = Menu.itemMap[SELECT].options![1].value;
+        await Menu.loadSettings({ ...Menu.collectSettings(), [SLIDER]: "500", [SELECT]: String(option) });
+        expect(Menu.getValue(SLIDER)).toBe("500");
+        expect(String(Menu.getValue(SELECT))).toBe(String(option));
+
+        // Round trip of all defaults: nothing a fresh menu saves may be rejected when loaded back.
+        reset();
+        const defaults = Menu.collectSettings();
+        for (const item of Object.values(Menu.itemMap)) item.status = undefined;
+        await Menu.loadSettings(defaults);
+        for (const [id, value] of Object.entries(defaults)) {
+            if (id !== "__version" && value !== undefined) expect([id, Menu.getValue(id)]).toEqual([id, value]);
+        }
+    });
+
+    it("ignores saved data that isn't an object", async () => {
+        reset();
+        localStorage.setItem(SETTINGS, "[1, 2, 3]");
+        await Menu.loadSettings();
+        expect(snapshotStatuses()).toEqual(initial);
     });
 });
 

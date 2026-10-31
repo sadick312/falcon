@@ -22,17 +22,8 @@ export default function drawConfigUI() {
 
     saveButton.onclick = async () => {
         if (nameInput.value) {
-            const savedCache: Record<string, any> = {};
-
-            for (const id in Menu.itemMap) {
-                const item = Menu.itemMap[id];
-                if (item.neverSave) continue;
-                if (item.type === "paragraph") continue;
-                savedCache[item.id] = item.status;
-            }
-
             const savedConfigs = readJson<SavedConfigs>("falcon-configs", {});
-            savedConfigs[nameInput.value] = savedCache;
+            savedConfigs[nameInput.value] = Menu.collectSettings();
             localStorage.setItem("falcon-configs", JSON.stringify(savedConfigs));
             Menu.renderItems(menuContent.configs);
         }
