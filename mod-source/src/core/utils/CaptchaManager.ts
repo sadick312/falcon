@@ -1,6 +1,11 @@
 import Client from "@core/Client";
+import Endpoints from "@constants/Endpoints";
 import Socket, { MixKeyFunc } from "@core/socket/Socket";
 import SocketListener from "@core/socket/SocketListener";
+import ProtocolLoader from "@core/utils/ProtocolLoader";
+import { fetchJson, NetworkError } from "@services/network/Http";
+import { REQUEST_TIMEOUT_MS } from "@constants/Endpoints";
+import { showConnectionError } from "@ui/ConnectionError";
 import getElem from "@utils/dom/getElem";
 
 declare const turnstile: Turnstile.Turnstile;
@@ -20,57 +25,68 @@ export interface MooMooProtocol {
 export default class CaptchaManager {
     private static widgetId: string | null | undefined = null;
 
-    static async renderChallenge(wsAddress: string) {
-        if (typeof turnstile === "undefined") return;
+    /** Resolves with a Turnstile token, or rejects with a readable reason. Always cleans up the widget. */
+    private static solveChallenge(): Promise<string> {
+        return new Promise<string>((resolve, reject) => {
+            if (typeof turnstile === "undefined") {
+                reject(new NetworkError("captcha", "Cloudflare Turnstile script did not load (blocked or offline?)"));
+                return;
+            }
 
-        const captchaToken = wsAddress.includes("localhost") ? "lol" : await (new Promise<string | undefined>((res) => {
             this.widgetId = turnstile.render(getElem("turnstile-holder"), {
-                sitekey: "0x4AAAAAAAMYHI96GFiJzMmp",
+                sitekey: Endpoints.config.turnstileSiteKey,
                 theme: "light",
-                "error-callback": (err) => res(undefined),
-                callback: (e) => res(e)
+                callback: (token) => resolve(token),
+                "error-callback": (code) => reject(new NetworkError("captcha", `Turnstile error ${code}`)),
+                "timeout-callback": () => reject(new NetworkError("captcha", "Challenge timed out")),
+                "unsupported-callback": () => reject(new NetworkError("captcha", "Browser not supported by Turnstile"))
             });
-        }));
+        }).finally(() => {
+            if (typeof this.widgetId === "string") {
+                turnstile.remove(this.widgetId);
+                this.widgetId = null;
+            }
+        });
+    }
 
-        if (typeof captchaToken !== "string") {
-            alert("Error occured with cloudflare turnstile. Please reload the page.");
-            return;
-        }
-
-        if (typeof this.widgetId === "string") {
-            turnstile.remove(this.widgetId);
-            this.widgetId = null;
-        }
-
-        const res = await fetch("https://api-sandbox2.moomoo.io/join", {
+    private static async join(wsAddress: string, captchaToken: string): Promise<ServerJoinRequest> {
+        const data = await fetchJson<Partial<ServerJoinRequest>>(Endpoints.joinUrl(), {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 captcha: captchaToken,
                 did: localStorage.getItem("moo_did") ?? undefined,
                 host: wsAddress
-            }),
-            signal: AbortSignal.timeout(8e3)
-        });
+            })
+        }, { step: "join", timeoutMs: REQUEST_TIMEOUT_MS });
 
-        const data = (await res.json()) as ServerJoinRequest;
-        const ticketToken = `tk:${data.ticket}`;
-        localStorage.setItem("moo_did", data.did);
+        if (typeof data?.ticket !== "string" || typeof data?.did !== "string") {
+            throw new NetworkError("join", "Join response is missing 'ticket' or 'did'. The join API may have changed.");
+        }
 
-        let fullWsAddress = "";
-        if (wsAddress.includes("localhost")) fullWsAddress += "ws://";
-        else fullWsAddress += "wss://";
+        return data as ServerJoinRequest;
+    }
 
-        // vvv very very OP coding:
-        const buildFile = (window as any).oldHTML.match(/"imports"\s*:\s*\{\s*"moomoo-protocol"\s*:\s*"([^"]+)"/g)[0].split("\":\"")[1].slice(1, -1);
-        const moduleUrl = `https://sandbox.moomoo.io/${buildFile}`;
-        const moomooProtocol = (await import(moduleUrl)) as MooMooProtocol;
+    static async renderChallenge(wsAddress: string) {
+        let step: "protocol" | "captcha" | "join" = "protocol";
 
-        fullWsAddress += `${wsAddress}/?token=${encodeURIComponent(ticketToken)}&b=${moomooProtocol.BUILD_ID}`;
-        Client.socket = new Socket(fullWsAddress, moomooProtocol);
-        SocketListener.hookEvents(Client.socket);
+        try {
+            // Resolve the protocol first so we don't spend a captcha / single-use ticket if it can't be found.
+            const protocol = await ProtocolLoader.load();
+
+            step = "captcha";
+            const captchaToken = Endpoints.isLocalHost(wsAddress) ? "lol" : await this.solveChallenge();
+
+            step = "join";
+            const joined = await this.join(wsAddress, captchaToken);
+            localStorage.setItem("moo_did", joined.did);
+
+            Client.socket = new Socket(Endpoints.socketUrl(wsAddress, joined.ticket, protocol.BUILD_ID), protocol);
+            SocketListener.hookEvents(Client.socket);
+        } catch (err) {
+            const failedStep = err instanceof NetworkError ? err.step as typeof step : step;
+            showConnectionError(failedStep, err instanceof Error ? err.message : String(err));
+        }
     }
 
     static reset() {

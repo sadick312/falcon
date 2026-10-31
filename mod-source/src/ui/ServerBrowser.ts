@@ -1,4 +1,7 @@
 import Client from "@core/Client";
+import Endpoints, { REQUEST_TIMEOUT_MS, SERVER_LIST_RETRIES, SERVER_LIST_TTL_MS } from "@constants/Endpoints";
+import { fetchJson, NetworkError } from "@services/network/Http";
+import { showConnectionNotice } from "@ui/ConnectionError";
 import { mainMenu } from "@ui/Loader";
 import getElem from "@utils/dom/getElem";
 
@@ -27,12 +30,53 @@ const regionDescriptions = {
 };
 
 export default class ServerBrowser {
-    private static async getData() {
-        const res = await fetch("https://api-sandbox2.moomoo.io/servers?v=1.28");
-        if (!res.ok) return [];
+    private static cache?: { at: number; data: MooMooPublicServer[] };
+    private static inflight?: Promise<MooMooPublicServer[]>;
 
-        const data = await res.json();
-        return data as MooMooPublicServer[];
+    private static isServer(entry: any): entry is MooMooPublicServer {
+        return !!entry
+            && typeof entry.key === "string"
+            && typeof entry.region === "string"
+            && typeof entry.name === "string"
+            && typeof entry.playerCount === "number";
+    }
+
+    private static async fetchList() {
+        const raw = await fetchJson<unknown>(Endpoints.serverListUrl(), {}, {
+            step: "server-list",
+            timeoutMs: REQUEST_TIMEOUT_MS,
+            retries: SERVER_LIST_RETRIES
+        });
+
+        if (!Array.isArray(raw)) {
+            throw new NetworkError("server-list", "Server list response is not an array. The API may have changed.");
+        }
+
+        const servers = raw.filter((entry) => this.isServer(entry));
+        if (raw.length > 0 && servers.length === 0) {
+            throw new NetworkError("server-list", "Server list entries have an unexpected shape. The API may have changed.");
+        }
+
+        return servers;
+    }
+
+    /** Cached for SERVER_LIST_TTL_MS; concurrent callers share one request. Throws NetworkError on failure. */
+    static async getData(force = false): Promise<MooMooPublicServer[]> {
+        if (!force && this.cache && Date.now() - this.cache.at < SERVER_LIST_TTL_MS) return this.cache.data;
+        if (this.inflight) return this.inflight;
+
+        this.inflight = this.fetchList()
+            .then((data) => {
+                this.cache = { at: Date.now(), data };
+                return data;
+            })
+            .finally(() => { this.inflight = undefined; });
+
+        return this.inflight;
+    }
+
+    private static errorMessage(err: unknown) {
+        return err instanceof Error ? err.message : String(err);
     }
 
     static selectedOption: MooMooPublicServer | undefined;
@@ -86,7 +130,7 @@ export default class ServerBrowser {
         serverBrowser.appendChild(button);
     }
 
-    private static async render() {
+    private static async render(force = false) {
         this.selectionIndex = -1;
         this.selectedOption = undefined;
         connectToServerBtn.classList.add("disabled");
@@ -97,7 +141,16 @@ export default class ServerBrowser {
             i--;
         }
 
-        const data = await this.getData();
+        let data: MooMooPublicServer[];
+        try {
+            data = [...await this.getData(force)];
+        } catch (err) {
+            serverBrowserLoadingText.style.display = "none";
+            refreshServersBtn.classList.remove("disabled");
+            showConnectionNotice("server-list", this.errorMessage(err));
+            return;
+        }
+
         data.sort((a, b) => b.playerCount - a.playerCount);
 
         for (let i = 0; i < data.length; i++) {
@@ -109,15 +162,26 @@ export default class ServerBrowser {
     }
 
     static async getHighest(region: string) {
-        const data = await this.getData();
-        const filtered = data.filter(e => e.region === region);
-        return filtered.sort((a, b) => b.playerCount - a.playerCount)[0];
+        try {
+            const data = await this.getData();
+            return data.filter(e => e.region === region).sort((a, b) => b.playerCount - a.playerCount)[0];
+        } catch (err) {
+            showConnectionNotice("server-list", this.errorMessage(err));
+            return undefined;
+        }
     }
 
-    static async doesExist(serverKey: string) {
+    /** true / false when known, undefined when the list couldn't be fetched. */
+    static async doesExist(serverKey: string): Promise<boolean | undefined> {
         const [key, region] = serverKey.split(":");
-        const data = await this.getData();
-        return data.some(e => e.key === key && e.region === region);
+
+        try {
+            const data = await this.getData();
+            return data.some(e => e.key === key && e.region === region);
+        } catch (err) {
+            showConnectionNotice("server-list", this.errorMessage(err));
+            return undefined;
+        }
     }
 
     static async start() {
@@ -132,7 +196,7 @@ export default class ServerBrowser {
 
         refreshServersBtn.onclick = () => {
             refreshServersBtn.classList.add("disabled");
-            this.render();
+            this.render(true);
         };
 
         cancelServerBrowser.onclick = () => {

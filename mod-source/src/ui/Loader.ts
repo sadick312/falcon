@@ -88,8 +88,9 @@ function hookMainMenuBtns() {
             ServerBrowser.selectedOption = mostActiveServer;
             Client.connect(mostActiveServer.key, region, mostActiveServer.name);
         } else {
+            // getHighest() returns undefined both for "no servers in region" and for a failed fetch
+            // (the latter already showed a notice), so only hide the button when the fetch itself worked.
             loadingCirclePage.style.display = "none";
-            largestRecentMultiplayerBtn.style.display = "none";
         }
     };
 
@@ -97,12 +98,14 @@ function hookMainMenuBtns() {
         const serverKey = localStorage.getItem("falcon-recent-server")!;
         loadingCirclePage.style.display = "flex";
 
-        if (await ServerBrowser.doesExist(serverKey)) {
+        const exists = await ServerBrowser.doesExist(serverKey);
+        if (exists) {
             const [key, region, name] = serverKey.split(":");
             Client.connect(key, region, name);
         } else {
             loadingCirclePage.style.display = "none";
-            recentMultiplayerBtn.style.display = "none";
+            // undefined = the list could not be fetched; keep the button so the user can retry.
+            if (exists === false) recentMultiplayerBtn.style.display = "none";
         }
     };
 

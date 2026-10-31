@@ -1,3 +1,4 @@
+import { HANDSHAKE_TIMEOUT_MS } from "@constants/Endpoints";
 import { deathText } from "@core/Client";
 import GameEventTracker from "@core/mod/utils/GameEventTracker";
 import CustomEncoder from "@core/socket/CustomEncoder";
@@ -12,6 +13,7 @@ import { decode } from "@msgpack/msgpack";
 import PacketMap, { MOOMOO_CLIENT_TO_SERVER_MAP, MOOMOO_SERVER_TO_CLIENT_MAP } from "@root/utils/socket/PacketMap";
 import TaskScheduler from "@services/event-timer/TaskScheduler";
 import PacketRecorder from "@services/packet-recorder/PacketRecorder";
+import { showConnectionError } from "@ui/ConnectionError";
 import { enterGameBtn } from "@ui/Hook";
 import { gameUI, respawnPage } from "@ui/Loader";
 import getElem from "@utils/dom/getElem";
@@ -40,6 +42,11 @@ export default class Socket extends WebSocket {
 
     isPrivateServer = false;
 
+    private hasOpened = false;
+    private handshakeDone = false;
+    private errorShown = false;
+    private handshakeTimer: number | undefined;
+
     constructor(url: string, socketProtocol: MooMooProtocol) {
         super(url);
 
@@ -52,17 +59,48 @@ export default class Socket extends WebSocket {
         this.onclose = (ev) => this.onClose(ev);
     }
 
-    private onClose(ev: CloseEvent) {
-        respawnPage.style.display = "flex";
-        disconnectedPage.style.display = "flex";
-        respawnMainCard.style.display = "none";
-        deathText.style.display = "none";
-        gameUI.style.display = "none";
+    private clearHandshakeTimer() {
+        if (this.handshakeTimer === undefined) return;
+        clearTimeout(this.handshakeTimer);
+        this.handshakeTimer = undefined;
+    }
 
-        disconnectedReason.innerText = ev.reason || "No reason provided";
+    private onClose(ev: CloseEvent) {
+        this.clearHandshakeTimer();
+        SocketListener.stopPinging();
+
+        if (this.errorShown) return;
+        const code = `code ${ev.code}`;
+
+        // The browser gives no detail for failed connections, only code 1006.
+        if (!this.hasOpened) {
+            showConnectionError("socket-open", `${code}${ev.reason ? `, ${ev.reason}` : ""}. The server refused or could not be reached (bad/expired ticket, wrong host, or build id mismatch).`);
+        } else if (!this.handshakeDone) {
+            showConnectionError("handshake", `${code}${ev.reason ? `, ${ev.reason}` : ""}. Closed before the server sent its init packet.`);
+        } else {
+            respawnPage.style.display = "flex";
+            disconnectedPage.style.display = "flex";
+            respawnMainCard.style.display = "none";
+            deathText.style.display = "none";
+            gameUI.style.display = "none";
+
+            disconnectedReason.innerText = ev.reason ? `${ev.reason} (${code})` : `No reason provided (${code})`;
+        }
     }
 
     private onOpen(_ev: Event) {
+        this.hasOpened = true;
+
+        // Local private servers use the plain encoder and may never send io-init, so don't police them.
+        if (this.isPrivateServer) this.handshakeDone = true;
+
+        if (!this.handshakeDone) this.handshakeTimer = window.setTimeout(() => {
+            if (this.handshakeDone) return;
+            this.errorShown = true;
+            showConnectionError("handshake", `No init packet from the server within ${HANDSHAKE_TIMEOUT_MS / 1000}s.`);
+            this.close();
+        }, HANDSHAKE_TIMEOUT_MS);
+
         PacketRecorder.init();
         PacketBatcher.init(this);
         enterGameBtn.classList.remove("disabled");
@@ -99,6 +137,8 @@ export default class Socket extends WebSocket {
         if (parsed[0] === "io-init") {
             const [id, seed, salt] = parsed[1] as MOOMOO_SERVER_TO_CLIENT_MAP["io-init"];
             this.manager.init(id, seed, salt, this.socketProtocol);
+            this.handshakeDone = true;
+            this.clearHandshakeTimer();
             return;
         }
 

@@ -119,6 +119,15 @@ export default class SocketListener {
         WebhookSender.send(fileName, buffer as any);
     }
 
+    private static pingTimer: number | undefined;
+
+    /** Stops the 1s ping loop. Called when the socket closes so the interval doesn't outlive it. */
+    static stopPinging() {
+        if (this.pingTimer === undefined) return;
+        clearInterval(this.pingTimer);
+        this.pingTimer = undefined;
+    }
+
     static hookEvents(socket: Socket | FakeSocket) {
         if (this.isInitialized) return;
 
@@ -127,7 +136,8 @@ export default class SocketListener {
 
         if (socket instanceof Socket) {
             this.pingSocket();
-            setInterval(() => this.pingSocket(), 1e3);
+            this.stopPinging();
+            this.pingTimer = window.setInterval(() => this.pingSocket(), 1e3);
         }
 
         const playerUpdateEvent = new PlayerUpdateEvent(this.socket);

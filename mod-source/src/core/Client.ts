@@ -1,3 +1,4 @@
+import Endpoints, { LOCAL_SERVER_HOST } from "@constants/Endpoints";
 import GameObject from "@constants/GameObject";
 import Player from "@constants/Player";
 import PlayerManager from "@core/logic/players/PlayerManager";
@@ -81,10 +82,10 @@ export default class Client {
 
         const selection = ServerBrowser.selectedOption;
         const wsAddress = key && region ?
-            `${key}.${region}.moomoo.io` :
+            Endpoints.gameHost(key, region) :
             typeof selection === "undefined" ?
-                "localhost:1234" :
-                `${selection.key}.${selection.region}.moomoo.io`;
+                LOCAL_SERVER_HOST :
+                Endpoints.gameHost(selection.key, selection.region);
 
         if (selection?.region) {
             localStorage.setItem("falcon-recent-server", `${selection.key}:${selection.region}:${selection.name}`);
