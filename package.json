@@ -23,7 +23,9 @@
         "test": "vitest run",
         "inject:build": "npm run build --workspace=mod-source && npm run build:inject --workspace=mod-source",
         "format": "prettier --write .",
-        "format:check": "prettier --check ."
+        "format:check": "prettier --check .",
+        "lint": "node tools/lint/node_modules/eslint/bin/eslint.js .",
+        "postinstall": "npm ci --prefix tools/lint --no-workspaces --no-audit --no-fund"
     },
     "allowScripts": {
         "esbuild@0.27.7": true,

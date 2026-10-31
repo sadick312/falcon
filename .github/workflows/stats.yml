@@ -20,6 +20,9 @@ jobs:
 
       - run: npm run typecheck
 
+      # npm ci's postinstall also installed tools/lint (ESLint with its own TypeScript 6).
+      - run: npm run lint
+
       - run: npm test
 
       # Builds both workspaces, then compares against the committed stats/history.json (if any).
