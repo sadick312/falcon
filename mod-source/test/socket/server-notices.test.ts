@@ -6,6 +6,7 @@ type Handlers = Record<string, (...args: unknown[]) => void>;
 let handlers: Handlers;
 let Client: typeof import("@core/Client").default;
 
+// Loads the menu and client afresh for each test, which can pass the 10 s default hook limit when the whole suite runs at once.
 beforeEach(async () => {
     vi.resetModules();
     document.getElementById("falcon-restart-notice")?.remove();
@@ -18,7 +19,7 @@ beforeEach(async () => {
     Client.mode = "replay";
     await Client.connect();
     handlers = (Client.socket as unknown as { handlers: Handlers }).handlers;
-});
+}, 30_000);
 
 describe("server restart countdown (Z)", () => {
     it("shows the time left as m:ss and updates it", () => {
