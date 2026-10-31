@@ -133,9 +133,18 @@ export default class PlacementSystem {
         return count;
     }
 
+    /**
+     * Markers are only marked inactive by the renderer, which doesn't run while Render Placements is off or the tab
+     * is hidden. Past this many, the oldest marker is reused instead of growing the list. Far more than fit on screen.
+     */
+    private static readonly MAX_MARKERS = 256;
+    private static oldestMarker = 0;
+
     static addMarkerRaw(x: number, y: number, angle: number, id: number, placementType: PlacementType) {
-        for (let i = 0; i < Client.markers.length; i++) {
-            const marker = Client.markers[i];
+        const markers = Client.markers;
+
+        for (let i = 0; i < markers.length; i++) {
+            const marker = markers[i];
 
             if (marker && !marker.active) {
                 marker.redefine(x, y, angle, id, placementType);
@@ -143,20 +152,17 @@ export default class PlacementSystem {
             }
         }
 
-        Client.markers.push(new Marker(x, y, angle, id, placementType));
+        if (markers.length < this.MAX_MARKERS) {
+            markers.push(new Marker(x, y, angle, id, placementType));
+            return;
+        }
+
+        markers[this.oldestMarker].redefine(x, y, angle, id, placementType);
+        this.oldestMarker = (this.oldestMarker + 1) % this.MAX_MARKERS;
     }
 
     static addMarker(angleData: Angle | Replacement | Preplacement, placementType: PlacementType) {
-        for (let i = 0; i < Client.markers.length; i++) {
-            const marker = Client.markers[i];
-
-            if (marker && !marker.active) {
-                marker.redefine(angleData.x, angleData.y, angleData.angle, angleData.id, placementType);
-                return;
-            }
-        }
-
-        Client.markers.push(new Marker(angleData.x, angleData.y, angleData.angle, angleData.id, placementType));
+        this.addMarkerRaw(angleData.x, angleData.y, angleData.angle, angleData.id, placementType);
     }
 
     static sendMarker(angleData: Angle | Replacement | Preplacement, placementType: PlacementType) {

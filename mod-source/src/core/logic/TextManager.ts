@@ -76,10 +76,19 @@ export default class TextManager {
     static LIFE = 1250;
     static SIZE = 50;
 
+    /**
+     * Texts are only removed by the renderer when they fade out, and a hidden tab doesn't render. Past this many,
+     * the oldest is dropped, so the map can't grow while the tab is in the background. Far more than fit on screen.
+     */
+    static MAX_TEXTS = 500;
+
     static texts: Map<number, Text> = new Map();
 
     static add(x: number, y: number, text: number | string, type: number) {
         const id = Math.floor(Math.random() * 99999);
         this.texts.set(id, new Text(x, y, text, type, id));
+
+        // Maps iterate in insertion order, so the first key is the oldest text.
+        if (this.texts.size > this.MAX_TEXTS) this.texts.delete(this.texts.keys().next().value!);
     }
 }
