@@ -35,8 +35,10 @@ export default function updateUpgrades(points: number, age: number) {
 
         for (let i = 0; i < items.list.length; i++) {
             const item = items.list[i];
+            // Like weapons above, and like the game: a building is only offered once you own its prerequisite.
+            const hasPrerequisite = item.pre === undefined || Client.player.items.indexOf(item.pre) >= 0;
 
-            if (item.age == age) {
+            if (item.age == age && (Client.socket.isPrivateServer || hasPrerequisite)) {
                 const tmpId = i + items.weapons.length;
                 const elem = document.createElement("div");
                 elem.id = `upgrade-item-${tmpId}`;

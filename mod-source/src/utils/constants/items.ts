@@ -892,5 +892,11 @@ export const WEAPON_ID_MAP = {
     MUSKET: 15
 } as const;
 
+// A building's `pre` above is written the way the game's source writes it: how many entries back its
+// prerequisite is (castle wall: 1 back = stone wall). The game turns it into that item's id when it loads; so does this.
+for (const item of list) {
+    if (item.pre) item.pre = item.id - item.pre;
+}
+
 const items: Items = { groups, projectiles, weapons, list };
 export default items;
