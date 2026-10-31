@@ -1,0 +1,15 @@
+{
+    "name": "falcon-lint",
+    "private": true,
+    "version": "1.0.0",
+    "description": "ESLint for every workspace. Kept apart because typescript-eslint needs TypeScript 6, while the build uses TypeScript 7.",
+    "type": "module",
+    "devDependencies": {
+        "@eslint/js": "^10.0.1",
+        "eslint": "^10.14.0",
+        "globals": "^17.13.0",
+        "prettier": "^3.9.10",
+        "typescript": "~6.0.0",
+        "typescript-eslint": "^8.72.1"
+    }
+}

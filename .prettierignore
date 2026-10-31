@@ -1,0 +1,10 @@
+node_modules
+dist
+coverage
+stats
+package-lock.json
+mod-source/bench/recordings
+mod-source/bench/results
+mod-source/test/fixtures
+*.fpl
+*.json

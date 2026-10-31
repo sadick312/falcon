@@ -10,18 +10,23 @@
         "falcon-launcher"
     ],
     "scripts": {
+        "install:all": "npm install && npm install --prefix tools/lint",
         "build": "npm run inject:build && npm run ext:build",
-        "mod:watch": "npm run watch --workspace=mod-source",
         "mod:build": "npm run build --workspace=mod-source",
+        "mod:build:dev": "npm run build:dev --workspace=mod-source",
+        "mod:watch": "npm run watch --workspace=mod-source",
+        "inject:build": "npm run build --workspace=mod-source && npm run build:inject --workspace=mod-source",
         "ext:build": "npm run build --workspace=falcon-launcher",
         "ext:dev": "npm run dev --workspace=falcon-launcher",
-        "stats": "node scripts/dev-stats.mjs",
-        "stats:report": "node scripts/lib/report.mjs",
-        "bench": "vitest run --config vitest.bench.config.mts",
-        "mod:build:dev": "npm run build:dev --workspace=mod-source",
         "typecheck": "npm run typecheck --workspace=mod-source && npm exec --workspace=falcon-launcher -- tsc --noEmit",
+        "lint": "node scripts/tool.mjs eslint -c tools/lint/eslint.config.mjs .",
+        "lint:fix": "node scripts/tool.mjs eslint -c tools/lint/eslint.config.mjs . --fix",
+        "format": "node scripts/tool.mjs prettier --write .",
+        "format:check": "node scripts/tool.mjs prettier --check .",
         "test": "vitest run",
-        "inject:build": "npm run build --workspace=mod-source && npm run build:inject --workspace=mod-source"
+        "bench": "vitest run --config vitest.bench.config.mts",
+        "stats": "node scripts/dev-stats.mjs",
+        "stats:report": "node scripts/lib/report.mjs"
     },
     "allowScripts": {
         "esbuild@0.27.7": true,
