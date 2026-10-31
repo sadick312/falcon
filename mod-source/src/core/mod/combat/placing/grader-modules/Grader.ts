@@ -3,7 +3,6 @@ import Player from "@entities/Player";
 import Client from "@core/Client";
 import ObjectManager from "@core/logic/ObjectManager";
 import PotentialObjectManager from "@core/logic/PotentialObjectManager";
-import AutoPusher from "@core/mod/combat/core/AutoPusher";
 import PlacementSystem from "@core/mod/combat/core/PlacementSystem";
 import Angle from "@core/mod/combat/placing/Angle";
 import ModManager from "@core/ModManager";
@@ -19,7 +18,6 @@ interface GraderEnemyCache {
     distanceSqMap: Map<number, number>;
     trapsNearMap: Map<number, number>;
     spikesNearMap: Map<number, number>;
-    trapSpikesMap: Map<number, number>;
 }
 
 interface GraderInternalCache {
@@ -35,8 +33,7 @@ export default abstract class Grader {
             directionMap: new Map(),
             distanceSqMap: new Map(),
             trapsNearMap: new Map(),
-            spikesNearMap: new Map(),
-            trapSpikesMap: new Map()
+            spikesNearMap: new Map()
         },
         canAbuse: false
     };
@@ -142,13 +139,16 @@ export default abstract class Grader {
         const allTraps = ObjectManager.pool.allTraps;
         if (replaceObj) item.replace = true;
 
-        const { directionMap, distanceSqMap, trapsNearMap, spikesNearMap, trapSpikesMap } = this.internalCache.enemies;
+        const { directionMap, distanceSqMap, trapsNearMap, spikesNearMap } = this.internalCache.enemies;
 
-        directionMap.clear();
-        distanceSqMap.clear();
-        trapsNearMap.clear();
-        spikesNearMap.clear();
-        trapSpikesMap.clear();
+        // Every enemy's entry is rewritten below and graders only read the enemies passed in, so the maps only
+        // need clearing to drop enemies that left. Map.clear() allocates a new table, and this runs per angle.
+        if (directionMap.size > enemies.length) {
+            directionMap.clear();
+            distanceSqMap.clear();
+            trapsNearMap.clear();
+            spikesNearMap.clear();
+        }
 
         this.factorPotentialObjects(item, allowPreplace);
         if (!item.preplace)
@@ -173,36 +173,26 @@ export default abstract class Grader {
 
             let trapsNear = 0;
             let spikesNear = 0;
-            let trapSpikes = 0;
 
             for (let i = 0; i < totalLength; i++) {
                 const gameObject = allSpikes[i] ?? allTraps[i - spikesLength];
                 if (!gameObject || !gameObject.active || gameObject.isGhost) continue;
+                // Only objects in range count, so test that before the team lookup.
+                if (!withinDist(item, gameObject, 15 + item.scale + gameObject.scale)) continue;
 
                 const isTeam = Client.isTeam(enemy, gameObject.ownerSID ?? -1);
                 const willBreak = item.preplace && gameObject.willBreak;
                 const isTrap = gameObject.trap && !isTeam && !willBreak;
                 const isSpike = gameObject.dmg && !isTeam && !willBreak;
                 const isCactus = gameObject.type === 1 && gameObject.y >= ScriptConfig.MAP_SIZE - ScriptConfig.SNOW_BIOME_TOP;
-                const isPointyScaryThingy = isCactus || isSpike;
 
-                const isInRange = withinDist(item, gameObject, 15 + item.scale + gameObject.scale);
-                const withinTrapSpikeRadius = enemy.trap && withinDist(enemy.trap, gameObject, AutoPusher.AUTO_PUSH_DISTANCE + gameObject.scale);
-
-                if (isPointyScaryThingy && withinTrapSpikeRadius) {
-                    trapSpikes++;
-                }
-
-                if (isInRange && (isPointyScaryThingy || isTrap)) {
-                    if (isPointyScaryThingy) {
-                        spikesNear++;
-                    } else {
-                        trapsNear++;
-                    }
+                if (isCactus || isSpike) {
+                    spikesNear++;
+                } else if (isTrap) {
+                    trapsNear++;
                 }
             }
 
-            trapSpikesMap.set(enemy.sid, trapSpikes);
             trapsNearMap.set(enemy.sid, trapsNear);
             spikesNearMap.set(enemy.sid, spikesNear);
         }
