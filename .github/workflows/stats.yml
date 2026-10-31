@@ -1,4 +1,4 @@
-name: Type check and stats
+name: Type check, tests and stats
 
 on: push
 
@@ -19,6 +19,8 @@ jobs:
       - run: npm ci
 
       - run: npm run typecheck
+
+      - run: npm test
 
       # Builds both workspaces, then compares against the committed stats/history.json (if any).
       # Fails the job when a build fails, e.g. over the bundle size limit.

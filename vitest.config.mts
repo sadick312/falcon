@@ -50,6 +50,8 @@ export default defineConfig({
         include: ["mod-source/test/**/*.test.ts"],
         setupFiles: ["mod-source/test/setup.ts"],
         restoreMocks: true,
+        // Replay tests load the whole client and play a fight; 5 s is too tight on slower CI runners.
+        testTimeout: 30_000,
         coverage: {
             provider: "v8",
             include: ["mod-source/src/**/*.ts"],
