@@ -325,6 +325,7 @@ export const menuContent: IMenuContent = {
             settings: [{
                 label: "Allow While Trapped",
                 id: "attackFactoringKB:insta:allowInTrap",
+                description: "Lets these instakills run while you are trapped, as long as Auto Breaker has no spikes to break around you.",
                 type: "toggle",
                 status: false
             }],
@@ -544,6 +545,7 @@ export const menuContent: IMenuContent = {
         settings: [{
             label: "Ignore Hats",
             id: "oneTickIgnoreHats",
+            description: "Leaves the enemy's Soldier, Tank and EMP Helmet damage reduction out when deciding if a one tick kills.",
             type: "toggle",
             status: false
         }],
@@ -565,6 +567,7 @@ export const menuContent: IMenuContent = {
         }, {
             label: "Render Pathfinding Line",
             id: "renderAutoPushingPathfindingLine",
+            description: "Draws the path Auto Push is following.",
             type: "toggle",
             status: true
         }],
@@ -1036,11 +1039,11 @@ export const menuContent: IMenuContent = {
         label: "Development Analytics",
         id: "improvementLogging",
         type: "toggle",
-        description: "Allows the platform to automatically track and send anonymous logic and performance data to help make improvements.",
+        description: "Nothing is sent anywhere. While this is on, a packet log (.fpl) is only saved when you die if Download Local Copy is on; while it is off, one is saved on every death.",
         icon: gearIcon(22),
         settings: [{
             label: "Download Local Copy",
-            description: "Downloads a local FPL file as well upon death instead of only sending it to the webhook.",
+            description: "Saves the last 15 seconds of packets as an .fpl file each time you die.",
             id: "improvementLoggingLCopy",
             type: "toggle"
         }],
