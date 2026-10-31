@@ -43,6 +43,8 @@ export default class PotentialObjectManager {
     static onRenderObjects: PotentialObject[] = [];
 
     private static tmpPos = { x: 0, y: 0 };
+    /** Where add() last found an object in range. Adds come from neighbouring angles, so the next match is usually close by. */
+    private static lastMatchIndex = 0;
 
     static update(x: number, y: number, scale: number) {
         const allObjects = this.allObjects;
@@ -75,28 +77,31 @@ export default class PotentialObjectManager {
 
     static add(x: number, y: number, ownerSID: number) {
         const allObjects = this.allObjects;
+        const length = allObjects.length;
         const pos = this.tmpPos;
-        let inactiveObj: PotentialObject | null = null;
 
         pos.x = x;
         pos.y = y;
 
-        for (let i = 0; i < allObjects.length; i++) {
+        // Any active object in range stops the add, so the scan can start where the last one was found.
+        const start = this.lastMatchIndex < length ? this.lastMatchIndex : 0;
+        for (let n = 0; n < length; n++) {
+            const i = start + n < length ? start + n : start + n - length;
             const obj = allObjects[i];
-            if (!obj) continue;
 
-            if (obj.active) {
-                if (withinDist(obj, pos, 100)) {
-                    return;
-                }
-            } else if (!inactiveObj) {
-                inactiveObj = obj;
+            if (obj && obj.active && withinDist(obj, pos, 100)) {
+                this.lastMatchIndex = i;
+                return;
             }
         }
 
-        if (inactiveObj) {
-            inactiveObj.redefine(x, y, ownerSID, ModManager.tick);
-            return;
+        for (let i = 0; i < length; i++) {
+            const obj = allObjects[i];
+
+            if (obj && !obj.active) {
+                obj.redefine(x, y, ownerSID, ModManager.tick);
+                return;
+            }
         }
 
         allObjects.push(new PotentialObject(x, y, ownerSID, ModManager.tick));
