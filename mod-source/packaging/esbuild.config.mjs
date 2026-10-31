@@ -79,6 +79,9 @@ export function createBuildOptions({ dev = false } = {}) {
         minifySyntax: true,
         platform: "browser",
         target: "es2022",
+        // Write non-ASCII characters (the emoji table) as-is instead of \uXXXX escapes. Extension scripts and the
+        // quick-inject file are read as UTF-8, so the strings are the same at runtime.
+        charset: "utf8",
         sourcemap: "linked",
         metafile: true,
         define: { __DEV__: String(dev) },
