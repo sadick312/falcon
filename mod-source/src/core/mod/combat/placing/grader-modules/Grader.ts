@@ -178,7 +178,7 @@ export default abstract class Grader {
 
         // Which spikes and traps are in range depends only on the angle, so find them once for all enemies.
         const objectsInRange = this.objectsInRange;
-        objectsInRange.length = 0;
+        if (objectsInRange.length) objectsInRange.length = 0;
 
         const spikesLength = allSpikes.length;
         const totalLength = enemies.length ? allSpikes.length + allTraps.length : 0;
