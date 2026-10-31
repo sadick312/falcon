@@ -18,7 +18,9 @@
         "stats:report": "node scripts/lib/report.mjs",
         "mod:build:dev": "npm run build:dev --workspace=mod-source",
         "typecheck": "npm run typecheck --workspace=mod-source && npm exec --workspace=falcon-launcher -- tsc --noEmit",
-        "inject:build": "npm run build --workspace=mod-source && npm run build:inject --workspace=mod-source"
+        "inject:build": "npm run build --workspace=mod-source && npm run build:inject --workspace=mod-source",
+        "bench": "vitest run --config vitest.bench.config.mts",
+        "bench:sample": "node mod-source/bench/make-sample-recording.mjs"
     },
     "allowScripts": {
         "esbuild@0.27.7": true,

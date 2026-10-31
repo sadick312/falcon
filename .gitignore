@@ -13,3 +13,7 @@ NOTES.md
 Falcon-Update.zip
 stats/*
 !stats/history.json
+
+# Replay benchmark: recordings hold other players' names and ids; results are per machine.
+mod-source/bench/recordings/
+mod-source/bench/results/
