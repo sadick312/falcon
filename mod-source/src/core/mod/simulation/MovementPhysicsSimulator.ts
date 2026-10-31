@@ -209,6 +209,12 @@ export default class MovementPhysicsSimulator {
     }
 
     private static handleCollision(victim: PlayerSimulationState, gameObject: Readonly<GameObjectSimulationState>, tMlt: number, result: SimulationResult, options: SimulationOptions) {
+        // This runs for every object, every step of every simulation, and most are out of reach. The padding below is
+        // at most 1, so anything farther than that can be skipped before the team lookup and direction.
+        const maxReach = victim.scale + gameObject.scale + 1;
+        const distSq = getDistSq(gameObject, victim);
+        if (distSq > maxReach * maxReach) return;
+
         const ownerSID = gameObject.ownerSID ?? -1;
         const isEnemy = !Client.isTeam(victim, ownerSID);
         const isCactus = gameObject.type === 1 && gameObject.y >= ScriptConfig.MAP_SIZE - ScriptConfig.SNOW_BIOME_TOP;
@@ -222,7 +228,6 @@ export default class MovementPhysicsSimulator {
         const totalEffectiveScale = totalScale + scalePadding
 
         const totalEffectiveScaleSq = totalEffectiveScale * totalEffectiveScale;
-        const distSq = getDistSq(gameObject, victim);
         const dir = getDirComp(victim, gameObject);
         const hasAlreadyCollided = this.hasAlreadyCollided(gameObject.sid);
 
