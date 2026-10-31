@@ -19,6 +19,7 @@ import getDir from "@utils/angle/getDir";
 import ScriptConfig from "@utils/config/ScriptConfig";
 import getDistSq from "@utils/geometry/getDistSq";
 import inRange from "@utils/math/inRange";
+import { BOOST_TICK_MAX_DIST_SQ, BOOST_TICK_MIN_DIST_SQ, BOW_INSTA_MAX_DIST_SQ, BOW_INSTA_MIN_DIST_SQ, NEARBY_ENEMY_DIST_SQ } from "@constants/world";
 type UpdatePlayerPacket = typeof PacketMap.SERVER_TO_CLIENT.UPDATE_PLAYERS;
 
 export default class PlayerUpdateEvent extends MessageHandler<UpdatePlayerPacket> {
@@ -191,15 +192,15 @@ export default class PlayerUpdateEvent extends MessageHandler<UpdatePlayerPacket
                 const canBoostTick = hasDiaPolearm && hasCorrectBow && player.getReload(0) === 1 && player.getReload(1) === 1 && player.getReload(2) === 1;
 
                 // idk if these ranges are right, just guessed pls no attack me :(
-                if (canBoostTick && inRange(distanceSq, 90_000, 136_900)) {
+                if (canBoostTick && inRange(distanceSq, BOOST_TICK_MIN_DIST_SQ, BOOST_TICK_MAX_DIST_SQ)) {
                     ModManager.enemyData.rangedInstaThreats++;
                 }
 
-                if (inRange(distanceSq, 250_000, 562_500) && canBowInsta && DefenseUtils.isInLineOfSight(player, PlayerCombatManager.fetch(player, 1))) {
+                if (inRange(distanceSq, BOW_INSTA_MIN_DIST_SQ, BOW_INSTA_MAX_DIST_SQ) && canBowInsta && DefenseUtils.isInLineOfSight(player, PlayerCombatManager.fetch(player, 1))) {
                     ModManager.enemyData.rangedInstaThreats++;
                 }
 
-                if (distanceSq <= 136_900) {
+                if (distanceSq <= NEARBY_ENEMY_DIST_SQ) {
                     player.ticksNotNearby = 0;
                     ModManager.enemyData.nearby.push(player);
                 } else {

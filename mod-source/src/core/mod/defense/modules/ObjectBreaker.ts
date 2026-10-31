@@ -12,6 +12,7 @@ import getAngleDist from "@utils/angle/getAngleDist";
 import getDir from "@utils/angle/getDir";
 import ScriptConfig from "@utils/config/ScriptConfig";
 import withinDist from "@utils/geometry/withinDist";
+import { isCactusObject } from "@constants/world";
 
 export default class ObjectBreaker {
     static gameObjectQueue: GameObject[] = [];
@@ -64,7 +65,7 @@ export default class ObjectBreaker {
             const gameObject = closeObjects[i];
 
             const isSpike = gameObject.dmg && !Client.isTeam(nearestEnemy, gameObject.ownerSID ?? -1);
-            const isCactus = gameObject.type === 1 && gameObject.y >= ScriptConfig.MAP_SIZE - ScriptConfig.SNOW_BIOME_TOP;
+            const isCactus = isCactusObject(gameObject);
             const isWithinRange = withinDist(enemyTrap, gameObject, AutoPusher.AUTO_PUSH_DISTANCE + gameObject.scale);
 
             if (!isSpike && !isCactus) continue;

@@ -29,6 +29,7 @@ import ScriptConfig from "@utils/config/ScriptConfig";
 import getDistSq from "@utils/geometry/getDistSq";
 import lineInCircle from "@utils/geometry/lineInCircle";
 import withinDist from "@utils/geometry/withinDist";
+import { isCactusObject } from "@constants/world";
 
 interface EnemyProcessResult {
     primaryDamage: number;
@@ -479,7 +480,7 @@ export default class DefenseSystem {
 
             const objectScale = gameObject.getScale();
             const isDangerousSpike = !Client.isFriendly(gameObject.ownerSID ?? -1);
-            const isCactus = gameObject.type === 1 && gameObject.y >= ScriptConfig.MAP_SIZE - ScriptConfig.SNOW_BIOME_TOP;
+            const isCactus = isCactusObject(gameObject);
             const objectDmg = isCactus ? 35 : gameObject.dmg;
             const isPoisonSpikes = gameObject.id === LIST_ID_MAP.POISON_SPIKES;
 

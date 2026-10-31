@@ -12,6 +12,7 @@ import normalizeAngle from "@utils/angle/normalizeAngle";
 import { profileEnd, profileStart } from "@services/profiler/Profiler";
 import ScriptConfig from "@utils/config/ScriptConfig";
 import getDistSq from "@utils/geometry/getDistSq";
+import { RIVER_HALF_WIDTH } from "@constants/world";
 
 type AngleItemContextIntervals = "open" | "raw" | "invalid" | "valid";
 type AngleItemContextIndexs = `${AngleItemContextIntervals}Index`;
@@ -95,7 +96,7 @@ function insertionSortIntervals(arr: Float32Array, n: number) {
 }
 
 export default class AngleFinder {
-    private static riverObject = new GameObject(0, ScriptConfig.MAP_SIZE / 2, 0, 362, -1, -1);
+    private static riverObject = new GameObject(0, ScriptConfig.MAP_SIZE / 2, 0, RIVER_HALF_WIDTH, -1, -1);
 
     static readonly HIGHEST_ANGLE_COUNT = 140;
     static readonly CLOSEST_OBJ_DISTANCE_SQ = 20 * 20;

@@ -39,6 +39,7 @@ import ScriptConfig from "@utils/config/ScriptConfig";
 import getElem from "@utils/dom/getElem";
 import kFormat from "@utils/math/kFormat";
 import shortnameToUnicode from "@utils/text/shortnameToUnicode";
+import { NATURAL_OBJECT_OWNER } from "@constants/world";
 
 const ageBar = getElem("age-bar");
 const ageDisplay = getElem("age-display");
@@ -196,7 +197,7 @@ export default class SocketListener {
 
         this.socket.on(PacketMap.SERVER_TO_CLIENT.SET_UP_GAME, (yourSID) => {
             Client.mySID = yourSID;
-            ObjectManager.removeAll(6967);
+            ObjectManager.removeAll(NATURAL_OBJECT_OWNER);
         });
 
         this.socket.on(PacketMap.SERVER_TO_CLIENT.SET_PLAYER_TEAM, (team, isOwner) => {

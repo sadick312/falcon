@@ -11,6 +11,7 @@ import CameraManager from "../../core/CameraManager";
 import SpriteCache from "../../core/SpriteCache";
 import RendererSystem, { mainContext } from "../../RendererSystem";
 import RendererUtils, { isOnScreen } from "../../RendererUtils";
+import { NATURAL_OBJECT_OWNER } from "@constants/world";
 
 const config = {
     volcanoScale: 320,
@@ -171,7 +172,7 @@ export default function renderGameObjects(delta: number, layer: number) {
             if (player) renderObjectBreakerVisuals(gameObject, mainContext);
             renderWillBreakVisuals(gameObject, mainContext, getAllyColor);
 
-            if (renderOwnership && typeof gameObject.ownerSID === "number" && gameObject.ownerSID !== 6967) {
+            if (renderOwnership && typeof gameObject.ownerSID === "number" && gameObject.ownerSID !== NATURAL_OBJECT_OWNER) {
                 mainContext.rotate(-gameObject.dir);
                 mainContext.font = "16px Hammersmith One";
                 mainContext.fillStyle = getAllyColor;

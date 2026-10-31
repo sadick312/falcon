@@ -16,6 +16,13 @@ import ScriptConfig from "@utils/config/ScriptConfig";
 import getDistSq from "@utils/geometry/getDistSq";
 
 export default class HatSystem {
+    /** Flipper hat band: within this many units of the river's centre line (a little inside its 362 half width). */
+    private static readonly FLIPPER_HAT_HALF_BAND = 350;
+    /** Soldier helmet against most weapons only when the enemy is this close. */
+    private static readonly DEFENSIVE_GEAR_MAX_DIST_SQ = 200 ** 2;
+    /** While auto-pushing, wear shadow wings to strike when the nearest enemy is this close. */
+    private static readonly PUSH_STRIKE_DIST_SQ = 125 ** 2;
+
     static needTick = 0;
     static sentHatPacket = false;
     private static stopMoveDuration = 0;
@@ -120,7 +127,7 @@ export default class HatSystem {
             return this.shouldUseDaggerSoldier(enemy);
         }
 
-        if (getDistSq(Client.player.real_position, enemy.real_position) > 40000) return false;
+        if (getDistSq(Client.player.real_position, enemy.real_position) > this.DEFENSIVE_GEAR_MAX_DIST_SQ) return false;
         if (primaryId === WEAPON_ID_MAP.POLEARM) return this.shouldUsePolearmSoldier(enemy);
         return true;
     }
@@ -190,7 +197,8 @@ export default class HatSystem {
 
         if (canUseSpikeGear) return STORE_HAT_MAP.SPIKE_GEAR;
 
-        if (player.real_position.y >= 6850 && player.real_position.y <= 7550) {
+        const riverCentre = ScriptConfig.MAP_SIZE / 2;
+        if (player.real_position.y >= riverCentre - this.FLIPPER_HAT_HALF_BAND && player.real_position.y <= riverCentre + this.FLIPPER_HAT_HALF_BAND) {
             return STORE_HAT_MAP.FLIPPER_HAT;
         }
 
@@ -201,7 +209,7 @@ export default class HatSystem {
             return STORE_HAT_MAP.SOLDIER_HELMET;
         }
 
-        if (player.real_position.y <= 2400) {
+        if (player.real_position.y <= ScriptConfig.SNOW_BIOME_TOP) {
             return STORE_HAT_MAP.WINTER_CAP;
         }
 
@@ -237,7 +245,7 @@ export default class HatSystem {
 
         if (nearestEnemy && AutoPusher.theSpike && primaryId !== WEAPON_ID_MAP.STICK) {
             const daggerMethod = parseInt(Menu.getValue("attackInPush:dagger_method"));
-            const isWithinRange = getDistSq(player.real_position, nearestEnemy.real_position) <= 15625;
+            const isWithinRange = getDistSq(player.real_position, nearestEnemy.real_position) <= this.PUSH_STRIKE_DIST_SQ;
 
             const daggerBullSpam = primaryId === WEAPON_ID_MAP.DAGGERS && daggerMethod === 1;
             const isNotDaggers = primaryId !== WEAPON_ID_MAP.DAGGERS;

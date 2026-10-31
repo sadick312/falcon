@@ -12,6 +12,7 @@ import ServerBrowser from "@ui/ServerBrowser";
 import getElem from "@utils/dom/getElem";
 import Menu from "../core/menu/Menu";
 import RendererSystem from "../rendering/RendererSystem";
+import { NATURAL_OBJECT_OWNER } from "@constants/world";
 
 declare global {
     interface HTMLImageElement {
@@ -168,7 +169,7 @@ function importTemporaryObjects() {
 
     for (let i = 0; i < tmpObjects.objects.length; i++) {
         const obj = tmpObjects.objects[i];
-        ObjectManager.add(i, obj.x, obj.y, obj.dir, obj.scale, obj.type ?? -1000, obj.id, true, 6967);
+        ObjectManager.add(i, obj.x, obj.y, obj.dir, obj.scale, obj.type ?? -1000, obj.id, true, NATURAL_OBJECT_OWNER);
     }
 }
 

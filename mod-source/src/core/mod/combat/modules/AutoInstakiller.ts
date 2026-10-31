@@ -14,9 +14,9 @@ import AutoBreaker from "@core/mod/defense/modules/AutoBreaker";
 import MovementPhysicsSimulator, { DamageSimAction, KnockbackSimAction, SimulationOptions, SimulationResult } from "@core/mod/simulation/MovementPhysicsSimulator";
 import ModManager from "@core/ModManager";
 import Menu from "@menu/Menu";
-import ScriptConfig from "@utils/config/ScriptConfig";
 import lineInRect from "@utils/geometry/lineInRect";
 import withinDist from "@utils/geometry/withinDist";
+import { isCactusObject } from "@constants/world";
 
 type AutoInstakillerSimActions = [
     [DamageSimAction, DamageSimAction, KnockbackSimAction],
@@ -224,7 +224,7 @@ export default class AutoInstakiller extends CombatModule {
 
             const tmpScale = gameObject.getScale(.6);
             const isSpike = gameObject.dmg && !Client.isTeam(nearestEnemy, gameObject.ownerSID ?? -1);
-            const isCactus = gameObject.type === 1 && gameObject.y >= ScriptConfig.MAP_SIZE - ScriptConfig.SNOW_BIOME_TOP;
+            const isCactus = isCactusObject(gameObject);
             if (gameObject.health <= goldHammerDamage) continue;
 
             if ((isSpike || isCactus) && withinDist(simTrap, gameObject, gameObject.scale + 65)) {

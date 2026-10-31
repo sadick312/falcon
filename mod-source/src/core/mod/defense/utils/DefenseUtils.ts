@@ -15,7 +15,8 @@ export default class DefenseUtils {
         const player = Client.player;
         const realPlayerPos = player.real_position;
         const realEnemyPos = enemy.real_position;
-        const radiusSq = 490000;
+        // Only players and animals within 700 units are considered.
+        const radiusSq = 700 ** 2;
 
         let smallestDistSq = Infinity;
         let closest: Ai | Player | undefined;

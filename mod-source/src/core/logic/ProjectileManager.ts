@@ -12,6 +12,7 @@ import ScriptConfig from "@utils/config/ScriptConfig";
 import getDistSq from "@utils/geometry/getDistSq";
 import withinDist from "@utils/geometry/withinDist";
 import inRange from "@utils/math/inRange";
+import { BOOST_TICK_MAX_DIST_SQ, BOOST_TICK_MIN_DIST_SQ } from "@constants/world";
 
 export default class ProjectileManager {
     static simulationProjectiles = new EntityHandler<SimulationProjectile>();
@@ -102,7 +103,7 @@ export default class ProjectileManager {
                     const distanceSq = getDistSq(source.real_position, Client.player.real_position);
                     const rangedThreats = ModManager.enemyData.rangedInstaThreats > 0;
 
-                    if (isDiaPolearm && inRange(distanceSq, 90000, 136900) && rangedThreats && isUsingOneTickSecondary) {
+                    if (isDiaPolearm && inRange(distanceSq, BOOST_TICK_MIN_DIST_SQ, BOOST_TICK_MAX_DIST_SQ) && rangedThreats && isUsingOneTickSecondary) {
                         DefenseSystem.isBeingBowInstaed = true;
                         DefenseSystem.forceSoldierTicks += 3;
                         source.ignoreDamageConsideration = true;
