@@ -41,6 +41,10 @@ export default class PlayerPlacementManager {
             }
 
             arr[placePotential[bufType]++].redefine(item.x, item.y, item.scale, item.angle, item.id);
+            if (item.x < placePotential.allMinX) placePotential.allMinX = item.x;
+            if (item.x > placePotential.allMaxX) placePotential.allMaxX = item.x;
+            if (item.y < placePotential.allMinY) placePotential.allMinY = item.y;
+            if (item.y > placePotential.allMaxY) placePotential.allMaxY = item.y;
 
             if (player.weaponData.primary !== WEAPON_ID_MAP.TOOL_HAMMER && !item.preplace) {
                 PotentialObjectManager.add(item.x, item.y, player.sid);
@@ -49,8 +53,11 @@ export default class PlayerPlacementManager {
     }
 
     static update(player: Player) {
-        player.placePotential.onMeBufferIndex = 0;
-        player.placePotential.allBufferIndex = 0;
+        const placePotential = player.placePotential;
+        placePotential.onMeBufferIndex = 0;
+        placePotential.allBufferIndex = 0;
+        placePotential.allMinX = placePotential.allMinY = Infinity;
+        placePotential.allMaxX = placePotential.allMaxY = -Infinity;
 
         this.computeFor(player, "all", "allBufferIndex");
 

@@ -67,15 +67,32 @@ export default abstract class Grader {
         this.candidates = list;
     }
 
+    /** Whether none of the enemy's possible placements is in reach of the angle; if one is, the angle gets priority. */
     factorAngleAbuse(item: Angle, enemy: Player) {
-        const scale = item.scale + enemy.placePotential.objectScale;
+        const placePotential = enemy.placePotential;
+        const all = placePotential.all;
+        const count = placePotential.allBufferIndex;
+        const scale = item.scale + placePotential.objectScale;
         const scaleSq = scale * scale;
 
-        for (let i = 0, len = enemy.placePotential.allBufferIndex; i < len; i++) {
-            const placeData = enemy.placePotential.all[i];
-            const distanceSq = getDistSq(placeData, item);
+        // Runs per angle and enemy, and most angles are nowhere near the enemy's placements: anything farther than
+        // `scale` outside their bounding box can't be in reach (+1 so rounding can't reject a point exactly at `scale`).
+        const reach = scale + 1;
+        if (
+            item.x < placePotential.allMinX - reach || item.x > placePotential.allMaxX + reach ||
+            item.y < placePotential.allMinY - reach || item.y > placePotential.allMaxY + reach
+        ) return true;
 
-            if (distanceSq <= scaleSq) {
+        // Any point in reach gives the same result, and neighbouring angles usually hit the same point.
+        const lastHit = placePotential.allLastHit;
+        if (lastHit < count && getDistSq(all[lastHit], item) <= scaleSq) {
+            item.priority = true;
+            return false;
+        }
+
+        for (let i = 0; i < count; i++) {
+            if (getDistSq(all[i], item) <= scaleSq) {
+                placePotential.allLastHit = i;
                 item.priority = true;
                 return false;
             }
