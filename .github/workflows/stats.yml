@@ -1,4 +1,4 @@
-name: Type check, tests and stats
+name: Lint, type check, build, tests and stats
 
 on: push
 
@@ -15,14 +15,31 @@ jobs:
         with:
           node-version: 24
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            tools/lint/package-lock.json
 
       - run: npm ci
 
+      # ESLint has its own install (it needs TypeScript 6; the build uses TypeScript 7).
+      - run: npm ci --prefix tools/lint
+
+      - run: npm run lint
+
       - run: npm run typecheck
+
+      # Builds the mod, the Quick Inject file and the extension, then checks that each output exists.
+      - run: npm run build
+
+      - run: |
+          for f in mod-source/dist/bundle.js mod-source/dist/falcon-quick-inject.js \
+                   falcon-launcher/dist/manifest.json falcon-launcher/dist/mod/bundle.js; do
+            test -s "$f" || { echo "Missing build output: $f"; exit 1; }
+          done
 
       - run: npm test
 
-      # Builds both workspaces, then compares against the committed stats/history.json (if any).
+      # Builds both workspaces again, then compares against the committed stats/history.json (if any).
       # Fails the job when a build fails, e.g. over the bundle size limit.
       - run: npm run stats -- --label "ci"
 
