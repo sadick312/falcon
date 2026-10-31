@@ -10,6 +10,7 @@
         "falcon-launcher"
     ],
     "scripts": {
+        "build": "npm run inject:build && npm run ext:build",
         "mod:watch": "npm run watch --workspace=mod-source",
         "mod:build": "npm run build --workspace=mod-source",
         "ext:build": "npm run build --workspace=falcon-launcher",
