@@ -460,8 +460,8 @@ export default class ModManager {
     static justAttacked: Player[] = [];
 
     static main() {
-        // Every module below assumes we have spawned; updates can arrive before ADD_PLAYER.
-        if (!Client.player) return;
+        // Every module below assumes we have spawned and are alive; updates can arrive before ADD_PLAYER.
+        if (!Client.player || !Client.isAlive) return;
 
         const startTime = performance.now();
         // Dev builds only: time each step below (profiler overlay, replay benchmark). Dropped from production.

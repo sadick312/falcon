@@ -310,6 +310,7 @@ export default class SocketListener {
             tmpPlayer.visible = false;
 
             if (isYou) {
+                Client.isAlive = true;
                 Client.upgradesObtained.clear();
                 Client.mySID = tmpPlayer.sid;
                 Client.player = tmpPlayer;
@@ -452,6 +453,7 @@ export default class SocketListener {
         });
 
         this.socket.on(PacketMap.SERVER_TO_CLIENT.KILL_PLAYER, () => {
+            Client.isAlive = false;
             Client.upgradesObtained.clear();
             CombatController.attackState.confirm = false;
             CombatController.attackState.status = false;
