@@ -54,7 +54,7 @@ Feature-by-feature audit for MooMoo.io **v1.8.2** (sandbox.moomodding.io). Start
 
 | # | Feature | File(s) | Status | Earlier work |
 |---|---|---|---|---|
-| 14 | Attack Manager (picks one attack per tick) | core/AttackManager.ts, core/AttackQueuePool.ts | not checked | |
+| 14 | Attack Manager (picks one attack per tick) | core/AttackManager.ts, core/AttackQueuePool.ts | not checked | To check (seen in #9): it starts `attackQueue[0]`, the first module to queue, and never compares the `grade`/`cost` modules set; a new queue also replaces an attack already in progress |
 | 15 | Combat Controller / Select Best Weapon | core/CombatController.ts | not checked | |
 | 16 | Auto Push (+ pathfinding) | core/AutoPusher.ts, services/pathfinding/Pathfinder.ts, Pathfinder.worker.js | not checked | Pathfinder race fixed + tested; extra path requests every tick still open |
 | 17 | Placement System | core/PlacementSystem.ts | not checked | |
