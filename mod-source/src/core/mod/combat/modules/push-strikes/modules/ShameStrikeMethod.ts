@@ -33,7 +33,8 @@ export default class ShameStrikeMethod extends PushSpikeMethod {
         if (player.getReload(2) !== 1) return;
         if (!withinDist(enemyPos, player.real_position, 100)) return;
 
-        const willHitSpike = withinDist(nearestEnemy.real_position, spike, scale);
+        // "Will hit" looks at where the enemy is going, as PredictiveMethod does; both used the current position before.
+        const willHitSpike = withinDist(nearestEnemy.next_position, spike, scale - .8);
         const isHittingSpike = withinDist(enemyPos, spike, scale);
 
         if (!willHitSpike && !isHittingSpike) return;

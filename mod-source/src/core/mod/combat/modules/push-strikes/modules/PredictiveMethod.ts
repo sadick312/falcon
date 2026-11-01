@@ -73,7 +73,9 @@ export default class PredictiveMethod extends PushSpikeMethod {
         ) {
             const tickSinceReloaded = nearestEnemy.weaponIndex < 9 ? nearestEnemy.weaponData.lastTickSincePrimaryReloaded : nearestEnemy.weaponData.lastTickSinceSecondaryReloaded;
             const dt = ModManager.tick - tickSinceReloaded;
-            nearestEnemy.profilingData.tankUseHits[nearestEnemy.weaponIndex][dt]++;
+            const hits = nearestEnemy.profilingData.tankUseHits[nearestEnemy.weaponIndex];
+            // One slot per tick since reload (9). Later ticks used to grow the list with NaN entries.
+            if (dt >= 0 && dt < hits.length) hits[dt]++;
         }
 
         GameEventTracker.track(nearestEnemy.sid, PacketMap.SERVER_TO_CLIENT.GATHER_ANIMATION);
