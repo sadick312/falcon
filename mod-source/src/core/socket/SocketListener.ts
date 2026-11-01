@@ -12,6 +12,7 @@ import ProjectileManager from "@core/logic/ProjectileManager";
 import TextManager from "@core/logic/TextManager";
 import CombatController from "@core/mod/combat/core/CombatController";
 import PlacementSystem from "@core/mod/combat/core/PlacementSystem";
+import MovementManager from "@core/mod/defense/defense-modules/MovementManager";
 import AutoBuyer from "@core/mod/utils/AutoBuyer";
 import PingTracker from "@core/mod/utils/PingTracker";
 import ModManager from "@core/ModManager";
@@ -313,6 +314,7 @@ export default class SocketListener {
             tmpPlayer.visible = false;
 
             if (isYou) {
+                MovementManager.onSpawn();
                 Client.upgradesObtained.clear();
                 Client.mySID = tmpPlayer.sid;
                 Client.player = tmpPlayer;

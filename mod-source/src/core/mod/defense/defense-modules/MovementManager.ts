@@ -17,6 +17,11 @@ export default class MovementManager {
     private static lastMoveDir: number | null = null;
     static sentMovePacket = false;
 
+    /** 1.8.2 clears the server's moveDir when a player spawns, so the next direction must be sent again. */
+    static onSpawn() {
+        this.lastMoveDir = null;
+    }
+
     private static move(moveDir: number | null) {
         if (moveDir === this.lastMoveDir) return;
         this.lastMoveDir = moveDir;
