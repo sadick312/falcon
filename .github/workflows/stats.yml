@@ -28,6 +28,9 @@ jobs:
 
       - run: npm run typecheck
 
+      # docs/SETTINGS.md is generated from the menu's settings; fail if someone changed a setting without it.
+      - run: npm run docs:settings -- --check
+
       # Builds the mod, the Quick Inject file and the extension, then checks every output (scripts/smoke-test.mjs).
       - run: npm run test:smoke
 

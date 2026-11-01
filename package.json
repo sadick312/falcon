@@ -25,6 +25,7 @@
         "lint:fix": "node scripts/tool.mjs eslint -c tools/lint/eslint.config.mjs . --fix",
         "format": "node scripts/tool.mjs prettier --write .",
         "format:check": "node scripts/tool.mjs prettier --check .",
+        "docs:settings": "node scripts/gen-settings-doc.mjs",
         "test": "vitest run",
         "test:smoke": "node scripts/smoke-test.mjs",
         "bench": "vitest run --config vitest.bench.config.mts",
