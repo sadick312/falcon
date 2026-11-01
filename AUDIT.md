@@ -37,7 +37,7 @@ Feature-by-feature audit for MooMoo.io **v1.8.2** (sandbox.moomodding.io). Start
 | # | Feature | File(s) | Status | Earlier work |
 |---|---|---|---|---|
 | 1 | Velocity Hits | VelocityAttacker.ts | tested | Toggle test; possible issue P1 |
-| 2 | Knockback Hits | AutoAttacker.ts | not checked | Toggle test |
+| 2 | Knockback Hits | AutoAttacker.ts | tested | Toggle test; possible issue P1 |
 | 3 | Knockback Instakills | AutoInstakiller.ts | not checked | Toggle test; duplicated blocks noted |
 | 4 | Apple Insta / Shame Grind | AppleInstakiller.ts | not checked | Toggle test |
 | 5 | Spike Tick | SpikeTicker.ts | not checked | Toggle test |
@@ -221,9 +221,10 @@ Possible issues waiting for a decision are listed under "Possible issues (Step 1
 | # | Feature | What it does | Problems found | Fixed | Optimized | Tests added | Result |
 |---|---|---|---|---|---|---|---|
 | 1 | Velocity Hits | If an enemy stands next to a spike owned by us or another player, and a bull-helmet polearm hit plus that spike would deal 100 or more, it queues a bull hit | Fake ticks make it ignore the update-order check (P1) | Waiting on P1 | No. The loop is short and stops at the first spike; its other checks are one-line comparisons | `features/velocity-hits.test.ts` (8): 100-damage threshold, toggle, spike owner, update order, Monkey Tail, range. Plus `test/helpers/game.ts`, a scripted-game helper for feature tests | tested |
+| 2 | Knockback Hits | Simulates a bull-helmet polearm hit and its knockback for one tick. If that would kill (spike damage on top of the hit reaching full health; the simulation assumes the enemy heals), pit-trap the enemy, or push them through 3+ spikes, it queues the hit | Fake ticks: with no update order it always assumes the knockback lands next tick (P1) | Waiting on P1 | No. It reuses its simulation actions; nothing is allocated per tick | `features/knockback-hits.test.ts` (5), checked from the packets sent in real ticks: switch to polearm, bull helmet, aim at the enemy, hit, and again after reload; nothing without a spike, with a spike too far, with the toggle off, or out of range | tested |
 
 ## Possible issues (Step 1)
 
 | # | Where | What I found | Why I'm asking |
 |---|---|---|---|
-| P1 | VelocityAttacker, AutoAttacker, AutoInstakiller, AutoMeleeSyncer, OneTicker, SpikeGrader, DefenseSystem, AutoBreaker, DefensiveKnockbacker (all read `PlayerStateManager.placementMap`) | The "who updates first on the server" order (gold tech) comes from the last real player update. Falcon's fake ticks, sent when a real one is late, carry no positions, so the order is empty and every comparison is false. Each module then guesses differently: Velocity Hits attacks even when the enemy really updates first (confirmed in a test). `ModManager` already skips these checks on fake ticks | The safe fix (skip order-based decisions when the order is unknown, as ModManager does) changes when these modules fire on laggy connections. Alternative: keep the previous real tick's order through a fake tick |
+| P1 | VelocityAttacker, AutoAttacker, AutoInstakiller, AutoMeleeSyncer, OneTicker, SpikeGrader, DefenseSystem, AutoBreaker, DefensiveKnockbacker, MovementPhysicsSimulator (all read `PlayerStateManager.placementMap`) | The "who updates first on the server" order (gold tech) comes from the last real player update. Falcon's fake ticks, sent when a real one is late, carry no positions, so the order is empty and every comparison is false. Each module then guesses differently: Velocity Hits attacks even when the enemy really updates first (confirmed in a test). `ModManager` already skips these checks on fake ticks | The safe fix (skip order-based decisions when the order is unknown, as ModManager does) changes when these modules fire on laggy connections. Alternative: keep the previous real tick's order through a fake tick |
