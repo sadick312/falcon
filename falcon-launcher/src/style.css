@@ -39,7 +39,7 @@
 
 * {
     box-sizing: border-box;
-    font-family: "Roboto", system-ui, sans-serif;
+    font-family: system-ui, "Segoe UI", Roboto, sans-serif;
 }
 
 html,
@@ -67,9 +67,9 @@ body {
 
 .extension-title {
     margin: 0;
-    font-family: "Hammersmith One", "Roboto", sans-serif;
+    font-family: system-ui, "Segoe UI", Roboto, sans-serif;
+    font-weight: 700;
     font-size: 2rem;
-    font-weight: 400;
     letter-spacing: 1px;
 }
 
