@@ -687,9 +687,9 @@ export default class DefenseSystem {
             state.totalDamage += projDamages[i];
             totalProjDamage += projDamages[i];
 
+            // Keep adding up: this used to `break` here, leaving the remaining projectiles out of the total.
             if (projDamages[i] === 25 && projDamages[i] + highestPrimaryDamage >= 100) {
                 oneTickThreat = true;
-                break;
             }
         }
 
