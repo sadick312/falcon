@@ -108,6 +108,12 @@ export default class AngleFinder {
     // Each object adds 1 interval (2 if it straddles angle 0). 30 filled up in a busy base, and every object after that
     // was ignored, so blocked spots were offered as free.
     private static readonly MAX_INTERVALS = 64;
+    /**
+     * Farthest an object can be from the player and still block a spot: placement distance (35 + scale + offset, up to
+     * ~85) + the item (~50) + the object, up to a blocker's 300, plus a little for the next position (replace/preplace).
+     */
+    private static readonly OBJECT_REACH = 460;
+
     /** Room one object (up to 2 intervals) plus the river (up to 3) need, at 2 numbers per interval. */
     private static readonly INTERVAL_HEADROOM = 10;
     private static tmpBuffer = new Float32Array(AngleFinder.MAX_INTERVALS * 2);
@@ -586,7 +592,11 @@ export default class AngleFinder {
 
         const playerPos = player.real_position;
         const playerNextPos = player.sid === Client.mySID ? player.next_state : player.next_position;
-        const blockableObjects = ObjectManager.pool.blockableObjects;
+        // Everything in the 3×3 chunks around us, kept to what can reach this player's spots. This used a list cut at
+        // 300 from US, which also served enemies (whose surroundings were then partly missing) and left out blockers
+        // up to ~435 away.
+        const closeObjects = ObjectManager.pool.closeObjects;
+        const reachSq = AngleFinder.OBJECT_REACH * AngleFinder.OBJECT_REACH;
 
         const ctx = this.data;
         this.resetCtx(ctx);
@@ -595,9 +605,10 @@ export default class AngleFinder {
         const trapItem = items.list[15];
         if (options.replace && options.preplace) return 0;
 
-        for (let i = 0, len = blockableObjects.length; i < len; i++) {
-            const gameObject = blockableObjects[i];
+        for (let i = 0, len = closeObjects.length; i < len; i++) {
+            const gameObject = closeObjects[i];
             if (!gameObject || !gameObject.active || gameObject.isGhost) continue;
+            if (getDistSq(playerPos, gameObject) > reachSq) continue;
 
             // Stop while there is still room: a Float32Array silently drops writes past its end.
             const limit = AngleFinder.MAX_INTERVALS * 2 - AngleFinder.INTERVAL_HEADROOM;

@@ -1,19 +1,19 @@
 {
     "sample-base": {
         "packets": "1bad29f6f0978f00",
-        "angles": "fa9e9cfcf67497eb",
+        "angles": "fad3316ca3ab111c",
         "sentPackets": 1602,
         "angleComputes": 5275
     },
     "sample-busy": {
         "packets": "c0427ed3be9988ca",
-        "angles": "dc1e5752e935f0da",
+        "angles": "04d861ddf8e1321f",
         "sentPackets": 2884,
         "angleComputes": 14551
     },
     "sample-synthetic": {
         "packets": "f815fbedf6756a5e",
-        "angles": "b49ed1236fde6755",
+        "angles": "b216068658d07d06",
         "sentPackets": 372,
         "angleComputes": 773
     }
