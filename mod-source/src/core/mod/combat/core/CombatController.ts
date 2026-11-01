@@ -41,12 +41,14 @@ export default class CombatController {
     }
 
     static selectWeapon(id: number = Client.weaponIndex, requiredSwitchCheck?: boolean) {
-        if (this.needsWeaponSwitch(id) && requiredSwitchCheck) return;
+        // With requiredSwitchCheck, nothing is sent when we already hold it.
+        if (requiredSwitchCheck && this.isHolding(id)) return;
         Client.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.SELECT_TO_BUILD, id, true);
         Client.weaponIndex = id;
     }
 
-    static needsWeaponSwitch(id: number) {
+    /** True when we already hold weapon `id` (it was named needsWeaponSwitch, the opposite of what it returns). */
+    static isHolding(id: number) {
         return Client.weaponIndex === id && Client.player.weaponIndex === id;
     }
 
