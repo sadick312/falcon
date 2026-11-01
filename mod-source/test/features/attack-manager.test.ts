@@ -91,12 +91,20 @@ describe("Attack Manager", () => {
         }
     });
 
-    it("today starts the first queued attack, whatever the grades (possible issue P8)", async () => {
+    it("starts the queued attack with the highest grade (P8: it used to take the first queued)", async () => {
         const m = await setUp();
         stubModule.manager = m;
         const low = makeQueue(m, ["low grade, queued first", null], 1);
         const high = makeQueue(m, ["high grade, queued second", null], Infinity);
-        expect(runTicks(m, [stubModule(low, [1]), stubModule(high, [1])], 1)).toEqual(["low grade, queued first"]);
+        expect(runTicks(m, [stubModule(low, [1]), stubModule(high, [1])], 1)).toEqual(["high grade, queued second"]);
+    });
+
+    it("breaks a tie in grade by module order", async () => {
+        const m = await setUp();
+        stubModule.manager = m;
+        const first = makeQueue(m, ["first module", null], 2);
+        const second = makeQueue(m, ["second module", null], 2);
+        expect(runTicks(m, [stubModule(first, [1]), stubModule(second, [1])], 1)).toEqual(["first module"]);
     });
 
     it("prepares a bull hit with the bull helmet, or the soldier helmet for daggers", async () => {

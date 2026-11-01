@@ -175,7 +175,13 @@ export default class AttackManager {
         }
 
         if (attackQueue.length) {
-            const bestQueue = attackQueue[0];
+            // The highest grade wins (One Tick: Infinity; gradeAttackQueue adds spike and pit bonuses); on a tie, the
+            // module listed first. It used to always take attackQueue[0] and ignore the grades.
+            let bestQueue = attackQueue[0];
+            for (let i = 1; i < attackQueue.length; i++) {
+                if (attackQueue[i].grade > bestQueue.grade) bestQueue = attackQueue[i];
+            }
+
             AttackQueuePool.copySequenceOver(bestQueue.sequence, this._currentAttackActions)
             this.currentAttackActionHead = 0;
             bestQueue.onSelect?.();
