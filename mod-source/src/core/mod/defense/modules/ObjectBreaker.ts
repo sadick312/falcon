@@ -139,6 +139,9 @@ export default class ObjectBreaker {
 
         this.targetObject.x = currentTarget.x;
         this.targetObject.y = currentTarget.y;
+        // getDoubleHitId reads the id (Poison Spikes rule); it was never copied, so it stayed 0.
+        this.targetObject.id = currentTarget.id;
+        this.targetObject.dmg = currentTarget.dmg;
         this.targetObject.scale = currentTarget.scale;
         this.targetObject.health = currentTarget.health;
 
