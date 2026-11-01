@@ -63,12 +63,14 @@ describe("Players", () => {
         expect(enemy.reloads[POLEARM]).toBe(1);
     });
 
-    it("today guesses a musket for an unseen secondary even next to daggers (possible issue P24)", async () => {
-        // updatePrimary sets a great-hammer guess for daggers or a stick, then overwrites it with the musket.
-        const { enemy } = await setUp({ weaponIndex: DAGGERS });
-        expect(enemy.weaponData.primary).toBe(DAGGERS);
-        expect(enemy.weaponData.secondary).toBe(MUSKET);
-        expect(enemy.weaponData.secondary).not.toBe(GREAT_HAMMER);
+    it("guesses a great hammer as the unseen secondary of a daggers player, else a musket (P24)", async () => {
+        // A leftover line used to overwrite the great-hammer guess with the musket.
+        const daggers = await setUp({ weaponIndex: DAGGERS });
+        expect(daggers.enemy.weaponData.primary).toBe(DAGGERS);
+        expect(daggers.enemy.weaponData.secondary).toBe(GREAT_HAMMER);
+        expect(daggers.enemy.reloads[GREAT_HAMMER]).toBe(1);
+        const polearm = await setUp({ weaponIndex: POLEARM });
+        expect(polearm.enemy.weaponData.secondary).toBe(MUSKET);
     });
 
     it("today ignores Samurai Armor's faster reload (possible issue P25)", async () => {

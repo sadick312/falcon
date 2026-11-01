@@ -25,7 +25,6 @@ export default class PlayerCombatManager {
         const isNotPermanentRange = weaponData.secondary === WEAPON_ID_MAP.HUNTING_BOW || weaponData.secondary === WEAPON_ID_MAP.CROSSBOW;
 
         if (!weaponData.secondaryConfirmed || isNotPermanentRange || id === WEAPON_ID_MAP.TOOL_HAMMER) {
-            player.reloads[WEAPON_ID_MAP.MUSKET] = 1;
             weaponData.lastTickSinceSecondaryReloaded = tick;
 
             if (id === WEAPON_ID_MAP.DAGGERS || id === WEAPON_ID_MAP.STICK) {
@@ -36,7 +35,9 @@ export default class PlayerCombatManager {
                 weaponData.secondaryVariant = WEAPON_VARIANT_MAP.STONE;
             }
 
-            weaponData.secondary = WEAPON_ID_MAP.MUSKET;
+            // The guessed weapon is assumed ready. A leftover line used to set the musket here regardless, undoing the
+            // great-hammer guess (and only the musket's reload was set).
+            player.reloads[weaponData.secondary] = 1;
             weaponData.secondaryConfirmed = false;
         }
 
