@@ -64,13 +64,14 @@ export default class AutoBuyer {
         const item = items.find(e => e.id === currentItem.id);
         const group = currentItem.isAccessory ? player.tails : player.skins;
 
-        if (item && item.price <= points) {
-            if (group[currentItem.id]) {
-                this.shopList.shift();
-                this.main(points);
-                return;
-            }
+        // Skip what we already own first: this used to happen only once we could afford it, holding up cheaper items.
+        if (group[currentItem.id]) {
+            this.shopList.shift();
+            this.main(points);
+            return;
+        }
 
+        if (item && item.price <= points) {
             HatSystem.storeBuy(item.id, currentItem.isAccessory);
         }
     }
