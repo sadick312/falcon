@@ -59,7 +59,8 @@ export default class AutoHealer {
         ModManager.brainState.healingInternal.expectedDamage = ctx.totalDamage;
 
         if (willDieIfDoNothing && alreadyForcedHat) {
-            if (DefenseSystem.skinIndex === STORE_HAT_MAP.SOLDIER_HELMET) {
+            // The Hat System can't put on a hat we don't own, so only count on soldier's 0.75× when we have it.
+            if (DefenseSystem.skinIndex === STORE_HAT_MAP.SOLDIER_HELMET && player.skins[STORE_HAT_MAP.SOLDIER_HELMET]) {
                 if (player.health - ctx.totalDamage * .75 <= 0) {
                     this.heal();
                     ModManager.brainState.healingResponse = "instant soldier + heal";
