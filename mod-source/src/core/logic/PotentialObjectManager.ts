@@ -16,12 +16,17 @@ export class PotentialObject {
     static readonly maxHealth = items.list[LIST_ID_MAP.PIT_TRAP].health!;
     health = PotentialObject.maxHealth;
 
+    /** The last tick an enemy could still place here (`tick` stays the creation tick, which the grader reads). */
+    lastPredicted: number;
+
     constructor(
         public x: number,
         public y: number,
         public ownerSID: number,
         public tick: number
-    ) { }
+    ) {
+        this.lastPredicted = tick;
+    }
 
     public redefine(x: number, y: number, ownerSID: number, tick: number): void {
         this.x = x;
@@ -30,6 +35,7 @@ export class PotentialObject {
         this.isBreaking = false;
         this.totalDamagePotential = 0;
         this.tick = tick;
+        this.lastPredicted = tick;
         this.active = true;
         this.ticksOut = 0;
         this.willBreak = false;
@@ -91,6 +97,7 @@ export default class PotentialObjectManager {
 
             if (obj && obj.active && withinDist(obj, pos, 100)) {
                 this.lastMatchIndex = i;
+                obj.lastPredicted = ModManager.tick;
                 return;
             }
         }
@@ -107,10 +114,14 @@ export default class PotentialObjectManager {
         allObjects.push(new PotentialObject(x, y, ownerSID, ModManager.tick));
     }
 
+    /** Ghosts no enemy could place for this many ticks (1 s) are dropped; they used to stay while within 800 of us. */
+    private static readonly STALE_TICKS = 9;
+
     static query() {
         const allObjects = this.allObjects;
         const closeObjects = this.closeObjects;
         const onRenderObjects = this.onRenderObjects;
+        const tick = ModManager.tick;
 
         onRenderObjects.length = 0;
         closeObjects.length = 0;
@@ -119,6 +130,11 @@ export default class PotentialObjectManager {
         for (let i = 0; i < allObjects.length; i++) {
             const obj = allObjects[i];
             if (!obj || !obj.active) continue;
+
+            if (tick - obj.lastPredicted > this.STALE_TICKS) {
+                obj.active = false;
+                continue;
+            }
 
             if (!withinDist(player.real_position, obj, 800)) {
                 obj.ticksOut++;

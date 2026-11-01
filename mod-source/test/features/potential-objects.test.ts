@@ -1,7 +1,7 @@
 // Feature #42, Predicted placements (PotentialObjectManager): "ghost" pit traps where an enemy could place one this
 // tick (from PlayerPlacementManager; not for a tool hammer). A ghost is dropped when a real building appears on it,
-// when its owner leaves (KILL_OBJECTS), or after 10 s more than 800 from us. Ghosts within 200 lower the grade of our
-// spots on them; ones that will break boost a "predict" spot.
+// when its owner leaves (KILL_OBJECTS), when no enemy could place it for 1 s, or after 10 s more than 800 from us.
+// Ghosts within 200 lower the grade of our spots on them; ones that will break boost a "predict" spot.
 import { afterEach, describe, expect, it } from "vitest";
 import { type Game, ME, startGame } from "../helpers/game";
 
@@ -37,13 +37,22 @@ describe("Predicted placements", () => {
         expect(active()).toEqual([]);
     });
 
-    it("today keeps an enemy's ghosts after they walk away (possible issue P23)", async () => {
+    it("drops an enemy's ghosts once they walk away (P23)", async () => {
         const { active } = await setUp();
         const before = active().map(o => [o.x, o.y]);
         // The enemy walks 600 away (still on screen) and stays there for 5 s.
         game!.update([{ sid: 2, x: 1850, y: 1000 }]);
         for (let i = 0; i < 45; i++) game!.update();
+        // They used to stay while within 800 of us.
         const stale = active().filter(o => before.some(([x, y]) => x === o.x && y === o.y));
-        expect(stale.length).toBeGreaterThan(0);
+        expect(stale).toEqual([]);
+    });
+
+    it("keeps the ghosts of an enemy who stays put", async () => {
+        const { active } = await setUp();
+        const before = active().length;
+        for (let i = 0; i < 45; i++) game!.update();
+        expect(active().length).toBeGreaterThanOrEqual(before);
+        expect(active().every(o => Math.hypot(o.x - 1250, o.y - 1000) < 200)).toBe(true);
     });
 });
