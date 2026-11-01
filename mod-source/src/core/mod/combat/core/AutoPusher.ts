@@ -202,6 +202,8 @@ export default class AutoPusher {
 
     static currentPath: Point[] = [];
     private static findingPath = false;
+    /** A route request is with the pathfinder and hasn't been answered yet. */
+    private static pathPending = false;
 
     private static async pathfind(start: Point, goal: Point): Promise<void> {
         const activityList = ModManager.activityList;
@@ -209,7 +211,18 @@ export default class AutoPusher {
         if (!this.currentPath.length) {
             this.findingPath = true;
             activityList.push("calculatingPath");
-            const path = await Pathfinder.find(start, goal);
+
+            // One route request at a time. resetState() clears findingPath every tick, so this used to send a new
+            // request (a fresh grid and another worker job) on every tick until the first answer arrived.
+            if (this.pathPending) return;
+            this.pathPending = true;
+
+            let path: Point[];
+            try {
+                path = await Pathfinder.find(start, goal);
+            } finally {
+                this.pathPending = false;
+            }
 
             if (path) {
                 this.currentPath = path;

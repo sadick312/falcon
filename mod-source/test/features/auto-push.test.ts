@@ -65,8 +65,9 @@ describe("Auto Push", () => {
         expect(pathRequests).toBe(1);
     });
 
-    it("today asks again every tick while the first route is still being worked out (possible issue P9)", async () => {
+    it("waits for the route it asked for instead of asking again every tick (P9)", async () => {
+        // The pathfinder never answers here; the old code sent 4 requests in 4 ticks.
         const { pathRequests } = await play({ meX: 950, ticks: 4 });
-        expect(pathRequests).toBe(4);
+        expect(pathRequests).toBe(1);
     });
 });
