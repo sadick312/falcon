@@ -27,6 +27,8 @@ export interface IMenuItem {
     unchangable?: boolean;
     neverSave?: boolean;
     update?: () => void;
+    /** Set while the item is drawn: shows or hides its reset-to-default button. */
+    refreshReset?: () => void;
 }
 
 /** "falcon-configs" in localStorage: config name -> saved item statuses (undefined once deleted). */

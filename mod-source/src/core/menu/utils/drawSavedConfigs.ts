@@ -1,6 +1,7 @@
 import readJson from "@utils/storage/readJson";
 import Menu, { menuContent, SavedConfigs } from "../Menu";
 import drawItemBody from "./drawItemBody";
+import { makeKeyboardClickable } from "./keyboard";
 
 const ICON = `
 <svg viewBox="0 0 360 360" width="37" height="37">
@@ -43,7 +44,10 @@ export default async function drawSavedConfigs() {
         `;
         body.appendChild(deleteButton);
 
-        deleteButton.onclick = async () => {
+        makeKeyboardClickable(deleteButton, `Delete config ${key}`);
+        deleteButton.onclick = async (ev) => {
+            // The row itself loads the config; deleting must not load it too.
+            ev.stopPropagation();
             savedConfigs[key] = undefined;
             localStorage.setItem("falcon-configs", JSON.stringify(savedConfigs));
             Menu.renderItems(menuContent.configs);
@@ -60,8 +64,10 @@ export default async function drawSavedConfigs() {
         `;
         body.appendChild(settingButton);
 
+        makeKeyboardClickable(body, `Load config ${key}`);
         body.onclick = () => {
-            Menu.loadSettings(savedConfigs[key]);
+            // applySettings also saves them as the current settings and redraws, so the toggles show the change.
+            Menu.applySettings(savedConfigs[key]!);
         };
 
         Menu.contentElement.appendChild(body);

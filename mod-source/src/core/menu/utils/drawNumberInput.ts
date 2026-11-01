@@ -1,6 +1,8 @@
 import Menu, { IMenuItem } from "@menu/Menu";
 import drawItemBody from "@menu/utils/drawItemBody";
 import drawItemLabel from "@menu/utils/drawItemLabel";
+import drawResetButton from "@menu/utils/drawResetButton";
+import { keepEnterInInput } from "@menu/utils/keyboard";
 
 export default function drawNumberInput(item: IMenuItem, contentElement: HTMLElement) {
     const isInDropdownContent = contentElement !== Menu.contentElement;
@@ -25,6 +27,9 @@ export default function drawNumberInput(item: IMenuItem, contentElement: HTMLEle
     input.type = "number";
     input.classList.add("menuNumberInput");
     input.value = item.status as string;
+    input.setAttribute("aria-label", item.label);
+    keepEnterInInput(input);
+    drawResetButton(item, body);
     body.appendChild(input);
 
     if (typeof item.min === "number") input.min = String(item.min);
@@ -34,6 +39,7 @@ export default function drawNumberInput(item: IMenuItem, contentElement: HTMLEle
     input.addEventListener("input", () => {
         item.status = input.value;
         Menu.saveSettings();
+        item.refreshReset?.();
     });
 
     contentElement.appendChild(body);

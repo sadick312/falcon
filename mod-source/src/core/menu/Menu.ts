@@ -12,6 +12,7 @@ import drawMenuSelect from "./utils/drawMenuSelect";
 import drawMenuSlider from "./utils/drawMenuSlider";
 import drawMenuToggle from "./utils/drawMenuToggle";
 import drawSavedConfigs from "./utils/drawSavedConfigs";
+import { keepEnterInInput, makeKeyboardClickable } from "./utils/keyboard";
 import { IMenuItem } from "./types";
 import { SETTINGS_VERSION, SETTINGS_VERSION_KEY, migrateSettings, isValidSettingValue } from "./settingsVersion";
 import { ChatLog } from "./ChatLog";
@@ -65,20 +66,78 @@ export default class Menu {
         this.saveSettings();
     }
 
+    /** Applies saved settings (the stored ones by default). Returns how many values were used and skipped. */
     static async loadSettings(customSettings?: Record<string, unknown>) {
         const saved = customSettings ?? readJson<Record<string, unknown>>("falcon-settings", {});
         const data = migrateSettings(saved);
+        let applied = 0;
+        let skipped = 0;
 
         for (const id in data) {
+            if (id === SETTINGS_VERSION_KEY) continue;
+
             // Own keys only: `in` would also match inherited names such as "__proto__".
-            if (!Object.hasOwn(this.itemMap, id)) continue;
+            if (!Object.hasOwn(this.itemMap, id)) {
+                skipped++;
+                continue;
+            }
 
             // A value that no longer fits its setting (e.g. a toggle that became a slider) keeps the default.
             const item = this.itemMap[id];
-            if (isValidSettingValue(item, data[id])) item.status = data[id];
+            if (isValidSettingValue(item, data[id])) {
+                item.status = data[id];
+                applied++;
+            } else {
+                skipped++;
+            }
         }
 
-        return true;
+        return { applied, skipped };
+    }
+
+    /** Loads a saved config or an imported file, saves it as the current settings and redraws the menu. */
+    static async applySettings(settings: Record<string, unknown>) {
+        const result = await this.loadSettings(settings);
+        this.saveSettings();
+        this.rerender();
+        return result;
+    }
+
+    /** Each setting's value before saved settings were loaded, filled in by buildItemMap. */
+    static defaults: Record<string, unknown> = {};
+
+    /** Whether the item is a setting with a value that can be put back to its default. */
+    static canReset(item: IMenuItem) {
+        if (!item.id || item.neverSave || item.disabled || item.unchangable) return false;
+        if (!Object.hasOwn(this.defaults, item.id)) return false;
+        return item.type === "toggle" || item.type === "select" || item.type === "slider" || item.type === "number";
+    }
+
+    /** Sliders and number boxes store what was typed as text, so "5" and 5 count as the same value. */
+    static isChanged(item: IMenuItem) {
+        return String(item.status) !== String(this.defaults[item.id]);
+    }
+
+    /** The default as shown to the user: On/Off, the option's label, or the number. */
+    static describeDefault(item: IMenuItem) {
+        const value = this.defaults[item.id];
+        if (item.type === "toggle") return value ? "On" : "Off";
+        if (item.type === "select") return item.options?.find((option) => String(option.value) === String(value))?.label ?? String(value);
+        return String(value);
+    }
+
+    static resetToDefault(item: IMenuItem) {
+        if (!this.canReset(item)) return;
+        item.status = this.defaults[item.id];
+        this.saveSettings();
+        this.rerender();
+    }
+
+    /** Draws the current view again with the latest values (search results stay searched). */
+    static rerender() {
+        if (!this.contentElement) return;
+        if (this.searchQuery) this.search(this.searchQuery);
+        else this.renderItems(this.oldItems);
     }
 
     /** Every saveable setting's value, plus the format version, as stored in "falcon-settings" and saved configs. */
@@ -136,6 +195,7 @@ export default class Menu {
 
         for (const item of items) {
             this.itemMap[item.id] = item;
+            if (item.id && !Object.hasOwn(this.defaults, item.id)) this.defaults[item.id] = item.status;
             if (item.settings) this.buildItemMap(item.settings);
         }
     }
@@ -166,6 +226,7 @@ export default class Menu {
         closeMenuButton.id = "closeMenuButton";
         closeMenuButton.innerHTML = `<i class="material-icons" style="color: var(--theme-secondary); font-size: 20px;">close</i>`;
         closeMenuButton.onclick = () => menuElement.style.display = "none";
+        makeKeyboardClickable(closeMenuButton, "Close menu");
         headerElement.appendChild(closeMenuButton);
 
         const contentHolderElement = document.createElement("div");
@@ -205,9 +266,36 @@ export default class Menu {
         this.forwardButton = forwardButton;
         this.utilsTitle = utilsTitle;
 
+        makeKeyboardClickable(backwardButton, "Back");
+        makeKeyboardClickable(forwardButton, "Forward");
+
         utilsHolder.appendChild(backwardButton);
         utilsHolder.appendChild(forwardButton);
         utilsHolder.appendChild(utilsTitle);
+
+        const searchInput = document.createElement("input");
+        searchInput.type = "search";
+        searchInput.classList.add("menuSearchInput");
+        searchInput.placeholder = "Search settings";
+        searchInput.setAttribute("aria-label", "Search settings");
+        keepEnterInInput(searchInput);
+        this.searchInput = searchInput;
+        utilsHolder.appendChild(searchInput);
+
+        let searchTimer: number | undefined;
+        searchInput.addEventListener("input", () => {
+            // Wait for a short pause in typing instead of redrawing on every key.
+            clearTimeout(searchTimer);
+            searchTimer = window.setTimeout(() => this.search(searchInput.value), 120);
+        });
+        searchInput.addEventListener("keydown", (event) => {
+            if (event.key !== "Escape") return;
+            // Esc clears the search first; the next Esc (outside the box) closes the menu as before.
+            event.stopPropagation();
+            searchInput.value = "";
+            searchInput.blur();
+            this.search("");
+        });
 
         backwardButton.onclick = (ev) => {
             ev.stopPropagation();
@@ -311,7 +399,7 @@ export default class Menu {
         contentElement.innerHTML = "";
 
         if (this.contentElement === contentElement) {
-            for (const item of this.oldItems) item.update = undefined;
+            for (const item of this.oldItems) item.update = item.refreshReset = undefined;
             this.oldItems = items; // This will help with the GC
         }
 
@@ -337,6 +425,55 @@ export default class Menu {
         if (__DEV__ && !isNested) profileEnd("menu", drawStart);
     }
 
+    static searchInput: HTMLInputElement;
+    static searchQuery = "";
+
+    /** Settings whose label or description contains the text, from every tab and sub-page. */
+    static findSettings(query: string) {
+        const needle = query.trim().toLowerCase();
+        const matches: IMenuItem[] = [];
+        if (!needle) return matches;
+
+        // Descriptions may hold HTML (line breaks, bold); search their text only.
+        const textOf = (html = "") => html.replace(/<[^>]*>/g, " ").toLowerCase();
+        const visit = (items: IMenuItem[]) => {
+            for (const item of items) {
+                if (this.canReset(item) && (textOf(item.label).includes(needle) || textOf(item.description).includes(needle)))
+                    matches.push(item);
+                if (item.settings) visit(item.settings);
+            }
+        };
+
+        for (const [key, items] of Object.entries(menuContent)) {
+            if (key !== "favorites") visit(items);
+        }
+
+        return matches;
+    }
+
+    /** Shows the settings matching the text, or the selected tab again when the text is empty. */
+    static search(query: string) {
+        this.searchQuery = query.trim();
+
+        if (!this.searchQuery) {
+            getElem(`menuTab:${this.selectedTab}`).click();
+            return;
+        }
+
+        const matches = this.findSettings(this.searchQuery);
+        this.backwardStack.clear();
+        this.forwardStack.clear();
+        this.updateUtilsBar(`Search: ${matches.length} result${matches.length === 1 ? "" : "s"}`);
+
+        if (matches.length) {
+            this.renderItems(matches);
+            this.currentItem = matches[0];
+        } else {
+            this.renderItems([]);
+            this.contentElement.querySelector(".noTabTtems")!.textContent = `No settings match "${this.searchQuery}".`;
+        }
+    }
+
     static selectedTab = 1;
     static isInFavoritesTab = false;
 
@@ -354,8 +491,19 @@ export default class Menu {
                 ${tab.label}
             `;
 
-            tabElem.onclick = ({ isTrusted }) => {
-                if (isTrusted) {
+            makeKeyboardClickable(tabElem, tab.label, "tab");
+
+            tabElem.onclick = () => {
+                // Opening a tab ends a search.
+                if (this.searchQuery && this.searchInput) {
+                    this.searchQuery = "";
+                    this.searchInput.value = "";
+                }
+
+                // Clicks from code (startup, refreshing favorites, ending a search) always target the selected
+                // tab, so only a switch to another tab needs the old one un-highlighted. (Keyboard clicks are
+                // not isTrusted, which this used to check.)
+                if (this.selectedTab !== i) {
                     const oldElem = getElem(`menuTab:${this.selectedTab}`);
                     const tab = menuTabs[this.selectedTab];
 
