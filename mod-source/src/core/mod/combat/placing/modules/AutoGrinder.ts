@@ -6,6 +6,7 @@ import ObjectManager from "@core/logic/ObjectManager";
 import CombatController from "@core/mod/combat/core/CombatController";
 import PlacementSystem from "@core/mod/combat/core/PlacementSystem";
 import BreakerUtils from "@core/mod/defense/utils/BreakerUtils";
+import ModManager from "@core/ModManager";
 import Menu from "@menu/Menu";
 import PlacerUtils from "@placing/utils/PlacerUtils";
 import { Input } from "@ui/Hook";
@@ -19,7 +20,21 @@ export default class AutoGrinder {
     static weaponIndex = 0;
     static aimDir = 0;
 
+    private static lastTick = -1;
+    private static lastResult = false;
+
+    /**
+     * Grinds once per tick and returns whether it did. CombatController and PlacementSystem both call this each tick
+     * (each to skip its own work while grinding); before, both calls placed and swung, so every placement went out twice.
+     */
     static main(): boolean {
+        if (ModManager.tick === this.lastTick) return this.lastResult;
+        this.lastTick = ModManager.tick;
+        this.lastResult = this.grind();
+        return this.lastResult;
+    }
+
+    private static grind(): boolean {
         const player = Client.player;
         if (!Menu.getValue("autoGrind")) {
             this.weaponIndex = Client.weaponIndex;
