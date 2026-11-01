@@ -77,7 +77,7 @@ describe("Graders", () => {
         expect(regrade(true) - regrade(false)).toBeCloseTo(0.5);
     });
 
-    it("today leave the spike-tick hit's damage out of the spike simulation (possible issue P15)", async () => {
+    it("count the spike-tick hit's damage in the spike simulation (P15)", async () => {
         // Enemy close enough for the spike to hit it.
         const { grade, LIST_ID_MAP } = await setUp(1100);
         const { default: MovementPhysicsSimulator } = await import("@core/mod/simulation/MovementPhysicsSimulator");
@@ -90,7 +90,7 @@ describe("Graders", () => {
         });
         grade(LIST_ID_MAP.SPIKES, 0, spot => { spot.spikeTick = true; });
         expect(damageSkipped.length).toBeGreaterThan(0);
-        // The hit's damage is worked out but the step stays switched off.
-        expect(damageSkipped.every(Boolean)).toBe(true);
+        // The hit's damage step used to stay switched off.
+        expect(damageSkipped.some(Boolean)).toBe(false);
     });
 });

@@ -93,6 +93,7 @@ export default class SpikeGrader extends Grader {
         if (spike.spikeTick && weUpdateFirst !== null) {
             const primary = PlayerCombatManager.fetch(player, 0);
             damageAction.damage = CombatUtils.getMonkeyDamage(primary.dmg * 1.5);
+            damageAction.dontUse = false;
 
             if (weUpdateFirst) {
                 sameTickKbAction.dontUse = false;
