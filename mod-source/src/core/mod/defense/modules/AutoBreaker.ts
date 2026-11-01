@@ -71,6 +71,8 @@ export default class AutoBreaker {
         this.targetObject.x = x;
         this.targetObject.y = y;
         this.targetObject.id = id;
+        // main() reads dmg to tell a spike target from the trap; it was never updated after construction (always 0).
+        this.targetObject.dmg = items.list[id].dmg ?? 0;
         this.targetObject.scale = scale;
         this.targetObject.health = health;
     }
