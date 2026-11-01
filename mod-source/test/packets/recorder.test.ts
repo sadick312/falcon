@@ -89,6 +89,33 @@ describe("PacketRecorder -> PacketReplayer", () => {
         expect(spawn.slice(0, 5)).toEqual(["enemy", 7, "p", 500, 600]);
     });
 
+    it("keeps one saved spawn per player across respawns", () => {
+        // A respawn used to be saved under the whole spawn array as its key, so each one added another entry.
+        addPlayer("enemy", 7);
+        now += 100;
+        addPlayer("enemy", 7);
+        now += 20_000;
+        log(S2C.UPDATE_HEALTH, [7, 90]);
+        now += 100;
+        addPlayer("enemy", 7);
+        now += 20_000;
+        log(S2C.UPDATE_HEALTH, [7, 90]);
+
+        expect(savedSpawns(readLog(PacketRecorder.compileBinaryLog()!)).map(s => s[0])).toEqual(["enemy"]);
+    });
+
+    it("forgets a respawned player who then left", () => {
+        addPlayer("enemy", 7);
+        now += 100;
+        addPlayer("enemy", 7);
+        now += 20_000;
+        log(S2C.REMOVE_PLAYER, ["enemy"]);
+        now += 20_000;
+        log(S2C.UPDATE_HEALTH, [1, 90]);
+
+        expect(savedSpawns(readLog(PacketRecorder.compileBinaryLog()!))).toEqual([]);
+    });
+
     it("still forgets a player who left when an object kill came first in the same second", () => {
         addPlayer("enemy", 7);
         now += 100;

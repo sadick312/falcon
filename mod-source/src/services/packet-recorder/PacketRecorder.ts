@@ -104,9 +104,11 @@ export default class PacketRecorder {
                     }
                 }
             } else if (packet.type === PacketMap.SERVER_TO_CLIENT.ADD_PLAYER) {
-                // data[0] is the whole PlayerInitType array here, so this key never matches a player id
-                // lookup (as with the old `player_${data[0]}` key); kept as is so exports don't change.
-                this.permanentData.set(String(packet.data[0]), log);
+                // A respawn leaving the 15 s window replaces the player's saved spawn. It was keyed by the whole
+                // PlayerInitType array as a string, so every respawn added another permanent entry (exported for
+                // good, even after the player left) instead of replacing the old one.
+                const playerId = packet.data[0][0];
+                if (this.idToSidMap[playerId] !== undefined) this.permanentData.set(playerId, log);
             } else if (packet.type === PacketMap.SERVER_TO_CLIENT.REMOVE_PLAYER) {
                 const playerId = packet.data[0];
                 const playerSid = this.idToSidMap[playerId];
