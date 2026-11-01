@@ -45,7 +45,9 @@ export default class AppleInstakiller extends CombatModule {
         if (AttackManager.isAttacking()) return false;
         if (!HatSystem.allowHatSwitch()) return false;
         if (!Menu.getValue("autoPlacing")) return false;
-        if (!Menu.getValue("replacer")) return false;
+        // As the menu says: the spike marks this relies on only survive on preplacement spikes (SpikeGrader clears
+        // them on replacement spikes next to a trapped enemy). It checked "replacer" before.
+        if (!Menu.getValue("preplacer")) return false;
         if (!Menu.getValue("appleInsta")) return false;
         if (!Menu.getValue("appleInstaWhileTrapped") && Client.player.trap) return false;
 

@@ -15,7 +15,7 @@ interface Scenario {
     settings?: Record<string, unknown>;
 }
 
-const ALL = ["appleInsta", "autoPlacing", "replacer"];
+const ALL = ["appleInsta", "autoPlacing", "preplacer"];
 
 /** Enemy standing in our pit trap, 90 units away. */
 async function setUp(s: Scenario = {}) {
@@ -66,6 +66,14 @@ describe("Apple Insta: marking a spike", () => {
 });
 
 describe("Apple Insta: the attack", () => {
+    it("runs with Preplacements on and Replacements off, as the menu describes", async () => {
+        const { AttackManager } = await setUp({ enable: ["appleInsta", "autoPlacing", "preplacer"] });
+        const queued = vi.spyOn(AttackManager, "addAttackQueue").mockImplementation(() => { });
+        AttackManager.placeIntent.appleInstaIntent = true;
+        AttackManager.appleInstakiller.run();
+        expect(queued).toHaveBeenCalledTimes(1);
+    });
+
     it("queues tank gear + hammer, then bull helmet + polearm, once a marked spike is going to be placed", async () => {
         const { AttackManager } = await setUp();
         const { STORE_HAT_MAP } = await import("@constants/store");
@@ -88,9 +96,9 @@ describe("Apple Insta: the attack", () => {
     });
 
     it.each([
-        ["Apple Insta", ["autoPlacing", "replacer"]],
-        ["Auto Place", ["appleInsta", "replacer"]],
-        ["Replacements", ["appleInsta", "autoPlacing"]]
+        ["Apple Insta", ["autoPlacing", "preplacer"]],
+        ["Auto Place", ["appleInsta", "preplacer"]],
+        ["Preplacements", ["appleInsta", "autoPlacing"]]
     ])("does nothing with %s off", async (_label, enable) => {
         const { AttackManager } = await setUp({ enable });
         const queued = vi.spyOn(AttackManager, "addAttackQueue").mockImplementation(() => { });
