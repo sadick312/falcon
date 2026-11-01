@@ -206,7 +206,7 @@ export default abstract class Grader {
         // Angle Finder hands over the ones within reach of the player once per call (Grader.candidates); this used to
         // walk every nearby spike and trap for every angle.
         const objectsInRange = this.objectsInRange;
-        objectsInRange.length = 0;
+        if (objectsInRange.length) objectsInRange.length = 0;
 
         const candidates = Grader.candidates;
         if (enemies.length && candidates) {

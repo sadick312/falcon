@@ -56,7 +56,8 @@ export default class Angle {
         if (this.pitSpike.size) this.pitSpike.clear();
         if (this.kill.size) this.kill.clear();
 
-        this.reasons.length = 0;
+        // Setting length goes through V8's slow path even on an empty array; this runs for every candidate angle.
+        if (this.reasons.length) this.reasons.length = 0;
         this.spikeTick = false;
         this.appleInsta = false;
         this.preplace = isPreplacement;
