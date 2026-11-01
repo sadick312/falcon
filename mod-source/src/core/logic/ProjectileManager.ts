@@ -114,6 +114,10 @@ export default class ProjectileManager {
                 const gameObject = allTurrets[i];
                 if (getDistSq(turretPosition, gameObject) > 5) continue;
 
+                // We saw this turret fire: restart its shot counter (TurretManager), which otherwise only counts from
+                // when the turret was first seen.
+                gameObject.reload = 0;
+
                 // turret object always has ownerSID defined (at least it should)
                 const simProj = this.simulationProjectiles.get(sid);
                 if (simProj && !simProj.active) {

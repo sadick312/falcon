@@ -38,7 +38,7 @@ describe("Turret Manager", () => {
         expect(await threats({ dx: 750 })).toEqual([]);
     });
 
-    it("today keeps its own 20-tick count even after seeing the turret actually fire (possible issue P20)", async () => {
+    it("restarts a turret's count when it's seen firing (P20)", async () => {
         const { LIST_ID_MAP } = await import("@constants/items");
         game = await startGame();
         game.spawn({ sid: ME, x: 1000, y: 1000, weaponIndex: 5 });
@@ -53,8 +53,10 @@ describe("Turret Manager", () => {
             game.update();
             if (ModManager.brainState.totalDamage >= 25) hits.push(i);
         }
-        // The next real shot is due on tick 28; Falcon still expects it on its own schedule.
-        expect(hits).not.toContain(28);
+        // Tick 9: the bullet we saw, on its way to us. The next shot comes 2200 ms after tick 8's, in tick 28, so the
+        // threat is flagged on tick 27 (the tick before, as for every predicted shot). The count used to run from when
+        // the turret was first seen: ticks 19 and 39.
+        expect(hits).toEqual([9, 27]);
     });
 
     it("expects a turret to shoot an animal that is closer than the player (P19)", async () => {
