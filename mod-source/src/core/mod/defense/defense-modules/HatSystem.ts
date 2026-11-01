@@ -125,6 +125,8 @@ export default class HatSystem {
         return true;
     }
 
+    private static readonly RIVER_HALF_WIDTH = 724 / 2;
+
     private static fetchBestHat(): STORE_HAT_ID {
         const player = Client.player;
         const currentKillAction = AttackManager.currentAttackAction;
@@ -190,7 +192,8 @@ export default class HatSystem {
 
         if (canUseSpikeGear) return STORE_HAT_MAP.SPIKE_GEAR;
 
-        if (player.real_position.y >= 6850 && player.real_position.y <= 7550) {
+        // 1.8.2 slows players in water when |y - MAP_SIZE / 2| <= riverWidth / 2 (724 / 2); this used 6850-7550.
+        if (Math.abs(player.real_position.y - ScriptConfig.MAP_SIZE / 2) <= this.RIVER_HALF_WIDTH) {
             return STORE_HAT_MAP.FLIPPER_HAT;
         }
 
