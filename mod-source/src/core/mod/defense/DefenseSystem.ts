@@ -337,6 +337,8 @@ export default class DefenseSystem {
         const vec1 = calculateKnockVector(enemy.real_position, kb);
         const vec2 = calculateKnockVector(enemy.next_position, kb);
 
+        // Knockback from an enemy who updates after us lands next tick. When the order is unknown (fake tick: either
+        // spot is undefined, so the comparison is false) it's treated as landing this tick, the safe side for defense.
         if (enemyPositionalSpot > myPositionalSpot) {
             vec1.attacker = vec2.attacker = enemy.sid;
             this.delayedKnockbackVectors.push(vec1, vec2);

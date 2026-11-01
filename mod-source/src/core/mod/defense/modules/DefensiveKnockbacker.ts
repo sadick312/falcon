@@ -49,14 +49,15 @@ export default class DefensiveKnockbacker extends DefenseModule {
         if (!CombatUtils.getCombatDistance(player, nearestEnemy, items.weapons[primary.id].range)) return;
         if (getDistSq(player.next_position, player.real_position) <= 3) return;
 
-        const myPositionalSpot = PlayerStateManager.placementMap.get(player.sid)!;
-        const enemyPositionalSpot = PlayerStateManager.placementMap.get(nearestEnemy.sid)!;
+        // How far we move before the enemy does depends on the update order; unknown on fake ticks, so wait.
+        const isHigher = PlayerStateManager.updatesBefore(player.sid, nearestEnemy.sid);
+        if (isHigher === null) return;
+
         const realPos = player.real_position;
         const nextPos = player.next_position;
 
         const dt_x = nextPos.x - realPos.x;
         const dt_y = nextPos.y - realPos.y;
-        const isHigher = myPositionalSpot < enemyPositionalSpot;
 
         const nextPosition = {
             x: realPos.x + (isHigher ? dt_x : dt_x * 2),

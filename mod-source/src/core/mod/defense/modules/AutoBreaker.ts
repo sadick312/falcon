@@ -116,8 +116,9 @@ export default class AutoBreaker {
         const enemyPos = nearestEnemy.real_position;
         const playerPos = player.real_position;
 
-        const myPositionalSpot = PlayerStateManager.placementMap.get(player.sid)!;
-        const enemyPositionalSpot = PlayerStateManager.placementMap.get(nearestEnemy.sid)!;
+        // The enemy hit only adds its knockback this tick if the enemy updates first. When the order is unknown
+        // (fake tick), assume it does: this predicts danger, so err on the safe side.
+        const enemyKnocksFirst = PlayerStateManager.updatesBefore(player.sid, nearestEnemy.sid) !== true;
         const placementRadius = spikeData.scale + 30;
 
         const sampleSteps = 5;
@@ -155,7 +156,7 @@ export default class AutoBreaker {
                     let projX = playerPos.x + kbVelX * dt;
                     let projY = playerPos.y + kbVelY * dt;
 
-                    if (myPositionalSpot > enemyPositionalSpot) {
+                    if (enemyKnocksFirst) {
                         projX += enemyToPlayerCos * enemyPrimary.totalKnock * dt;
                         projY += enemyToPlayerSin * enemyPrimary.totalKnock * dt;
                     }

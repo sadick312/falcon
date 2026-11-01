@@ -258,9 +258,9 @@ export default class OneTicker extends CombatModule {
 
         if (!secondStep) return;
 
-        const myPositionalSpot = PlayerStateManager.placementMap.get(player.sid)!;
-        const enemyPositionalSpot = PlayerStateManager.placementMap.get(nearestEnemy.sid)!;
-        const isFasterExecution = myPositionalSpot < enemyPositionalSpot;
+        // Whether our hit lands before the enemy moves this tick; unknown on fake ticks, so wait for a real one.
+        const isFasterExecution = PlayerStateManager.updatesBefore(player.sid, nearestEnemy.sid);
+        if (isFasterExecution === null) return;
 
         let totalDmg = 25 + primary.dmg * 1.5;
         const bTickOffset = ModManager.tick - nearestEnemy.bullTick;

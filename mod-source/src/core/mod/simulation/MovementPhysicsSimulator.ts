@@ -368,9 +368,12 @@ export default class MovementPhysicsSimulator {
             }
         }
 
-        const index = PlayerStateManager.placementMap.get(newState.sid)! + 1;
         const players = PlayerManager.players.visible.all;
         const playersLength = players.length;
+        // Players after this one in the server update order still move this tick. Unknown on fake ticks: none
+        // (what the missing lookup did before, via NaN).
+        const spot = PlayerStateManager.placementMap.get(newState.sid);
+        const index = spot === undefined ? playersLength : spot + 1;
 
         for (let i = index; i < playersLength; i++) {
             this.checkPlayerCollision(newState, players[i]);
@@ -399,9 +402,11 @@ export default class MovementPhysicsSimulator {
         let currentSpikeHits = 0;
         const dt = ScriptConfig.SERVER_UPDATE_SPEED;
 
-        const index = PlayerStateManager.placementMap.get(victim.sid)! + 1;
         const players = PlayerManager.players.visible.all;
         const playersLength = players.length;
+        // As in the single-tick step: no later players when the update order is unknown (fake tick).
+        const spot = PlayerStateManager.placementMap.get(victim.sid);
+        const index = spot === undefined ? playersLength : spot + 1;
 
         if (options.clearVelocity) {
             victim.velX = 0;

@@ -80,7 +80,6 @@ describe("Knockback Instakills damage estimate", () => {
 
         const { default: AutoInstakiller } = await import("@combat-modules/AutoInstakiller");
         const { default: PlayerCombatManager } = await import("@core/logic/players/core/PlayerCombatManager");
-        const { default: ModManager } = await import("@core/ModManager");
         const module = new AutoInstakiller() as unknown as {
             modifySimulationActions(...args: unknown[]): void;
             simulationActions: { damage?: number }[][];
@@ -89,7 +88,8 @@ describe("Knockback Instakills damage estimate", () => {
         const primary = { ...PlayerCombatManager.fetch(player, 0) };
         const secondary = { ...PlayerCombatManager.fetch(player, 1) };
 
-        module.modifySimulationActions(player, ModManager.enemyData.nearest, true, true, primary, secondary);
+        // (player, isFasterExecution, shouldReverseInsta, hasProjectile, primary, secondary)
+        module.modifySimulationActions(player, true, true, true, primary, secondary);
         // Musket: 50 damage, not 50 x 0.2.
         expect(module.simulationActions[0][1].damage).toBe(50);
     });

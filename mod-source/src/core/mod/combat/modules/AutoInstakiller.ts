@@ -124,12 +124,8 @@ export default class AutoInstakiller extends CombatModule {
         }
     }
 
-    private modifySimulationActions(player: Player, nearestEnemy: Player, shouldReverseInsta: boolean, hasProjectile: boolean, primary: WeaponFetchData, secondary: WeaponFetchData) {
+    private modifySimulationActions(player: Player, isFasterExecution: boolean, shouldReverseInsta: boolean, hasProjectile: boolean, primary: WeaponFetchData, secondary: WeaponFetchData) {
         this.resetAllActions();
-
-        const myPositionalSpot = PlayerStateManager.placementMap.get(player.sid)!;
-        const enemyPositionalSpot = PlayerStateManager.placementMap.get(nearestEnemy.sid)!;
-        const isFasterExecution = myPositionalSpot < enemyPositionalSpot;
 
         const actions = this.simulationActions;
         const firstStep = actions[0];
@@ -273,7 +269,11 @@ export default class AutoInstakiller extends CombatModule {
         const hasProjectile = !!items.weapons[secondary.id].projectile;
         if (!hasGreatHammer && !hasProjectile) return;
 
-        this.modifySimulationActions(player, nearestEnemy, shouldReverseInsta, hasProjectile, primary, secondary);
+        // Whether our hits land before the enemy moves this tick; unknown on fake ticks, so wait for a real one.
+        const isFasterExecution = PlayerStateManager.updatesBefore(player.sid, nearestEnemy.sid);
+        if (isFasterExecution === null) return;
+
+        this.modifySimulationActions(player, isFasterExecution, shouldReverseInsta, hasProjectile, primary, secondary);
 
         const simActions = AttackManager.autoInstaToggle ? SimulationOptions.get().toggleGatherRawDamage() : undefined;
         const simResult = MovementPhysicsSimulator.simulate(nearestEnemy.getSimulationState(), this.simulationActions, 2, simActions);

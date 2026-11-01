@@ -43,10 +43,8 @@ export default class VelocityAttacker extends CombatModule {
         const allSpikes = ObjectManager.pool.allSpikes;
         const primary = PlayerCombatManager.fetch(player, 0);
 
-        const enemyPosition = PlayerStateManager.placementMap.get(enemy.sid)!;
-        const playerPosition = PlayerStateManager.placementMap.get(player.sid)!;
-
-        if (enemyPosition <= playerPosition) return;
+        // Only when we update first; when the order is unknown (fake tick), wait for a real one.
+        if (PlayerStateManager.updatesBefore(player.sid, enemy.sid) !== true) return;
         if (!CombatUtils.isAttackPrimary(primary.id)) return;
         if (!CombatUtils.getCombatDistance(player, enemy, items.weapons[primary.id].range)) return;
         if (enemy.trap) return;

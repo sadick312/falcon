@@ -53,9 +53,7 @@ export default class AutoAttacker extends CombatModule {
         }]
     ];
 
-    private modifyActions(player: Player, nearestEnemy: Player, primary: WeaponFetchData) {
-        const myPositionalSpot = PlayerStateManager.placementMap.get(player.sid)!;
-        const enemyPositionalSpot = PlayerStateManager.placementMap.get(nearestEnemy.sid)!;
+    private modifyActions(player: Player, primary: WeaponFetchData, weUpdateFirst: boolean) {
         const actions = this.simulationActions;
 
         const firstActions = actions[0];
@@ -69,7 +67,7 @@ export default class AutoAttacker extends CombatModule {
         sameTickKbAction.knockPower = nextTickKbAction.knockPower = primary.totalKnock;
         sameTickKbAction.pos = nextTickKbAction.pos = player.real_position;
 
-        if (myPositionalSpot < enemyPositionalSpot) {
+        if (weUpdateFirst) {
             sameTickKbAction.dontUse = false;
             nextTickKbAction.dontUse = true;
         } else {
@@ -88,7 +86,11 @@ export default class AutoAttacker extends CombatModule {
         if (!CombatUtils.getCombatDistance(player, nearestEnemy, primaryRange)) return;
         if (nearestEnemy.trap) return;
 
-        this.modifyActions(player, nearestEnemy, primary);
+        // The update order decides whether the knockback lands this tick or next; unknown on fake ticks, so wait.
+        const weUpdateFirst = PlayerStateManager.updatesBefore(player.sid, nearestEnemy.sid);
+        if (weUpdateFirst === null) return;
+
+        this.modifyActions(player, primary, weUpdateFirst);
 
         const simResult = MovementPhysicsSimulator.simulate(nearestEnemy.getSimulationState(), this.simulationActions, 1);
         const hasHitSpikes = simResult.spikesHit >= 3; // ensures shame gain

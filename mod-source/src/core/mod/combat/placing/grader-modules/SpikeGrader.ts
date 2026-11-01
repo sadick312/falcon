@@ -79,8 +79,7 @@ export default class SpikeGrader extends Grader {
         const nextTickKbAction = secondActions[0];
 
         const simulationObjects = ObjectManager.pool.simObjects;
-        const myPositionalSpot = PlayerStateManager.placementMap.get(player.sid)!;
-        const enemyPositionalSpot = PlayerStateManager.placementMap.get(enemy.sid)!;
+        const weUpdateFirst = PlayerStateManager.updatesBefore(player.sid, enemy.sid);
         const isEnemyInTrap = enemy.trap && enemy.trap.active && !enemy.trap.isGhost && (!spike.preplace || !enemy.trap.willBreak);
 
         placementAction.placementData.pos.x = spike.x;
@@ -89,11 +88,13 @@ export default class SpikeGrader extends Grader {
         placementAction.placementData.ownerSID = Client.mySID;
         const isAttackPrimary = CombatUtils.isAttackPrimary(player.weapons[0]);
 
-        if (spike.spikeTick) {
+        // The spike-tick hit's knockback lands this tick or next depending on the update order. When that's unknown
+        // (fake tick), the hit is left out of the simulation, like a spike without one.
+        if (spike.spikeTick && weUpdateFirst !== null) {
             const primary = PlayerCombatManager.fetch(player, 0);
             damageAction.damage = CombatUtils.getMonkeyDamage(primary.dmg * 1.5);
 
-            if (myPositionalSpot < enemyPositionalSpot) {
+            if (weUpdateFirst) {
                 sameTickKbAction.dontUse = false;
                 nextTickKbAction.dontUse = true;
             } else {

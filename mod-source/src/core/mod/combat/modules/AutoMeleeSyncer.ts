@@ -58,8 +58,6 @@ export default class AutoMeleeSyncer extends CombatModule {
         if (ourPrimary.dmg * 1.5 + partnerPrimary.dmg * 1.5 < 100) return;
 
         const allEnemies = ModManager.enemyData.all;
-        const myPositionalSpot = PlayerStateManager.placementMap.get(player.sid)!;
-        const partnerPositionalSpot = PlayerStateManager.placementMap.get(partner.sid)!;
 
         let angleX = 0;
         let angleY = 0;
@@ -69,12 +67,16 @@ export default class AutoMeleeSyncer extends CombatModule {
             const enemy = allEnemies[i];
             if (enemy.sid === meleeSyncTarget) continue;
 
-            const enemyPositionalSpot = PlayerStateManager.placementMap.get(enemy.sid)!;
+            // Who updates before this enemy decides which positions the hits are measured from; skip the enemy on fake ticks.
+            const partnerFirst = PlayerStateManager.updatesBefore(partner.sid, enemy.sid);
+            const weFirst = PlayerStateManager.updatesBefore(player.sid, enemy.sid);
+            if (partnerFirst === null || weFirst === null) continue;
+
             const allyRangeDecrement = 1;
             const myRangeDecrement = 1;
 
-            const canPartnerHit = CombatUtils.getCombatDistance(partner, enemy, items.weapons[partnerPrimary.id].range - allyRangeDecrement, partnerPositionalSpot < enemyPositionalSpot);
-            const canWeHit = CombatUtils.getCombatDistance(player, enemy, items.weapons[ourPrimary.id].range - myRangeDecrement, myPositionalSpot < enemyPositionalSpot);
+            const canPartnerHit = CombatUtils.getCombatDistance(partner, enemy, items.weapons[partnerPrimary.id].range - allyRangeDecrement, partnerFirst);
+            const canWeHit = CombatUtils.getCombatDistance(player, enemy, items.weapons[ourPrimary.id].range - myRangeDecrement, weFirst);
 
             if (canPartnerHit && canWeHit) {
                 const angleTo = getDir(enemy.next_position, player.next_position);

@@ -12,6 +12,18 @@ export default class PlayerStateManager {
         this.placementMap.set(sid, place);
     }
 
+    /**
+     * Whether player `a` updates before player `b` on the server this tick (see GOLD_TECH.md), or null when that's
+     * unknown: fake ticks, which PacketBatcher emits when a real update is late, carry no positions, so the order is
+     * empty. Callers must decide what unknown means for them instead of comparing missing values.
+     */
+    static updatesBefore(a: number, b: number): boolean | null {
+        const spotA = this.placementMap.get(a);
+        const spotB = this.placementMap.get(b);
+        if (spotA === undefined || spotB === undefined) return null;
+        return spotA < spotB;
+    }
+
     static updateState() {
         const allTraps = ObjectManager.pool.allTraps;
         const enemies = ModManager.enemyData.all;
