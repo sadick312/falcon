@@ -306,6 +306,8 @@ export default class SocketListener {
                 PlayerManager.add(tmpPlayer);
             }
 
+            // SET_UP_GAME normally set this already; spawn() needs it to tell us apart from enemies (resetReloads).
+            if (isYou) Client.mySID = tmpPlayer.sid;
             tmpPlayer.spawn();
             tmpPlayer.setData(data);
             tmpPlayer.visible = false;

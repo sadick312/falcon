@@ -16,11 +16,13 @@ interface Scenario {
     enable?: boolean;
     primaryVariant?: number;
     secondaryVariant?: number;
+    /** Hold the hammer once before grinding (default true). */
+    heldSecondary?: boolean;
 }
 
 /**
  * One tick of grinding; returns what was placed, the weapon held, and whether tank gear went on. Auto Grind is switched on
- * only after we have held both weapons, so it knows their real variants (until then Falcon assumes diamond: P11).
+ * only after we have held the weapons, so it knows their real variants (a weapon never held counts as stone).
  */
 async function grind(s: Scenario = {}) {
     game = await startGame();
@@ -32,7 +34,8 @@ async function grind(s: Scenario = {}) {
     game.Client.weaponIndex = POLEARM;
     game.update();
     // We held the hammer once, at the given variant.
-    game.update([{ sid: ME, weaponIndex: GREAT_HAMMER, weaponVariant: s.secondaryVariant ?? 0 }]);
+    if (s.heldSecondary !== false)
+        game.update([{ sid: ME, weaponIndex: GREAT_HAMMER, weaponVariant: s.secondaryVariant ?? 0 }]);
     game.update([{ sid: ME, weaponIndex: POLEARM, weaponVariant: s.primaryVariant ?? 0 }]);
 
     game.Menu.itemMap.autoGrind.status = s.enable !== false;
@@ -67,6 +70,12 @@ describe("Auto Grind", () => {
     it("keeps going while one weapon is still short of its target", async () => {
         const { stillOn } = await grind({ primaryVariant: 2, secondaryVariant: 0 });
         expect(stillOn).toBe(true);
+    });
+
+    it("keeps going when the secondary was never held (counts as stone, not diamond: P11)", async () => {
+        const { stillOn, placed } = await grind({ primaryVariant: 2, heldSecondary: false });
+        expect(stillOn).toBe(true);
+        expect(placed).toEqual([TURRET, TURRET, TURRET]);
     });
 
     it("does nothing when off", async () => {

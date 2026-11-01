@@ -13,6 +13,8 @@ interface Scenario {
     trapHealth?: number;
     inTrap?: boolean;
     settings?: Record<string, unknown>;
+    /** Variant of both weapons (default 2, diamond). */
+    variant?: number;
 }
 
 const ALL = ["appleInsta", "autoPlacing", "preplacer"];
@@ -25,7 +27,11 @@ async function setUp(s: Scenario = {}) {
     game.spawn({ sid: 2, x: 1090, y: 1000 });
     game.setLoadout(s.weapons ?? [5, 10], [0, 3, 6, 15]);
     if (s.inTrap !== false) game.addObjects([{ sid: 600, x: 1090, y: 1000, itemId: LIST_ID_MAP.PIT_TRAP, owner: ME }]);
-    for (let i = 0; i < 2; i++) game.update();
+    // Hold both weapons once so their variants are known (a weapon we haven't held yet counts as stone).
+    const [primary, secondary] = s.weapons ?? [5, 10];
+    const variant = s.variant ?? 2;
+    game.update([{ sid: ME, weaponIndex: secondary, weaponVariant: variant }]);
+    game.update([{ sid: ME, weaponIndex: primary, weaponVariant: variant }]);
 
     const { default: ModManager } = await import("@core/ModManager");
     const { default: AttackManager } = await import("@core/mod/combat/core/AttackManager");
@@ -49,6 +55,11 @@ describe("Apple Insta: marking a spike", () => {
 
     it("doesn't when the trap has more health than one hammer hit", async () => {
         expect(await marks({ trapHealth: 300 })).toBe(false);
+    });
+
+    it("doesn't with a stone great hammer, which can't break a 250-health trap in one hit", async () => {
+        expect(await marks({ variant: 0 })).toBe(false);
+        expect(await marks({ variant: 0, trapHealth: 240 })).toBe(true);
     });
 
     it("doesn't without a great hammer", async () => {

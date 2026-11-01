@@ -431,6 +431,10 @@ export default class Player implements Entity {
 
         this.reloads[53] = 1;
 
+        // Enemies: assume the worst (diamond) until we see the weapon. Us: every weapon starts at stone (0), and
+        // updateOwn() records the real variant once it's held, so keep what spawn() set.
+        if (this.sid === Client.mySID) return;
+
         if (WEAPON_VARIANT_MAP.DIAMOND > this.weaponData.primaryVariant)
             this.weaponData.primaryVariant = WEAPON_VARIANT_MAP.DIAMOND;
 
