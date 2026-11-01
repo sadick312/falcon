@@ -7,6 +7,7 @@ import Menu from "@core/menu/Menu";
 import { Point } from "@mod-types/index";
 import Angle from "@placing/Angle";
 import AngleGrader from "@placing/AngleGrader";
+import Grader from "@placing/grader-modules/Grader";
 import getDir from "@utils/angle/getDir";
 import normalizeAngle from "@utils/angle/normalizeAngle";
 import { profileEnd, profileStart } from "@services/profiler/Profiler";
@@ -468,6 +469,27 @@ export default class AngleFinder {
     ) {
         const trapItem = items.list[15];
 
+        // Every angle sits at most this far from the player, so a spike or trap farther than this plus its own size
+        // can't be in range of any of them (Grader.prepare's 15 + item + object). Pick those once for all angles.
+        const previousCandidates = Grader.candidates;
+        if (options.grade) {
+            const reachOf = (item: ListItem) => 35 + item.scale + (item.placeOffset ?? 0) + 15 + item.scale;
+            Grader.setCandidates(playerPos, Math.max(reachOf(trapItem), reachOf(spikeItem)));
+        }
+
+        try {
+            this.gradeAllAngles(playerPos, spikeItem, trapItem, samples, spikeSamplesIndex, trapSamplesIndex, options);
+        } finally {
+            Grader.candidates = previousCandidates;
+        }
+    }
+
+    private static gradeAllAngles(
+        playerPos: Point,
+        spikeItem: ListItem, trapItem: ListItem,
+        samples: FinderSampleContext, spikeSamplesIndex: number, trapSamplesIndex: number,
+        options: Readonly<FinderOptions>
+    ) {
         let currentIdx = 0;
         const trapSamples = samples.trapSamples;
         const spikeSamples = samples.spikeSamples;

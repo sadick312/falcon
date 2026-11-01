@@ -41,6 +41,32 @@ export default abstract class Grader {
     /** The spikes and traps in range of the angle being prepared, reused between calls. */
     private objectsInRange: GameObject[] = [];
 
+    /**
+     * Set by the Angle Finder while it grades one player's angles: the active spikes and traps (in allSpikes then
+     * allTraps order) that can be in range of any of those angles. Null outside that, and prepare() walks the full lists.
+     */
+    static candidates: GameObject[] | null = null;
+
+    private static candidateBuffer: GameObject[] = [];
+
+    /** Picks the spikes and traps that can be within `15 + item + object` of an angle at most `maxReach` from `center`. */
+    static setCandidates(center: { x: number; y: number }, maxReach: number) {
+        const list = this.candidateBuffer;
+        list.length = 0;
+
+        const allSpikes = ObjectManager.pool.allSpikes;
+        const allTraps = ObjectManager.pool.allTraps;
+        const spikesLength = allSpikes.length;
+
+        for (let i = 0, len = spikesLength + allTraps.length; i < len; i++) {
+            const gameObject = allSpikes[i] ?? allTraps[i - spikesLength];
+            if (!gameObject || !gameObject.active || gameObject.isGhost) continue;
+            if (withinDist(center, gameObject, maxReach + gameObject.scale + 1)) list.push(gameObject);
+        }
+
+        this.candidates = list;
+    }
+
     factorAngleAbuse(item: Angle, enemy: Player) {
         const scale = item.scale + enemy.placePotential.objectScale;
         const scaleSq = scale * scale;
@@ -159,17 +185,27 @@ export default abstract class Grader {
 
         let canAbuse = true;
 
-        // Which spikes and traps are in range depends only on the angle, so find them once for all enemies.
+        // Which spikes and traps are in range depends only on the angle, so find them once for all enemies. The
+        // Angle Finder hands over the ones within reach of the player once per call (Grader.candidates); this used to
+        // walk every nearby spike and trap for every angle.
         const objectsInRange = this.objectsInRange;
         objectsInRange.length = 0;
 
-        const spikesLength = allSpikes.length;
-        const totalLength = enemies.length ? allSpikes.length + allTraps.length : 0;
+        const candidates = Grader.candidates;
+        if (enemies.length && candidates) {
+            for (let i = 0, len = candidates.length; i < len; i++) {
+                const gameObject = candidates[i];
+                if (withinDist(item, gameObject, 15 + item.scale + gameObject.scale)) objectsInRange.push(gameObject);
+            }
+        } else {
+            const spikesLength = allSpikes.length;
+            const totalLength = enemies.length ? allSpikes.length + allTraps.length : 0;
 
-        for (let i = 0; i < totalLength; i++) {
-            const gameObject = allSpikes[i] ?? allTraps[i - spikesLength];
-            if (!gameObject || !gameObject.active || gameObject.isGhost) continue;
-            if (withinDist(item, gameObject, 15 + item.scale + gameObject.scale)) objectsInRange.push(gameObject);
+            for (let i = 0; i < totalLength; i++) {
+                const gameObject = allSpikes[i] ?? allTraps[i - spikesLength];
+                if (!gameObject || !gameObject.active || gameObject.isGhost) continue;
+                if (withinDist(item, gameObject, 15 + item.scale + gameObject.scale)) objectsInRange.push(gameObject);
+            }
         }
 
         const inRangeLength = objectsInRange.length;
