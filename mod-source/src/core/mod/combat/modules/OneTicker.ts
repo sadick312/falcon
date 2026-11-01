@@ -113,9 +113,8 @@ export default class OneTicker extends CombatModule {
         const wpnReload = enemy.getReload(wpnIndex < 9 ? 0 : 1);
 
         const tickReload = ScriptConfig.SERVER_UPDATE_SPEED / speed;
-        if (wpnReload + tickReload < 1) return true;
-        if (wpnReload + tickReload * 2 < 1) return true;
-        return false;
+        // Still reloading next tick, so no reason to leave soldier for tank gear yet.
+        return wpnReload + tickReload < 1;
     }
 
     getMoveHat(): STORE_HAT_ID {
