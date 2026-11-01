@@ -47,7 +47,9 @@ export default class AntiBuller extends CombatModule {
         const sgReflection = hats[SPIKE_GEAR_INDEX].dmg!;
         const cxReflection = accessories[CORRUPT_X_WINGS_INDEX].dmg!;
 
-        const lowestTotalDamage = enemyPrimary.dmg * sgReflection + enemyPrimary.dmg + cxReflection;
+        // Spike Gear (0.45) and Corrupt X Wings (0.25) each reflect a share of the hit taken. This used to add the
+        // enemy's whole hit plus a flat 0.25 (dmg * 0.45 + dmg + 0.25).
+        const lowestTotalDamage = enemyPrimary.dmg * (sgReflection + cxReflection);
 
         this.consider = false;
         if (primary.dmg * 1.5 + lowestTotalDamage >= 100 && player.health + enemyPrimary.dmg <= 100) {

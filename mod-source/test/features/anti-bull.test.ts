@@ -52,12 +52,12 @@ describe("Anti Bull: putting on Spike Gear + Corrupt X Wings", () => {
 });
 
 describe("Anti Bull: the counter hit", () => {
-    async function counter(opts: { wearing?: boolean; ourHealth?: number } = {}) {
+    async function counter(opts: { wearing?: boolean; ourHealth?: number; variant?: number } = {}) {
         const { STORE_ACCESSORY_MAP, STORE_HAT_MAP } = await import("@constants/store");
         game = await startGame({ enable: ["antiBull"] });
         const wearing = opts.wearing ?? true;
         game.spawn({
-            sid: ME, x: 1000, y: 1000, weaponIndex: 5,
+            sid: ME, x: 1000, y: 1000, weaponIndex: 5, weaponVariant: opts.variant ?? 2,
             skinIndex: wearing ? STORE_HAT_MAP.SPIKE_GEAR : 0,
             tailIndex: wearing ? STORE_ACCESSORY_MAP.CORRUPT_X_WINGS : 0
         });
@@ -75,8 +75,14 @@ describe("Anti Bull: the counter hit", () => {
         return queued.mock.calls.map(([queue]) => queue.sequence[0].reason);
     }
 
-    it("bull-hits back after taking a hit in Spike Gear + Corrupt X Wings", async () => {
+    it("bull-hits back when our hit plus the reflected share finishes the enemy", async () => {
+        // Diamond polearm 53.1 x 1.5 = 79.65, plus 45 x (0.45 + 0.25) = 31.5 reflected: 111.
         expect(await counter()).toEqual(["pAB"]);
+    });
+
+    it("holds back when it would fall short (P7: the old formula counted the enemy's whole hit)", async () => {
+        // Stone polearm 67.5 + 31.5 = 99. The old formula gave 67.5 + 65.5 and countered.
+        expect(await counter({ variant: 0 })).toEqual([]);
     });
 
     it("waits instead of cutting off an attack in progress (P6)", async () => {
