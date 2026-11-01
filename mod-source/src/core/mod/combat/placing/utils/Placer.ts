@@ -49,7 +49,6 @@ export default abstract class Placer {
         const playerNext = player.next_position;
         const speedMag = getDistSq(playerPos, playerNext);
 
-        let allowOverlap = false;
         const candidates = PlacementSystem.angleCandidates;
         const bestAngles = PlacementSystem.bestAngles;
         const bestAnglesSet = PlacementSystem.bestAnglesSet;
@@ -69,34 +68,37 @@ export default abstract class Placer {
         if (speedMag >= 25) PlacementSystem.usedAnglesCount = 0;
         const currentTick = ModManager.tick;
 
-        for (let i = 0, len = candidates.length; i < len; i++) {
-            const currentAngle = candidates[i];
-            const isPreemptive = currentAngle.preplace;
+        // Pass 1 picks spots that don't overlap each other; if that gives fewer than 4, pass 2 adds overlapping backups.
+        // Pass 2 used to start from inside the loop on the last candidate, so it was skipped whenever that candidate hit
+        // one of the `continue`s below.
+        for (let pass = 0; pass < 2; pass++) {
+            const allowOverlap = pass === 1;
+            if (allowOverlap && bestAnglesSet.size >= 4) break;
 
-            if (PlacementSystem.totalPlacements + bestAngles.length >= 4) break;
-            if (isPreemptive && PlacerUtils.checkPreplacementOverlap(bestAngles, currentAngle)) continue;
-            if (!isPreemptive && PlacerUtils.checkForPreplacements(preplacements, currentAngle, currentTick)) continue;
-            if (bestAnglesSet.size >= totalAngles) break;
-            if (PlacerUtils.filterOverlapWithReplacements(replacements, currentAngle, currentTick)) continue;
-            if (bestAnglesSet.has(currentAngle)) continue;
-            if (allowOverlap && currentAngle.grade <= 0) continue;
-            if (options.replace && allowOverlap) break;
+            for (let i = 0, len = candidates.length; i < len; i++) {
+                const currentAngle = candidates[i];
+                const isPreemptive = currentAngle.preplace;
 
-            if (!allowOverlap) {
-                if (!PlacerUtils.filterWithoutOverlap(bestAngles, currentAngle)) {
-                    bestAngles.push(currentAngle);
-                    bestAnglesSet.add(currentAngle);
+                if (PlacementSystem.totalPlacements + bestAngles.length >= 4) break;
+                if (isPreemptive && PlacerUtils.checkPreplacementOverlap(bestAngles, currentAngle)) continue;
+                if (!isPreemptive && PlacerUtils.checkForPreplacements(preplacements, currentAngle, currentTick)) continue;
+                if (bestAnglesSet.size >= totalAngles) break;
+                if (PlacerUtils.filterOverlapWithReplacements(replacements, currentAngle, currentTick)) continue;
+                if (bestAnglesSet.has(currentAngle)) continue;
+                if (allowOverlap && currentAngle.grade <= 0) continue;
+                if (options.replace && allowOverlap) break;
+
+                if (!allowOverlap) {
+                    if (!PlacerUtils.filterWithoutOverlap(bestAngles, currentAngle)) {
+                        bestAngles.push(currentAngle);
+                        bestAnglesSet.add(currentAngle);
+                    }
+                } else {
+                    if (!PlacerUtils.filterWithOverlap(bestAngles, currentAngle)) {
+                        bestAngles.push(currentAngle);
+                        bestAnglesSet.add(currentAngle);
+                    }
                 }
-            } else {
-                if (!PlacerUtils.filterWithOverlap(bestAngles, currentAngle)) {
-                    bestAngles.push(currentAngle);
-                    bestAnglesSet.add(currentAngle);
-                }
-            }
-
-            if (!allowOverlap && i + 1 >= len && bestAnglesSet.size < 4) {
-                allowOverlap = true;
-                i = -1;
             }
         }
 

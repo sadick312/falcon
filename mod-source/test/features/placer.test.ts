@@ -72,10 +72,10 @@ describe("Placer", () => {
         expect(chosen).toEqual([0]);
     });
 
-    it("today skips the backups when the lowest-graded spot happens to be skipped (possible issue P16)", async () => {
-        // Same as the backup case plus a low-graded spot that a replacement blocks: the second pass only starts from
-        // the last candidate, and that one is skipped with `continue`, so 0.4 is never added.
+    it("adds the backups even when the lowest-graded spot is skipped (P16)", async () => {
+        // Same as the backup case plus a low-graded spot that a replacement blocks. The second pass used to start
+        // from the last candidate, which is skipped here, so 0.4 was never added.
         const chosen = await choose([{ angle: 0, grade: 5 }, { angle: 0.4, grade: 4 }, { angle: Math.PI, grade: 1 }], Math.PI);
-        expect(chosen).toEqual([0]);
+        expect(chosen).toEqual([0, 0.4]);
     });
 });
