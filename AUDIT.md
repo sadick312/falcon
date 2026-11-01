@@ -36,7 +36,7 @@ Feature-by-feature audit for MooMoo.io **v1.8.2** (sandbox.moomodding.io). Start
 
 | # | Feature | File(s) | Status | Earlier work |
 |---|---|---|---|---|
-| 1 | Velocity Hits | VelocityAttacker.ts | not checked | Toggle test |
+| 1 | Velocity Hits | VelocityAttacker.ts | tested | Toggle test; possible issue P1 |
 | 2 | Knockback Hits | AutoAttacker.ts | not checked | Toggle test |
 | 3 | Knockback Instakills | AutoInstakiller.ts | not checked | Toggle test; duplicated blocks noted |
 | 4 | Apple Insta / Shame Grind | AppleInstakiller.ts | not checked | Toggle test |
@@ -214,4 +214,16 @@ Compared on 1 Nov 2026 against the saved 1.8.2 client: `sandbox.moomodding.io/1.
 
 After these: `npm run build` OK, `npm test` 114 passed (1 opt-in test skipped), `npm run lint` 0 errors, `npm run typecheck` clean.
 
-_Step 1 features: one entry per feature, added as each is audited._
+### Step 1: features
+
+Possible issues waiting for a decision are listed under "Possible issues (Step 1)" below.
+
+| # | Feature | What it does | Problems found | Fixed | Optimized | Tests added | Result |
+|---|---|---|---|---|---|---|---|
+| 1 | Velocity Hits | If an enemy stands next to a spike owned by us or another player, and a bull-helmet polearm hit plus that spike would deal 100 or more, it queues a bull hit | Fake ticks make it ignore the update-order check (P1) | Waiting on P1 | No. The loop is short and stops at the first spike; its other checks are one-line comparisons | `features/velocity-hits.test.ts` (8): 100-damage threshold, toggle, spike owner, update order, Monkey Tail, range. Plus `test/helpers/game.ts`, a scripted-game helper for feature tests | tested |
+
+## Possible issues (Step 1)
+
+| # | Where | What I found | Why I'm asking |
+|---|---|---|---|
+| P1 | VelocityAttacker, AutoAttacker, AutoInstakiller, AutoMeleeSyncer, OneTicker, SpikeGrader, DefenseSystem, AutoBreaker, DefensiveKnockbacker (all read `PlayerStateManager.placementMap`) | The "who updates first on the server" order (gold tech) comes from the last real player update. Falcon's fake ticks, sent when a real one is late, carry no positions, so the order is empty and every comparison is false. Each module then guesses differently: Velocity Hits attacks even when the enemy really updates first (confirmed in a test). `ModManager` already skips these checks on fake ticks | The safe fix (skip order-based decisions when the order is unknown, as ModManager does) changes when these modules fire on laggy connections. Alternative: keep the previous real tick's order through a fake tick |
