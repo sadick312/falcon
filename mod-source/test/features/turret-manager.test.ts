@@ -57,7 +57,7 @@ describe("Turret Manager", () => {
         expect(hits).not.toContain(28);
     });
 
-    it("today picks the player as a turret's target even when an animal is closer (possible issue P19)", async () => {
+    it("expects a turret to shoot an animal that is closer than the player (P19)", async () => {
         const { LIST_ID_MAP } = await import("@constants/items");
         game = await startGame();
         game.spawn({ sid: ME, x: 1000, y: 1000, weaponIndex: 5 });
@@ -81,6 +81,7 @@ describe("Turret Manager", () => {
         } finally {
             (ais.all as unknown[]).splice((ais.all as unknown[]).indexOf(animal), 1);
         }
-        expect(enemy.turretThreats).toBe(1);
+        // It used to pick the player here.
+        expect(enemy.turretThreats).toBe(0);
     });
 });

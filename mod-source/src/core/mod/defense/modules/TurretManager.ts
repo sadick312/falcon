@@ -30,7 +30,8 @@ export default class TurretManager {
 
         const closestEnemyDistance = closestEnemy ? getDistSq(closestEnemy.real_position, turret) : Infinity;
         const closestAiDistance = closestAI ? getDistSq(closestAI.real_position, turret) : Infinity;
-        const closest = !isFinite(closestAiDistance) ? closestEnemy : closestEnemyDistance >= closestAiDistance ? closestEnemy : closestAI;
+        // The closer one is the target (this used to pick the player when the animal was closer).
+        const closest = !isFinite(closestAiDistance) ? closestEnemy : closestEnemyDistance <= closestAiDistance ? closestEnemy : closestAI;
 
         if (!isFinite(closestEnemyDistance) && !isFinite(closestAiDistance)) return;
         if (!closest) return;
