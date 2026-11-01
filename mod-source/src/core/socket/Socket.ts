@@ -229,10 +229,10 @@ export default class Socket extends NativeWebSocket {
             PlayerUpdateEvent.lastReceive = performance.now();
         }
 
-        if (GameEventTracker.TRACKABLE_PACKETS.has(parsed[0])) {
-            const data = parsed[1];
-            const sid = parsed[0] === PacketMap.SERVER_TO_CLIENT.ADD_PROJECTILE ? data[7] : data[0];
-            GameEventTracker.updateTracker(sid, parsed[0]);
+        // ADD_PROJECTILE's last value is the projectile's own sid, not the shooter's (it was read as the shooter here);
+        // ProjectileManager.add works out who fired and reports it.
+        if (parsed[0] === PacketMap.SERVER_TO_CLIENT.GATHER_ANIMATION) {
+            GameEventTracker.updateTracker(parsed[1][0], parsed[0]);
         }
 
         PacketBatcher.add(parsed[0], parsed[1]);

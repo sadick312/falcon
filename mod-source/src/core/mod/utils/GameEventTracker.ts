@@ -9,11 +9,6 @@ export default class GameEventTracker {
     private static textCache: Record<string, number> = {};
     private static textEncoder = new TextEncoder();
 
-    static readonly TRACKABLE_PACKETS = new Set<TrackableGameEvents>([
-        PacketMap.SERVER_TO_CLIENT.GATHER_ANIMATION,
-        PacketMap.SERVER_TO_CLIENT.ADD_PROJECTILE
-    ]);
-
     static prepare() {
         this.records.clear();
     }

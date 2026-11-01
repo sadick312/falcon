@@ -7,7 +7,9 @@ import Client from "@core/Client";
 import ObjectManager from "@core/logic/ObjectManager";
 import PlayerManager from "@core/logic/players/PlayerManager";
 import DefenseSystem from "@core/mod/defense/DefenseSystem";
+import GameEventTracker from "@core/mod/utils/GameEventTracker";
 import ModManager from "@core/ModManager";
+import PacketMap from "@root/utils/socket/PacketMap";
 import ScriptConfig from "@utils/config/ScriptConfig";
 import getDistSq from "@utils/geometry/getDistSq";
 import withinDist from "@utils/geometry/withinDist";
@@ -61,6 +63,8 @@ export default class ProjectileManager {
         let assigned = false;
 
         if (source) {
+            // Pattern recognition asks whether this player attacked; the packet itself doesn't say who fired.
+            GameEventTracker.updateTracker(source.sid, PacketMap.SERVER_TO_CLIENT.ADD_PROJECTILE);
             const simProj = this.simulationProjectiles.get(sid);
 
             if (simProj && !simProj.active) {
