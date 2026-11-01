@@ -43,7 +43,10 @@ export default async function drawSavedConfigs() {
         `;
         body.appendChild(deleteButton);
 
-        deleteButton.onclick = async () => {
+        deleteButton.onclick = async (event) => {
+            // The button is inside the row: without this the click also reached the row's load handler, which then
+            // loaded the just-deleted config (undefined), i.e. re-read the stored settings.
+            event.stopPropagation();
             savedConfigs[key] = undefined;
             localStorage.setItem("falcon-configs", JSON.stringify(savedConfigs));
             Menu.renderItems(menuContent.configs);
@@ -60,8 +63,10 @@ export default async function drawSavedConfigs() {
         `;
         body.appendChild(settingButton);
 
-        body.onclick = () => {
-            Menu.loadSettings(savedConfigs[key]);
+        body.onclick = async () => {
+            await Menu.loadSettings(savedConfigs[key]);
+            // Keep it (with Auto Save on): a loaded config used to be lost on the next page load.
+            await Menu.saveSettings();
         };
 
         Menu.contentElement.appendChild(body);

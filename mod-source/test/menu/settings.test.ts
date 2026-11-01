@@ -183,6 +183,29 @@ describe("saved configs (config tab UI)", () => {
         expect(Menu.getValue(TOGGLE)).toBe(false);
     });
 
+    it("keeps a loaded config for the next page load (Auto Save on)", async () => {
+        reset();
+        Menu.itemMap.autoSaveSettings.status = true;
+        Menu.itemMap[TOGGLE].status = false;
+        saveConfig("off");
+        Menu.itemMap[TOGGLE].status = true;
+        await Menu.saveSettings();
+
+        configRows()[0].click();
+        await vi.waitFor(() => expect(JSON.parse(localStorage.getItem("falcon-settings")!)[TOGGLE]).toBe(false));
+    });
+
+    it("deletes a config without loading anything", () => {
+        reset();
+        Menu.itemMap[TOGGLE].status = false;
+        saveConfig("gone");
+        const spy = vi.spyOn(Menu, "loadSettings");
+
+        configRows()[0].querySelector<HTMLElement>(".menuItemSettings")!.click();
+        expect(spy).not.toHaveBeenCalled();
+        expect(JSON.parse(localStorage.getItem(CONFIGS)!).gone).toBeUndefined();
+    });
+
     it("shows a config name as text, not HTML", () => {
         saveConfig("<img src=x onerror=alert(1)>");
         expect(Menu.contentElement.querySelector("img")).toBeNull();
