@@ -199,8 +199,10 @@ export function resetScreenSize() {
     WindowResizer.resize();
 }
 
+// Keys held while the window lost focus never get their keyup. This only cleared the keys, so the last direction
+// stayed and we kept walking after alt-tabbing out with a movement key down.
 window.onblur = () => {
-    Input.keys = {};
+    resetMovementDir();
 };
 
 function isKeyboardActive() {
