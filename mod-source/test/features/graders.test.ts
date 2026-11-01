@@ -63,19 +63,18 @@ describe("Graders", () => {
         PlacementSystem.usedAnglesCount = 0;
     });
 
-    it("today never give traps the 'enemy could place here' bonus (possible issue P14)", async () => {
-        // The trap spot is about 35 from the enemy, well inside its place reach. TrapGrader compares the squared
-        // distance with the plain reach, so the bonus (+1, or +.5 when the enemy can't place there) is decided by
-        // whether 35² <= reach: never.
+    it("give traps within the enemy's place reach a bonus: +1, or +.5 when the enemy can't place there (P14)", async () => {
+        // The trap spot is about 35 from the enemy, well inside its place reach. TrapGrader used to compare the
+        // squared distance with the plain reach, so the bonus never applied (both grades came out equal).
         const { grade, enemy, LIST_ID_MAP } = await setUp();
-        expect(35 ** 2).toBeGreaterThan(enemy.placePotential.range + 50);
-        const withAbuse = grade(LIST_ID_MAP.PIT_TRAP, 0, () => { });
-        const before = withAbuse.spot.grade;
-        // Re-grade with canAbuse flipped: the result is the same, so the bonus wasn't applied either way.
-        withAbuse.spot.grade = 0;
-        withAbuse.grader.internalCache.canAbuse = !withAbuse.grader.internalCache.canAbuse;
-        withAbuse.grader.grade(withAbuse.spot, enemy);
-        expect(withAbuse.spot.grade).toBe(before);
+        const { spot, grader } = grade(LIST_ID_MAP.PIT_TRAP, 0);
+        const regrade = (canAbuse: boolean) => {
+            spot.grade = 0;
+            grader.internalCache.canAbuse = canAbuse;
+            grader.grade(spot, enemy);
+            return spot.grade;
+        };
+        expect(regrade(true) - regrade(false)).toBeCloseTo(0.5);
     });
 
     it("today leave the spike-tick hit's damage out of the spike simulation (possible issue P15)", async () => {

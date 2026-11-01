@@ -12,14 +12,15 @@ export default class TrapGrader extends Grader {
     private readonly TRAP_SCALE_SQ = 49 * 49;
 
     private factorTrapHit(trap: Angle, enemy: Player) {
-        const distance = this.distanceSqMap.get(enemy.sid)!;
+        const distanceSq = this.distanceSqMap.get(enemy.sid)!;
+        const placeReach = enemy.placePotential.range + trap.scale;
 
-        if (distance < this.TRAP_SCALE_SQ) {
+        if (distanceSq < this.TRAP_SCALE_SQ) {
             trap.grade++;
         }
 
-        if (distance < this.CLOSEST_OBJ_DISTANCE_SQ) trap.grade += .5;
-        if (distance <= enemy.placePotential.range + trap.scale) {
+        if (distanceSq < this.CLOSEST_OBJ_DISTANCE_SQ) trap.grade += .5;
+        if (distanceSq <= placeReach * placeReach) {
             if (this.internalCache.canAbuse) trap.grade++;
             else trap.grade += .5;
         }
