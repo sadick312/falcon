@@ -25,7 +25,12 @@ export default class SpikeTicker extends CombatModule {
     consider = false;
 
     protected canExecute() {
-        if (!this.consider) return false;
+        // Set by AutoReplacer when it places a spike-tick spike; the hit only makes sense on the next tick. Used up here
+        // either way: kept until the hit happened, a flag set while the toggle was off (or while attacking) fired a stray
+        // bull hit whenever it next could, long after the trap broke.
+        const consider = this.consider;
+        this.consider = false;
+        if (!consider) return false;
         if (AttackManager.isAttacking()) return false;
         if (!HatSystem.allowHatSwitch()) return false;
         if (!ModManager.enemyData.nearest) return false;
@@ -57,7 +62,6 @@ export default class SpikeTicker extends CombatModule {
     }
 
     protected execute() {
-        AttackManager.spikeTicker.consider = false;
         this.commit();
     }
 
