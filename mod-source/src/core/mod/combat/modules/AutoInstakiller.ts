@@ -153,7 +153,8 @@ export default class AutoInstakiller extends CombatModule {
             const turretKbAction = sourceTwoKB_2;
 
             turretDmgAction.damage = 25;
-            hammerDamageAction.damage = CombatUtils.getMonkeyDamage(secondary.dmg);
+            // A spike-gear target reverses the combo with any secondary; Monkey Tail doesn't cut projectile damage.
+            hammerDamageAction.damage = CombatUtils.getMonkeyDamage(secondary.dmg, hasProjectile);
             hammerDamageAction.dontUse = false;
 
             turretKbAction.dontUse = false;

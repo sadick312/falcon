@@ -1,5 +1,6 @@
 import items, { WEAPON_ID_MAP, WEAPON_VARIANT_MAP } from "@constants/items";
 import Player from "@entities/Player";
+import Client from "@core/Client";
 import ModManager from "@core/ModManager";
 import ScriptConfig from "@utils/config/ScriptConfig";
 
@@ -65,7 +66,44 @@ export default class PlayerCombatManager {
         if (didHit) weaponData.lastSecondaryTickHit = tick;
     }
 
+    /**
+     * Our own weapons are known exactly: UPDATE_ITEMS sends them as [primary, secondary]. Without this, the guesses
+     * above (made for other players) also applied to us, so e.g. a great hammer was taken for a musket until held once,
+     * and combos switched to a weapon we don't own.
+     */
+    private static updateOwn(player: Player, id: number, variant?: number, didHit: boolean = false) {
+        const weaponData = player.weaponData;
+        const tick = ModManager.tick;
+        const [primary, secondary] = player.weapons;
+
+        if (primary !== undefined) {
+            weaponData.primary = primary;
+            weaponData.primaryConfirmed = true;
+        }
+
+        if (secondary !== undefined) {
+            weaponData.secondary = secondary;
+            weaponData.secondaryConfirmed = true;
+        }
+
+        const isSecondary = id >= 9;
+        if (typeof variant === "number") {
+            if (isSecondary) weaponData.secondaryVariant = variant;
+            else weaponData.primaryVariant = variant;
+        }
+
+        if (didHit) {
+            if (isSecondary) weaponData.lastSecondaryTickHit = tick;
+            else weaponData.lastPrimaryTickHit = tick;
+        }
+    }
+
     static update(player: Player, id: number, variant?: number, didHit: boolean = false) {
+        if (player.sid === Client.mySID) {
+            this.updateOwn(player, id, variant, didHit);
+            return;
+        }
+
         if (id < 9) {
             this.updatePrimary(player, id, variant, didHit);
             return;
