@@ -26,6 +26,7 @@
         "format": "node scripts/tool.mjs prettier --write .",
         "format:check": "node scripts/tool.mjs prettier --check .",
         "test": "vitest run",
+        "test:smoke": "node scripts/smoke-test.mjs",
         "bench": "vitest run --config vitest.bench.config.mts",
         "stats": "node scripts/dev-stats.mjs",
         "stats:report": "node scripts/lib/report.mjs"

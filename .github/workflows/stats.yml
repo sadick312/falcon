@@ -28,14 +28,8 @@ jobs:
 
       - run: npm run typecheck
 
-      # Builds the mod, the Quick Inject file and the extension, then checks that each output exists.
-      - run: npm run build
-
-      - run: |
-          for f in mod-source/dist/bundle.js mod-source/dist/falcon-quick-inject.js \
-                   falcon-launcher/dist/manifest.json falcon-launcher/dist/mod/bundle.js; do
-            test -s "$f" || { echo "Missing build output: $f"; exit 1; }
-          done
+      # Builds the mod, the Quick Inject file and the extension, then checks every output (scripts/smoke-test.mjs).
+      - run: npm run test:smoke
 
       - run: npm test
 
