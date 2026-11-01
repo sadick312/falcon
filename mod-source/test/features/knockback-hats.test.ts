@@ -99,22 +99,23 @@ describe("Barbarian Knockback", () => {
 describe("Turret Gear Knockback", () => {
     const turret = (s: Partial<Scenario> = {}) => play("TurretGearKnockbacker", { toggle: "turretGearKB", ...s });
 
+    it("puts on turret gear when the bullet has a clear line and its knockback would push the enemy into spikes", async () => {
+        expect((await turret()).length).toBeGreaterThan(0);
+    });
+
     it("does nothing when the knockback wouldn't do enough", async () => {
-        expect(await turret({ blocked: true, sim: NOTHING })).toEqual([]);
+        expect(await turret({ sim: NOTHING })).toEqual([]);
     });
 
     it("skips EMP Helmets, trapped enemies, enemies beyond 700, and the toggle off", async () => {
         const { STORE_HAT_MAP } = await import("@constants/store");
-        expect(await turret({ blocked: true, enemyHat: STORE_HAT_MAP.EMP_HELMET })).toEqual([]);
-        expect(await turret({ blocked: true, trapped: true })).toEqual([]);
-        expect(await turret({ blocked: true, enemyX: 1800 })).toEqual([]);
-        expect(await turret({ blocked: true, enable: false })).toEqual([]);
+        expect(await turret({ enemyHat: STORE_HAT_MAP.EMP_HELMET })).toEqual([]);
+        expect(await turret({ trapped: true })).toEqual([]);
+        expect(await turret({ enemyX: 1800 })).toEqual([]);
+        expect(await turret({ enable: false })).toEqual([]);
     });
 
-    it("today only fires when the line to the enemy is blocked (possible issue P5)", async () => {
-        // canTurretHit() is "nothing blocks the line"; the module returns when it's true, i.e. when the bullet could
-        // actually reach the enemy. See AUDIT.md P5.
-        expect((await turret({ blocked: false })).length).toBe(0);
-        expect((await turret({ blocked: true })).length).toBeGreaterThan(0);
+    it("does nothing when a tree blocks the bullet (P5: this used to be the only case it fired)", async () => {
+        expect(await turret({ blocked: true })).toEqual([]);
     });
 });

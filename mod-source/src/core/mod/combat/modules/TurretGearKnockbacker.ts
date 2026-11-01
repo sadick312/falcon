@@ -69,7 +69,8 @@ export default class TurretGearKnockbacker extends CombatModule {
         if (turret.reload !== 1) return;
         if (!withinDist(nearestEnemy.real_position, player.real_position, 700)) return;
         if (nearestEnemy.trap) return;
-        if (CombatUtils.canTurretHit(nearestEnemy)) return;
+        // The bullet needs a clear line to the enemy (this returned when the line was clear, so it only ran when blocked).
+        if (!CombatUtils.canTurretHit(nearestEnemy)) return;
 
         const kbAction = this.simActions[1][0];
         kbAction.pos.x = player.next_position.x;
