@@ -28,7 +28,9 @@ export default class DefenseUtils {
             const isInvalidPlayer = entity.isPlayer && (
                 entity.sid === enemy.sid || entity.sid === player.sid ||
                 entity.skinIndex === STORE_HAT_MAP.EMP_HELMET ||
-                Client.isTeam(entity, entity.sid)
+                // The turret won't shoot the enemy's teammates. This was `isTeam(entity, entity.sid)`, true for every
+                // player, so only animals were ever considered.
+                Client.isTeam(entity, enemy.sid)
             );
 
             if (isInvalidPlayer) continue;
@@ -79,7 +81,9 @@ export default class DefenseUtils {
             if (gameObject.ignoreCollision) continue;
 
             // Cheap tests before the raycasts.
-            if (projData.indx > gameObject.layer) continue;
+            // 1.8.2: an object stops a projectile when projectile.layer <= object.layer (this read `indx`, which happens
+            // to equal `layer` for every 1.8.2 projectile).
+            if (projData.layer > gameObject.layer) continue;
             if (playerDistSq <= getDistSq(gameObject, enemyPos)) continue;
 
             const tmpScale = gameObject.getScale() - .05;
