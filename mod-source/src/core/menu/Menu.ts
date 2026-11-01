@@ -385,6 +385,7 @@ export const menuContent: IMenuContent = {
         description: "Automatically places buildings quickly and efficiently.",
         icon: BUILDING_ICON,
         type: "toggle",
+        status: false,
         settings: [{
             label: "Range",
             id: "autoPlaceRange",
@@ -526,7 +527,8 @@ export const menuContent: IMenuContent = {
                 max: 3,
                 status: 1
             }],
-            type: "toggle"
+            type: "toggle",
+            status: false
         }, {
             label: "Auto Buy",
             id: "autoBuy",
@@ -622,7 +624,8 @@ export const menuContent: IMenuContent = {
         label: "Auto Respawn",
         icon: TOMBSTONE_ICON,
         description: "Automatically respawns when you die.",
-        type: "toggle"
+        type: "toggle",
+        status: false
     }, {
         label: "Kill Chat",
         id: "killChat",
@@ -686,6 +689,7 @@ export const menuContent: IMenuContent = {
             id: "bloodWingsOptimizations",
             description: "Uses blood wings for defensive purposes (e.g. no-soldier antionetick, no-shame antishamegrind, etc).",
             type: "toggle",
+            status: false,
             icon: BLOOD_WINGS_OPTIMIZATIONS_ICON,
             disabled: true
         }]
@@ -757,6 +761,7 @@ export const menuContent: IMenuContent = {
             settings: [{
                 label: "Always Show",
                 type: "toggle",
+                status: false,
                 id: "buildingHealthAlwaysShow",
                 description: "Render health bars regardless if the object has taken damage or not."
             }],
@@ -848,7 +853,8 @@ export const menuContent: IMenuContent = {
             id: "renderTurretReload",
             description: "Shows a reload bar next to players while their Turret Gear is reloading.",
             label: "Render Turret Gear Reload",
-            type: "toggle"
+            type: "toggle",
+            status: false
         }],
         type: "toggle",
         status: true
@@ -861,6 +867,7 @@ export const menuContent: IMenuContent = {
         status: true
     }, {
         type: "toggle",
+        status: false,
         label: "Stacked Text",
         id: "stackedText",
         description: "Damage and healing text are merged.",
@@ -888,7 +895,8 @@ export const menuContent: IMenuContent = {
             label: "Download Local Copy",
             description: "Saves the last 15 seconds of packets as an .fpl file each time you die.",
             id: "improvementLoggingLCopy",
-            type: "toggle"
+            type: "toggle",
+            status: false
         }],
         status: true
     }, {
