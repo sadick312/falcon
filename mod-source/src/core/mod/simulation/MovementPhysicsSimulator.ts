@@ -215,6 +215,10 @@ export default class MovementPhysicsSimulator {
         const distSq = getDistSq(gameObject, victim);
         if (distSq > maxReach * maxReach) return;
 
+        // 1.8.2 handles each object at most once per tick (the `W` map in Player.update skips it for the rest of the
+        // tick's sub-steps). This used to push out and slow (×0.75) again on every sub-step.
+        if (this.hasAlreadyCollided(gameObject.sid)) return;
+
         const ownerSID = gameObject.ownerSID ?? -1;
         const isEnemy = !Client.isTeam(victim, ownerSID);
         const isCactus = gameObject.type === 1 && gameObject.y >= ScriptConfig.MAP_SIZE - ScriptConfig.SNOW_BIOME_TOP;
@@ -229,7 +233,6 @@ export default class MovementPhysicsSimulator {
 
         const totalEffectiveScaleSq = totalEffectiveScale * totalEffectiveScale;
         const dir = getDirComp(victim, gameObject);
-        const hasAlreadyCollided = this.hasAlreadyCollided(gameObject.sid);
 
         if (distSq > totalEffectiveScaleSq) return;
 
@@ -240,7 +243,7 @@ export default class MovementPhysicsSimulator {
             victim.velY *= 0.75;
 
             const isDamageSpike = (isEnemy && gameObject.dmg) || isCactus;
-            if (!hasAlreadyCollided && isDamageSpike) {
+            if (isDamageSpike) {
                 const tmpSpd = 1.5;
 
                 this.damageVictim(victim, gameObject.dmg || 35, result, options);

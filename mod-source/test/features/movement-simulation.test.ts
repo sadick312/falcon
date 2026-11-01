@@ -62,12 +62,12 @@ describe("Movement / knockback simulation", () => {
         expect(next.spikeDamages).toBe(20);
     });
 
-    it("today pushes out of the same building on every sub-step of a tick (possible issue P21)", async () => {
+    it("handles each building once per tick, like 1.8.2 (P21)", async () => {
         // Fast into a wall (4 sub-steps). 1.8.2 handles each object once per tick (the `W` map in Player.update), so
-        // the velocity is cut by 0.75 once; Falcon cuts it again on every sub-step that still touches the wall.
+        // the velocity is cut by 0.75 once; Falcon used to cut it again on every sub-step that still touched the wall.
         const { Sim, state } = await setUp([{ x: 1150, y: 1000, itemId: "WOOD_WALL" }]);
         const next = Sim.simTick(state(1000, 1.6), null);
         const oneCut = 1.6 * 0.75 * Math.pow(0.993, 111);
-        expect(next.velX).toBeLessThan(oneCut - 0.01);
+        expect(next.velX).toBeCloseTo(oneCut, 5);
     });
 });
