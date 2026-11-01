@@ -83,7 +83,9 @@ export default class DefensiveKnockbacker extends DefenseModule {
         if (!collisionPotential) return;
         const attackAction = this.attackAction;
         AttackManager.prepareBullHitSequence(attackAction.sequence, "defKB");
-        attackAction.sequence[0].skinData[0] = turretReload === 1 ? STORE_HAT_MAP.TURRET_GEAR : STORE_HAT_MAP.SOLDIER_HELMET;
+        // Turret gear only if we own it (with "Require Turret" off it used to be asked for regardless).
+        const useTurret = turretReload === 1 && player.skins[STORE_HAT_MAP.TURRET_GEAR];
+        attackAction.sequence[0].skinData[0] = useTurret ? STORE_HAT_MAP.TURRET_GEAR : STORE_HAT_MAP.SOLDIER_HELMET;
         AttackManager.addAttackQueue(attackAction);
     }
 
