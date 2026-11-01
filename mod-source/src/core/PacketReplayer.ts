@@ -295,11 +295,24 @@ export default class PacketReplayer {
         }
     }
 
-    static start(bytes: ArrayBuffer) {
-        Client.mode = "replay";
-        this.decompileBinaryFormat(bytes);
+    /**
+     * Loads a recorded log and starts replaying it. Returns false, changing nothing, when the file isn't a usable log
+     * (empty, not msgpack, or no timed packets); this used to throw and leave the loading screen up.
+     */
+    static start(bytes: ArrayBuffer): boolean {
+        try {
+            this.decompileBinaryFormat(bytes);
+        } catch (err) {
+            console.warn("[Falcon] Not a packet log.", err);
+            this.allData.length = 0;
+            return false;
+        }
 
-        const startTimestamp = this.allData.find(e => e.timestamp > 0)!.timestamp;
+        const first = this.allData.find(e => e.timestamp > 0);
+        if (!first) return false;
+
+        Client.mode = "replay";
+        const startTimestamp = first.timestamp;
         const endTimestamp = this.allData[this.allData.length - 1].timestamp;
         const replayStart = Math.max(startTimestamp, endTimestamp - this.MAX_DURATION);
 
@@ -322,5 +335,6 @@ export default class PacketReplayer {
 
         packetReplayerOptionsPage.style.display = "none";
         Client.connect();
+        return true;
     }
 }

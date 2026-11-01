@@ -141,9 +141,10 @@ function hookMainMenuBtns() {
         fileReader.onload = () => {
             const result = fileReader.result;
 
-            if (result instanceof ArrayBuffer) {
-                PacketReplayer.start(result);
-                loadingCirclePage.style.display = "none";
+            loadingCirclePage.style.display = "none";
+
+            if (result instanceof ArrayBuffer && !PacketReplayer.start(result)) {
+                alert("That file isn't a Falcon packet log (no recorded packets found).");
             }
         };
 
