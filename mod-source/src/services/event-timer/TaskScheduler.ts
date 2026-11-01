@@ -63,7 +63,13 @@ export default class TaskScheduler {
             timer.dt -= dt;
             if (timer.dt <= threshold) {
                 timer.active = false;
-                timer.callback();
+                // A throwing task used to end this poll before it re-posted, with isRunning left true: no task ever
+                // ran again.
+                try {
+                    timer.callback();
+                } catch (err) {
+                    console.error("[Falcon] A scheduled task failed.", err);
+                }
             } else {
                 activeTimers++;
             }
