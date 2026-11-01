@@ -180,8 +180,11 @@ export default class ModManager {
             const primaryWpn = items.weapons[primary.id];
             const secondaryWpn = items.weapons[secondary.id];
 
-            const primaryWillBeReloaded = primary.reload + ScriptConfig.SERVER_UPDATE_SPEED / primaryWpn.speed >= 1;
-            const secondaryWillBeReloaded = secondary.reload + ScriptConfig.SERVER_UPDATE_SPEED / secondaryWpn.speed >= 1;
+            // The reload time recorded at the last swing (Samurai Armor shortens it, P25), else the weapon's speed.
+            const primaryReloadTime = player.reloadTimes[primary.id] ?? primaryWpn.speed;
+            const secondaryReloadTime = player.reloadTimes[secondary.id] ?? secondaryWpn.speed;
+            const primaryWillBeReloaded = primary.reload + ScriptConfig.SERVER_UPDATE_SPEED / primaryReloadTime >= 1;
+            const secondaryWillBeReloaded = secondary.reload + ScriptConfig.SERVER_UPDATE_SPEED / secondaryReloadTime >= 1;
             const isGreatHammer = secondary.id === WEAPON_ID_MAP.GREAT_HAMMER;
 
             primaryRange[j] = primaryWpn.range;
