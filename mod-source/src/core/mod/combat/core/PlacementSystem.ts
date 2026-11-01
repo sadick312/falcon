@@ -112,15 +112,22 @@ export default class PlacementSystem {
         return true;
     }
 
+    /** The building limit `place()` enforces for this item, or undefined when it doesn't enforce one. */
+    static getPlaceLimit(id: number) {
+        const item = items.list[id];
+        if (typeof item.group.limit !== "number" || Client.socket.isPrivateServer) return undefined;
+        return item.group.sandboxLimit ?? 99;
+    }
+
     static place(id: number, angle: number = Input.getAttackDir(), itemCount?: number) {
         const player = Client.player;
         if (!player.items.includes(id)) return 0;
 
         const item = items.list[id];
+        const limit = this.getPlaceLimit(id);
         let count = 0;
 
-        if (typeof item.group.limit === "number" && !Client.socket.isPrivateServer) {
-            const limit = item.group.sandboxLimit ?? 99;
+        if (limit !== undefined) {
             count = itemCount ?? player.itemCounts[item.group.id];
             const isFull = count + 1 > limit;
 

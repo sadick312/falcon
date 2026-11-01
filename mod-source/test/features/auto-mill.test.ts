@@ -14,6 +14,8 @@ interface Scenario {
     millCount?: number;
     /** How far we move before the tick that is checked. */
     moved?: number;
+    /** Placements already made this tick (hotkeys) before Auto Mill runs. */
+    alreadyPlaced?: number;
 }
 
 /** Returns the angles windmills were placed at during the checked tick, and whether Auto Mill is still on. */
@@ -35,6 +37,7 @@ async function play(s: Scenario = {}) {
     const main = AutoMiller.main.bind(AutoMiller);
     let counted = -1;
     vi.spyOn(AutoMiller, "main").mockImplementation(() => {
+        PlacementSystem.totalPlacements += s.alreadyPlaced ?? 0;
         main();
         counted = PlacementSystem.totalPlacements;
     });
@@ -75,10 +78,19 @@ describe("Auto Mill", () => {
         expect(stillOn).toBe(false);
     });
 
-    it("today doesn't count its windmills toward the 4-per-tick cap (possible issue P12)", async () => {
+    it("counts its windmills toward the 4-per-tick cap (P12)", async () => {
+        // They used to go out on top of it: the count stayed 0.
         const { angles, counted } = await play();
         expect(angles.length).toBe(3);
-        expect(counted).toBe(0);
+        expect(counted).toBe(3);
+    });
+
+    it("places only what's left of the cap", async () => {
+        const { angles, counted } = await play({ alreadyPlaced: 2 });
+        expect(angles.length).toBe(2);
+        expect(angles[0]).toBeCloseTo(Math.PI);
+        expect(counted).toBe(4);
+        expect((await play({ alreadyPlaced: 4 })).angles).toEqual([]);
     });
 
     it("stops at the limit part-way through a batch", async () => {
