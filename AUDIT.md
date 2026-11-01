@@ -118,53 +118,53 @@ Feature-by-feature audit for MooMoo.io **v1.8.2** (sandbox.moomodding.io). Start
 | 55 | Packet recorder (`!plog`) | services/packet-recorder/PacketRecorder.ts | fixed + tested | Tests exist. Fixed: a saved spawn per respawn |
 | 56 | Packet replayer | PacketReplayer.ts | fixed + tested | Fixed: unusable files threw. Possible issue P28 (replays never place) |
 | 57 | UI events (clan menu, items, notifications, values, upgrades) | events/updateClanMenu.ts, updateItems.ts, updateNotifications.ts, updatePlayerValue.ts, updateUpgrades.ts | tested | |
-| 58 | Packet names and types | utils/socket/PacketMap.ts | not checked | |
+| 58 | Packet names and types | utils/socket/PacketMap.ts | tested |  |
 
 ### Menu and settings (`core/menu`)
 
 | # | Feature | File(s) | Status | Earlier work |
 |---|---|---|---|---|
-| 59 | Menu, settings save/load, favorites | Menu.ts, icons.ts, menuStyle.ts, misc/Stack.ts | not checked | Settings versioning + tests |
-| 60 | Saved configs | utils/drawConfigUI.ts, drawSavedConfigs.ts | not checked | Tests exist |
-| 61 | Menu controls (toggle, slider, select, number, group, paragraph, label, body) | utils/draw*.ts (8 files) | not checked | Paragraph container bug fixed |
-| 62 | Chat log | utils/drawChatLog.ts | not checked | |
+| 59 | Menu, settings save/load, favorites | Menu.ts, icons.ts, menuStyle.ts, misc/Stack.ts | tested | Settings versioning + tests |
+| 60 | Saved configs | utils/drawConfigUI.ts, drawSavedConfigs.ts | fixed + tested | Tests exist. Fixed: delete also loaded; loaded config not kept |
+| 61 | Menu controls (toggle, slider, select, number, group, paragraph, label, body) | utils/draw*.ts (8 files) | tested | Paragraph container bug fixed |
+| 62 | Chat log | utils/drawChatLog.ts | tested |  |
 
 ### Game UI and services
 
 | # | Feature | File(s) | Status | Earlier work |
 |---|---|---|---|---|
-| 63 | Startup and page setup | index.ts, ui/Loader.ts, ui/DisclaimerDisplay.ts, ui/data/AllTemporaryObjects.ts | not checked | |
-| 64 | Input (keys, mouse, chat box) | ui/Hook.ts | not checked | |
-| 65 | Server browser | ui/ServerBrowser.ts, services/network/Http.ts | not checked | |
-| 66 | Connection error screens | ui/ConnectionError.ts | not checked | |
-| 67 | Sub-millisecond timers | services/event-timer/TaskScheduler.ts | not checked | |
-| 68 | Profiler (dev builds only) | services/profiler/Profiler.ts | not checked | |
-| 69 | Script config | utils/utils/config/ScriptConfig.ts | not checked | |
+| 63 | Startup and page setup | index.ts, ui/Loader.ts, ui/DisclaimerDisplay.ts, ui/data/AllTemporaryObjects.ts | checked |  |
+| 64 | Input (keys, mouse, chat box) | ui/Hook.ts | fixed + tested | Fixed: kept walking after alt-tab |
+| 65 | Server browser | ui/ServerBrowser.ts, services/network/Http.ts | tested |  |
+| 66 | Connection error screens | ui/ConnectionError.ts | checked |  |
+| 67 | Sub-millisecond timers | services/event-timer/TaskScheduler.ts | fixed + tested | Fixed: one failing task stopped the scheduler |
+| 68 | Profiler (dev builds only) | services/profiler/Profiler.ts | tested |  |
+| 69 | Script config | utils/utils/config/ScriptConfig.ts | tested | Matches 1.8.2 |
 
 ### Rendering (`rendering`)
 
 | # | Feature | File(s) | Status | Earlier work |
 |---|---|---|---|---|
-| 70 | Render loop, camera, resize, sprite cache | RendererSystem.ts, RendererUtils.ts, RenderingConfig.ts, core/CameraManager.ts, WindowResizer.ts, SpriteCache.ts | not checked | |
-| 71 | World drawing (players, AIs, objects, projectiles, names, text, chats, background, water, borders) | utils/core/ (11 files) | not checked | renderNames 0% covered |
-| 72 | Building drawing | utils/items/ (5 files) | not checked | |
-| 73 | Mod overlays (placements, paths, one-tick line, minimap, grid, building health, breaker visuals) | utils/mod/ (10 files) | not checked | |
+| 70 | Render loop, camera, resize, sprite cache | RendererSystem.ts, RendererUtils.ts, RenderingConfig.ts, core/CameraManager.ts, WindowResizer.ts, SpriteCache.ts | checked |  |
+| 71 | World drawing (players, AIs, objects, projectiles, names, text, chats, background, water, borders) | utils/core/ (11 files) | checked | renderNames 0% covered |
+| 72 | Building drawing | utils/items/ (5 files) | checked |  |
+| 73 | Mod overlays (placements, paths, one-tick line, minimap, grid, building health, breaker visuals) | utils/mod/ (10 files) | checked |  |
 
 ### Shared helpers (`utils`)
 
 | # | Feature | File(s) | Status | Earlier work |
 |---|---|---|---|---|
-| 74 | Game data | utils/constants/items.ts, store.ts, GameObject.ts, PlayerInitType.ts | not checked | Compared with 1.8.2 earlier |
-| 75 | Geometry and angles | utils/utils/geometry/ (8), angle/ (5), utils/types/geometry/Vec2.ts | not checked | Mostly tested |
-| 76 | Small helpers (math, random, storage, DOM, emoji text) | utils/utils/math/, random/, storage/, dom/, text/ | not checked | Mostly tested |
+| 74 | Game data | utils/constants/items.ts, store.ts, GameObject.ts, PlayerInitType.ts | checked | Compared with 1.8.2 earlier. Compared with 1.8.2 in Step 0.5 |
+| 75 | Geometry and angles | utils/utils/geometry/ (8), angle/ (5), utils/types/geometry/Vec2.ts | tested | Mostly tested. lineInRect matches 1.8.2 |
+| 76 | Small helpers (math, random, storage, DOM, emoji text) | utils/utils/math/, random/, storage/, dom/, text/ | checked | Mostly tested |
 
 ### Launcher (`falcon-launcher`)
 
 | # | Feature | File(s) | Status | Earlier work |
 |---|---|---|---|---|
-| 77 | Background worker (injects the mod) | src/background.ts, manifest.json | not checked | Host access limited to https |
-| 78 | Page loader (shared with Quick Inject) | src/gameLoader.ts, mod-source/packaging/build-inject.mjs | not checked | |
-| 79 | Content script | src/remove.js | not checked | |
+| 77 | Background worker (injects the mod) | src/background.ts, manifest.json | tested | Host access limited to https |
+| 78 | Page loader (shared with Quick Inject) | src/gameLoader.ts, mod-source/packaging/build-inject.mjs | tested |  |
+| 79 | Content script | src/remove.js | tested | Possible issue P29 |
 
 ## 1.8.2 differences
 
@@ -331,13 +331,28 @@ Possible issues waiting for a decision are listed under "Possible issues (Step 1
 
 | 57 | UI events | Redraw the tribe menu (members with Kick for the owner, or tribes to join), the hotbar, tribe join requests, resources, and the upgrade choices (prerequisites as in 1.8.2; Auto Upgrade picks cookie, pit trap, greater spikes or the chosen 7th-slot item) | None. Names are written with innerText, so they can't inject HTML | - | No | `features/ui-events.test.ts` (3): tribe members as text with Kick for the owner, join request answered, hotbar | tested |
 
-**Audit stopped after #57 at the user's request (1 Nov 2026).** Features 58-79 (packet names, menu and settings, saved configs, menu controls, chat log, startup, input, server browser, connection screens, timers, profiler, script config, rendering, game data, geometry, helpers, and the launcher) were not audited in this pass; earlier work listed in their rows still applies.
+**Audit paused after #57 at the user's request, then resumed on 2 Nov 2026 for 58-79**, faster: each was read for bugs and checked against 1.8.2 where it applies; clear bugs were fixed with a test that fails on the old code. (Between the two, every project file disappeared from the working folder, from outside this session; they were restored from git at `26de9a3` with the user's OK and all checks passed again. The untracked ANALYTICS_REPORT.md could not be restored.)
+
+| # | Feature | Result | Commit | Tests |
+|---|---|---|---|---|
+| 58 | Packet names | Compared with 1.8.2 in Step 0.5; ids unique per direction, Falcon's own packets separate | `fb32d79` | `features/packet-map.test.ts` (3) |
+| 59 | Menu, settings | Saving, loading, versioning, favorites already tested; all real settings have their own id (16 layout items share the empty id, not saved as settings), selects start on an option | `20857dd` | `features/menu.test.ts` (3) |
+| 60 | Saved configs | **Fixed:** the delete button's click also reached the row's load handler (reloading the stored settings); a loaded config wasn't saved, so with Auto Save on it was lost on the next page load | `fa5d2c9` | `test/menu/settings.test.ts` (+2, both fail on the old code) |
+| 61-62 | Menu controls, chat log | A toggle click flips, saves and updates its setting; the chat log keeps 500 entries as text | `7b500bd` | `features/menu-controls.test.ts` (2) |
+| 63 | Startup | Checked; exercised by every test through the test page setup | - | - |
+| 64 | Input | **Fixed:** losing window focus cleared the held keys but not the movement direction, so after alt-tabbing with a movement key down we kept walking | `ac5ccba` | `features/input.test.ts` (3, one fails on the old code) |
+| 65-66 | Server browser, connection screens | Timeouts, retries for 5xx / 429 only, readable errors; every server name, error and notice is written as text | `e7a9e09` | `features/startup-and-services.test.ts` |
+| 67 | Timers | **Fixed:** a task that threw ended the poll with the scheduler marked running, so no delayed task (artificial ping) ever ran again | `70328fd` | `features/startup-and-services.test.ts` (fails on the old code) |
+| 68-69 | Profiler, script config | Profiler off unless switched on; every script-config constant matches 1.8.2 (map 14400, snow 2400, speed 0.0016, 9 Hz, gather π/2.6, hit π/2, shield π/3, wiggle 10, turret gear 2500, weapon variants) | `e7a9e09` | same file |
+| 70-73 | Rendering | Checked: per-frame lists reset every frame, sprite caches bounded, a failing frame still schedules the next. No canvas in the test environment, so no new tests | - | - |
+| 74-76 | Game data, geometry, helpers | Game data compared in Step 0.5; `lineInRect` (projectile hits, line of sight) is line-for-line 1.8.2's and agrees on 2000 random cases | `877806b` | `features/shared-helpers.test.ts` (2) |
+| 77-79 | Launcher | Injects only into the two game pages' main frame, pinned to the page load; manifest and worker list the same two sites; the page loader replaces the page, keeps the old HTML and starts the client once. **P29** below | `d80bfdf` | `features/launcher.test.ts` (3) |
 
 **Behaviour change in #3 (a):** the replay fingerprints changed for `sample-base` and `sample-busy` (`test/fixtures/replay-fingerprints.json` updated). In those recordings the server never shows us holding the musket, so the old code thought it was always reloaded and kept attempting combos (161 musket switches, 123 bull helmets on sample-busy). The new code: 1 and 18. In a real game the old behaviour only lasted until we held our secondary once, but every combo it planned in that window used an unloaded weapon.
 
 ## Possible issues (Step 1)
 
-P1-P25: all fixed as suggested on 1 Nov 2026; see the Result column. P26-P27 skipped by the user. P28 not decided (audit stopped).
+P1-P25: all fixed as suggested on 1 Nov 2026; see the Result column. P26-P27 skipped by the user. P28-P29 not decided.
 
 | # | Where | What I found | Why I'm asking | Result |
 |---|---|---|---|---|
@@ -369,3 +384,4 @@ P1-P25: all fixed as suggested on 1 Nov 2026; see the Result column. P26-P27 ski
 | P26 | [HealthUpdateEvent.ts:74](mod-source/src/core/socket/events/core/HealthUpdateEvent.ts:74) `onHeal` | Every health gain counts as eating for shame (+1 within a tick of a hit, else −2). In 1.8.2 only eating food changes shame; regen, healing accessories and healing pads don't. Falcon's shame count can therefore drift, and ours decides when Auto Heal is safe to eat | For our own player, count shame only on ticks where we actually ate (we know when we send food); enemies stay as they are (we can't see their food). I suggest doing that | Skipped (user's decision) |
 | P27 | [PacketBatcher.ts:72](mod-source/src/core/utils/PacketBatcher.ts:72) `flush` | The batch is sorted so the player update comes last. With two ticks in one batch (a lag burst), both updates go to the end, so tick N runs with tick N+1's swings, hits and health changes already counted | Splitting the batch at each update (packets before an update stay with it; anything after the last update still goes before it, as now) keeps single-tick batches exactly as they are and fixes bursts. I suggest doing it | Skipped (user's decision) |
 | P28 | [Client.ts:77](mod-source/src/core/Client.ts:77) `connect` (replay mode) | Replay mode returns before `PacketTracker.init()`, so every placement request in a replay is refused: replays and the replay benchmark never show Falcon's placements | Starting the budget in replays makes them show placements, but changes every recorded benchmark result. Not decided (audit stopped) | Not decided |
+| P29 | [remove.js](falcon-launcher/src/remove.js) | The content script removes every added `<script>` with a `src`, which includes the Cloudflare Turnstile script Falcon itself adds on sandbox.moomoo.io (1.9.0 only; moomodding.io has no captcha). Browsers usually keep loading an already-inserted script even if it's removed, so this may be harmless; the test environment can't show it | Exempting challenges.cloudflare.com from the removal is safe either way. Not decided | Not decided |
