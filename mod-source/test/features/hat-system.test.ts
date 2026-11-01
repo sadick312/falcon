@@ -10,6 +10,9 @@ let game: Game | undefined;
 afterEach(() => game?.done());
 
 const SOLDIER = 6;
+const BULL = 7;
+const TANK_GEAR = 40;
+const TURRET_GEAR = 53;
 const BOOSTER = 12;
 const WINTER_CAP = 15;
 const FLIPPER = 31;
@@ -60,8 +63,14 @@ describe("Hat System", () => {
         expect(await hat({ wearing: BOOSTER })).toBeUndefined();
     });
 
-    it("today takes off the current hat when the one it wants isn't owned (possible issue P18)", async () => {
-        // Wearing soldier helmet, moving, no booster hat: it switches to no hat at all.
-        expect(await hat({ wearing: SOLDIER, notOwned: [BOOSTER] })).toBe(0);
+    it("keeps the current hat when the one it wants isn't owned (P18)", async () => {
+        // Wearing soldier helmet, moving, no booster hat: it used to switch to no hat at all.
+        expect(await hat({ wearing: SOLDIER, notOwned: [BOOSTER] })).toBeUndefined();
+    });
+
+    it("still takes off bull helmet, tank gear or turret gear when the wanted hat isn't owned", async () => {
+        for (const wearing of [BULL, TANK_GEAR, TURRET_GEAR]) {
+            expect(await hat({ wearing, notOwned: [BOOSTER] }), String(wearing)).toBe(0);
+        }
     });
 });

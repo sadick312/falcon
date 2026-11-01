@@ -273,6 +273,8 @@ export default class HatSystem {
         return STORE_ACCESSORY_MAP.MONKEY_TAIL;
     }
 
+    private static readonly HATS_TO_DROP = new Set<number>([STORE_HAT_MAP.BULL_HELMET, STORE_HAT_MAP.TANK_GEAR, STORE_HAT_MAP.TURRET_GEAR]);
+
     static storeEquip(id: number, isAccessory: boolean) {
         if (this.sentHatPacket) return;
 
@@ -290,6 +292,10 @@ export default class HatSystem {
 
         if (pool[id]) return;
         if (curr === 0) return;
+
+        // The hat we want isn't owned. Keep the current one (it used to come off, even soldier helmet), unless it has a
+        // downside worth dropping: bull helmet drains health, tank gear and turret gear slow us.
+        if (!isAccessory && !this.HATS_TO_DROP.has(curr)) return;
 
         this.sentHatPacket = true;
         Client.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.STORE, false, 0, isAccessory);
