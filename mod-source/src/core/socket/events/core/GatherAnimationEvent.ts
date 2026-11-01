@@ -21,7 +21,7 @@ export default class GatherAnimationEvent extends MessageHandler<GatherAnimation
 
         if (player) {
             PlayerCombatManager.update(player, index, undefined, true);
-            player.reloads[index] = 0;
+            PlayerCombatManager.startReload(player, index);
 
             const wpn = items.weapons[index];
             player.animTime = player.animSpeed = wpn.speed;

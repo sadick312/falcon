@@ -73,11 +73,20 @@ describe("Players", () => {
         expect(polearm.enemy.weaponData.secondary).toBe(MUSKET);
     });
 
-    it("today ignores Samurai Armor's faster reload (possible issue P25)", async () => {
-        // 1.8.2: reload = weapon.speed × hat.atkSpd (Samurai Armor 0.78). After 80% of the normal time, a polearm
-        // swung in Samurai Armor is ready again; Falcon still thinks it's reloading.
+    it("reloads 22% faster after a swing in Samurai Armor, as 1.8.2 does (P25)", async () => {
+        // 1.8.2: reload = weapon.speed × hat.atkSpd (Samurai Armor 0.78): a polearm is ready after 546 ms. Falcon
+        // used the plain 700 ms, so after 666 ms it still thought the polearm was reloading.
         const { default: items } = await import("@constants/items");
         const { enemy } = await setUp({ skinIndex: SAMURAI_ARMOR });
+        game!.handlers.K(2, false, POLEARM);
+        const ticks = Math.ceil(items.weapons[POLEARM].speed * 0.8 / 111);
+        for (let i = 0; i < ticks; i++) game!.update();
+        expect(enemy.reloads[POLEARM]).toBe(1);
+    });
+
+    it("uses the plain reload time without Samurai Armor", async () => {
+        const { default: items } = await import("@constants/items");
+        const { enemy } = await setUp();
         game!.handlers.K(2, false, POLEARM);
         const ticks = Math.ceil(items.weapons[POLEARM].speed * 0.8 / 111);
         for (let i = 0; i < ticks; i++) game!.update();

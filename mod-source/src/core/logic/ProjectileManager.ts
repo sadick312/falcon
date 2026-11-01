@@ -5,6 +5,7 @@ import Projectile from "@entities/Projectile";
 import SimulationProjectile from "@entities/SimulationProjectile";
 import Client from "@core/Client";
 import ObjectManager from "@core/logic/ObjectManager";
+import PlayerCombatManager from "@core/logic/players/core/PlayerCombatManager";
 import PlayerManager from "@core/logic/players/PlayerManager";
 import DefenseSystem from "@core/mod/defense/DefenseSystem";
 import GameEventTracker from "@core/mod/utils/GameEventTracker";
@@ -125,7 +126,7 @@ export default class ProjectileManager {
                     }
                 }
 
-                source.reloads[weaponID] = 0;
+                PlayerCombatManager.startReload(source, weaponID);
                 source.weaponData.secondary = weaponID;
                 source.weaponData.secondaryConfirmed = true;
                 source.weaponData.lastSecondaryTickHit = tick;

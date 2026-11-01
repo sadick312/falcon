@@ -229,6 +229,8 @@ export default class Player implements Entity {
 
     weaponXP: number[] = [];
     reloads: Record<number, number> = {};
+    /** How long each weapon's current reload takes (ms): its speed × the attack-speed hat worn at the swing. */
+    reloadTimes: Record<number, number> = {};
     itemCounts: Record<number, number> = {};
 
     potentialTrap?: GameObject;

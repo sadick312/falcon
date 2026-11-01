@@ -1,4 +1,5 @@
 import items, { WEAPON_ID_MAP, WEAPON_VARIANT_MAP } from "@constants/items";
+import { hatMap } from "@constants/store";
 import Player from "@entities/Player";
 import Client from "@core/Client";
 import ModManager from "@core/ModManager";
@@ -113,6 +114,21 @@ export default class PlayerCombatManager {
         this.updateSecondary(player, id, variant, didHit);
     }
 
+    /**
+     * A weapon was just used: its reload restarts. 1.8.2 sets it to `weapon.speed × hat.atkSpd` (Samurai Armor 0.78);
+     * Falcon used weapon.speed alone. The hat is read once this tick's player update is in, since the swing packet
+     * arrives before it and the server uses the hat worn at the swing.
+     */
+    static startReload(player: Player, weaponId: number) {
+        player.reloads[weaponId] = 0;
+        player.reloadTimes[weaponId] = items.weapons[weaponId].speed;
+
+        ModManager.nextTick(() => {
+            const atkSpd = hatMap.get(player.skinIndex)?.atkSpd ?? 1;
+            player.reloadTimes[weaponId] = items.weapons[weaponId].speed * atkSpd;
+        });
+    }
+
     static updateReloads(player: Player, delta: number) {
         const tick = ModManager.tick;
         const weaponData = player.weaponData;
@@ -128,7 +144,7 @@ export default class PlayerCombatManager {
 
             player.reloads[weaponIndex] = Math.min(
                 1,
-                player.reloads[weaponIndex] + (delta / wpn.speed)
+                player.reloads[weaponIndex] + (delta / (player.reloadTimes[weaponIndex] ?? wpn.speed))
             );
 
             if (player.reloads[weaponIndex] === 1 && !wasReloaded) {
