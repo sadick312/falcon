@@ -43,7 +43,7 @@ Feature-by-feature audit for MooMoo.io **v1.8.2** (sandbox.moomodding.io). Start
 | 5 | Spike Tick | SpikeTicker.ts | tested | Toggle test. Fixed: stale trigger |
 | 6 | Dynamic One Tick | OneTicker.ts | tested | Toggle test. P1 fixed; possible issue P3 |
 | 7 | Projectile Sync | ProjectileSyncer.ts | tested | Toggle test |
-| 8 | Melee Sync | AutoMeleeSyncer.ts | not checked | Toggle test |
+| 8 | Melee Sync | AutoMeleeSyncer.ts | tested | Toggle test. P1 fixed |
 | 9 | Auto Push Strikes | AutoPushStriker.ts, push-strikes/ (Bullspam, Predictive, ShameStrike, PushStrikeMethod) | not checked | Toggle test |
 | 10 | Turret Bullet Assist | TurretAPAssister.ts | not checked | Toggle test |
 | 11 | Turret Gear Knockback | TurretGearKnockbacker.ts | not checked | Toggle test; duplicate of #12 noted |
@@ -231,6 +231,8 @@ Possible issues waiting for a decision are listed under "Possible issues (Step 1
 | 6 | Dynamic One Tick | Lands a turret-gear bullet and a bull-helmet hit on the same tick with a diamond polearm or ruby katana (25 + 53.1 × 1.5 = 104.65), from 195–265 units while moving in. Holds back against Soldier Helmet (×0.75, unless "Ignore Hats") and EMP Helmet (no turret damage). T toggles "Active" tap mode, which walks you to ~214 units with booster/tank/soldier hats; it turns itself off without a polearm | Fake ticks (P1, fixed). `willStayInSoldier`'s second reload check can never be true (P3) | P1 | No. It allocates two small step objects only when a one tick is possible | `features/one-tick.test.ts` (6): turret then bull, stone polearm too weak, toggle off, Soldier Helmet with and without "Ignore Hats", EMP Helmet, Monkey Tail | tested |
 
 | 7 | Projectile Sync | Bull-helmet hit timed with projectiles (turret bullets, arrows, musket shots) predicted to hit the enemy next tick, when our hit plus those reaches 100. The prediction comes from ProjectileManager's simulation | None found. Note: like the other hit modules it uses a fixed 100 instead of the enemy's health, and doesn't count the enemy's hat | - | No. One short loop | `features/projectile-sync.test.ts` (6), with real ADD_PROJECTILE packets: musket bullet → hit on the tick it arrives, arrow too weak, no projectile, toggle off, out of range, Monkey Tail | tested |
+
+| 8 | Melee Sync | Bull-helmet hit together with a chosen partner (their sid in "Sync With"; -1 = no one) when both primaries are reloaded, the two hits reach 100, and both can hit an enemy. Aims at the average direction of all enemies both can hit. Only works if the partner syncs back (their own Falcon) | Fake ticks (P1, fixed: that enemy is skipped). Design note: with reachable enemies on opposite sides, the average aim points at neither | P1 | No | `features/melee-sync.test.ts` (5): hit and aim at the shared enemy, no partner, partner out of reach, hits short of 100 (partner with daggers), toggle off | tested |
 
 **Behaviour change in #3 (a):** the replay fingerprints changed for `sample-base` and `sample-busy` (`test/fixtures/replay-fingerprints.json` updated). In those recordings the server never shows us holding the musket, so the old code thought it was always reloaded and kept attempting combos (161 musket switches, 123 bull helmets on sample-busy). The new code: 1 and 18. In a real game the old behaviour only lasted until we held our secondary once, but every combo it planned in that window used an unloaded weapon.
 
