@@ -38,15 +38,15 @@ describe("Auto Place", () => {
         expect(await play([], 2)).toEqual([]);
     });
 
-    it("today goes over the 4-per-tick cap when a hotkey places in the same tick (possible issue P10)", async () => {
+    it("keeps to the 4-per-tick cap when a hotkey places in the same tick (P10)", async () => {
         const placed = await play(["autoPlacing"], 1, async () => {
             const { Input } = await import("@ui/Hook");
             Input.keys["KeyV"] = true; // spike hotkey, released after the tick below
         });
         const { Input } = await import("@ui/Hook");
         Input.keys["KeyV"] = false;
-        // Auto Place picked its 4 spots before the hotkey placed, and places all of them: 1 spike + 4 traps.
+        // Auto Place picked its 4 spots before the hotkey placed; it used to place all of them (1 spike + 4 traps).
         expect(placed.filter(p => p === `1:${SPIKES}`).length).toBe(1);
-        expect(placed.length).toBe(5);
+        expect(placed.length).toBe(4);
     });
 });

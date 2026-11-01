@@ -177,7 +177,8 @@ export default class AutoPlacer extends Placer {
                 continue;
             }
 
-            if (shouldTick)
+            // The spots were picked in preStart(); a hotkey may have placed since then, so re-check the 4-per-tick cap.
+            if (shouldTick && PlacementSystem.totalPlacements < 4)
                 this.place(item);
         }
 
