@@ -1,4 +1,5 @@
 import { prepareGamePage, showLoadError, startFalconClient } from "./gameLoader";
+import { type LoadStatus, STATUS_REQUEST, type StatusReply } from "./status";
 
 (function () {
     // Game pages Falcon replaces. Keep in sync with content_scripts in manifest.json and the
@@ -41,10 +42,29 @@ import { prepareGamePage, showLoadError, startFalconClient } from "./gameLoader"
         return response.text();
     }
 
-    /** Logs the error in the extension's console and shows it on the game page. */
-    function reportLoadError(target: chrome.scripting.InjectionTarget, step: string, err: unknown) {
+    // Kept in memory only (no storage permission): the dashboard shows it, and it's gone when Chrome stops
+    // the idle background worker, which the dashboard explains.
+    let lastLoad: LoadStatus | null = null;
+
+    function hostOf(url: string) {
+        try {
+            return new URL(url).hostname;
+        } catch {
+            return url;
+        }
+    }
+
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        // Only our own pages (the dashboard) ask; content scripts on game pages never send this.
+        if (sender.id !== chrome.runtime.id || message?.type !== STATUS_REQUEST) return;
+        sendResponse({ lastLoad } satisfies StatusReply);
+    });
+
+    /** Logs the error in the extension's console, shows it on the game page and keeps it for the dashboard. */
+    function reportLoadError(target: chrome.scripting.InjectionTarget, url: string, step: string, err: unknown) {
         const message = `${step}: ${err instanceof Error ? err.message : String(err)}`;
         console.error(`[Falcon] ${message}`);
+        lastLoad = { host: hostOf(url), time: Date.now(), ok: false, error: message };
 
         chrome.scripting.executeScript({ target, world: "MAIN", func: showLoadError, args: [message] })
             // The tab may have closed or navigated away; nothing more to do then.
@@ -108,6 +128,7 @@ import { prepareGamePage, showLoadError, startFalconClient } from "./gameLoader"
             });
 
             if (started?.result) throw new Error(started.result);
-        }).catch((err) => reportLoadError(target, step, err));
+            lastLoad = { host: hostOf(details.url), time: Date.now(), ok: true };
+        }).catch((err) => reportLoadError(target, details.url, step, err));
     });
 })();
