@@ -104,7 +104,11 @@ export default class AngleFinder {
 
     static angleBuffer: Angle[] = Array.from({ length: this.HIGHEST_ANGLE_COUNT }, () => new Angle(0, 0, 0, 0, 0));
 
-    private static readonly MAX_INTERVALS = 30; // a estimate
+    // Each object adds 1 interval (2 if it straddles angle 0). 30 filled up in a busy base, and every object after that
+    // was ignored, so blocked spots were offered as free.
+    private static readonly MAX_INTERVALS = 64;
+    /** Room one object plus the river need: 2 intervals each (4 numbers). */
+    private static readonly INTERVAL_HEADROOM = 8;
     private static tmpBuffer = new Float32Array(AngleFinder.MAX_INTERVALS * 2);
 
     private static data: FinderComputeContext = {
@@ -549,8 +553,10 @@ export default class AngleFinder {
             const gameObject = blockableObjects[i];
             if (!gameObject || !gameObject.active || gameObject.isGhost) continue;
 
-            if (ctx.spike.rawIndex >= AngleFinder.MAX_INTERVALS * 2 || ctx.trap.rawIndex >= AngleFinder.MAX_INTERVALS * 2) {
-                console.log("raw interval has gone beyond 30 (basic fix: should increase the buffer)");
+            // Stop while there is still room: a Float32Array silently drops writes past its end.
+            const limit = AngleFinder.MAX_INTERVALS * 2 - AngleFinder.INTERVAL_HEADROOM;
+            if (ctx.spike.rawIndex > limit || ctx.trap.rawIndex > limit || ctx.spike.openIndex > limit || ctx.trap.openIndex > limit) {
+                console.log(`AngleFinder: more than ${AngleFinder.MAX_INTERVALS} blocked intervals; ignoring the remaining objects`);
                 break;
             }
 
