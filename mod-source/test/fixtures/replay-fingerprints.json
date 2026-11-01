@@ -1,20 +1,20 @@
 {
     "sample-base": {
-        "packets": "7e99e520367bcdfe",
+        "packets": "d492821fcdc2789c",
         "angles": "fa9e9cfcf67497eb",
-        "sentPackets": 1566,
+        "sentPackets": 1602,
         "angleComputes": 5275
     },
     "sample-busy": {
-        "packets": "d75f4efcb7333d9c",
+        "packets": "ad1179ba898596a5",
         "angles": "4406c273bb1794ab",
-        "sentPackets": 2863,
+        "sentPackets": 2899,
         "angleComputes": 14551
     },
     "sample-synthetic": {
-        "packets": "9aa1531682903b31",
+        "packets": "f815fbedf6756a5e",
         "angles": "b49ed1236fde6755",
-        "sentPackets": 354,
+        "sentPackets": 372,
         "angleComputes": 773
     }
 }

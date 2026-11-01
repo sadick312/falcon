@@ -344,6 +344,10 @@ export default class MovementPhysicsSimulator {
         const newState = Player.copyState(oldState);
         const gameObjects = this.getGameObjects();
 
+        // A new tick: forget earlier hits. Without this, an object hit in a previous simulation (or simTick) still
+        // counted as hit, and its spike damage was skipped.
+        this.clearCollisionMap();
+
         if (options.clearVelocity) {
             newState.velX = 0;
             newState.velY = 0;
