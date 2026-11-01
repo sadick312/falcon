@@ -184,8 +184,12 @@ const Endpoints = {
         return new URL(config.joinPath, config.apiOrigin).toString();
     },
 
+    /**
+     * A dev server on this machine ("localhost:1234"): plain ws:// and no captcha. This used `includes("localhost")`,
+     * which also matched hosts like "localhost.example.com" and would have skipped TLS and the captcha for them.
+     */
     isLocalHost(host: string) {
-        return host.includes("localhost");
+        return /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(host);
     },
 
     /** `{key}.{region}.moomoo.io` */
