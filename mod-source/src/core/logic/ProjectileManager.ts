@@ -30,6 +30,27 @@ export default class ProjectileManager {
     private static bulletPositionBuffer = { x: 0, y: 0 };
     private static turretPositionBuffer = { x: 0, y: 0 };
 
+    /** 1.8.2 projectile speeds: hunting bow 1.6, crossbow 2.5, repeater crossbow 2, musket 3.6. */
+    private static readonly WEAPON_SPEEDS: [number, number][] = [
+        [WEAPON_ID_MAP.HUNTING_BOW, 1.6],
+        [WEAPON_ID_MAP.CROSSBOW, 2.5],
+        [WEAPON_ID_MAP.REPEATER_CROSSBOW, 2],
+        [WEAPON_ID_MAP.MUSKET, 3.6]
+    ];
+
+    /** Marksman Cap's aMlt: the server sends speed × 1.3 for its wearer. */
+    private static readonly MARKSMAN_SPEED_MULT = 1.3;
+
+    /** Which projectile weapon fired at this speed (plain or with Marksman Cap). Unknown speeds count as a musket. */
+    private static weaponFromSpeed(speed: number) {
+        for (const [id, base] of this.WEAPON_SPEEDS) {
+            if (Math.abs(speed - base) < 1e-6 || Math.abs(speed - base * this.MARKSMAN_SPEED_MULT) < 1e-6) return id;
+        }
+
+        // Marksman Cap shots used to fall through to this and be taken for a musket.
+        return WEAPON_ID_MAP.MUSKET;
+    }
+
     static add(x: number, y: number, dir: number, range: number, speed: number, indx: number, layer: number, sid: number) {
         const tick = ModManager.tick;
         const visiblePlayers = PlayerManager.players.visible.all;
@@ -89,7 +110,7 @@ export default class ProjectileManager {
                 source.reloads[53] = 0;
                 source.weaponData.lastTurretTickHit = tick;
             } else {
-                const weaponID = speed == 1.6 ? 9 : speed == 2.5 ? 12 : speed == 2 ? 13 : 15;
+                const weaponID = this.weaponFromSpeed(speed);
 
                 if (!Client.isFriendly(source.sid)) {
                     const isDiaPolearm = source.weaponData.primary === WEAPON_ID_MAP.POLEARM && source.weaponData.primaryVariant >= WEAPON_VARIANT_MAP.DIAMOND;
