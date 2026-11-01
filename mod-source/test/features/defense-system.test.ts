@@ -62,12 +62,15 @@ describe("Defense System", () => {
         expect(DefenseSystem.skinIndex).toBe(STORE_HAT_MAP.SOLDIER_HELMET);
     });
 
-    it("today lets OUR Monkey Tail change how hard a Monkey Tail enemy can hit (possible issue P17)", async () => {
+    it("counts a Monkey Tail enemy's weapon + turret at full damage, whatever we wear (P17)", async () => {
         const { STORE_ACCESSORY_MAP } = await import("@constants/store");
         const monkey = STORE_ACCESSORY_MAP.MONKEY_TAIL;
         const without = await threat({ enemyTail: monkey });
         const withOurs = await threat({ enemyTail: monkey, myTail: monkey });
-        // The enemy's possible damage should not depend on what we wear; here it drops when we put Monkey Tail on.
-        expect(withOurs.total).toBeLessThan(without.total);
+        // It used to read our tail: the estimate dropped when we put Monkey Tail on.
+        expect(withOurs.total).toBe(without.total);
+        // The enemy can take the tail off and hit with weapon + turret (25).
+        const { default: items } = await import("@constants/items");
+        expect(without.total).toBeGreaterThanOrEqual(items.weapons[5].dmg + 25);
     });
 });

@@ -1,4 +1,3 @@
-import CombatUtils from "@combat-utils/CombatUtils";
 import items, { LIST_ID_MAP, WEAPON_ID_MAP, WEAPON_VARIANT_MAP } from "@constants/items";
 import Player from "@entities/Player";
 import { accessories, CORRUPT_X_WINGS_INDEX, hats, SPIKE_GEAR_INDEX, STORE_ACCESSORY_MAP, STORE_HAT_ID, STORE_HAT_MAP } from "@constants/store";
@@ -269,11 +268,9 @@ export default class DefenseSystem {
         const turretDamage = turret.reload >= HealerUtils.RELOAD_BUFFER && DefenseUtils.isInLineOfSight(enemy, turret) ? 25 : 0;
 
         if (primaryDamage > 0 && turretDamage > 0) {
-            const priTurretDamage = hasMonkeyTailOn ?
-                primary.dmg <= 31.25 ?
-                    primary.dmg :
-                    CombatUtils.getMonkeyDamage(primary.dmg) + turretDamage :
-                primary.dmg + turretDamage;
+            // Worst case, whatever either of us wears: a Monkey Tail enemy can take the tail off and hit at full damage,
+            // and the turret is on their hat. This used CombatUtils.getMonkeyDamage, which reads OUR tail.
+            const priTurretDamage = primary.dmg + turretDamage;
 
             primaryDamage = Math.max(priTurretDamage, primaryDamage);
         }
