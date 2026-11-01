@@ -77,7 +77,9 @@ export default class AntiBuller extends CombatModule {
             return;
         }
 
-        if (ourPrimary.reload === 1 && this.hasPredictedBullHit()) return;
+        // The counter hit waits for an attack in progress, like every other attack module (it's first in AttackManager's
+        // list, so it used to cut off combos). The hat request below still runs.
+        if (ourPrimary.reload === 1 && !AttackManager.isAttacking() && this.hasPredictedBullHit()) return;
         this.consider = false;
 
         let totalDamage = 0;

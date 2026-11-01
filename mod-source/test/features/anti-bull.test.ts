@@ -79,6 +79,24 @@ describe("Anti Bull: the counter hit", () => {
         expect(await counter()).toEqual(["pAB"]);
     });
 
+    it("waits instead of cutting off an attack in progress (P6)", async () => {
+        const { STORE_ACCESSORY_MAP, STORE_HAT_MAP } = await import("@constants/store");
+        game = await startGame({ enable: ["antiBull"] });
+        game.spawn({ sid: ME, x: 1000, y: 1000, weaponIndex: 5, skinIndex: STORE_HAT_MAP.SPIKE_GEAR, tailIndex: STORE_ACCESSORY_MAP.CORRUPT_X_WINGS });
+        game.spawn({ sid: 2, x: 1100, y: 1000, weaponIndex: 5 });
+        game.setLoadout([5], [0, 3, 6, 15]);
+        game.update();
+        game.update();
+        game.setHealth(ME, 55);
+        game.setHealth(2, 70);
+
+        const { default: AttackManager } = await import("@core/mod/combat/core/AttackManager");
+        vi.spyOn(AttackManager, "isAttacking").mockReturnValue(true);
+        const queued = vi.spyOn(AttackManager, "addAttackQueue").mockImplementation(() => { });
+        AttackManager.antiBuller.run();
+        expect(queued).not.toHaveBeenCalled();
+    });
+
     it("not without both items on", async () => {
         expect(await counter({ wearing: false })).toEqual([]);
     });
