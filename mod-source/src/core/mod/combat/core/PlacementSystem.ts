@@ -59,9 +59,10 @@ export default class PlacementSystem {
         const totalAllowedActions = PacketTracker.request("PLACE", 1);
         if (totalAllowedActions <= 0) return;
 
+        // Only placements that happened count toward the 4-per-tick cap Auto Place respects (Placer); a blocked spot
+        // or an item we don't have used to count too.
         if (keys["KeyH"]) {
-            this.checkPlace(PlacerUtils.placeSevenSlot(player), angle);
-            this.totalPlacements++;
+            if (this.checkPlace(PlacerUtils.placeSevenSlot(player), angle)) this.totalPlacements++;
             activityList.push("macroKeyH");
         }
 
@@ -71,14 +72,12 @@ export default class PlacementSystem {
         }
 
         if (keys["KeyF"]) {
-            this.checkPlace(player.items[4], angle);
-            this.totalPlacements++;
+            if (this.checkPlace(player.items[4], angle)) this.totalPlacements++;
             activityList.push("macroKeyF");
         }
 
         if (keys["KeyV"]) {
-            this.checkPlace(player.items[2], angle);
-            this.totalPlacements++;
+            if (this.checkPlace(player.items[2], angle)) this.totalPlacements++;
             activityList.push("macroKeyV");
         }
     }
@@ -92,10 +91,11 @@ export default class PlacementSystem {
 
     private static bufferAngle = new Angle(0, 0, 0, 0, 0);
 
+    /** Places item `id` at `angle` if we have it and the spot is free. Returns whether it placed. */
     static checkPlace(id: number, angle: number = Input.getAttackDir()) {
         const player = Client.player;
 
-        if (!player.items.includes(id)) return;
+        if (!player.items.includes(id)) return false;
 
         const item = items.list[id];
         const realPos = player.real_position;
@@ -104,11 +104,12 @@ export default class PlacementSystem {
         const tmpX = realPos.x + Math.cos(angle) * tmpScale;
         const tmpY = realPos.y + Math.sin(angle) * tmpScale;
 
-        if (!ObjectManager.checkItem(tmpX, tmpY, item.scale, id)) return;
+        if (!ObjectManager.checkItem(tmpX, tmpY, item.scale, id)) return false;
         this.bufferAngle.redefine(tmpX, tmpY, item.scale, angle, id);
 
         this.place(id, angle);
         this.sendMarker(this.bufferAngle, PlacementTypes.NORMAL);
+        return true;
     }
 
     static place(id: number, angle: number = Input.getAttackDir(), itemCount?: number) {
