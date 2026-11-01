@@ -88,8 +88,10 @@ export default class ChatCommands {
         if (!input.startsWith("!")) return false;
 
         const [name, ...args] = input.slice(1).trim().split(/\s+/);
-        const command = this.commands[name.toLowerCase()];
-        if (!command) return false;
+        const key = name.toLowerCase();
+        // Own commands only: "!constructor" or "!tostring" used to find Object's built-ins and throw on `.run`.
+        if (!Object.hasOwn(this.commands, key)) return false;
+        const command = this.commands[key];
 
         const reply = command.run(args);
         if (reply) this.reply(reply);
