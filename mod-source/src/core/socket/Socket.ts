@@ -80,7 +80,8 @@ export default class Socket extends NativeWebSocket {
 
         this.socketProtocol = socketProtocol;
         this.binaryType = "arraybuffer";
-        this.isPrivateServer = url.includes("localhost");
+        // Same rule as Endpoints.socketUrl (this used `url.includes("localhost")`, true for e.g. localhost.example.com).
+        this.isPrivateServer = Endpoints.isLocalHost(new URL(url).host);
         this.plainPackets = this.isPrivateServer || socketProtocol === null;
 
         this.onopen = (ev) => this.onOpen(ev);
@@ -231,7 +232,7 @@ export default class Socket extends NativeWebSocket {
 
         // ADD_PROJECTILE's last value is the projectile's own sid, not the shooter's (it was read as the shooter here);
         // ProjectileManager.add works out who fired and reports it.
-        if (parsed[0] === PacketMap.SERVER_TO_CLIENT.GATHER_ANIMATION) {
+        if (parsed[0] === PacketMap.SERVER_TO_CLIENT.GATHER_ANIMATION && Array.isArray(parsed[1])) {
             GameEventTracker.updateTracker(parsed[1][0], parsed[0]);
         }
 
