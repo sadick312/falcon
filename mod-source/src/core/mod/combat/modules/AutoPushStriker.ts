@@ -1,6 +1,7 @@
 import items, { WEAPON_ID_MAP } from "@constants/items";
 import Client from "@core/Client";
 import PlayerCombatManager from "@core/logic/players/core/PlayerCombatManager";
+import AttackManager from "@core/mod/combat/core/AttackManager";
 import AutoPusher from "@core/mod/combat/core/AutoPusher";
 import BullspamMethod from "@core/mod/combat/modules/push-strikes/modules/BullspamMethod";
 import PredictiveMethod from "@core/mod/combat/modules/push-strikes/modules/PredictiveMethod";
@@ -8,6 +9,7 @@ import ShameStrikeMethod from "@core/mod/combat/modules/push-strikes/modules/Sha
 import { PushStrikeContext } from "@core/mod/combat/modules/push-strikes/utils/PushStrikeMethod";
 import CombatModule from "@core/mod/combat/utils/CombatModule";
 import CombatUtils from "@core/mod/combat/utils/CombatUtils";
+import HatSystem from "@core/mod/defense/defense-modules/HatSystem";
 import ModManager from "@core/ModManager";
 import Menu from "@menu/Menu";
 
@@ -23,6 +25,10 @@ export default class AutoPusherStriker extends CombatModule {
     protected canExecute() {
         if (!AutoPusher.theSpike) return false;
         if (!ModManager.enemyData.nearest) return false;
+        // Like every other attack module: AttackManager starts whatever is queued, so without these a push strike
+        // cut off a combo in progress (e.g. an instakill's second hit) or replaced a hat defense chose.
+        if (AttackManager.isAttacking()) return false;
+        if (!HatSystem.allowHatSwitch()) return false;
         return true;
     }
 

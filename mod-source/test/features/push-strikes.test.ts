@@ -16,7 +16,7 @@ interface Scenario {
 }
 
 /** Sets the scene, makes the spike Auto Push's current target, runs the module once; returns the queued attacks. */
-async function strike(s: Scenario = {}, before?: (ctx: { enemy: import("@entities/Player").default; tick: number }) => void) {
+async function strike(s: Scenario = {}, before?: (ctx: { enemy: import("@entities/Player").default; tick: number }) => void | Promise<void>) {
     const { LIST_ID_MAP } = await import("@constants/items");
     game = await startGame({ enable: s.enable === false ? [] : ["attackInPush"], settings: s.settings });
     const [prevX, enemyX] = s.enemyPath ?? [1095, 1095];
@@ -35,7 +35,7 @@ async function strike(s: Scenario = {}, before?: (ctx: { enemy: import("@entitie
     const { default: AutoPushStriker } = await import("@combat-modules/AutoPushStriker");
 
     AutoPusher.theSpike = ObjectManager.getObject(700)!;
-    before?.({ enemy: ModManager.enemyData.nearest!, tick: ModManager.tick });
+    await before?.({ enemy: ModManager.enemyData.nearest!, tick: ModManager.tick });
     const module = new AutoPushStriker();
     module.init();
     const queued = vi.spyOn(AttackManager, "addAttackQueue").mockImplementation(() => { });
@@ -58,6 +58,23 @@ describe("Auto Push Strikes: Bullspam", () => {
     it("does nothing when the method is Disabled, or the toggle is off", async () => {
         expect(await strike({ settings: { "attackInPush:polearm_katana_method": 2 } })).toEqual([]);
         expect(await strike({ settings: BULLSPAM, enable: false })).toEqual([]);
+    });
+});
+
+describe("Auto Push Strikes: waiting for other attacks", () => {
+    it("doesn't cut off an attack already in progress", async () => {
+        // Mid-way through a 2-step combo: the next step is still to come. (Imported here: startGame reloads modules.)
+        expect(await strike({ settings: BULLSPAM }, async () => {
+            const { default: AttackManager } = await import("@core/mod/combat/core/AttackManager");
+            vi.spyOn(AttackManager, "isAttacking").mockReturnValue(true);
+        })).toEqual([]);
+    });
+
+    it("doesn't replace a hat defense chose", async () => {
+        expect(await strike({ settings: BULLSPAM }, async () => {
+            const { default: HatSystem } = await import("@core/mod/defense/defense-modules/HatSystem");
+            vi.spyOn(HatSystem, "allowHatSwitch").mockReturnValue(false);
+        })).toEqual([]);
     });
 });
 
