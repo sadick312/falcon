@@ -95,7 +95,8 @@ function insertionSortIntervals(arr: Float32Array, n: number) {
 }
 
 export default class AngleFinder {
-    private static riverObject = new GameObject(0, ScriptConfig.MAP_SIZE / 2, 0, 362, -1, -1);
+    /** 1.8.2 `checkItemLocation`: a building whose centre's y is within this of the map's middle is refused. */
+    private static readonly RIVER_HALF_WIDTH = 724 / 2;
 
     static readonly HIGHEST_ANGLE_COUNT = 140;
     static readonly CLOSEST_OBJ_DISTANCE_SQ = 20 * 20;
@@ -107,8 +108,8 @@ export default class AngleFinder {
     // Each object adds 1 interval (2 if it straddles angle 0). 30 filled up in a busy base, and every object after that
     // was ignored, so blocked spots were offered as free.
     private static readonly MAX_INTERVALS = 64;
-    /** Room one object plus the river need: 2 intervals each (4 numbers). */
-    private static readonly INTERVAL_HEADROOM = 8;
+    /** Room one object (up to 2 intervals) plus the river (up to 3) need, at 2 numbers per interval. */
+    private static readonly INTERVAL_HEADROOM = 10;
     private static tmpBuffer = new Float32Array(AngleFinder.MAX_INTERVALS * 2);
 
     private static data: FinderComputeContext = {
@@ -165,8 +166,7 @@ export default class AngleFinder {
         const placementOffset = 35 + itemScale + (item.placeOffset ?? 0);
         const placeDistanceSq = placementOffset * placementOffset;
 
-        const objScale = (this.riverObject === obj ? this.riverObject.scale :
-            obj.blocker ? obj.blocker : obj.getScale(.6, obj.isItem)) + (isOurPlayer ? .01 : -.05);
+        const objScale = (obj.blocker ? obj.blocker : obj.getScale(.6, obj.isItem)) + (isOurPlayer ? .01 : -.05);
 
         const totalRadius = itemScale + objScale;
         const totalRadiusSq = totalRadius * totalRadius;
@@ -177,10 +177,6 @@ export default class AngleFinder {
         if (distanceSq > maxReach * maxReach) return index;
 
         const distance = Math.sqrt(distanceSq);
-        const isRiverObject = obj === this.riverObject;
-        const riverObjectEffectiveScale = this.riverObject.scale - 20;
-        const riverObjectEffectiveScaleSq = riverObjectEffectiveScale * riverObjectEffectiveScale;
-        const isWithinRiver = isRiverObject && distanceSq <= riverObjectEffectiveScaleSq;
 
         if (isOurPlayer && isPreplace) {
             const ourPlayer = Client.player;
@@ -192,7 +188,7 @@ export default class AngleFinder {
             }
         }
 
-        if ((obj.blocker && distanceSq < AngleFinder.CLOSEST_BLOCKER_DISTANCE_SQ) || distanceSq < AngleFinder.CLOSEST_OBJ_DISTANCE_SQ || isWithinRiver) {
+        if ((obj.blocker && distanceSq < AngleFinder.CLOSEST_BLOCKER_DISTANCE_SQ) || distanceSq < AngleFinder.CLOSEST_OBJ_DISTANCE_SQ) {
             interval[index++] = 0;
             interval[index++] = Math.PI * 2;
             return index;
@@ -220,6 +216,57 @@ export default class AngleFinder {
         } else {
             interval[index++] = start;
             interval[index++] = end;
+        }
+
+        return index;
+    }
+
+    /**
+     * The directions in which the item's centre would land in the river band. 1.8.2 refuses a placement when
+     * `|y - MAP_SIZE / 2| <= 362`: a band, not a circle, and the building's own size doesn't count.
+     */
+    private static computeRiverInterval(playerPos: Point, item: ListItem, interval: Float32Array, index: number, isOurPlayer: boolean) {
+        const offset = 35 + item.scale + (item.placeOffset ?? 0);
+        const halfWidth = AngleFinder.RIVER_HALF_WIDTH + (isOurPlayer ? .01 : -.05);
+        const center = ScriptConfig.MAP_SIZE / 2;
+
+        // The centre lands at y = playerPos.y + offset * sin(angle); blocked while sin(angle) is in [low, high].
+        let low = (center - halfWidth - playerPos.y) / offset;
+        let high = (center + halfWidth - playerPos.y) / offset;
+        if (low > 1 || high < -1) return index;
+
+        if (low <= -1 && high >= 1) {
+            interval[index++] = 0;
+            interval[index++] = Math.PI * 2;
+            return index;
+        }
+
+        if (low < -1) low = -1;
+        if (high > 1) high = 1;
+
+        const a = Math.asin(low);
+        const b = Math.asin(high);
+
+        // sin is in [low, high] on [a, b] (right half) and on [π - b, π - a] (left half). These two meet when low or
+        // high is at -1 or 1, and the merge step joins them.
+        index = this.addArc(interval, index, a, b);
+        index = this.addArc(interval, index, Math.PI - b, Math.PI - a);
+        return index;
+    }
+
+    /** Adds the arc from `start` to `end` (end >= start, less than a full turn) as one or two intervals in [0, 2π]. */
+    private static addArc(interval: Float32Array, index: number, start: number, end: number) {
+        const from = normalizeAngle(start);
+        const to = from + (end - start);
+
+        if (to > Math.PI * 2) {
+            interval[index++] = from;
+            interval[index++] = Math.PI * 2;
+            interval[index++] = 0;
+            interval[index++] = to - Math.PI * 2;
+        } else {
+            interval[index++] = from;
+            interval[index++] = to;
         }
 
         return index;
@@ -540,7 +587,6 @@ export default class AngleFinder {
         const playerPos = player.real_position;
         const playerNextPos = player.sid === Client.mySID ? player.next_state : player.next_position;
         const blockableObjects = ObjectManager.pool.blockableObjects;
-        this.riverObject.x = playerPos.x;
 
         const ctx = this.data;
         this.resetCtx(ctx);
@@ -564,7 +610,9 @@ export default class AngleFinder {
             this.computeAllIntervals(requireNextPosition ? playerNextPos : playerPos, gameObject, spikeItem, trapItem, ctx, player.sid === Client.mySID, options);
         }
 
-        this.computeAllIntervals(playerPos, this.riverObject, spikeItem, trapItem, ctx, player.sid === Client.mySID, options);
+        const isOurPlayer = player.sid === Client.mySID;
+        if (!options.trap) ctx.spike.rawIndex = this.computeRiverInterval(playerPos, spikeItem, ctx.spike.raw, ctx.spike.rawIndex, isOurPlayer);
+        if (!options.spike) ctx.trap.rawIndex = this.computeRiverInterval(playerPos, trapItem, ctx.trap.raw, ctx.trap.rawIndex, isOurPlayer);
 
         if (options.preplace) {
             if (!options.trap) this.mergeRawInterval(ctx.spike, "open", "openIndex", "open", "openIndex");

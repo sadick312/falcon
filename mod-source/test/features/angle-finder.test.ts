@@ -68,13 +68,36 @@ describe("Angle Finder", () => {
         expect(overlapping).toEqual([]);
     });
 
-    it("today refuses spots just outside the river that the game allows (possible issue P13)", async () => {
-        // We stand 100 north of the river band. A spot straight down (angle PI/2) lands about 15 short of the band,
-        // which 1.8.2's checkItemLocation allows, but Falcon models the river as a circle 362 + the building's size.
+    /** The game's rule (1.8.2 checkItemLocation): refused when the centre's y is inside the band. */
+    const inRiver = (y: number) => Math.abs(y - MAP_CENTER) <= RIVER_HALF_WIDTH;
+
+    it("allows spots just outside the river, as the game does (P13)", async () => {
+        // We stand 100 north of the river band. A spot straight down lands about 15 short of the band. Falcon used to
+        // model the river as a circle of 362 + the building's size, and refused it.
         const { spots } = await find([], MAP_CENTER - RIVER_HALF_WIDTH - 100);
-        const down = spots.filter(s => Math.sin(s.angle) > 0.99);
-        expect(down.length).toBe(0);
-        // Straight up is fine.
+        expect(spots.some(s => Math.sin(s.angle) > 0.99)).toBe(true);
         expect(spots.some(s => Math.sin(s.angle) < -0.99)).toBe(true);
+        expect(spots.filter(s => inRiver(s.y))).toEqual([]);
+    });
+
+    it("near the river, offers only spots outside the band", async () => {
+        // 40 north of the band: straight down lands in the river, sideways and up don't.
+        const { spots } = await find([], MAP_CENTER - RIVER_HALF_WIDTH - 40);
+        expect(spots.length).toBeGreaterThan(0);
+        expect(spots.filter(s => inRiver(s.y))).toEqual([]);
+        expect(spots.some(s => Math.sin(s.angle) > 0.99)).toBe(false);
+        expect(spots.some(s => Math.abs(Math.cos(s.angle)) > 0.99)).toBe(true);
+    });
+
+    it("standing in the river near its edge, offers spots that land outside it", async () => {
+        // 20 inside the band: Falcon used to refuse every direction here.
+        const { spots } = await find([], MAP_CENTER - RIVER_HALF_WIDTH + 20);
+        expect(spots.length).toBeGreaterThan(0);
+        expect(spots.filter(s => inRiver(s.y))).toEqual([]);
+        expect(spots.every(s => Math.sin(s.angle) < 0)).toBe(true);
+    });
+
+    it("offers nothing in the middle of the river", async () => {
+        expect((await find([], MAP_CENTER)).spots).toEqual([]);
     });
 });
