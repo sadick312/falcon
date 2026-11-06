@@ -9,7 +9,10 @@
  *   BENCH_SETTINGS    JSON file with the menu settings to use (the "falcon-settings" localStorage value)
  *   BENCH_ALLOC=1     one extra run with V8's sampling heap profiler, for allocations per tick
  *   BENCH_CPU=1       one extra run with V8's CPU profiler, for self time per function
+ *   BENCH_CPU_LINES   with BENCH_CPU=1: sampled ticks per line for functions whose "file:line name" contains this
  *   BENCH_BASELINE=1  save this run as the baseline the next runs are compared against
+ *   BENCH_MODE        "bundle" (default): time an esbuild bundle shaped like production; "modules": the source
+ *                     modules through Vitest, slower but CPU/allocation profiles name source files and lines
  *
  * The replay itself (fake timers, seeded Math.random, packet fingerprint) lives in replay.ts.
  */
@@ -26,12 +29,14 @@ const env = process.env;
 const RUNS = Math.max(1, Number(env.BENCH_RUNS ?? 5));
 const SETTINGS = env.BENCH_SETTINGS ? fs.readFileSync(env.BENCH_SETTINGS, "utf8") : null;
 
-const replay = (packets: Packet[]) => replayOnce(packets, { settings: SETTINGS, profile: true });
+const MODE = env.BENCH_MODE === "modules" ? "modules" : "bundle";
+const replay = (packets: Packet[]) => replayOnce(packets, { settings: SETTINGS, profile: true, mode: MODE });
 type RunResult = Awaited<ReturnType<typeof replay>>;
 
 /** The path relative to src, or "" for code outside it. Line numbers are of the transformed module, close to the source. */
 function srcFile(rawUrl: string) {
     if (!rawUrl) return "";
+    if (rawUrl.includes("bench-bundle")) return "bundle";
     const url = decodeURIComponent(rawUrl.replace(/^file:\/\/\/?/, "")).replace(/\?.*$/, "");
     const file = path.relative(srcDir, url).replace(/\\/g, "/");
     return file.startsWith("..") || path.isAbsolute(file) ? "" : file;
@@ -39,20 +44,27 @@ function srcFile(rawUrl: string) {
 
 const functionKey = (frame: CallFrame, file: string) => `${file}:${frame.lineNumber + 1} ${frame.functionName || "(anonymous)"}`;
 
-interface CallFrame { url: string; functionName: string; lineNumber: number }
-interface CpuProfile { nodes: { id: number; callFrame: CallFrame }[]; samples: number[]; timeDeltas: number[] }
+interface CallFrame { url: string; functionName: string; lineNumber: number; scriptId?: string }
+interface CpuProfile {
+    nodes: { id: number; callFrame: CallFrame; positionTicks?: { line: number; ticks: number }[] }[];
+    samples: number[];
+    timeDeltas: number[];
+}
 
-/** Self time by function (src only) from V8's CPU profiler, over one replay. */
-async function sampleCpu(packets: Packet[]) {
+/**
+ * Self time by function (src only) from V8's CPU profiler, over one replay. With `lineFilter`, also the sampled
+ * ticks per line of the functions whose key contains it, with the line's code (lines are the transformed module's).
+ */
+async function sampleCpu(packets: Packet[], lineFilter?: string) {
     const session = new Session();
     session.connect();
+    if (lineFilter) await session.post("Debugger.enable");
     await session.post("Profiler.enable");
     await session.post("Profiler.setSamplingInterval", { interval: 50 });
     await session.post("Profiler.start");
 
     const run = await replay(packets);
     const { profile } = await session.post("Profiler.stop") as { profile: CpuProfile };
-    session.disconnect();
 
     const nodes = new Map(profile.nodes.map(n => [n.id, n]));
     const selfUs: Record<string, number> = {};
@@ -63,7 +75,34 @@ async function sampleCpu(packets: Packet[]) {
         const key = functionKey(frame, file);
         selfUs[key] = (selfUs[key] ?? 0) + (profile.timeDeltas[i] ?? 0);
     }
-    return { ticks: run.ticks, selfUs };
+
+    const lines: string[] = [];
+    if (lineFilter) {
+        const ticks = new Map<string, { scriptId: string; line: number; ticks: number }>();
+        for (const node of profile.nodes) {
+            const file = srcFile(node.callFrame.url);
+            if (!file || !functionKey(node.callFrame, file).includes(lineFilter) || !node.callFrame.scriptId) continue;
+            for (const p of node.positionTicks ?? []) {
+                const id = `${file}:${p.line}`;
+                const entry = ticks.get(id) ?? { scriptId: node.callFrame.scriptId, line: p.line, ticks: 0 };
+                entry.ticks += p.ticks;
+                ticks.set(id, entry);
+            }
+        }
+
+        const sources = new Map<string, string[]>();
+        for (const [id, entry] of [...ticks].sort((a, b) => b[1].ticks - a[1].ticks).slice(0, 25)) {
+            if (!sources.has(entry.scriptId)) {
+                const { scriptSource } = await session.post("Debugger.getScriptSource", { scriptId: entry.scriptId }) as { scriptSource: string };
+                sources.set(entry.scriptId, scriptSource.split("\n"));
+            }
+            const code = sources.get(entry.scriptId)![entry.line - 1]?.trim().slice(0, 110) ?? "";
+            lines.push(`${String(entry.ticks).padStart(6)}  ${id}  ${code}`);
+        }
+    }
+
+    session.disconnect();
+    return { ticks: run.ticks, selfUs, lines };
 }
 
 /** Allocated bytes by source file and by function (relative to src), from V8's sampling heap profiler, garbage included. */
@@ -193,8 +232,10 @@ describe("replay benchmark", () => {
             }
 
             let cpu: { fn: string; usPerTick: number }[] | undefined;
+            let cpuLines: string[] | undefined;
             if (env.BENCH_CPU === "1") {
-                const sample = await sampleCpu(packets);
+                const sample = await sampleCpu(packets, env.BENCH_CPU_LINES);
+                if (sample.lines.length) cpuLines = sample.lines;
                 cpu = Object.entries(sample.selfUs)
                     .map(([fn, us]) => ({ fn, usPerTick: us / (sample.ticks || 1) }))
                     .sort((a, b) => b.usPerTick - a.usPerTick)
@@ -208,7 +249,7 @@ describe("replay benchmark", () => {
                 + (baseline ? (baseline.fingerprint === fingerprint ? "  (same as baseline)" : `  (DIFFERS from baseline ${baseline.fingerprint})`) : ""));
             if (runs[0].errors.length) console.log(`-- ${runs[0].errors.length} errors, first: ${runs[0].errors[0]}`);
 
-            const result = { name, date: new Date().toISOString(), ticks: runs[0].ticks, runs: RUNS, fingerprint, sentPackets: runs[0].sentPackets, rows, allocations, allocationsByFunction, cpu, errors: runs[0].errors.slice(0, 20) };
+            const result = { name, date: new Date().toISOString(), ticks: runs[0].ticks, runs: RUNS, fingerprint, sentPackets: runs[0].sentPackets, rows, allocations, allocationsByFunction, cpu, cpuLines, errors: runs[0].errors.slice(0, 20) };
             fs.mkdirSync(resultsDir, { recursive: true });
             fs.writeFileSync(path.join(resultsDir, `${name}.json`), JSON.stringify(result, null, 2));
             if (env.BENCH_BASELINE === "1") fs.writeFileSync(baselinePath, JSON.stringify(result, null, 2));

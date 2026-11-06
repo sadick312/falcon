@@ -9,6 +9,8 @@ export default defineConfig({
         ...base.test,
         // Replaces the unit-test include instead of adding to it.
         include: ["mod-source/bench/**/*.bench-run.ts"],
+        // Builds the bundle replay.ts's bundle mode loads.
+        globalSetup: ["mod-source/bench/build-bundle.mjs"],
         testTimeout: 0
     }
 });
