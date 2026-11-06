@@ -17,6 +17,15 @@ const STEP_LABELS: Record<ConnectionStep, string> = {
     closed: "Connection closed"
 };
 
+/**
+ * Reloads the page: the only way to connect again, since the main menu is gone once we've connected. A reload also
+ * starts every manager from a clean state (Quick Inject and the extension both run Falcon again on load).
+ */
+export const reconnect = { run: () => location.reload() };
+
+const reconnectBtn = document.getElementById("reconnect-btn");
+if (reconnectBtn) reconnectBtn.onclick = () => reconnect.run();
+
 function setDisplay(id: string, value: string) {
     const elem = document.getElementById(id);
     if (elem) elem.style.display = value;

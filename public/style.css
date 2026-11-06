@@ -820,6 +820,18 @@ button {
     font-size: 14px;
 }
 
+#reconnect-btn {
+    width: auto;
+    margin-top: 24px;
+    padding: 12px 28px;
+    font-size: 16px;
+}
+
+/* The menu buttons grow on hover; a centred button would shift sideways, so only the accent bar shows. */
+#reconnect-btn:hover {
+    padding-left: 28px;
+}
+
 #alliance-holder {
     display: none;
     align-items: center;
