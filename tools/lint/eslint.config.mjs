@@ -12,7 +12,9 @@ export default tseslint.config(
             "**/dist/**",
             "coverage/**",
             "stats/**",
-            "mod-source/bench/results/**"
+            "mod-source/bench/results/**",
+            // The replay benchmark's generated bundle (npm run bench).
+            "**/bench/.build/**"
         ]
     },
     {
