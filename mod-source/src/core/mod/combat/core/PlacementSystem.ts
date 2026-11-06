@@ -1,5 +1,5 @@
 import GameObject from "@constants/GameObject";
-import items, { LIST_ID_MAP } from "@constants/items";
+import items, { FOOD_GROUP_ID, LIST_ID_MAP } from "@constants/items";
 import Client, { Marker } from "@core/Client";
 import ObjectManager from "@core/logic/ObjectManager";
 import CombatController from "@core/mod/combat/core/CombatController";
@@ -137,6 +137,7 @@ export default class PlacementSystem {
 
         Client.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.SELECT_TO_BUILD, id, false);
         Client.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.SEND_HIT, 1, angle);
+        if (item.group.id === FOOD_GROUP_ID) Client.lastAteTick = ModManager.tick;
         CombatController.selectWeapon();
         return count;
     }

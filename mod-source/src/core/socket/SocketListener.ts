@@ -320,6 +320,7 @@ export default class SocketListener {
                 Client.isAlive = true;
                 AttackManager.resetModules();
                 Client.upgradesObtained.clear();
+                Client.lastAteTick = -Infinity;
                 Client.mySID = tmpPlayer.sid;
                 Client.player = tmpPlayer;
                 CameraManager.camX = tmpPlayer.render_position.x;

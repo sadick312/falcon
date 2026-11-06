@@ -152,6 +152,28 @@ describe("PacketManager.manage (outgoing filter)", () => {
         expect(m.manage(C2S.SEND_AIM, [0.9])).toBe(true);
     });
 
+    it("records when we eat: a hit while food is selected, including manual eating (P26)", async () => {
+        const { default: Client } = await import("@core/Client");
+        const { default: ModManager } = await import("@core/ModManager");
+        const m = new PacketManager();
+        ModManager.tick = 40;
+        Client.lastAteTick = -Infinity;
+
+        m.manage(C2S.SELECT_TO_BUILD, [5, true]); // a weapon
+        m.manage(C2S.SEND_HIT, [1, 0]);
+        expect(Client.lastAteTick).toBe(-Infinity);
+
+        m.manage(C2S.SELECT_TO_BUILD, [15, false]); // a pit trap: placing, not eating
+        m.manage(C2S.SEND_HIT, [1, 0]);
+        expect(Client.lastAteTick).toBe(-Infinity);
+
+        m.manage(C2S.SELECT_TO_BUILD, [0, false]); // an apple
+        m.manage(C2S.SEND_HIT, [0, 0]); // releasing the button doesn't eat
+        expect(Client.lastAteTick).toBe(-Infinity);
+        m.manage(C2S.SEND_HIT, [1, 0]);
+        expect(Client.lastAteTick).toBe(40);
+    });
+
     it("lets a move through after the movement reset", () => {
         const m = new PacketManager();
         m.manage(C2S.MOVE, [1]);

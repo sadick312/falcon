@@ -54,6 +54,12 @@ export default class Client {
     /** True from our ADD_PLAYER until KILL_PLAYER. Client.player keeps pointing at us while we're dead. */
     static isAlive = false;
 
+    /**
+     * The tick we last sent a food use (select food + hit). 1.8.2 only changes shame when food is eaten, so our own
+     * shame is counted only for heals that follow this, not for regen, healing accessories or healing pads.
+     */
+    static lastAteTick = -Infinity;
+
     static lastDeath: Point;
     static lastMoveDir: number | null;
 

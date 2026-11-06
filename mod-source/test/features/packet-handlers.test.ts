@@ -31,15 +31,18 @@ describe("Packet handlers", () => {
         expect(game!.Client.player.itemCounts[3]).toBe(5);
     });
 
-    it("count shame when we heal right after a hit, and lose 2 when we heal later", async () => {
+    it("count shame when we eat right after a hit, and lose 2 when we eat later", async () => {
         await setUp();
+        const { default: PlacementSystem } = await import("@core/mod/combat/core/PlacementSystem");
         const player = game!.Client.player;
         game!.setHealth(ME, 60);
+        PlacementSystem.place(0); // apple
         game!.setHealth(ME, 80); // same tick: shame +1
         expect(player.shameCount).toBe(1);
         game!.setHealth(ME, 70);
         game!.update();
         game!.update();
+        PlacementSystem.place(0);
         game!.setHealth(ME, 90); // 2 ticks later: shame -2, not below 0
         expect(player.shameCount).toBe(0);
     });
@@ -55,13 +58,32 @@ describe("Packet handlers", () => {
         expect(turret.reload).toBe(0);
     });
 
-    it("today counts a healing-pad heal right after a hit as eating (possible issue P26)", async () => {
+    it("don't count our own heal as eating when we didn't eat (P26)", async () => {
         // 1.8.2 only changes shame when food is eaten (`consume`); regen, accessories and healing pads don't.
-        // A +15 healing-pad tick in the same tick as a hit still adds shame here.
+        // A +15 healing-pad tick in the same tick as a hit used to add shame here.
         await setUp();
         const player = game!.Client.player;
         game!.setHealth(ME, 60);
         game!.setHealth(ME, 75);
-        expect(player.shameCount).toBe(1);
+        expect(player.shameCount).toBe(0);
+    });
+
+    it("don't count a heal long after our last meal as eating (P26)", async () => {
+        await setUp();
+        const { default: PlacementSystem } = await import("@core/mod/combat/core/PlacementSystem");
+        const player = game!.Client.player;
+        PlacementSystem.place(0);
+        for (let i = 0; i < 5; i++) game!.update();
+        game!.setHealth(ME, 60);
+        game!.setHealth(ME, 75);
+        expect(player.shameCount).toBe(0);
+    });
+
+    it("still count an enemy's heal right after a hit as eating, since we can't see what they eat", async () => {
+        const { PlayerManager } = await setUp();
+        const enemy = PlayerManager.get(2)!;
+        game!.setHealth(2, 60);
+        game!.setHealth(2, 80);
+        expect(enemy.shameCount).toBe(1);
     });
 });

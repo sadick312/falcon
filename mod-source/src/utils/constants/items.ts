@@ -95,8 +95,11 @@ interface Items {
     list: ListItem[];
 }
 
+/** Group id of apple, cookie and cheese: using one of these is eating. */
+export const FOOD_GROUP_ID = 0;
+
 const groups: ItemGroup[] = [{
-    id: 0,
+    id: FOOD_GROUP_ID,
     name: "food",
     layer: 0
 }, {

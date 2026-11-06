@@ -1,5 +1,6 @@
-import items from "@constants/items";
+import items, { FOOD_GROUP_ID } from "@constants/items";
 import Client from "@core/Client";
+import ModManager from "@core/ModManager";
 import ChatCommands from "@core/utils/ChatCommands";
 import { MooMooProtocol } from "@core/utils/CaptchaManager";
 import { hmac } from "@noble/hashes/hmac.js";
@@ -194,6 +195,8 @@ export default class PacketManager {
 
     private data: Record<string, unknown> = {};
     private aimDirection: number = Infinity;
+    /** Whether the item we last selected is food, so the next hit eats it (manual eating included). */
+    private foodSelected = false;
 
     /** Forget the last sent move/aim so the first ones after a (re)spawn are never dropped as duplicates. */
     private resetDedupe() {
@@ -237,9 +240,12 @@ export default class PacketManager {
         } else if (type === PacketMap.CLIENT_TO_SERVER.SEND_AIM) {
             if (this.aimDirection === data[0]) return false;
             this.aimDirection = data[0];
+        } else if (type === PacketMap.CLIENT_TO_SERVER.SELECT_TO_BUILD) {
+            this.foodSelected = !data[1] && items.list[data[0]]?.group.id === FOOD_GROUP_ID;
         } else if (type === PacketMap.CLIENT_TO_SERVER.SEND_HIT) {
             // A hit carries its own direction, so the next identical aim packet is redundant.
             if (typeof data[1] === "number") this.aimDirection = data[1];
+            if (data[0] === 1 && this.foodSelected) Client.lastAteTick = ModManager.tick;
         } else if (type === PacketMap.CLIENT_TO_SERVER.SEND_UPGRADE) {
             const id = data[0];
             if (Client.upgradesObtained.has(id)) return false;

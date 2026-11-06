@@ -1,8 +1,8 @@
 {
     "sample-base": {
-        "packets": "1bad29f6f0978f00",
+        "packets": "6aca8484bdbe212d",
         "angles": "fad3316ca3ab111c",
-        "sentPackets": 1602,
+        "sentPackets": 1618,
         "angleComputes": 5275
     },
     "sample-busy": {
