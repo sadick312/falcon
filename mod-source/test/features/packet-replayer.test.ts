@@ -34,11 +34,14 @@ describe("Packet replayer", () => {
         expect(Client.mode).toBe("normal");
     });
 
-    it("today never places anything in a replay (possible issue P28)", async () => {
-        // Replay mode connects through a FakeSocket and skips PacketTracker.init(), so every placement request is
-        // refused: replays (and the benchmark) never show Falcon's placements.
+    it("starts the packet budget in a replay, so placements can show (P28)", async () => {
+        // Replay mode used to skip PacketTracker.init(), so every placement request was refused: replays (and the
+        // benchmark) never showed Falcon's placements.
         game = await startGame();
         const { default: PacketTracker } = await import("@core/utils/PacketTracker");
-        expect(PacketTracker.request("PLACE", 4)).toBe(0);
+        const { default: Client } = await import("@core/Client");
+        Client.mode = "replay";
+        await Client.connect();
+        expect(PacketTracker.request("PLACE", 4)).toBe(4);
     });
 });

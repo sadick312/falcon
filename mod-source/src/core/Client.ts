@@ -82,6 +82,10 @@ export default class Client {
         respawnPage.style.display = "flex";
         mainMenu.style.display = "none";
 
+        // Without the packet budget every placement request is refused, so replays (and the replay benchmark)
+        // would never show Falcon's placements.
+        PacketTracker.init();
+
         if (this.mode === "replay") {
             this.socket = new FakeSocket();
             resetScreenSize();
@@ -95,7 +99,6 @@ export default class Client {
         if (selection) ServerBrowser.saveRecent(selection);
 
         gameInformationMetadata.innerText = `region: ${selection?.region ?? "local"} | NAME: ${selection?.name ?? "n/a"}`;
-        PacketTracker.init();
         TaskScheduler.init();
         CaptchaManager.renderChallenge(wsAddress);
     }

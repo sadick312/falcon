@@ -20,10 +20,14 @@ async function tracker() {
 }
 
 describe("Packet budget", () => {
-    it("gives nothing before it's started (replays)", async () => {
-        game = await startGame();
+    it("gives nothing before it's started", async () => {
+        // Client.connect starts it in every mode now, replays included (P28), so check a freshly loaded module.
+        vi.resetModules();
         const { default: PacketTracker } = await import("@core/utils/PacketTracker");
         expect(PacketTracker.request("PLACE", 4)).toBe(0);
+        PacketTracker.init();
+        PacketTracker.allocate();
+        expect(PacketTracker.request("PLACE", 4)).toBe(4);
     });
 
     it("grants placements while there's room, fewer as the second fills up", async () => {
