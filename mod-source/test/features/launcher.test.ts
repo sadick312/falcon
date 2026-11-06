@@ -1,6 +1,7 @@
 // Features #77 Background worker (falcon-launcher/src/background.ts, manifest.json), #78 Page loader
 // (gameLoader.ts, shared with Quick Inject) and #79 Content script (remove.js). The worker injects Falcon only into
-// the two game pages' main frame, pinned to that page load; the content script removes the game's own scripts.
+// the two game pages' main frame, pinned to that page load; the content script removes the game's own scripts
+// (but not Cloudflare Turnstile).
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { prepareGamePage, startFalconClient } from "../../../falcon-launcher/src/gameLoader";
 
@@ -44,5 +45,27 @@ describe("Manifest", () => {
         expect(manifest.content_scripts[0].matches).toEqual(sites);
         const worker = fs.readFileSync(path.join(root, "src/background.ts"), "utf8");
         expect(worker).toContain(`["sandbox.moomoo.io", "sandbox.moomodding.io"]`);
+    });
+});
+
+describe("Content script", () => {
+    it("removes the game's scripts but keeps Cloudflare Turnstile (P29)", async () => {
+        // @ts-expect-error remove.js is a plain JavaScript content script with no type declarations.
+        await import("../../../falcon-launcher/src/remove.js");
+        const add = (src: string) => {
+            const script = document.createElement("script");
+            script.src = src;
+            document.head.appendChild(script);
+            return script;
+        };
+
+        const game = add("https://sandbox.moomodding.io/1.8.2/assets/index-8f264913.js");
+        const turnstile = add("https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit");
+        // MutationObserver callbacks run as a microtask after the change.
+        await Promise.resolve();
+
+        expect(game.isConnected).toBe(false);
+        expect(turnstile.isConnected).toBe(true);
+        turnstile.remove();
     });
 });

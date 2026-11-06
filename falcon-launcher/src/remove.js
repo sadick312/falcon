@@ -1,9 +1,21 @@
+// Cloudflare Turnstile, which Falcon itself adds on sandbox.moomoo.io for the captcha; removing it could stop the
+// captcha from loading.
+const KEEP_SCRIPT_HOST = "challenges.cloudflare.com";
+
+function isKeptScript(node) {
+    try {
+        return new URL(node.src).hostname === KEEP_SCRIPT_HOST;
+    } catch {
+        return false;
+    }
+}
+
 const observer = new MutationObserver((mutations) => {
     for (let i = 0; i < mutations.length; i++) {
         const mutation = mutations[i];
 
         mutation.addedNodes.forEach((node) => {
-            if (node.nodeName === "SCRIPT" && (node.src || node.textContent.toLowerCase().includes("frvr"))) {
+            if (node.nodeName === "SCRIPT" && !isKeptScript(node) && (node.src || node.textContent.toLowerCase().includes("frvr"))) {
                 window.loadedScript = true;
                 node.parentNode.removeChild(node);
             }
