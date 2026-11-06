@@ -19,6 +19,25 @@ export default class EntityHandler<T extends Entity> {
         this.entitiesList.push(entity);
     }
 
+    /** Puts `entity` in place of the one with the same sid (same list position), or adds it if there is none. */
+    replace(entity: T) {
+        const old = this.entitiesMap.get(entity.sid);
+        if (!old) {
+            this.add(entity);
+            return;
+        }
+
+        if (this.type === 0) {
+            entity.listHandlerIndex = old.listHandlerIndex;
+            this.entitiesList[old.listHandlerIndex] = entity;
+        } else {
+            entity.turretHandlerIndex = old.turretHandlerIndex;
+            this.entitiesList[old.turretHandlerIndex] = entity;
+        }
+
+        this.entitiesMap.set(entity.sid, entity);
+    }
+
     get(sid: number) {
         return this.entitiesMap.get(sid);
     }

@@ -21,7 +21,14 @@ export default class LoadAiEvent extends MessageHandler<LoadAiPacket> {
         }
 
         for (let i = 0; i < data.length; i += 8) {
+            // An unknown animal type used to throw here, losing the rest of the packet.
+            if (!aiTypes[data[i + 1]]) continue;
+
             let ai = ais.get(data[i]);
+
+            // The server reuses an animal's sid for the next animal it spawns, possibly of another type; keeping the
+            // old object would keep the old type's size, damage and name.
+            if (ai && ai.index !== data[i + 1]) ai = undefined;
 
             if (ai) {
                 ai.forcePos = Client.mode === "replay" && PacketReplayer.slowTime !== 0 ? true : !ai.visible;
@@ -46,12 +53,17 @@ export default class LoadAiEvent extends MessageHandler<LoadAiPacket> {
                         TextManager.add(ai.real_position.x, ai.real_position.y, -(~~d), 0);
                     }
 
-                    if (d >= 0) {
+                    // > 0: an animal coming back into view with unchanged health showed a "0".
+                    if (d > 0) {
                         TextManager.add(ai.real_position.x, ai.real_position.y, ~~d, 0);
                     }
                 }
             } else {
-                ai = new Ai(data[i + 2], data[i + 3], data[i + 4], data[i + 1]);
+                // The packet's direction is × 100 (the update branch above divides too); this one used to be passed as is.
+                ai = new Ai(data[i + 2], data[i + 3], data[i + 4] / 100, data[i + 1]);
+                // Only the drawn position was set, so until its next update every check saw the animal at (0, 0).
+                ai.real_position.x = data[i + 2];
+                ai.real_position.y = data[i + 3];
                 ai.lastHealth = data[i + 5];
                 ai.health = data[i + 5];
 
@@ -61,8 +73,7 @@ export default class LoadAiEvent extends MessageHandler<LoadAiPacket> {
                 ai.forcePos = true;
                 ai.sid = data[i];
 
-                if (!ais.has(data[i]))
-                    ais.add(ai);
+                ais.replace(ai);
             }
 
             ai.visible = true;

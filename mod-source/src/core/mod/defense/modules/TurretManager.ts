@@ -23,13 +23,32 @@ export default class TurretManager {
             return;
         }
 
-        const closestAI = ais.all.sort((a, b) => getDistSq(a.real_position, turret) - getDistSq(b.real_position, turret))[0];
-        const closestEnemy = PlayerManager.players.visible.all
-            .filter((e) => !Client.isTeam(e, turret.ownerSID ?? -1) && e.skinIndex !== STORE_HAT_MAP.EMP_HELMET)
-            .sort((a, b) => getDistSq(a.real_position, turret) - getDistSq(b.real_position, turret))[0];
+        // Plain loops: this sorted the shared animal list in place on every shot, which left its entries' list
+        // positions stale (and allocated two arrays per turret and player).
+        const allAis = ais.all;
+        let closestAI: (typeof allAis)[number] | undefined;
+        let closestAiDistance = Infinity;
+        for (let i = 0; i < allAis.length; i++) {
+            const distSq = getDistSq(allAis[i].real_position, turret);
+            if (distSq < closestAiDistance) {
+                closestAiDistance = distSq;
+                closestAI = allAis[i];
+            }
+        }
 
-        const closestEnemyDistance = closestEnemy ? getDistSq(closestEnemy.real_position, turret) : Infinity;
-        const closestAiDistance = closestAI ? getDistSq(closestAI.real_position, turret) : Infinity;
+        const visible = PlayerManager.players.visible.all;
+        let closestEnemy: Player | undefined;
+        let closestEnemyDistance = Infinity;
+        for (let i = 0; i < visible.length; i++) {
+            const enemy = visible[i];
+            if (Client.isTeam(enemy, turret.ownerSID ?? -1) || enemy.skinIndex === STORE_HAT_MAP.EMP_HELMET) continue;
+
+            const distSq = getDistSq(enemy.real_position, turret);
+            if (distSq < closestEnemyDistance) {
+                closestEnemyDistance = distSq;
+                closestEnemy = enemy;
+            }
+        }
         // The closer one is the target (this used to pick the player when the animal was closer).
         const closest = !isFinite(closestAiDistance) ? closestEnemy : closestEnemyDistance <= closestAiDistance ? closestEnemy : closestAI;
 
