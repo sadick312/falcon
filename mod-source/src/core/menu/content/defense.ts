@@ -37,7 +37,7 @@ export const defenseSettings: IMenuItem[] = [{
     }, {
         label: "Blood Wings Optimizations",
         id: "bloodWingsOptimizations",
-        description: "Uses blood wings for defensive purposes (e.g. no-soldier antionetick, no-shame antishamegrind, etc).",
+        description: "While hurt, wears Blood Wings for melee hits on enemies (heals 20% of the damage, without shame). At 4+ shame, Auto Heal lets such a hit heal instead of eating.",
         type: "toggle",
         status: false,
         icon: `
@@ -46,8 +46,20 @@ export const defenseSettings: IMenuItem[] = [{
                     <path fill="REPLACE_WITH_COLOR" d="M52.2 57.4C43.9 43 22.9 55.2 17.8 38.2c5.3 1.5 9.4 1.5 12.9.3C14.3 36.2 6.9 30.4 6.5 21c5.3 3.4 10.1 4.8 14.6 4.6C6.6 19.3-2.3 7.4.5 0 9.1 6.8 14.2 10.1 18.6 12c8.6 3.9 17.5 5.2 26.1 10.5 8.2 5 13.7 12 13.3 21.3-.2 4.5-2 9-5.8 13.6Zm18.5 0C79 43 100 55.2 105 38.2c-5.3 1.5-9.4 1.5-12.9.3 16.4-2.3 23.8-8.1 24.2-17.5-5.3 3.4-10.1 4.8-14.6 4.6 14.5-6.3 23.4-18.2 20.6-25.6-8.5 6.8-13.7 10-18 12-8.6 3.9-17.5 5.2-26.1 10.5-8.2 5-13.7 12-13.3 21.3.2 4.5 2 9 5.8 13.6Z"/>
                 </g>
             </svg>
-            `,
-        disabled: true
+            `
+    }, {
+        label: "Angel Wings Regen",
+        id: "angelWingsRegen",
+        description: "While hurt and no enemy is close, wears Angel Wings (3 health a second, without shame) instead of Monkey Tail.",
+        type: "toggle",
+        status: false,
+        icon: `
+            <svg width="35px" height="35px" viewBox="0 0 122.88 57.38">
+                <g>
+                    <path fill="REPLACE_WITH_COLOR" d="M52.2 57.4C43.9 43 22.9 55.2 17.8 38.2c5.3 1.5 9.4 1.5 12.9.3C14.3 36.2 6.9 30.4 6.5 21c5.3 3.4 10.1 4.8 14.6 4.6C6.6 19.3-2.3 7.4.5 0 9.1 6.8 14.2 10.1 18.6 12c8.6 3.9 17.5 5.2 26.1 10.5 8.2 5 13.7 12 13.3 21.3-.2 4.5-2 9-5.8 13.6Zm18.5 0C79 43 100 55.2 105 38.2c-5.3 1.5-9.4 1.5-12.9.3 16.4-2.3 23.8-8.1 24.2-17.5-5.3 3.4-10.1 4.8-14.6 4.6 14.5-6.3 23.4-18.2 20.6-25.6-8.5 6.8-13.7 10-18 12-8.6 3.9-17.5 5.2-26.1 10.5-8.2 5-13.7 12-13.3 21.3.2 4.5 2 9 5.8 13.6Z"/>
+                </g>
+            </svg>
+            `
     }]
 }, {
     label: "Safe Walk",

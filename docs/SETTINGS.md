@@ -57,7 +57,6 @@ The **Favorites** tab lists the settings you starred; **Credits** has no setting
   - **Auto Buy** (`autoBuy`, toggle, default: on) — Automatically purchases hats and accessories.
   - **Auto Upgrade** (`autoUpgrade`, toggle, default: on) — Automatically upgrades weapons and items.
     - **7th Slot** (`7thSlot`, select, default: Teleport) — Set what the Auto Upgrader picks for the 7th slot. Options: Teleport / Turret / Healing Pad / Blocker / Platform.
-    - **Weapon Path** (`upgradePath`, select, default: Default) — Which weapons Auto Upgrade aims for. Polearm + Musket: polearm, then hunting bow, crossbow and musket (katana + musket can't be reached in 1.8.2: katana and crossbow are both age-8 picks). Options: Default / Polearm + Musket.
 - **Packet Management** (group) — Customize modules to modify the client's method for managing packet usage.
   - **Packet Budget Strictness** (`packetBudgetStrictness`, slider 2–4, default: 2) — Sets how many ticks ahead the budget tracker reserves packets.
   - **Packet Budget Limit** (`packetBudgetLimit`, slider 100–110, default: 110) — Determines the maximum capacity for packet usage.
@@ -75,7 +74,8 @@ The **Favorites** tab lists the settings you starred; **Credits** has no setting
   - **Pattern Recognition** (`usePatternRec`, toggle, default: on) — Adapts defensive calculations based on common enemy attack patterns.
   - **Auto Healing** (`autoHeal`, toggle, default: on) — Responds to dangers by auto healing.
   - **Hat Switching** (`defensiveHatSwitching`, toggle, default: on) — Allows the action of hat switching to mitigate potential damages.
-  - **Blood Wings Optimizations** (`bloodWingsOptimizations`, toggle, default: off) — Uses blood wings for defensive purposes (e.g. no-soldier antionetick, no-shame antishamegrind, etc).
+  - **Blood Wings Optimizations** (`bloodWingsOptimizations`, toggle, default: off) — While hurt, wears Blood Wings for melee hits on enemies (heals 20% of the damage, without shame). At 4+ shame, Auto Heal lets such a hit heal instead of eating.
+  - **Angel Wings Regen** (`angelWingsRegen`, toggle, default: off) — While hurt and no enemy is close, wears Angel Wings (3 health a second, without shame) instead of Monkey Tail.
 - **Safe Walk** (`safeWalk`, toggle, default: on) — Prevents walking into dangerous or annoying buildings.
   - **Ignore My Teleports** (`safeWalkIgnoreMyTps`, toggle, default: on) — Safe walk doesn't stop you from walking into your own teleports.
   - **Ignore Allied Boost Pads** (`safeWalkIgnoreAllyBoostPads`, toggle, default: on) — Safe walk doesn't stop you from walking into boost pads placed by allies.

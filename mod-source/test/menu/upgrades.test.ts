@@ -81,30 +81,3 @@ describe("building prerequisites", () => {
         expect(offered(age, [0, 3, 6, 10], true)).toContain(building(LIST_ID_MAP.CASTLE_WALL));
     });
 });
-
-describe("Auto Upgrade weapon path", () => {
-    /** The upgrade Auto Upgrade sends at `age` while holding `weapons`, with the given "Weapon Path". */
-    async function picked(age: number, weapons: number[], path: string) {
-        const { default: Menu } = await import("@menu/Menu");
-        Menu.itemMap.autoUpgrade.status = true;
-        Menu.itemMap.upgradePath.status = path;
-        const sent: unknown[][] = [];
-        vi.spyOn(Client.socket, "sendMsg").mockImplementation((...args: unknown[]) => { sent.push(args); });
-        Client.player = { items: [0, 3, 6, 10], weapons, upgradePoints: 0, upgrAge: 0 } as never;
-        Client.socket.isPrivateServer = false;
-        updateUpgrades(1, age);
-        Menu.itemMap.autoUpgrade.status = false;
-        return sent.map(args => args[1]);
-    }
-
-    it("goes polearm, hunting bow, crossbow, musket with Polearm + Musket", async () => {
-        expect(await picked(2, [0], "polearmMusket")).toEqual([5]);
-        expect(await picked(6, [5], "polearmMusket")).toEqual([9]);
-        expect(await picked(8, [5, 9], "polearmMusket")).toEqual([12]);
-        expect(await picked(9, [5, 12], "polearmMusket")).toEqual([15]);
-    });
-
-    it("leaves the default choices alone on the Default path", async () => {
-        expect(await picked(2, [0], "default")).not.toContain(5);
-    });
-});

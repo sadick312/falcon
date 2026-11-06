@@ -89,19 +89,6 @@ export const utilitySettings: IMenuItem[] = [{
                 value: 34
             }],
             status: 38
-        }, {
-            label: "Weapon Path",
-            id: "upgradePath",
-            type: "select",
-            description: "Which weapons Auto Upgrade aims for. Polearm + Musket: polearm, then hunting bow, crossbow and musket (katana + musket can't be reached in 1.8.2: katana and crossbow are both age-8 picks).",
-            options: [{
-                label: "Default",
-                value: "default"
-            }, {
-                label: "Polearm + Musket",
-                value: "polearmMusket"
-            }],
-            status: "default"
         }],
         type: "toggle"
     }]

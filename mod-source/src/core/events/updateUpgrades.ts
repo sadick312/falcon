@@ -1,4 +1,4 @@
-import items, { WEAPON_ID_MAP } from "@constants/items";
+import items from "@constants/items";
 import Client from "@core/Client";
 import Menu from "@menu/Menu";
 import PacketMap from "@root/utils/socket/PacketMap";
@@ -7,14 +7,6 @@ import getElem from "@utils/dom/getElem";
 const upgradeHolder = getElem<"div">("upgrade-holder");
 const upgradeCounter = getElem<"div">("upgrade-counter");
 const tmpUpgradeList: number[] = [];
-
-/**
- * Weapon ids Auto Upgrade picks whenever offered, by the "Weapon Path" setting. 1.8.2's tree: polearm (age 2),
- * hunting bow (6), crossbow (8, needs the bow), musket (9, needs the crossbow).
- */
-const UPGRADE_PATHS: Record<string, number[]> = {
-    polearmMusket: [WEAPON_ID_MAP.POLEARM, WEAPON_ID_MAP.HUNTING_BOW, WEAPON_ID_MAP.CROSSBOW, WEAPON_ID_MAP.MUSKET]
-};
 
 export default function updateUpgrades(points: number, age: number) {
     Client.player.upgradePoints = points;
@@ -59,14 +51,6 @@ export default function updateUpgrades(points: number, age: number) {
         }
 
         if (Menu.getValue("autoUpgrade")) {
-            // The chosen weapon path comes first: one pick per age, so a weapon on the path beats the item picks below.
-            const path = UPGRADE_PATHS[Menu.getValue("upgradePath") as string];
-            const pathPick = path && tmpList.find(id => path.includes(id));
-            if (pathPick !== undefined) {
-                Client.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.SEND_UPGRADE, pathPick);
-                return;
-            }
-
             if (tmpList.length === 1) {
                 Client.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.SEND_UPGRADE, tmpList[0]);
                 return;
