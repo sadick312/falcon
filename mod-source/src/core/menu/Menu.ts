@@ -706,11 +706,17 @@ export const menuContent: IMenuContent = {
         }, {
             label: "Blood Wings Optimizations",
             id: "bloodWingsOptimizations",
-            description: "Uses blood wings for defensive purposes (e.g. no-soldier antionetick, no-shame antishamegrind, etc).",
+            description: "While hurt, wears Blood Wings for melee hits on enemies (heals 20% of the damage, without shame). At 4+ shame, Auto Heal lets such a hit heal instead of eating.",
             type: "toggle",
             status: false,
-            icon: BLOOD_WINGS_OPTIMIZATIONS_ICON,
-            disabled: true
+            icon: BLOOD_WINGS_OPTIMIZATIONS_ICON
+        }, {
+            label: "Angel Wings Regen",
+            id: "angelWingsRegen",
+            description: "While hurt and no enemy is close, wears Angel Wings (3 health a second, without shame) instead of Monkey Tail.",
+            type: "toggle",
+            status: false,
+            icon: BLOOD_WINGS_OPTIMIZATIONS_ICON
         }]
     }, {
         label: "Safe Walk",

@@ -1,8 +1,9 @@
-import { STORE_HAT_MAP } from "@constants/store";
+import { STORE_ACCESSORY_MAP, STORE_HAT_MAP } from "@constants/store";
 import Client from "@core/Client";
 import PlacementSystem from "@core/mod/combat/core/PlacementSystem";
 import DefenseSystem, { DefenseContext } from "@core/mod/defense/DefenseSystem";
 import HealerUtils from "@core/mod/defense/utils/HealerUtils";
+import WingsUtils from "@core/mod/defense/utils/WingsUtils";
 import ModManager from "@core/ModManager";
 import Menu from "@menu/Menu";
 
@@ -17,6 +18,9 @@ export interface AutoHealerInternal {
 }
 
 export default class AutoHealer {
+    /** From this shame count on, a coming Blood Wings hit replaces eating (8 locks healing for 30 s in 1.8.2). */
+    static readonly BLOOD_WINGS_SHAME = 4;
+
     static heal() {
         if (DefenseSystem.alreadyHealed || !Menu.getValue("autoHeal"))
             return;
@@ -35,8 +39,19 @@ export default class AutoHealer {
     }
 
     private static healIfNoShame() {
-        if (ModManager.tick - Client.player.hitTime <= 1)
+        const player = Client.player;
+        if (ModManager.tick - player.hitTime <= 1)
             return;
+
+        // Blood Wings Optimizations: at high shame, let a hit with Blood Wings (already on) heal instead of eating:
+        // that healing doesn't add shame. Only for this non-lethal heal; lethal damage is handled above.
+        if (
+            Menu.getValue("bloodWingsOptimizations") && player.shameCount >= AutoHealer.BLOOD_WINGS_SHAME &&
+            player.tailIndex === STORE_ACCESSORY_MAP.BLOOD_WINGS && WingsUtils.willHitPlayer()
+        ) {
+            ModManager.brainState.healingResponse = "blood wings heal";
+            return;
+        }
 
         this.heal();
         ModManager.brainState.healingResponse = "0shame heal";

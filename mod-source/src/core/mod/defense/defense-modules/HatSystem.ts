@@ -9,6 +9,7 @@ import CombatUtils from "@core/mod/combat/utils/CombatUtils";
 import DefenseSystem from "@core/mod/defense/DefenseSystem";
 import AutoBreaker from "@core/mod/defense/modules/AutoBreaker";
 import BreakerUtils from "@core/mod/defense/utils/BreakerUtils";
+import WingsUtils from "@core/mod/defense/utils/WingsUtils";
 import ModManager from "@core/ModManager";
 import Menu from "@menu/Menu";
 import PacketMap from "@root/utils/socket/PacketMap";
@@ -251,6 +252,15 @@ export default class HatSystem {
             }
         }
 
+        const isHurt = player.health < player.maxHealth;
+
+        // Blood Wings Optimizations: a melee hit on an enemy heals 20% of its damage with Blood Wings on, and that
+        // healing doesn't add shame (it isn't eating).
+        if (Menu.getValue("bloodWingsOptimizations") && isHurt && player.tails[STORE_ACCESSORY_MAP.BLOOD_WINGS] && WingsUtils.willHitPlayer()) {
+            ModManager.activityList.push("bloodWings");
+            return STORE_ACCESSORY_MAP.BLOOD_WINGS;
+        }
+
         if (nearestEnemy && CombatUtils.isAttackPrimary(player.weapons[0])) {
             const distSq = getDistSq(player.real_position, nearestEnemy.real_position);
 
@@ -268,6 +278,12 @@ export default class HatSystem {
             if (isWithinRange) {
                 return canUseCXWings ? STORE_ACCESSORY_MAP.CORRUPT_X_WINGS : STORE_ACCESSORY_MAP.SHADOW_WINGS;
             }
+        }
+
+        // Angel Wings Regen: out of a fight and hurt, regenerate 3 health a second (no shame) instead of Monkey Tail's speed.
+        const isEnemyClose = !!nearestEnemy && getDistSq(player.real_position, nearestEnemy.real_position) <= this.CLOSE_DISTANCE_SQ;
+        if (Menu.getValue("angelWingsRegen") && isHurt && !isEnemyClose && player.tails[STORE_ACCESSORY_MAP.ANGEL_WINGS]) {
+            return STORE_ACCESSORY_MAP.ANGEL_WINGS;
         }
 
         return STORE_ACCESSORY_MAP.MONKEY_TAIL;
