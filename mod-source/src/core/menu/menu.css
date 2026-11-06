@@ -494,3 +494,48 @@ input[type=number] {
     -moz-appearance: textfield;
     appearance: textfield;
 }
+/* Settings search in the header, pushed to the right of the title. */
+.menuSearchInput {
+    margin-left: auto;
+    margin-right: 50px;
+    width: 220px;
+    height: 30px;
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--bg-secondary);
+    color: var(--generic-white);
+    font-size: 13px;
+    outline: none;
+    user-select: text;
+}
+
+.menuSearchInput::placeholder {
+    color: var(--text-primary);
+}
+
+.menuSearchInput:focus {
+    border-color: var(--theme-primary);
+}
+
+/* Shown only while a setting differs from its default. Select/slider rows turn pointer events off. */
+.menuResetButton {
+    pointer-events: auto;
+    margin-right: 10px;
+    cursor: pointer;
+}
+
+.menuConfigUIStatus {
+    width: 100%;
+    min-height: 14px;
+    color: var(--generic-white-2);
+    font-size: 12px;
+}
+
+/* Keyboard focus. Inset, because most menu elements clip their overflow. */
+#scriptMenu [tabindex]:focus-visible,
+#scriptMenu select:focus-visible,
+#scriptMenu input:focus-visible {
+    outline: 2px solid var(--theme-primary);
+    outline-offset: -2px;
+}

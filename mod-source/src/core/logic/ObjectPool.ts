@@ -2,7 +2,7 @@ import GameObject from "@constants/GameObject";
 import Client from "@core/Client";
 import ObjectManager from "@core/logic/ObjectManager";
 import { GameObjectSimulationState } from "@simulation/SimulationStates";
-import ScriptConfig from "@utils/config/ScriptConfig";
+import { isCactusObject } from "@constants/world";
 
 export default class ObjectPool {
     closeObjects: GameObject[] = [];
@@ -32,7 +32,7 @@ export default class ObjectPool {
             const gameObject = closeObjects[i];
             if (!gameObject) continue;
 
-            const isCactus = gameObject.type === 1 && gameObject.y >= ScriptConfig.MAP_SIZE - ScriptConfig.SNOW_BIOME_TOP;
+            const isCactus = isCactusObject(gameObject);
             if (gameObject.trap) allTraps.push(gameObject);
             if (gameObject.dmg || isCactus) allSpikes.push(gameObject);
 

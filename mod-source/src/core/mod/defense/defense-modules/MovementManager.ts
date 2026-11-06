@@ -12,6 +12,7 @@ import PacketMap from "@root/utils/socket/PacketMap";
 import { Input } from "@ui/Hook";
 import ScriptConfig from "@utils/config/ScriptConfig";
 import lineInCircle from "@utils/geometry/lineInCircle";
+import { isCactusObject } from "@constants/world";
 
 export default class MovementManager {
     private static lastMoveDir: number | null = null;
@@ -115,7 +116,7 @@ export default class MovementManager {
             const isEnemy = !Client.isFriendly(gameObject.ownerSID ?? -1);
             const isSpike = gameObject.dmg;
             const isBoostPad = gameObject.boostSpeed && (safeWalkIgnoreAllyBoostPads ? isEnemy : true);
-            const isCactus = gameObject.type === 1 && gameObject.y >= ScriptConfig.MAP_SIZE - ScriptConfig.SNOW_BIOME_TOP;
+            const isCactus = isCactusObject(gameObject);
 
             const isDangerousObject = isCactus || (isSpike && isEnemy);
             const isTeleport = gameObject.teleport && (shouldIgnoreMyTeleports ? isEnemy : true);

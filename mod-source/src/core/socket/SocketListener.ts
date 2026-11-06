@@ -10,6 +10,7 @@ import PlayerManager from "@core/logic/players/PlayerManager";
 import PotentialObjectManager from "@core/logic/PotentialObjectManager";
 import ProjectileManager from "@core/logic/ProjectileManager";
 import TextManager from "@core/logic/TextManager";
+import AttackManager from "@core/mod/combat/core/AttackManager";
 import CombatController from "@core/mod/combat/core/CombatController";
 import PlacementSystem from "@core/mod/combat/core/PlacementSystem";
 import MovementManager from "@core/mod/defense/defense-modules/MovementManager";
@@ -40,6 +41,7 @@ import ScriptConfig from "@utils/config/ScriptConfig";
 import getElem from "@utils/dom/getElem";
 import kFormat from "@utils/math/kFormat";
 import shortnameToUnicode from "@utils/text/shortnameToUnicode";
+import { NATURAL_OBJECT_OWNER } from "@constants/world";
 
 const ageBar = getElem("age-bar");
 const ageDisplay = getElem("age-display");
@@ -197,7 +199,7 @@ export default class SocketListener {
 
         this.socket.on(PacketMap.SERVER_TO_CLIENT.SET_UP_GAME, (yourSID) => {
             Client.mySID = yourSID;
-            ObjectManager.removeAll(6967);
+            ObjectManager.removeAll(NATURAL_OBJECT_OWNER);
         });
 
         this.socket.on(PacketMap.SERVER_TO_CLIENT.SET_PLAYER_TEAM, (team, isOwner) => {
@@ -315,6 +317,8 @@ export default class SocketListener {
 
             if (isYou) {
                 MovementManager.onSpawn();
+                Client.isAlive = true;
+                AttackManager.resetModules();
                 Client.upgradesObtained.clear();
                 Client.mySID = tmpPlayer.sid;
                 Client.player = tmpPlayer;
@@ -457,6 +461,7 @@ export default class SocketListener {
         });
 
         this.socket.on(PacketMap.SERVER_TO_CLIENT.KILL_PLAYER, () => {
+            Client.isAlive = false;
             Client.upgradesObtained.clear();
             CombatController.attackState.confirm = false;
             CombatController.attackState.status = false;

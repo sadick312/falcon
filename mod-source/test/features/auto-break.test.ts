@@ -22,7 +22,7 @@ async function trapped(s: Scenario = {}) {
     game.spawn({ sid: ME, x: 1000, y: 1000, weaponIndex: 5 });
     game.spawn({ sid: 2, x: 1400, y: 1000 });
     game.setLoadout([5, GREAT_HAMMER], [0, 3, 6, 10, 15]);
-    const objects = [{ sid: 600, x: 1000, y: 1000, itemId: LIST_ID_MAP.PIT_TRAP, owner: 2 }];
+    const objects = [{ sid: 600, x: 1000, y: 1000, itemId: LIST_ID_MAP.PIT_TRAP as number, owner: 2 }];
     if (s.spike) objects.push({ sid: 700, x: 1000, y: 1085, itemId: LIST_ID_MAP.SPIKES, owner: 2 });
     game.addObjects(objects);
     game.update();

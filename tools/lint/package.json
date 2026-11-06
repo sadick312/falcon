@@ -1,14 +1,18 @@
 {
     "name": "falcon-lint",
-    "version": "1.0.0",
     "private": true,
-    "description": "ESLint for the Falcon workspaces. Kept separate because typescript-eslint supports TypeScript < 6.1, while the project builds with TypeScript 7; this package's TypeScript 6 is only used to lint.",
+    "version": "1.0.0",
+    "description": "ESLint for every workspace. Kept apart because typescript-eslint needs TypeScript 6, while the build uses TypeScript 7.",
     "type": "module",
     "devDependencies": {
-        "@eslint/js": "10.0.1",
-        "eslint": "10.14.0",
+        "@eslint/js": "^10.0.1",
+        "eslint": "^10.14.0",
         "globals": "^17.13.0",
-        "typescript": "6.0.3",
-        "typescript-eslint": "8.72.1"
+        "prettier": "^3.9.10",
+        "typescript": "~6.0.0",
+        "typescript-eslint": "^8.72.1"
+    },
+    "overrides": {
+        "minimatch": "^11.0.3"
     }
 }

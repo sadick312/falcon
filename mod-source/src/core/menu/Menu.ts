@@ -12,948 +12,18 @@ import drawMenuSelect from "./utils/drawMenuSelect";
 import drawMenuSlider from "./utils/drawMenuSlider";
 import drawMenuToggle from "./utils/drawMenuToggle";
 import drawSavedConfigs from "./utils/drawSavedConfigs";
-import {
-    gearIcon,
-    GRID_ICON,
-    MOON_ICON,
-    SWORD_ICON,
-    SHIELD_ICON,
-    WIFI_ICON,
-    PACKAGE_ICON,
-    TOMBSTONE_ICON,
-    STACKED_ICON,
-    CONSOLE_ICON,
-    SHAME_HAT_ICON,
-    HEALING_ICON,
-    SPIEK_ICON,
-    NAME_TAG_ICON,
-    BUILDING_ICON,
-    PUNCH_ICON,
-    WALKING_ICON,
-    SPEAR_ICON,
-    FAVORITES_ICON,
-    UTILITY_ICON,
-    VISUAL_ICON,
-    EXPERIMENTALS_ICON,
-    CREDITS_ICON,
-    FARMING_STORE_UTILITIES_ICON,
-    AUTO_GRIND_ICON,
-    AUTO_BUY_ICON,
-    AUTO_BREAK_ICON,
-    AUTO_PLAY_ICON,
-    BLOOD_WINGS_OPTIMIZATIONS_ICON,
-    SELECT_BEST_WEAPON_ICON,
-    BUILDING_HEALTH_BAR_ICON,
-    BUILDING_OVERLAY_ICON,
-    RELOAD_BARS_ICON,
-    FALCON_LOGO
-} from "./icons";
+import { keepEnterInInput, makeKeyboardClickable } from "./utils/keyboard";
+import { IMenuItem } from "./types";
+import { SETTINGS_VERSION, SETTINGS_VERSION_KEY, migrateSettings, isValidSettingValue } from "./settingsVersion";
+import { ChatLog } from "./ChatLog";
+import { menuTabs } from "./content/tabs";
+import { menuContent } from "./content";
 
-interface IMenuTab {
-    label: string;
-    icon: string;
-}
-
-interface IMenuOptions {
-    label: string;
-    value: any;
-}
-
-export interface IMenuItem {
-    label: string;
-    description?: string;
-    id: string;
-    type: "toggle" | "select" | "number" | "slider" | "paragraph" | "group" | "chat-log" | "saved-configs" | "config-ui";
-    settings?: IMenuItem[];
-    icon?: string;
-    options?: IMenuOptions[];
-    status?: any;
-    min?: number;
-    max?: number;
-    step?: number;
-    disabled?: boolean;
-    isDropdownToggled?: boolean;
-    isFavorited?: boolean;
-    unchangable?: boolean;
-    neverSave?: boolean;
-    update?: () => void;
-}
-
-/** "falcon-configs" in localStorage: config name -> saved item statuses (undefined once deleted). */
-export type SavedConfigs = Record<string, Record<string, unknown> | undefined>;
-
-/**
- * Format version of saved settings ("falcon-settings" and each saved config), stored under SETTINGS_VERSION_KEY.
- * When a setting's id or kind of value changes, bump this and add a step to SETTINGS_MIGRATIONS.
- */
-export const SETTINGS_VERSION = 1;
-const SETTINGS_VERSION_KEY = "__version";
-
-/** SETTINGS_MIGRATIONS[n] upgrades settings saved at version n to version n + 1, in place. */
-const SETTINGS_MIGRATIONS: Record<number, (data: Record<string, unknown>) => void> = {
-    // Version 0: saved before versioning existed. Same ids and kinds of values as version 1.
-    0: () => { }
-};
-
-/** A copy of saved settings upgraded to SETTINGS_VERSION, without the version key. Non-objects become {}. */
-function migrateSettings(saved: unknown): Record<string, unknown> {
-    if (!saved || typeof saved !== "object" || Array.isArray(saved)) return {};
-
-    const data: Record<string, unknown> = { ...saved };
-    const savedVersion = data[SETTINGS_VERSION_KEY];
-    delete data[SETTINGS_VERSION_KEY];
-
-    // Settings from a newer Falcon load as they are: unknown ids and misfitting values are skipped anyway.
-    let version = typeof savedVersion === "number" ? savedVersion : 0;
-    for (; version < SETTINGS_VERSION; version++) SETTINGS_MIGRATIONS[version]?.(data);
-
-    return data;
-}
-
-/**
- * Whether a saved value is one the menu itself could have stored for this setting. Sliders and number inputs
- * hold a number until edited, then the input's text; selects hold an option's value or its text.
- */
-function isValidSettingValue(item: IMenuItem, value: unknown) {
-    switch (item.type) {
-        case "toggle":
-            return typeof value === "boolean";
-        case "slider":
-        case "number":
-            return (typeof value === "number" || typeof value === "string") && value !== "" && Number.isFinite(Number(value));
-        case "select":
-            return item.options?.some(option => String(option.value) === String(value)) ?? false;
-        default:
-            return true;
-    }
-}
-
-interface IMenuContent {
-    favorites: IMenuItem[];
-    combat: IMenuItem[];
-    utility: IMenuItem[];
-    defense: IMenuItem[];
-    visual: IMenuItem[];
-    console: IMenuItem[];
-    configs: IMenuItem[];
-    experimentals: IMenuItem[];
-    credits: IMenuItem[];
-}
-
-/** The settings gear at a given size (the menu used 15.5 and 22). */
-const menuTabs: IMenuTab[] = [{
-    label: "Favorites",
-    icon: FAVORITES_ICON
-}, {
-    label: "Combat",
-    icon: SWORD_ICON
-}, {
-    label: "Utility",
-    icon: UTILITY_ICON
-}, {
-    label: "Defense",
-    icon: SHIELD_ICON
-}, {
-    label: "Visual",
-    icon: VISUAL_ICON
-}, {
-    label: "Console",
-    icon: CONSOLE_ICON
-}, {
-    label: "Configs",
-    icon: gearIcon(15.5)
-}, {
-    label: "Experimentals",
-    icon: EXPERIMENTALS_ICON
-}, {
-    label: "Credits",
-    icon: CREDITS_ICON
-}];
-
-export class ChatLog {
-    time: string;
-    type: "chat" | "encounter" | "leave" | "death" = "chat";
-
-    constructor(
-        public msg: string,
-        type?: "encounter" | "leave" | "death"
-    ) {
-        if (type) this.type = type;
-
-        const now = new Date();
-        let hours = now.getHours();
-        const minutes = now.getMinutes();
-        const ampm = hours >= 12 ? "PM" : "AM";
-
-        hours = hours % 12;
-        hours = hours ? hours : 12;
-        const minutesStr = minutes < 10 ? "0" + minutes : minutes;
-
-        this.time = `${hours}:${minutesStr} ${ampm}`;
-    }
-}
-
-export const menuContent: IMenuContent = {
-    favorites: [],
-    combat: [{
-        label: "",
-        id: "",
-        description: `This module offers multiple toggles to customize the combat modules in the script. Click the settings button to adjust sub-settings for each module.`,
-        type: "paragraph"
-    }, {
-        label: "Combat Modules",
-        id: "",
-        type: "group",
-        description: "General purpose combat modules grouped up to clean up the menu interface.",
-        icon: SWORD_ICON,
-        settings: [{
-            label: "Velocity Hits",
-            id: "velocityHits",
-            description: "Automatically strikes enemies if they will run into spikes.",
-            type: "toggle",
-            status: true
-        }, {
-            label: "Knockback Hits",
-            id: "attackFactoringKB:hits",
-            description: "Automatically strikes enemies factoring knocking potential.",
-            type: "toggle",
-            status: true
-        }, {
-            label: "Knockback Instakills",
-            id: "attackFactoringKB:insta",
-            description: "Automatically instakills enemies factoring knocking potential.",
-            type: "toggle",
-            settings: [{
-                label: "Allow While Trapped",
-                id: "attackFactoringKB:insta:allowInTrap",
-                description: "Lets these instakills run while you are trapped, as long as Auto Breaker has no spikes to break around you.",
-                type: "toggle",
-                status: false
-            }],
-            status: true
-        }, {
-            label: "Musket Insta",
-            id: "musketInsta",
-            description: "With polearm + musket: bull helmet + polearm, then turret gear + musket, when the damage kills the nearest enemy at its current health (assuming soldier helmet for the second hit).",
-            type: "toggle",
-            status: false
-        }, {
-            label: "Auto Push Strikes",
-            id: "attackInPush",
-            description: "Automatically attacks enemies during auto pushing once collision is made with a spike.",
-            type: "toggle",
-            settings: [{
-                label: "Dagger Shame Strike Threshold",
-                id: "daggerShameStrikeThres",
-                description: "Shame Strike waits until the enemy's shame count reaches this number.",
-                type: "slider",
-                min: 2,
-                max: 7,
-                step: 1,
-                status: 4
-            }, {
-                label: "Dagger Attack Method",
-                id: "attackInPush:dagger_method",
-                description: `
-                Determines what method to use to attack enemies when our primary weapon is daggers.
-                Shame Strike method makes the mod wait for enemies to gain a high shameCount before attacking with turret.
-                Bullspam method makes the mod do constant brute force attacking.
-                Disabled makes the mod do nothing.
-                `,
-                type: "select",
-                options: [{
-                    label: "Shame Strike",
-                    value: 0
-                }, {
-                    label: "Bullspam",
-                    value: 1
-                }, {
-                    label: "Disabled",
-                    value: 2
-                }],
-                status: 0
-            }, {
-                label: "High Damage Attack Method",
-                id: "attackInPush:polearm_katana_method",
-                description: `
-                Determines what method to use to attack enemies when our primary weapon is either polearm or katana.
-                Predictive method makes mod try to sync the attacks with enemies' tank gear equip.
-                Bullspam method makes the mod do constant brute force bullspamming.
-                Disabled makes the mod do nothing.
-                `,
-                type: "select",
-                options: [{
-                    label: "Predictive",
-                    value: 0
-                }, {
-                    label: "Bullspam",
-                    value: 1
-                }, {
-                    label: "Disabled",
-                    value: 2
-                }],
-                status: 0
-            }, {
-                label: "Generic Attack Method",
-                id: "attackInPush:generic_method",
-                description: `
-                Determines what method to use to attack enemies for any other primary weapon.
-                Bullspam method makes the mod do constant brute force bullspamming.
-                Disabled makes the mod do nothing.
-                `,
-                type: "select",
-                options: [{
-                    label: "Bullspam",
-                    value: 0
-                }, {
-                    label: "Disabled",
-                    value: 1
-                }],
-                status: 0
-            }, {
-                label: "Turret Bullet Assist",
-                id: "turretBulletAssistOnAP",
-                description: "Uses turret gear to attack pit-spiked enemies if other attack methods are unavailable.",
-                type: "toggle",
-                status: true
-            }],
-            status: true
-        }, {
-            id: "objectBreaker:pit_spike",
-            label: "Pit-Spike Breaker",
-            description: "Automatically breaks objects near traps to accelerate pit-spiking. If you used Chicken V3, you'll have a more clear idea of what this does. Requires Object Breaker to be enabled for this to work.",
-            type: "toggle",
-            status: false
-        }, {
-            label: "Projectile Sync",
-            id: "projectileSync",
-            description: "Automatically attacks enemies the moment it can onetick with any projectile.",
-            type: "toggle",
-            status: true
-        }, {
-            label: "Turret Gear Knockback",
-            id: "turretGearKB",
-            description: "Automatically uses turret gear's knockback to kill enemies if possible.",
-            type: "toggle",
-            status: true
-        }, {
-            label: "Barbarian Knockback",
-            id: "barbKnockback",
-            description: "Automatically uses barbarian armor if the knockback kills the enemy.",
-            type: "toggle",
-            status: true
-        }]
-    }, {
-        label: "Spike Oneshots",
-        id: "",
-        description: "Modules that customize oneshots using spikes",
-        icon: SPIEK_ICON,
-        type: "group",
-        settings: [{
-            label: "Shame Grind",
-            id: "shameGrind",
-            description: "Fakes appleInstas repeatedly and once the enemy stops shaming, finishes off with appleInsta. Must have appleInsta and preplacements toggled on for this to work.",
-            type: "toggle",
-            icon: SHAME_HAT_ICON,
-            disabled: true,
-            status: false
-        }, {
-            label: "Apple Insta",
-            id: "appleInsta",
-            description: "Automatically breaks enemy traps and spike one shots them. Requires preplacements module to be turned on.",
-            icon: SPIEK_ICON,
-            type: "toggle",
-            settings: [{
-                label: "Allow While Trapped",
-                id: "appleInstaWhileTrapped",
-                description: "Triggers even when trapped.",
-                type: "toggle",
-                status: true
-            }, {
-                label: "Allow Low Damage Primaries",
-                id: "appleAllowsLowDamagePri",
-                description: "Triggers even for daggers, bat, etc.",
-                type: "toggle",
-                status: true
-            }],
-            status: true
-        }, {
-            label: "Spike Tick",
-            id: "spikeTick",
-            description: "Automatically spike instakills enemies when trap breaks.",
-            icon: SPIEK_ICON,
-            type: "toggle",
-            status: true
-        }]
-    }, {
-        label: "Auto Place",
-        id: "autoPlacing",
-        description: "Automatically places buildings quickly and efficiently.",
-        icon: BUILDING_ICON,
-        type: "toggle",
-        status: false,
-        settings: [{
-            label: "Range",
-            id: "autoPlaceRange",
-            description: "How close the nearest enemy must be before Auto Place starts placing traps.",
-            type: "slider",
-            min: 100,
-            max: 1200,
-            status: 400,
-            step: 10
-        }, {
-            label: "Angle Finder Level",
-            id: "angleFinderLevel",
-            description: "Determines the levels of budget the angle finder has. The higher it is, the more accurate angles become. This toggle also affects defensive modules.",
-            type: "slider",
-            min: 1,
-            max: 10,
-            status: 7,
-            step: 1
-        }, {
-            label: "Two Tick Placements",
-            description: "Automatic placements occur every two game ticks instead of one. Reduces packet usage, makes placement less 'spammy', but reduces overall placement effectiveness.",
-            id: "twoTickPlacements",
-            type: "toggle",
-            status: false
-        }, {
-            label: "Preplacements",
-            description: "Preemptively places buildings in places where buildings are about to break.",
-            id: "preplacer",
-            type: "toggle",
-            status: true
-        }, {
-            label: "Replacements",
-            description: "Places buildings once it receives a killObject packet from the game server.",
-            id: "replacer",
-            type: "toggle",
-            status: true
-        }]
-    }, {
-        label: "Melee Sync",
-        id: "meleeSync",
-        description: "Automatically melee syncs with allies on targets with primary weapon. For this to work correctly, the person you want to sync with must choose to sync with you as well. Which means that this toggle will generally NOT work with non-falcon users.",
-        icon: SPEAR_ICON,
-        type: "toggle",
-        settings: [{
-            label: "Sync With",
-            id: "meleeSyncTarget",
-            description: "Select ANY player to sync with via their in-game SID. To sync with no one, set the value to -1.",
-            type: "number",
-            min: -1,
-            max: 50,
-            step: 1,
-            neverSave: true,
-            status: -1
-        }],
-        status: false
-    }, {
-        label: "Dynamic One Tick",
-        id: "dynamicOneTick",
-        description: "Automatically does one ticks whenever possible. This toggle must be turned on for 'Active' oneTick mode to work.",
-        icon: SPEAR_ICON,
-        settings: [{
-            label: "Ignore Hats",
-            id: "oneTickIgnoreHats",
-            description: "Leaves the enemy's Soldier, Tank and EMP Helmet damage reduction out when deciding if a one tick kills.",
-            type: "toggle",
-            status: false
-        }],
-        status: true,
-        type: "toggle"
-    }, {
-        label: "Auto Push",
-        id: "autoPush",
-        description: "Automatically pushes enemies into spikes.",
-        icon: WALKING_ICON,
-        settings: [{
-            label: "Range",
-            id: "autoPushRange",
-            description: "How close a trapped enemy must be before Auto Push starts pushing them.",
-            type: "slider",
-            min: 100,
-            max: 300,
-            status: 250,
-            step: 5
-        }, {
-            label: "Render Pathfinding Line",
-            id: "renderAutoPushingPathfindingLine",
-            description: "Draws the path Auto Push is following.",
-            type: "toggle",
-            status: true
-        }],
-        type: "toggle",
-        status: true
-    }, {
-        label: "Anti Bull",
-        id: "antiBull",
-        description: "Counters bullspamming by using Spike Gear and CX Wings. This toggle completely overrides Shadow Wings.",
-        type: "toggle",
-        icon: SPIEK_ICON,
-        settings: [{
-            label: "Force Spike Gear",
-            id: "forceAntiBull",
-            type: "toggle",
-            description: "Force equips Spike Gear in situations where enemies cannot do non-soldier vulnerable counter attacks (e.g. spikeTick).",
-            status: true
-        }],
-        status: false
-    }],
-    utility: [{
-        label: "",
-        id: "",
-        description: `This module offers multiple toggles to customize the general use modules in the script. Click the settings button to adjust sub-settings for each module.`,
-        type: "paragraph"
-    }, {
-        label: "Farming / Store Utilities",
-        id: "",
-        description: "Modules that help automate the annoying parts of the store and grinding.",
-        icon: FARMING_STORE_UTILITIES_ICON,
-        type: "group",
-        settings: [{
-            label: "Auto Grinding",
-            id: "autoGrind",
-            neverSave: true,
-            description: "Helps with leveling up weapons to higher variants.",
-            icon: AUTO_GRIND_ICON,
-            settings: [{
-                label: "Primary Limit",
-                id: "grindPrimaryLimit",
-                description: "Set the limit of primary grinding.",
-                type: "slider",
-                min: 0,
-                max: 3,
-                status: 2
-            }, {
-                label: "Secondary Limit",
-                id: "grindSecondaryLimit",
-                description: "Set the limit of secondary grinding.",
-                type: "slider",
-                min: 0,
-                max: 3,
-                status: 1
-            }],
-            type: "toggle",
-            status: false
-        }, {
-            label: "Auto Buy",
-            id: "autoBuy",
-            description: "Automatically purchases hats and accessories.",
-            icon: AUTO_BUY_ICON,
-            type: "toggle",
-            status: true
-        }, {
-            label: "Auto Upgrade",
-            id: "autoUpgrade",
-            description: "Automatically upgrades weapons and items.",
-            icon: AUTO_BUY_ICON,
-            status: true,
-            settings: [{
-                label: "7th Slot",
-                id: "7thSlot",
-                type: "select",
-                description: "Set what the Auto Upgrader picks for the 7th slot.",
-                options: [{
-                    label: "Teleport",
-                    value: 38
-                }, {
-                    label: "Turret",
-                    value: 33
-                }, {
-                    label: "Healing Pad",
-                    value: 35
-                }, {
-                    label: "Blocker",
-                    value: 37
-                }, {
-                    label: "Platform",
-                    value: 34
-                }],
-                status: 38
-            }, {
-                label: "Weapon Path",
-                id: "upgradePath",
-                type: "select",
-                description: "Which weapons Auto Upgrade aims for. Polearm + Musket: polearm, then hunting bow, crossbow and musket (katana + musket can't be reached in 1.8.2: katana and crossbow are both age-8 picks).",
-                options: [{
-                    label: "Default",
-                    value: "default"
-                }, {
-                    label: "Polearm + Musket",
-                    value: "polearmMusket"
-                }],
-                status: "default"
-            }],
-            type: "toggle"
-        }]
-    }, {
-        label: "Packet Management",
-        description: "Customize modules to modify the client's method for managing packet usage.",
-        id: "",
-        icon: PACKAGE_ICON,
-        type: "group",
-        settings: [{
-            label: "Packet Budget Strictness",
-            id: "packetBudgetStrictness",
-            description: "Sets how many ticks ahead the budget tracker reserves packets.",
-            type: "slider",
-            icon: WIFI_ICON,
-            min: 2,
-            max: 4,
-            step: 1,
-            status: 2
-        }, {
-            label: "Packet Budget Limit",
-            id: "packetBudgetLimit",
-            description: "Determines the maximum capacity for packet usage.",
-            type: "slider",
-            icon: PACKAGE_ICON,
-            min: 100,
-            max: 110,
-            step: 5,
-            status: 110
-        }, {
-            label: "Artificial Ping",
-            id: "artificialPing",
-            description: "Artificially increases ping. This toggle does actually make your ping worse. Unlike with other toggles, this toggle will not be automatically saved.",
-            icon: WIFI_ICON,
-            type: "toggle",
-            neverSave: true,
-            settings: [{
-                label: "Artificial Amount",
-                id: "artificialPingAmt",
-                description: "Extra delay added to your connection, in ms (half on sending, half on receiving).",
-                type: "slider",
-                min: 10,
-                step: 5,
-                max: 80,
-                status: 35
-            }],
-            status: false
-        }]
-    }, {
-        label: "Auto Break",
-        id: "autoBreak",
-        description: "Automatically breaks buildings while trapped.",
-        icon: AUTO_BREAK_ICON,
-        type: "toggle",
-        status: true
-    }, {
-        id: "autoRespawn",
-        label: "Auto Respawn",
-        icon: TOMBSTONE_ICON,
-        description: "Automatically respawns when you die.",
-        type: "toggle",
-        status: false
-    }, {
-        label: "Kill Chat",
-        id: "killChat",
-        description: "Automatically chats something whenever your killCount increases.",
-        type: "toggle",
-        icon: CONSOLE_ICON,
-        status: false
-    }, {
-        label: "Auto Play",
-        id: "autoPlay",
-        description: "Auto play? Might as well, the whole client basically does everything for you. Now let's automate movement too! Requires you to enable all the other modules for this to be good.",
-        icon: AUTO_PLAY_ICON,
-        type: "toggle",
-        settings: [{
-            label: "Follow",
-            id: "followTo",
-            description: "Follow ANY player with via their in-game SID. To follow with no one, set the value to -1.",
-            type: "number",
-            min: -1,
-            max: 500,
-            step: 1,
-            neverSave: true,
-            status: -1
-        }],
-        status: false
-    }],
-    defense: [{
-        label: "",
-        id: "",
-        description: `This module offers multiple toggles to customize the defensive modules in the script. Click the settings button to adjust sub-settings for each module.`,
-        type: "paragraph"
-    }, {
-        label: "Defense System",
-        description: "Manage the mod's main defensive system.",
-        id: "",
-        type: "group",
-        icon: SHIELD_ICON,
-        settings: [{
-            label: "Pattern Recognition",
-            id: "usePatternRec",
-            description: "Adapts defensive calculations based on common enemy attack patterns.",
-            icon: CONSOLE_ICON,
-            type: "toggle",
-            status: true
-        }, {
-            label: "Auto Healing",
-            id: "autoHeal",
-            description: "Responds to dangers by auto healing.",
-            icon: HEALING_ICON,
-            type: "toggle",
-            status: true
-        }, {
-            label: "Hat Switching",
-            id: "defensiveHatSwitching",
-            description: "Allows the action of hat switching to mitigate potential damages.",
-            icon: SHIELD_ICON,
-            type: "toggle",
-            status: true
-        }, {
-            label: "Blood Wings Optimizations",
-            id: "bloodWingsOptimizations",
-            description: "Uses blood wings for defensive purposes (e.g. no-soldier antionetick, no-shame antishamegrind, etc).",
-            type: "toggle",
-            status: false,
-            icon: BLOOD_WINGS_OPTIMIZATIONS_ICON,
-            disabled: true
-        }]
-    }, {
-        label: "Safe Walk",
-        id: "safeWalk",
-        description: "Prevents walking into dangerous or annoying buildings.",
-        icon: SPIEK_ICON,
-        type: "toggle",
-        settings: [{
-            id: "safeWalkIgnoreMyTps",
-            label: "Ignore My Teleports",
-            description: "Safe walk doesn't stop you from walking into your own teleports.",
-            type: "toggle",
-            status: true
-        }, {
-            id: "safeWalkIgnoreAllyBoostPads",
-            label: "Ignore Allied Boost Pads",
-            description: "Safe walk doesn't stop you from walking into boost pads placed by allies.",
-            type: "toggle",
-            status: true
-        }],
-        status: true
-    }, {
-        label: "Always Pick Best Weapon",
-        id: "selectBestWeapon",
-        description: "Automatically selects the best weapon for every scenario.",
-        icon: SELECT_BEST_WEAPON_ICON,
-        type: "toggle",
-        status: true
-    }, {
-        label: "Auto Object Breaker",
-        id: "walkBreaker",
-        description: "Automatically breaks spikes, traps, and teleports.",
-        icon: AUTO_BREAK_ICON,
-        type: "toggle",
-        status: true
-    }, {
-        label: "Defensive Knockbacks",
-        id: "defensiveKB",
-        description: "Uses highly 'advanced' complex spatial trigonometry to determine perfect knockback vectors to knock enemies away for defensive purposes.",
-        type: "toggle",
-        icon: PUNCH_ICON,
-        settings: [{
-            label: "Require Turret Bullet",
-            id: "defKBRequireTurret",
-            type: "toggle",
-            description: "Only executes defensive knockbacks only when primary AND turret is fully reloaded.",
-            status: true
-        }],
-        status: true
-    }],
-    visual: [{
-        label: "",
-        id: "",
-        description: `This module offers multiple toggles to customize the appearance of the script. Click the settings button to adjust sub-settings for each module.`,
-        type: "paragraph"
-    }, {
-        label: "Building Visuals",
-        id: "",
-        icon: BUILDING_ICON,
-        description: "Modules that customizes visuals relating to buildings.",
-        type: "group",
-        settings: [{
-            label: "Building Health Bars",
-            id: "buildingHealthBar",
-            description: "Draws health bars on buildings.",
-            icon: BUILDING_HEALTH_BAR_ICON,
-            settings: [{
-                label: "Always Show",
-                type: "toggle",
-                status: false,
-                id: "buildingHealthAlwaysShow",
-                description: "Render health bars regardless if the object has taken damage or not."
-            }],
-            type: "toggle",
-            status: true
-        }, {
-            label: "Draw Building Overlay",
-            id: "buildingOverlay",
-            description: "Draws indicators that tell if a building is friendly or not.",
-            icon: BUILDING_OVERLAY_ICON,
-            type: "toggle",
-            status: true
-        }]
-    }, {
-        label: "Debugging Visuals",
-        id: "",
-        type: "group",
-        description: "Modules that help with debugging the mod's features.",
-        icon: CONSOLE_ICON,
-        settings: [{
-            label: "Render Placement",
-            id: "renderPlacements",
-            description: "Draws ghost objects to where we'll place.",
-            icon: SPIEK_ICON,
-            type: "toggle",
-            status: true
-        }, {
-            label: "Render Packet Count",
-            id: "renderPacketCounter",
-            description: "Draws a packet counter on top of the player.",
-            icon: PACKAGE_ICON,
-            status: true,
-            type: "toggle"
-        }, {
-            label: "Show Activity",
-            id: "showActivity",
-            description: "Displays a live list of active modules and behaviors.",
-            type: "toggle",
-            icon: CONSOLE_ICON,
-            status: true
-        }, {
-            label: "Render Ownership",
-            id: "renderOwnership",
-            description: "Draws the unqiue sid values on both players and game objects.",
-            type: "toggle",
-            icon: NAME_TAG_ICON,
-            status: true
-        }, {
-            label: "Render Placement Times",
-            id: "renderPlacementTime",
-            description: "Shows runtimes for the 6 most recent placements.",
-            type: "toggle",
-            icon: CONSOLE_ICON,
-            status: true
-        }, {
-            label: "Render Real Direction",
-            id: "renderRealDir",
-            description: "Renders the real direction of our player.",
-            type: "toggle",
-            status: true
-        }]
-    }, {
-        label: "Render Grid",
-        id: "renderGrid",
-        description: "Draws the background grid.",
-        icon: GRID_ICON,
-        settings: [{
-            label: "Static Grid",
-            id: "staticGrid",
-            description: "Makes the grid not resize with zoom.",
-            type: "toggle",
-            status: false
-        }],
-        type: "toggle",
-        status: true
-    }, {
-        label: "Night Mode",
-        id: "nightMode",
-        description: "Renders a darker tint on the screen.",
-        icon: MOON_ICON,
-        type: "toggle",
-        status: false
-    }, {
-        label: "Reload Bars",
-        id: "reloadBars",
-        description: "Draws reload bars.",
-        icon: RELOAD_BARS_ICON,
-        settings: [{
-            id: "renderTurretReload",
-            description: "Shows a reload bar next to players while their Turret Gear is reloading.",
-            label: "Render Turret Gear Reload",
-            type: "toggle",
-            status: false
-        }],
-        type: "toggle",
-        status: true
-    }, {
-        label: "Shame Counter",
-        id: "renderShameCounter",
-        description: "Draws a entities' shame count.",
-        icon: SHAME_HAT_ICON,
-        type: "toggle",
-        status: true
-    }, {
-        type: "toggle",
-        status: false,
-        label: "Stacked Text",
-        id: "stackedText",
-        description: "Damage and healing text are merged.",
-        icon: STACKED_ICON
-    }, {
-        label: "Render Names",
-        id: "renderNames",
-        description: "Draws player and ai names.",
-        type: "toggle",
-        icon: NAME_TAG_ICON,
-        status: true
-    }],
-    console: [{
-        label: "",
-        id: "",
-        type: "chat-log"
-    }],
-    configs: [{
-        label: "Development Analytics",
-        id: "improvementLogging",
-        type: "toggle",
-        description: "Nothing is sent anywhere. While this is on, a packet log (.fpl) is only saved when you die if Download Local Copy is on; while it is off, one is saved on every death.",
-        icon: gearIcon(22),
-        settings: [{
-            label: "Download Local Copy",
-            description: "Saves the last 15 seconds of packets as an .fpl file each time you die.",
-            id: "improvementLoggingLCopy",
-            type: "toggle",
-            status: false
-        }],
-        status: true
-    }, {
-        label: "Auto Save Configs",
-        description: "Automatically saves setting configurations to local storage.",
-        id: "autoSaveSettings",
-        type: "toggle",
-        status: false,
-        icon: gearIcon(22)
-    }, {
-        label: "",
-        id: "",
-        type: "config-ui"
-    }, {
-        label: "",
-        type: "saved-configs",
-        id: ""
-    }],
-    experimentals: [{
-        label: "",
-        id: "",
-        description: `Experimental toggles and module configurations. All modules listed are usually experimental algorithmic adjustments for modules in other categories. Modules under this section here may or may not be fully integrated with the rest of the client. By default, experimental toggles will not be automatically saved.`,
-        type: "paragraph"
-    }, {
-        label: "preplacer dont round",
-        id: "prenorounding",
-        description: "makes preplace not round timing to the nearest int.",
-        type: "toggle",
-        neverSave: true,
-        status: false
-    }],
-    credits: [{
-        label: "",
-        id: "",
-        description: `By using this software, you acknowledge that the developers and anyone associated with this software are not responsible or liable for any direct, indirect, incidental, consequential, or other damages, losses, or issues of any kind arising from its use, including but not limited to data loss, system crashes, or other malfunctions.`,
-        type: "paragraph"
-    }]
-};
+// Re-exported so existing imports from "@menu/Menu" keep working.
+export type { IMenuItem, SavedConfigs } from "./types";
+export { SETTINGS_VERSION } from "./settingsVersion";
+export { ChatLog } from "./ChatLog";
+export { menuContent } from "./content";
 
 export default class Menu {
     static chatLogs: ChatLog[] = [new ChatLog("Loaded Falcon Mod")];
@@ -971,33 +41,103 @@ export default class Menu {
 
     static currentItem: IMenuItem;
 
+    /**
+     * The current value of a setting: true/false for toggles, the chosen option's value for selects, a number or
+     * numeric string for sliders and number inputs. Loosely typed because every module reads its own settings
+     * through this; a test checks that every id passed here exists (test/menu/setting-ids.test.ts).
+     */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     static getValue(id: string): any {
         return this.itemMap[id]?.status;
     }
 
     static setValue(id: string, val: boolean) {
-        if (typeof this.itemMap[id].status === "boolean") {
-            this.itemMap[id].status = val;
-            if (typeof this.itemMap[id].update === "function") this.itemMap[id].update();
+        const item = this.itemMap[id];
+        if (!item) {
+            console.warn(`[Falcon] Menu.setValue: there is no setting called "${id}".`);
+            return;
+        }
+
+        if (typeof item.status === "boolean") {
+            item.status = val;
+            if (typeof item.update === "function") item.update();
         }
 
         this.saveSettings();
     }
 
+    /** Applies saved settings (the stored ones by default). Returns how many values were used and skipped. */
     static async loadSettings(customSettings?: Record<string, unknown>) {
         const saved = customSettings ?? readJson<Record<string, unknown>>("falcon-settings", {});
         const data = migrateSettings(saved);
+        let applied = 0;
+        let skipped = 0;
 
         for (const id in data) {
+            if (id === SETTINGS_VERSION_KEY) continue;
+
             // Own keys only: `in` would also match inherited names such as "__proto__".
-            if (!Object.hasOwn(this.itemMap, id)) continue;
+            if (!Object.hasOwn(this.itemMap, id)) {
+                skipped++;
+                continue;
+            }
 
             // A value that no longer fits its setting (e.g. a toggle that became a slider) keeps the default.
             const item = this.itemMap[id];
-            if (isValidSettingValue(item, data[id])) item.status = data[id];
+            if (isValidSettingValue(item, data[id])) {
+                item.status = data[id];
+                applied++;
+            } else {
+                skipped++;
+            }
         }
 
-        return true;
+        return { applied, skipped };
+    }
+
+    /** Loads a saved config or an imported file, saves it as the current settings and redraws the menu. */
+    static async applySettings(settings: Record<string, unknown>) {
+        const result = await this.loadSettings(settings);
+        this.saveSettings();
+        this.rerender();
+        return result;
+    }
+
+    /** Each setting's value before saved settings were loaded, filled in by buildItemMap. */
+    static defaults: Record<string, unknown> = {};
+
+    /** Whether the item is a setting with a value that can be put back to its default. */
+    static canReset(item: IMenuItem) {
+        if (!item.id || item.neverSave || item.disabled || item.unchangable) return false;
+        if (!Object.hasOwn(this.defaults, item.id)) return false;
+        return item.type === "toggle" || item.type === "select" || item.type === "slider" || item.type === "number";
+    }
+
+    /** Sliders and number boxes store what was typed as text, so "5" and 5 count as the same value. */
+    static isChanged(item: IMenuItem) {
+        return String(item.status) !== String(this.defaults[item.id]);
+    }
+
+    /** The default as shown to the user: On/Off, the option's label, or the number. */
+    static describeDefault(item: IMenuItem) {
+        const value = this.defaults[item.id];
+        if (item.type === "toggle") return value ? "On" : "Off";
+        if (item.type === "select") return item.options?.find((option) => String(option.value) === String(value))?.label ?? String(value);
+        return String(value);
+    }
+
+    static resetToDefault(item: IMenuItem) {
+        if (!this.canReset(item)) return;
+        item.status = this.defaults[item.id];
+        this.saveSettings();
+        this.rerender();
+    }
+
+    /** Draws the current view again with the latest values (search results stay searched). */
+    static rerender() {
+        if (!this.contentElement) return;
+        if (this.searchQuery) this.search(this.searchQuery);
+        else this.renderItems(this.oldItems);
     }
 
     /** Every saveable setting's value, plus the format version, as stored in "falcon-settings" and saved configs. */
@@ -1055,6 +195,7 @@ export default class Menu {
 
         for (const item of items) {
             this.itemMap[item.id] = item;
+            if (item.id && !Object.hasOwn(this.defaults, item.id)) this.defaults[item.id] = item.status;
             if (item.settings) this.buildItemMap(item.settings);
         }
     }
@@ -1072,7 +213,9 @@ export default class Menu {
         menuElement.appendChild(headerElement);
 
         headerElement.innerHTML = `
-            ${FALCON_LOGO}
+            <svg viewBox="0 0 512 512" style="pointer-events: none; margin-left: 10px;" width="45" height="45">
+                <path fill="var(--generic-white)" d="M0 0c5.3.3 7.8 3.3 11.3 6.9.8.8.8.8 1.7 1.7 4 4.1 4 4.1 4 6.4.6.2 1.1.4 1.7.6 3.4 2.1 5.4 5.1 7.6 8.3.5.7 1 1.3 1.5 2 3.5 4.9 6.7 10 9.6 15.3 2.4 4.1 5 7.9 7.6 11.8 0-6.3 0-12.5 0-19 .7 0 1.3 0 2 0 .1.5.1 1.1.2 1.6C48.9 47.4 55.3 59 63 68c.7 1 1.5 1.9 2.3 2.9 1.5 2.2 1.5 2.2 3.7 3.1-1.1-8.4-2.7-16.6-4.5-24.9-4.7-22-4.7-22-4.5-32.1 3.2 1.6 4.2 5 5.7 8.2.7 1.5 1.4 2.9 2.2 4.4.4.7.7 1.5 1.1 2.2 1 2 2 4 3 6 .6 1.2 1.2 2.3 1.8 3.6.8 1.6.8 1.6 1.6 3.1 1.3 2.7 2.4 5.4 3.5 8.2 2.1 5.5 4.8 10.6 7.6 15.8 3.2 6 6.2 11.9 8.6 18.3 1.3 3.3 3.1 6.2 4.9 9.2 1-2.9 1.1-4.6 1.1-7.6 0-.9 0-1.8 0-2.8 0-1.5 0-1.5 0-3 0-1 0-2 0-3.1 0-3.3 0-6.5 0-9.8 0-2.2 0-4.4 0-6.6 0-5.4 0-10.8 0-16.2 3.1 2.8 4.7 5 6 8.9.3 1 .7 1.9 1 2.9s.7 2.1 1 3.1c.5 1.6.5 1.6 1.1 3.2 3.6 11.4 5.8 22.8 7.7 34.5.1.8.3 1.5.4 2.3.2 1.4.5 2.8.7 4.3.8 4.7 1.8 8.5 4.1 12.6 3.1 1.1 3.1 1.1 6 1 2.8-14.7 5.5-30 3-45 1 0 2 0 3 0 4.7 19.2 8.3 38 8.5 57.8.1 6.4 1.2 9.8 5.7 14.5.6.6 1.2 1.1 1.8 1.7.1-.7.1-1.4.2-2.1 1.6-12.7 5.5-25.3 9.7-37.6 1 0 2 0 3 0 .9 6.8 1.2 13.5 1.2 20.4 0 1.6 0 1.6 0 3.2 0 7.5-.5 14.9-1.6 22.3-.9 6.8-.9 11.5 3.4 17.2 3.6-9.6 7.3-19.1 11-29 1 0 2 0 3 0 .7 10.7-.9 20.9-2.7 31.5-1.8 10.6-1.8 10.6 1.7 20.4 1 1.5 1 1.5 1.9 3.1 4.2-4.6 6.5-9.9 9.1-15.4.4-.9.9-1.9 1.3-2.8 2.1-4.5 4.1-9 5.5-13.7 1 0 2 0 3 0-.2 8.6-1.6 16.8-3.3 25.1-.3 1.5-.3 1.5-.6 3-1.3 6.1-3 11.7-5.4 17.4-.8 2.9-.6 4.6.3 7.5.7 1 1.3 2 2 3 .7-1.1.7-1.1 1.3-2.3 3.9-6.6 7.7-12.9 11.9-18.9.5-.7 1-1.5 1.5-2.3.5-.6 1-1.2 1.5-1.8.7 0 1.3 0 2 0-.4 13-5.6 25.3-12 36.4-1.2 3.3-.8 5.3 0 8.6 5-3.7 8-7.6 11-13 .7.3 1.3.7 2 1-.1.9-.3 1.8-.4 2.7-.2 1.2-.4 2.4-.6 3.6s-.4 2.3-.6 3.6c-.5 3.1-.5 3.1-.4 6.1.7-.6.7-.6 1.4-1.3 21.8-19.2 21.8-19.2 29.6-20.6 0-.7 0-1.3 0-2 1.6-1.3 1.6-1.3 3.8-2.8 1.2-.8 1.2-.8 2.4-1.6.9-.6 1.7-1.2 2.6-1.7.9-.6 1.7-1.2 2.6-1.8 6.2-4.2 12.3-8.2 18.6-12.1.9-.6 1.8-1.2 2.7-1.8 5.3-3.4 10.7-6.6 16.3-9.6 2.3-1.3 4.5-2.6 6.8-3.9.7-.4 1.3-.8 2-1.2 1.3-.8 2.5-1.6 3.8-2.4 3.8-2.3 7.5-4 11.7-5.5 2.3-.9 4.3-2 6.3-3.4 4.2-2.6 8.5-4.8 13-7 15.9-7.8 31.5-16.8 42.9-30.6.5-.6 1.1-1.1 1.6-1.7.7 0 1.3 0 2 0 .4-.8.4-.8.7-1.6 1.6-2.9 3.6-5.4 5.7-8 4.2-5.3 7.9-10.9 11.5-16.6.5-.7.9-1.5 1.4-2.2 12.3-20.4 10.9-44.8 7.4-67.5-.2-1.3-.4-2.6-.6-3.9-1.2-7.2-2.9-13.9-5.4-20.7C401 12 401 12 401 9c2.6.4 3.8.8 5.6 2.7 1.8 2.7 3.6 5.5 5.4 8.3.6.9.6.9 1.1 1.8 11.1 17.7 12.4 33.7 12.7 54.2.1 2.7.4 5.3.7 8 .4 3.5.2 5.8-1.4 9-1.4 3-2.6 6-3.6 9.2-1.7 5.1-3.9 9.9-6.2 14.7-.4.9-.9 1.8-1.3 2.7-6 12.3-12.1 24.7-19.6 36.1-2 3-3.7 6.1-5.5 9.2 4.7-1.4 7.4-4.2 10.6-7.8.8-.9.8-.9 1.6-1.7 5.7-6.1 10.8-12.7 15.9-19.4.7-.8 1.4-1.7 2.1-2.5 2-2.6 3.6-5.3 5.1-8.3.5-1 1-2 1.6-3 .4-.7.8-1.5 1.2-2.2.7 0 1.3 0 2 0 .4-1.1.4-1.1.9-2.2 4.7-11.5 11-25.4 19.1-34.8 1 0 2 0 3 0-2.4 24-9.5 49.4-24 69-1.1 1.7-2.3 3.3-3.4 5-1.2 1.7-2.4 3.3-3.6 5-.6.9-1.3 1.8-1.9 2.7-6.1 8.6-12.9 16.5-20.7 23.6-1.7 2.1-2.5 4.1-3.4 6.7 13.2-8.2 25.4-17.3 37.1-27.6 2.9-2.4 2.9-2.4 4.9-2.4.3-.6.5-1.2.8-1.8 1.4-2.5 2.9-3.9 5.1-5.7.7-.6 1.4-1.2 2.2-1.8.7-.6 1.3-1.1 2-1.7.9-.8 1.9-1.6 2.8-2.4 2.1-1.6 2.1-1.6 5.1-1.6-1.5 7.8-7.2 14.5-12.1 20.6-2.2 2.7-4.2 5.5-6.3 8.3-4.2 5.7-8.8 10.9-13.6 16.1-1 1-1 1-2 2.1-3.5 3.6-7.1 6.8-11 9.9-5.3 4.2-10.2 8.8-15.2 13.4-.8.7-1.5 1.4-2.3 2.2-.7.7-1.4 1.3-2.1 2-.6.6-1.3 1.2-1.9 1.8-1.6 1.5-1.6 1.5-2.5 3.6 13.8-1.9 26-8 37.5-15.7 2.5-1.3 2.5-1.3 6.5-1.3-.5 4.2-2.9 6.3-6 9-.7 0-1.3 0-2 0-.3 1-.7 2-1 3-1.7 1.6-3.5 3.1-5.4 4.6-1 .8-2 1.6-3 2.4-2.6 2-2.6 2-5.6 3-.3 1-.7 2-1 3-10 7.1-22.4 13.1-34 16.9-2.7 1.5-3.6 3.4-5 6.1 1.1-.4 2.2-.8 3.4-1.2 1.5-.5 3-1.1 4.5-1.6.8-.3 1.6-.6 2.4-.8 3.8-1.3 7.6-2.6 11.4-3.8 7.9-2.6 15.6-6 22.9-9.9 3.4-1.7 3.4-1.7 7.4-1.7-4 10.2-19 17.5-28 23-.8.5-1.7 1-2.6 1.6-3.4 2-6.8 3.6-10.5 4.9-.8.3-1.6.5-2.4.8-.8.3-1.7.5-2.5.8-3.4 1.1-6.9 2.3-10.3 3.4-1.3.4-1.3.4-2.7.9-.8.3-1.7.6-2.6.9-.8.3-1.5.5-2.3.8-2.6 1.3-4.2 2.9-6.1 5 9.3-.4 18.1-1.9 27.1-4.1 2.4-.6 4.8-1.1 7.1-1.7 1-.2 2.1-.5 3.1-.7 2.7-.6 2.7-.6 5.7-.6 0 1 0 2 0 3-15.6 8.1-31.6 16-48.7 20.4-3.7 1-6.4 2-9.3 4.6 8.2.3 16.2-.4 24.4-1.3 5.2-.5 10.3-.8 15.6-.7-1 3-1 3-2.7 4-.7.3-1.5.6-2.2.9-.8.3-1.7.7-2.5 1-.9.3-1.8.7-2.8 1-.9.4-1.9.7-2.8 1.1-13.8 5-28 8.2-42.6 9.4-3.8.3-6.9 1-10.4 2.6 13 .1 26-.3 39-1-.3 1-.7 2-1 3-2.5 1-4.9 1.8-7.4 2.5-.8.2-1.5.4-2.3.6-7.1 1.9-14.3 3.2-21.6 4.3-2.7.4-5.1.9-7.7 1.6 1 .6 1 .6 2 1.2 7.4 4.4 7.4 4.4 10.6 6.9 2.2 1.8 4.3 3 6.8 4.3 8.9 4.9 14.7 10.5 20.7 18.6.8 1 1.5 2.1 2.3 3.1 6.4 8.7 10.8 17.3 12.9 27.9 1.6 7.2 5.9 11.6 10.8 16.9 4 4.7 4 4.7 4 7 .7 0 1.3 0 2 0 0 1 0 2 0 3-3.9 1.8-6.9 2.2-11.1 2.2-1 0-2.1 0-3.1 0-2.9-.1-2.9-.1-5.9-1.1 4.7 8.4 10.5 13.3 19.1 17.5 8.1 1.4 13.8-.8 20.5-5.4 3.8-3.3 5.6-6.1 6.4-11.1 0-4.7-.4-9.3-1-14 3 1 3 1 4.6 3.6.8 1.6.8 1.6 1.6 3.2.5 1.1 1 2.1 1.6 3.2 3.4 7.7 3.9 18.3 1.2 26.4-5 10.9-13.2 17.2-24 21.6-13.3 4.7-26.6.9-38.9-5-1-.7-2-1.3-3-2 0-.7 0-1.3 0-2-.6-.3-1.2-.5-1.7-.8-2.4-1.3-4.3-2.8-6.3-4.6-.7-.6-1.3-1.2-2-1.8-4.4-4.3-5.9-8.3-7.6-14.1-.2-.7-.4-1.5-.7-2.3-.6-1.8-1.1-3.7-1.6-5.5-.8.8-1.6 1.6-2.4 2.4-3.7 3.7-6.4 5.8-11.6 5.9-3.3-.1-6-.8-9-2.3.4-.4.8-.8 1.2-1.3 7.2-8 11.4-17.2 11.1-28.2-.8-6.3-2.3-14-6.8-18.8-4.9-3.5-8.5-4.1-14.6-3.8-1.7.3-3.3.6-5 1-1.3 9.7-1.3 9.7 1 19 1 .3 2 .7 3 1 0 1.3 0 2.6 0 4-2.8 1.4-4.9 1.2-8 1-1.4-.6-2.7-1.3-4-2 .4 1 .4 1 .9 2.1.4.9.7 1.8 1.1 2.7.4.9.7 1.8 1.1 2.7.8 2.7.8 2.7.8 5.7-5.3.7-10.6 1.3-16 2 .7 1 1.3 2 2 3 0 1 0 2 0 3 .6.2 1.3.5 1.9.8 4.1 1.7 8.1 3.4 12.1 5.3 1.5.7 1.5.7 3.1 1.4 1.9 1.5 1.9 1.5 2.6 4.2-1.3 6-6 11.4-10.7 15.3-1 0-2 0-3 0 0-.8-.1-1.5-.1-2.3-.1-1-.1-2-.2-3 0-1-.1-2-.1-3-.2-.9-.4-1.7-.6-2.6-1.3-.7-2.6-1.3-4-2 .3 6.9.7 13.9 1 21 3.6.7 7.3 1.3 11 2 0 4 0 4-1.8 5.9-.8.6-1.6 1.2-2.4 1.8-.8.6-1.6 1.2-2.4 1.8-2.6 1.6-4.4 2.2-7.5 2.5-5.3-2-5.3-2-7.1-4.6-1.3-3.5-1.6-7.1-2-10.9-.1-.8-.2-1.5-.3-2.3-.4-3.8-.7-7.5-.6-11.3-3.6 1-3.6 1-5.9 3.6-.2 3.5.3 6.9.9 10.4-3.1-.5-6-1-9-2-2.4 2-2.4 2-2.2 5.6.1 4.2.6 8.2 1.2 12.4-3.3-.6-5.1-1.6-7.6-3.8-.6-.5-1.2-1-1.8-1.5-1.7-1.8-2.7-3.3-3.6-5.7.3-3.3.3-3.3 1-7 .4-2.3.7-4.7 1-7-.3-.3-.7-.7-1-1-.5-3.2-.7-5 0-8 3.9-4.9 9.4-8.3 15-11 1 0 2 0 3 0 1.5-4.3.8-7.7-.8-11.8-4.4-8-17-11.6-25.1-15.2-2.6 4-5.3 7.9-8 12 1.5.9 3 1.8 4.5 2.7 2.5 1.5 2.5 1.5 4.5 3.3.6 3.1.3 4.5-1.4 7.2-.9 1-.9 1-1.9 2-.6.7-1.2 1.3-1.8 2-2 1.8-3.4 2.9-5.9 3.8-1.3-.3-2.6-.7-4-1 .3-3 .7-5.9 1-9-2 .3-4 .7-6 1-.3 3.6-.7 7.3-1 11 1.7-.3 3.5-.7 5.3-1 3.4-.6 6.3-1 9.8-1-.6 3.4-1.5 4.8-4.3 6.9-2.5 2-4.4 3.9-6.3 6.6-.8.8-1.7 1.7-2.5 2.6-4.3 0-6.4-.6-10-3-1.3 2-2.6 4-4 6-1.4-.1-2.9-.2-4.3-.4-.8-.1-1.6-.1-2.4-.2-2.3-.5-2.3-.5-5.3-2.5.1-1 .2-1.9.3-2.9.1-1.3.2-2.5.3-3.8.1-1.3.2-2.5.4-3.8 0-3.4-.3-4.6-2-7.5 0-7.2 2.7-12.4 7-18 5.4-5 5.4-5 9-5-.3-2.3-.7-4.6-1-7-1.2.1-1.2.1-2.4.2-28.4 2.5-56.8 2.7-83.1-10-4.4-2.1-8.8-4.1-13.2-6.2-2.5-1.1-4.9-2.3-7.4-3.4-3.2-1.5-6.6-3.1-9.9-4.6-.9-.4-1.8-.8-2.8-1.3-10.8-4.7-18.2-2.5-28.9 1.7-2.2.8-4.4 1.6-6.6 2.5-1 .4-1.9.7-2.9 1.1-2.8 1-2.8 1-6.1 1.9-.9.3-1.8.7-2.7 1.1-2 6.1-1.1 12.7 0 19-10.8-1.3-20.7-8.1-28-16-3-4.2-3.7-8.2-3.6-13.3 1.1-5.3 4.4-9.4 7.6-13.7 2.3-3.4 2.2-4.5 2-8.5-.2-13.1 2.8-26.7 12-36.5 4.3-4.1 8.6-5.6 14.2-7.3 7.9-2.4 15.6-5 23.3-7.8 2.1-.8 4.2-1.5 6.3-2.2 13.6-5 25.9-10.2 36.2-20.7.7-.6 1.4-1.3 2.1-2 4.3-4.8 4.3-9.9 4.2-16-.7-7.1-4.2-11.2-9.3-16 0-.7 0-1.3 0-2-.8-.4-.8-.4-1.6-.8-2-1-3.9-2.1-5.9-3.3-7.4-4.2-14.8-3.5-22.8-1.4-1.5.4-1.5.4-3 .9-2.7.6-2.7.6-5.2-.1-3.9-.5-5.7 1.4-8.9 3.5-4.6 3.1-8 5.1-13.6 5.1-4-1.9-7.1-4.6-10-8-.5-3.3-.3-4.1 1-7 .7-1.9 1.5-3.7 2.2-5.6.4-1.1.9-2.3 1.4-3.4C49 180.3 50.7 126.4 34.7 77.2c-.6-1.9-1.2-3.9-1.8-5.9-3.6-11.8-9.2-22.7-14.7-33.7-1.1-2.5-2.2-5-3.2-7.6-1.2-2.3-2.5-4.6-3.8-6.8-.4-.6-.7-1.2-1.1-1.9-1.9-3.3-3.9-6.6-6-9.9C1.7 7.7 0 4.5 0 0Z" />
+            </svg>
             <div style="pointer-events: none; margin-left: 3px;">
                 <div style="font-size: 34px; color: var(--generic-white);">FALCON</div>
                 <div style="color: var(--theme-primary); margin-top: -12px;">v1.0.0-pub</div>
@@ -1083,6 +226,7 @@ export default class Menu {
         closeMenuButton.id = "closeMenuButton";
         closeMenuButton.innerHTML = `<i class="material-icons" style="color: var(--theme-secondary); font-size: 20px;">close</i>`;
         closeMenuButton.onclick = () => menuElement.style.display = "none";
+        makeKeyboardClickable(closeMenuButton, "Close menu");
         headerElement.appendChild(closeMenuButton);
 
         const contentHolderElement = document.createElement("div");
@@ -1122,9 +266,36 @@ export default class Menu {
         this.forwardButton = forwardButton;
         this.utilsTitle = utilsTitle;
 
+        makeKeyboardClickable(backwardButton, "Back");
+        makeKeyboardClickable(forwardButton, "Forward");
+
         utilsHolder.appendChild(backwardButton);
         utilsHolder.appendChild(forwardButton);
         utilsHolder.appendChild(utilsTitle);
+
+        const searchInput = document.createElement("input");
+        searchInput.type = "search";
+        searchInput.classList.add("menuSearchInput");
+        searchInput.placeholder = "Search settings";
+        searchInput.setAttribute("aria-label", "Search settings");
+        keepEnterInInput(searchInput);
+        this.searchInput = searchInput;
+        utilsHolder.appendChild(searchInput);
+
+        let searchTimer: number | undefined;
+        searchInput.addEventListener("input", () => {
+            // Wait for a short pause in typing instead of redrawing on every key.
+            clearTimeout(searchTimer);
+            searchTimer = window.setTimeout(() => this.search(searchInput.value), 120);
+        });
+        searchInput.addEventListener("keydown", (event) => {
+            if (event.key !== "Escape") return;
+            // Esc clears the search first; the next Esc (outside the box) closes the menu as before.
+            event.stopPropagation();
+            searchInput.value = "";
+            searchInput.blur();
+            this.search("");
+        });
 
         backwardButton.onclick = (ev) => {
             ev.stopPropagation();
@@ -1228,7 +399,7 @@ export default class Menu {
         contentElement.innerHTML = "";
 
         if (this.contentElement === contentElement) {
-            for (const item of this.oldItems) item.update = undefined;
+            for (const item of this.oldItems) item.update = item.refreshReset = undefined;
             this.oldItems = items; // This will help with the GC
         }
 
@@ -1254,6 +425,55 @@ export default class Menu {
         if (__DEV__ && !isNested) profileEnd("menu", drawStart);
     }
 
+    static searchInput: HTMLInputElement;
+    static searchQuery = "";
+
+    /** Settings whose label or description contains the text, from every tab and sub-page. */
+    static findSettings(query: string) {
+        const needle = query.trim().toLowerCase();
+        const matches: IMenuItem[] = [];
+        if (!needle) return matches;
+
+        // Descriptions may hold HTML (line breaks, bold); search their text only.
+        const textOf = (html = "") => html.replace(/<[^>]*>/g, " ").toLowerCase();
+        const visit = (items: IMenuItem[]) => {
+            for (const item of items) {
+                if (this.canReset(item) && (textOf(item.label).includes(needle) || textOf(item.description).includes(needle)))
+                    matches.push(item);
+                if (item.settings) visit(item.settings);
+            }
+        };
+
+        for (const [key, items] of Object.entries(menuContent)) {
+            if (key !== "favorites") visit(items);
+        }
+
+        return matches;
+    }
+
+    /** Shows the settings matching the text, or the selected tab again when the text is empty. */
+    static search(query: string) {
+        this.searchQuery = query.trim();
+
+        if (!this.searchQuery) {
+            getElem(`menuTab:${this.selectedTab}`).click();
+            return;
+        }
+
+        const matches = this.findSettings(this.searchQuery);
+        this.backwardStack.clear();
+        this.forwardStack.clear();
+        this.updateUtilsBar(`Search: ${matches.length} result${matches.length === 1 ? "" : "s"}`);
+
+        if (matches.length) {
+            this.renderItems(matches);
+            this.currentItem = matches[0];
+        } else {
+            this.renderItems([]);
+            this.contentElement.querySelector(".noTabTtems")!.textContent = `No settings match "${this.searchQuery}".`;
+        }
+    }
+
     static selectedTab = 1;
     static isInFavoritesTab = false;
 
@@ -1271,8 +491,19 @@ export default class Menu {
                 ${tab.label}
             `;
 
-            tabElem.onclick = ({ isTrusted }) => {
-                if (isTrusted) {
+            makeKeyboardClickable(tabElem, tab.label, "tab");
+
+            tabElem.onclick = () => {
+                // Opening a tab ends a search.
+                if (this.searchQuery && this.searchInput) {
+                    this.searchQuery = "";
+                    this.searchInput.value = "";
+                }
+
+                // Clicks from code (startup, refreshing favorites, ending a search) always target the selected
+                // tab, so only a switch to another tab needs the old one un-highlighted. (Keyboard clicks are
+                // not isTrusted, which this used to check.)
+                if (this.selectedTab !== i) {
                     const oldElem = getElem(`menuTab:${this.selectedTab}`);
                     const tab = menuTabs[this.selectedTab];
 

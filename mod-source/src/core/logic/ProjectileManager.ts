@@ -15,6 +15,7 @@ import ScriptConfig from "@utils/config/ScriptConfig";
 import getDistSq from "@utils/geometry/getDistSq";
 import withinDist from "@utils/geometry/withinDist";
 import inRange from "@utils/math/inRange";
+import { BOOST_TICK_MAX_DIST_SQ, BOOST_TICK_MIN_DIST_SQ } from "@constants/world";
 
 export default class ProjectileManager {
     static simulationProjectiles = new EntityHandler<SimulationProjectile>();
@@ -52,6 +53,21 @@ export default class ProjectileManager {
         return WEAPON_ID_MAP.MUSKET;
     }
 
+    /**
+     * The server reuses a projectile's sid once that projectile is gone, sometimes before we have marked our copy
+     * inactive. EntityHandler.add ignores a sid it already has, so re-init the existing entry instead of adding;
+     * otherwise the new projectile would be dropped and the old one tracked in its place.
+     */
+    private static setSimulationProjectile(sid: number, indx: number, x: number, y: number, dir: number, speed: number, range: number, layer: number, ownerSID: number) {
+        const simProj = this.simulationProjectiles.get(sid);
+
+        if (simProj) {
+            simProj.init(indx, x, y, dir, speed, range, layer, ownerSID);
+        } else {
+            this.simulationProjectiles.add(new SimulationProjectile(sid, indx, x, y, dir, speed, range, layer, ownerSID));
+        }
+    }
+
     static add(x: number, y: number, dir: number, range: number, speed: number, indx: number, layer: number, sid: number) {
         const tick = ModManager.tick;
         const visiblePlayers = PlayerManager.players.visible.all;
@@ -87,13 +103,7 @@ export default class ProjectileManager {
         if (source) {
             // Pattern recognition asks whether this player attacked; the packet itself doesn't say who fired.
             GameEventTracker.updateTracker(source.sid, PacketMap.SERVER_TO_CLIENT.ADD_PROJECTILE);
-            const simProj = this.simulationProjectiles.get(sid);
-
-            if (simProj && !simProj.active) {
-                simProj.init(indx, x, y, dir, speed, range, layer, source.sid);
-            } else {
-                this.simulationProjectiles.add(new SimulationProjectile(sid, indx, x, y, dir, speed, range, layer, source.sid));
-            }
+            this.setSimulationProjectile(sid, indx, x, y, dir, speed, range, layer, source.sid);
 
             if (!Client.isFriendly(source.sid) && !isTurret) {
                 source.projFired++;
@@ -119,7 +129,7 @@ export default class ProjectileManager {
                     const distanceSq = getDistSq(source.real_position, Client.player.real_position);
                     const rangedThreats = ModManager.enemyData.rangedInstaThreats > 0;
 
-                    if (isDiaPolearm && inRange(distanceSq, 90000, 136900) && rangedThreats && isUsingOneTickSecondary) {
+                    if (isDiaPolearm && inRange(distanceSq, BOOST_TICK_MIN_DIST_SQ, BOOST_TICK_MAX_DIST_SQ) && rangedThreats && isUsingOneTickSecondary) {
                         DefenseSystem.isBeingBowInstaed = true;
                         DefenseSystem.forceSoldierTicks += 3;
                         source.ignoreDamageConsideration = true;
@@ -145,12 +155,7 @@ export default class ProjectileManager {
                 gameObject.reload = 0;
 
                 // turret object always has ownerSID defined (at least it should)
-                const simProj = this.simulationProjectiles.get(sid);
-                if (simProj && !simProj.active) {
-                    simProj.init(indx, x, y, dir, speed, range, layer, gameObject.ownerSID!);
-                } else {
-                    this.simulationProjectiles.add(new SimulationProjectile(sid, indx, x, y, dir, speed, range, layer, gameObject.ownerSID!));
-                }
+                this.setSimulationProjectile(sid, indx, x, y, dir, speed, range, layer, gameObject.ownerSID!);
 
                 assigned = true;
                 break;
@@ -159,17 +164,12 @@ export default class ProjectileManager {
 
         // did not assign source to projectile so just assume it is enemy
         if (!assigned) {
-            const simProj = this.simulationProjectiles.get(sid);
-
-            if (simProj && !simProj.active) {
-                simProj.init(indx, x, y, dir, speed, range, layer, -1);
-            } else {
-                this.simulationProjectiles.add(new SimulationProjectile(sid, indx, x, y, dir, speed, range, layer, -1));
-            }
+            this.setSimulationProjectile(sid, indx, x, y, dir, speed, range, layer, -1);
         }
 
+        // Same as setSimulationProjectile: re-init a reused sid even while the old projectile still looks active.
         const hadProj = this.projectiles.get(sid);
-        if (hadProj && !hadProj.active) {
+        if (hadProj) {
             hadProj.init(x, y, dir, range, speed, layer, indx);
         } else {
             const proj = new Projectile(x, y, dir, range, speed, sid, layer, indx);

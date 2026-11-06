@@ -82,6 +82,4 @@ export default class BarbarianKnockbacker extends CombatModule {
         attackAction.sequence[0].wpnId = Client.weaponIndex;
         AttackManager.addAttackQueue(attackAction);
     }
-
-    update() { }
 }

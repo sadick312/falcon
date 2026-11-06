@@ -12,7 +12,7 @@ export default class FakeSocket {
     } = {};
 
     on<K extends EventKey>(event: K, callback: EventCallback<K>) {
-        (this.handlers as any)[event] = callback;
+        (this.handlers as Record<string, unknown>)[event] = callback;
     }
 
     // Replays never send; the parameters only keep the same signature as Socket.sendMsg.

@@ -19,7 +19,7 @@ describe("Module base class", () => {
             protected initialize() { calls.push("init"); }
             protected canExecute() { return allowed; }
             protected execute() { calls.push("exec"); }
-            update() { }
+            override update() { }
         }
 
         const probe = new Probe();

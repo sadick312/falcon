@@ -63,6 +63,10 @@ export default class OneTicker extends CombatModule {
     readonly minDist = 204;
     tapMode = false;
 
+    override reset() {
+        this.tapMode = false;
+    }
+
     protected canExecute() {
         if (!Menu.getValue("dynamicOneTick")) {
             this.tapMode = false;
@@ -282,6 +286,4 @@ export default class OneTicker extends CombatModule {
 
         this.commit(firstStep, secondStep);
     }
-
-    update() { }
 }

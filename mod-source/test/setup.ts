@@ -24,7 +24,7 @@ if (typeof globalThis.CanvasRenderingContext2D === "undefined") {
 }
 HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement) {
     return fakeContext(this);
-} as typeof HTMLCanvasElement.prototype.getContext;
+} as unknown as typeof HTMLCanvasElement.prototype.getContext;
 
 beforeEach(() => {
     localStorage.clear();

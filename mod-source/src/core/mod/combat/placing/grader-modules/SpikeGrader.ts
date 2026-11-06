@@ -12,9 +12,9 @@ import Grader from "@core/mod/combat/placing/grader-modules/Grader";
 import MovementManager from "@core/mod/defense/defense-modules/MovementManager";
 import MovementPhysicsSimulator, { DamageSimAction, KnockbackSimAction, PlacementSimAction, SimulationOptions } from "@core/mod/simulation/MovementPhysicsSimulator";
 import getAngleDist from "@utils/angle/getAngleDist";
-import ScriptConfig from "@utils/config/ScriptConfig";
 import getDistSq from "@utils/geometry/getDistSq";
 import withinDist from "@utils/geometry/withinDist";
+import { isCactusObject } from "@constants/world";
 
 type GraderSimActions = [
     [PlacementSimAction, DamageSimAction, KnockbackSimAction],
@@ -163,7 +163,7 @@ export default class SpikeGrader extends Grader {
 
                 const ownerSID = obj.ownerSID ?? -1;
                 const isEnemy = !Client.isTeam(enemy, ownerSID);
-                const isCactus = obj.type === 1 && obj.y >= ScriptConfig.MAP_SIZE - ScriptConfig.SNOW_BIOME_TOP;
+                const isCactus = isCactusObject(obj);
                 const isSpike = isEnemy && obj.dmg;
                 const isTrap = isEnemy && obj.trap;
 

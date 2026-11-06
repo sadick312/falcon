@@ -53,7 +53,7 @@ describe("settings", () => {
         reset();
         const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
         localStorage.setItem(SETTINGS, "{not json");
-        await expect(Menu.loadSettings()).resolves.toBe(true);
+        await expect(Menu.loadSettings()).resolves.toEqual({ applied: 0, skipped: 0 });
         expect(snapshotStatuses()).toEqual(initial);
         expect(warn).toHaveBeenCalled();
     });

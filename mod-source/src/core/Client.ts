@@ -51,6 +51,8 @@ export default class Client {
     static player: Player;
 
     static mySID: number = -1;
+    /** True from our ADD_PLAYER until KILL_PLAYER. Client.player keeps pointing at us while we're dead. */
+    static isAlive = false;
 
     static lastDeath: Point;
     static lastMoveDir: number | null;

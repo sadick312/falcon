@@ -24,7 +24,7 @@ async function play(s: Scenario = {}) {
     game.spawn({ sid: ME, x: 1000, y: 1000, weaponIndex: 5, weaponVariant: s.variant ?? 2 });
     game.spawn({ sid: 2, x: 1230, y: 1000, skinIndex: s.enemyHat ?? 0 });
     game.setLoadout([5], [0, 3, 6, 15]);
-    const objects = [{ sid: 700, x: 1300, y: 1000, itemId: LIST_ID_MAP.SPIKES, owner: ME }];
+    const objects = [{ sid: 700, x: 1300, y: 1000, itemId: LIST_ID_MAP.SPIKES as number, owner: ME }];
     if (s.trapped !== false) objects.push({ sid: 600, x: 1230, y: 1000, itemId: LIST_ID_MAP.PIT_TRAP, owner: ME });
     game.addObjects(objects);
     game.update();

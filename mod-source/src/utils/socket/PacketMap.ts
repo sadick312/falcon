@@ -101,6 +101,13 @@ for (const key in PacketMap.SERVER_TO_CLIENT) {
     }
 }
 
+/**
+ * A value decoded from a packet before its handler has looked at it. Each field's meaning depends on its
+ * position and the packet type, and the handlers check what they read, so this stays loose on purpose.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type WireValue = any;
+
 export interface MOOMOO_CLIENT_TO_SERVER_MAP {
     "z": [id: number, isWeapon: boolean];
     "K": [id: 1];
@@ -139,7 +146,7 @@ export interface MOOMOO_SERVER_TO_CLIENT_MAP {
     "E": [id: string];
     "Q": [sid: number];
     "R": [ownerSID: number];
-    "a": [positions: number[], attributes: any[], hidden: number[]];
+    "a": [positions: number[], attributes: WireValue[], hidden: number[]];
     "O": [sid: number, health: number];
     "9": [x: number, y: number];
     "g": [data: AllianceDataType];

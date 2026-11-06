@@ -1,6 +1,7 @@
 import Menu, { IMenuItem } from "../Menu";
 import drawItemBody from "./drawItemBody";
 import drawItemLabel from "./drawItemLabel";
+import { makeKeyboardClickable } from "./keyboard";
 
 export default function drawMenuGroup(item: IMenuItem, contentElement: HTMLElement) {
     if (!item.settings) return;
@@ -31,6 +32,7 @@ export default function drawMenuGroup(item: IMenuItem, contentElement: HTMLEleme
     `;
     body.appendChild(settingButton);
 
+    makeKeyboardClickable(body, item.label);
     body.onclick = () => {
         Menu.renderItems(item.settings!);
 

@@ -103,17 +103,18 @@ export default class PacketBatcher {
             this.watchdogTimer = null;
         }
 
-        if (!Client.player) return;
+        // The server sends no ticks while we're dead; faking them would run every module on the death screen.
+        if (!Client.player || !Client.isAlive) return;
 
         const interval = this.getFakeUpdateThreshold();
-        this.watchdogTimer = setTimeout(() => {
+        this.watchdogTimer = window.setTimeout(() => {
             this.checkAndEmitFakeUpdate(performance.now());
         }, interval);
     }
 
     private static checkAndEmitFakeUpdate(now: number) {
         // Stop the watchdog loop once the socket is gone instead of faking ticks forever.
-        if (!Client.player || !this.socket || this.socket.readyState !== WebSocket.OPEN) return;
+        if (!Client.player || !Client.isAlive || !this.socket || this.socket.readyState !== WebSocket.OPEN) return;
 
         const timeSinceLast = now - PlayerUpdateEvent.lastReceive;
         const threshold = this.getFakeUpdateThreshold();

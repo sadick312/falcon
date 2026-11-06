@@ -2,6 +2,8 @@ import getElem from "@utils/dom/getElem";
 import Menu, { IMenuItem } from "../Menu";
 import drawItemBody from "./drawItemBody";
 import drawItemLabel from "./drawItemLabel";
+import drawResetButton from "./drawResetButton";
+import { makeKeyboardClickable } from "./keyboard";
 
 export default function drawMenuToggle(item: IMenuItem, contentElement: HTMLElement, isNested: boolean) {
     const isInDropdownContent = contentElement !== Menu.contentElement;
@@ -26,6 +28,7 @@ export default function drawMenuToggle(item: IMenuItem, contentElement: HTMLElem
     }
 
     drawItemLabel(item, toggle, isInDropdownContent);
+    drawResetButton(item, toggle);
 
     if (item.status) toggle.classList.add("activeMenuItem");
 
@@ -52,6 +55,7 @@ export default function drawMenuToggle(item: IMenuItem, contentElement: HTMLElem
             favoriteIcon.classList.add("active");
         }
 
+        makeKeyboardClickable(favoriteButton, `Favorite ${item.label}`);
         favoriteButton.onclick = (ev) => {
             ev.stopPropagation();
             item.isFavorited = !item.isFavorited;
@@ -92,6 +96,7 @@ export default function drawMenuToggle(item: IMenuItem, contentElement: HTMLElem
         settingButton.appendChild(settingIcon);
         toggle.appendChild(settingButton);
 
+        makeKeyboardClickable(settingButton, `${item.label} settings`);
         settingButton.onclick = (ev) => {
             ev.stopPropagation();
 
@@ -116,6 +121,8 @@ export default function drawMenuToggle(item: IMenuItem, contentElement: HTMLElem
     }
 
     item.update = () => {
+        toggle.setAttribute("aria-checked", String(!!item.status));
+        item.refreshReset?.();
         if (item.icon) iconHolderElem.innerHTML = `
             ${item.icon.replace(/REPLACE_WITH_COLOR/g, `var(${item.status ? "--theme-primary" : "--generic-white-2"})`)}
         `;
@@ -133,6 +140,9 @@ export default function drawMenuToggle(item: IMenuItem, contentElement: HTMLElem
         }
     };
 
+    makeKeyboardClickable(toggle, item.label, "switch");
+    toggle.setAttribute("aria-checked", String(!!item.status));
+
     toggle.onclick = () => {
         item.status = !item.status;
         Menu.saveSettings();
@@ -144,6 +154,8 @@ export default function drawMenuToggle(item: IMenuItem, contentElement: HTMLElem
 
     if (item.disabled || item.unchangable) {
         toggle.style.pointerEvents = "none";
+        toggle.tabIndex = -1;
+        toggle.setAttribute("aria-disabled", "true");
 
         const grayOut = document.createElement("div");
         grayOut.classList.add(item.unchangable ? "menuItemGrayOutUnchangable" : "menuItemGrayOutDisabled");

@@ -1,6 +1,7 @@
 import readJson from "@utils/storage/readJson";
 import Menu, { menuContent, SavedConfigs } from "../Menu";
 import drawItemBody from "./drawItemBody";
+import { makeKeyboardClickable } from "./keyboard";
 
 const ICON = `
 <svg viewBox="0 0 360 360" width="37" height="37">
@@ -43,10 +44,10 @@ export default async function drawSavedConfigs() {
         `;
         body.appendChild(deleteButton);
 
-        deleteButton.onclick = async (event) => {
-            // The button is inside the row: without this the click also reached the row's load handler, which then
-            // loaded the just-deleted config (undefined), i.e. re-read the stored settings.
-            event.stopPropagation();
+        makeKeyboardClickable(deleteButton, `Delete config ${key}`);
+        deleteButton.onclick = async (ev) => {
+            // The row itself loads the config; deleting must not load it too.
+            ev.stopPropagation();
             savedConfigs[key] = undefined;
             localStorage.setItem("falcon-configs", JSON.stringify(savedConfigs));
             Menu.renderItems(menuContent.configs);
@@ -63,10 +64,10 @@ export default async function drawSavedConfigs() {
         `;
         body.appendChild(settingButton);
 
-        body.onclick = async () => {
-            await Menu.loadSettings(savedConfigs[key]);
-            // Keep it (with Auto Save on): a loaded config used to be lost on the next page load.
-            await Menu.saveSettings();
+        makeKeyboardClickable(body, `Load config ${key}`);
+        body.onclick = () => {
+            // applySettings also saves them as the current settings and redraws, so the toggles show the change.
+            Menu.applySettings(savedConfigs[key]!);
         };
 
         Menu.contentElement.appendChild(body);

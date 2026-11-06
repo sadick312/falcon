@@ -13,6 +13,7 @@ import ScriptConfig from "@utils/config/ScriptConfig";
 import getDistSq from "@utils/geometry/getDistSq";
 import getMag from "@utils/geometry/getMag";
 import getMagSq from "@utils/geometry/getMagSq";
+import { RIVER_HALF_WIDTH, isCactusObject } from "@constants/world";
 
 interface BaseSimAction {
     dontUse?: boolean;
@@ -221,7 +222,7 @@ export default class MovementPhysicsSimulator {
 
         const ownerSID = gameObject.ownerSID ?? -1;
         const isEnemy = !Client.isTeam(victim, ownerSID);
-        const isCactus = gameObject.type === 1 && gameObject.y >= ScriptConfig.MAP_SIZE - ScriptConfig.SNOW_BIOME_TOP;
+        const isCactus = isCactusObject(gameObject);
 
         const isDangerous = isCactus || (gameObject.dmg && isEnemy);
         const isMe = victim.sid === Client.mySID;
@@ -289,7 +290,7 @@ export default class MovementPhysicsSimulator {
         const skin = hatMap.get(victim.skinIndex)!;
         const tail = accessoryMap.get(victim.tailIndex)!;
 
-        const halfRiverWidth = 362;
+        const halfRiverWidth = RIVER_HALF_WIDTH;
         const mapScaleHalf = ScriptConfig.MAP_SIZE / 2;
 
         const isOnRiver = victim.y >= mapScaleHalf - halfRiverWidth && victim.y <= mapScaleHalf + halfRiverWidth;

@@ -462,9 +462,21 @@ export default class ModManager {
     private static lastWeaponIndex = 0;
     static justAttacked: Player[] = [];
 
+    /**
+     * One mod tick, run after every UPDATE_PLAYERS (real, or faked by PacketBatcher when a tick is late).
+     *
+     * The order matters and should not be changed casually:
+     * 1. Prepare: rebuild this tick's state (players, objects, predicted positions, queued object damage).
+     * 2. DefenseSystem.start: add up the damage we could take this tick (spikes, enemies, projectiles).
+     * 3. Attack side: AutoPusher, AttackManager (picks one attack from the modules), CombatController.
+     * 4. DefenseSystem.respond: heal and choose soldier/EMP, knowing what the attack side wants to do.
+     * 5. DefenseSystem.resolve and PlacementSystem: send this tick's hat, movement and placement packets.
+     * 6. Clean up and hand the packet budget to the next tick.
+     * Damage and knockback predictions rely on the server's player update order (GOLD_TECH.md).
+     */
     static main() {
-        // Every module below assumes we have spawned; updates can arrive before ADD_PLAYER.
-        if (!Client.player) return;
+        // Every module below assumes we have spawned and are alive; updates can arrive before ADD_PLAYER.
+        if (!Client.player || !Client.isAlive) return;
 
         const startTime = performance.now();
         // Dev builds only: time each step below (profiler overlay, replay benchmark). Dropped from production.

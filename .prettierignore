@@ -13,3 +13,7 @@ mod-source/src/ui/data/
 mod-source/src/core/menu/icons.ts
 public/
 *.fpl
+
+# Also ignored on the improve/phased branch
+mod-source/test/fixtures/
+*.json

@@ -1,4 +1,4 @@
-name: Type check, tests and stats
+name: Lint, type check, build, tests and stats
 
 on: push
 
@@ -15,17 +15,30 @@ jobs:
         with:
           node-version: 24
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            tools/lint/package-lock.json
 
       - run: npm ci
+
+      # ESLint has its own install (it needs TypeScript 6; the build uses TypeScript 7).
+      - run: npm ci --prefix tools/lint
+
+      - run: npm run lint
 
       - run: npm run typecheck
 
       # npm ci's postinstall also installed tools/lint (ESLint with its own TypeScript 6).
       - run: npm run lint
+      # docs/SETTINGS.md is generated from the menu's settings; fail if someone changed a setting without it.
+      - run: npm run docs:settings -- --check
+
+      # Builds the mod, the Quick Inject file and the extension, then checks every output (scripts/smoke-test.mjs).
+      - run: npm run test:smoke
 
       - run: npm test
 
-      # Builds both workspaces, then compares against the committed stats/history.json (if any).
+      # Builds both workspaces again, then compares against the committed stats/history.json (if any).
       # Fails the job when a build fails, e.g. over the bundle size limit.
       - run: npm run stats -- --label "ci"
 

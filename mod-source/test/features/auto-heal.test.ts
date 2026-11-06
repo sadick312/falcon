@@ -28,7 +28,7 @@ async function play(s: Scenario) {
     game.update();
 
     const player = game.Client.player;
-    if (s.ownSoldier) player.skins[SOLDIER] = 1;
+    if (s.ownSoldier) player.skins[SOLDIER] = true;
     else delete player.skins[SOLDIER];
     game.setHealth(ME, s.health);
     for (let i = 0; i < (s.wait ?? 0); i++) game.update();

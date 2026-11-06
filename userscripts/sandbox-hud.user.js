@@ -158,9 +158,9 @@
             return;
         }
         origSend = proto.send;
-        proto.send = function (data) {
-            try { onSend(this, data); } catch (e) { err("send hook failed", e); }
-            return origSend.apply(this, arguments);
+        proto.send = function (...args) {
+            try { onSend(this, args[0]); } catch (e) { err("send hook failed", e); }
+            return origSend.apply(this, args);
         };
     }
 

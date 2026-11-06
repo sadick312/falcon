@@ -5,7 +5,7 @@ import { MooMooProtocol } from "@core/utils/CaptchaManager";
 import { hmac } from "@noble/hashes/hmac.js";
 import { sha256 } from "@noble/hashes/sha2.js";
 import { GAME_V182 } from "@constants/gameVersion";
-import PacketMap, { clientToServerArr, serverToClientArr } from "@root/utils/socket/PacketMap";
+import PacketMap, { clientToServerArr, serverToClientArr, WireValue } from "@root/utils/socket/PacketMap";
 
 const profanityList = [
     "cunt", "whore", "fuck", "shit", "faggot", "nigger", "mohmoh", "moh ",
@@ -192,7 +192,7 @@ export default class PacketManager {
         return this.packetSignBuffer;
     }
 
-    private data: Record<string, any> = {};
+    private data: Record<string, unknown> = {};
     private aimDirection: number = Infinity;
 
     /** Forget the last sent move/aim so the first ones after a (re)spawn are never dropped as duplicates. */
@@ -214,7 +214,7 @@ export default class PacketManager {
         return chatInput;
     }
 
-    manage(type: string, data: any[]) {
+    manage(type: string, data: WireValue[]) {
         if (type === PacketMap.CLIENT_TO_SERVER.SEND_CHAT) {
             const chatInput = data[0];
             if (typeof chatInput !== "string") return true;

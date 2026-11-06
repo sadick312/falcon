@@ -11,7 +11,7 @@ import PacketManager from "@core/utils/PacketManager";
 import PacketTracker from "@core/utils/PacketTracker";
 import Menu from "@menu/Menu";
 import { Decoder } from "@msgpack/msgpack";
-import PacketMap, { knownServerPackets, MOOMOO_CLIENT_TO_SERVER_MAP, MOOMOO_SERVER_TO_CLIENT_MAP } from "@root/utils/socket/PacketMap";
+import PacketMap, { knownServerPackets, MOOMOO_CLIENT_TO_SERVER_MAP, MOOMOO_SERVER_TO_CLIENT_MAP, WireValue } from "@root/utils/socket/PacketMap";
 import TaskScheduler from "@services/event-timer/TaskScheduler";
 import { profileEnd, profileStart } from "@services/profiler/Profiler";
 import PacketRecorder from "@services/packet-recorder/PacketRecorder";
@@ -170,10 +170,10 @@ export default class Socket extends NativeWebSocket {
         const bytes = new Uint8Array(ev.data);
         this.manager.maskIncoming(bytes);
 
-        let parsed: any[];
+        let parsed: WireValue[];
         const decodeStart = __DEV__ ? profileStart() : 0;
         try {
-            parsed = decoder.decode(bytes) as any[];
+            parsed = decoder.decode(bytes) as WireValue[];
             if (__DEV__) profileEnd("decode", decodeStart);
         } catch (err) {
             console.warn("[Falcon] Dropped a server message that is not valid msgpack.", err);
@@ -272,12 +272,12 @@ export default class Socket extends NativeWebSocket {
     }
 
     on<K extends EventKey>(event: K, callback: EventCallback<K>) {
-        (this.handlers as any)[event] = callback;
+        (this.handlers as Record<string, unknown>)[event] = callback;
     }
 
-    private DATA_BUFFER: any[] = [null, null, null];
+    private DATA_BUFFER: unknown[] = [null, null, null];
 
-    private populateBuffer(arg1?: any, arg2?: any, arg3?: any) {
+    private populateBuffer(arg1?: unknown, arg2?: unknown, arg3?: unknown) {
         // Write every slot so a skipped (undefined) argument can't leave the previous packet's value behind.
         const len = arg3 !== undefined ? 3 : arg2 !== undefined ? 2 : arg1 !== undefined ? 1 : 0;
 
@@ -300,7 +300,7 @@ export default class Socket extends NativeWebSocket {
         this.sendEncrypted(type, this.DATA_BUFFER);
     }
 
-    sendMsg: SendMsgSignature = (type: keyof MOOMOO_CLIENT_TO_SERVER_MAP, arg1?: any, arg2?: any, arg3?: any) => {
+    sendMsg: SendMsgSignature = (type: keyof MOOMOO_CLIENT_TO_SERVER_MAP, arg1?: unknown, arg2?: unknown, arg3?: unknown) => {
         this.populateBuffer(arg1, arg2, arg3);
 
         if (this.readyState !== WebSocket.OPEN) return;

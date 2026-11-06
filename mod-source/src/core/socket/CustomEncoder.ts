@@ -1,11 +1,11 @@
 import { Encoder } from "@msgpack/msgpack";
-import PacketMap, { MOOMOO_CLIENT_TO_SERVER_MAP } from "@root/utils/socket/PacketMap";
+import PacketMap, { MOOMOO_CLIENT_TO_SERVER_MAP, WireValue } from "@root/utils/socket/PacketMap";
 
 export default class CustomEncoder {
     private static DATA_BUFFER = new Uint8Array(256);
     private static DATA_VIEW = new DataView(CustomEncoder.DATA_BUFFER.buffer);
 
-    private static TEMP_ARRAY: any[] = [null, null, null];
+    private static TEMP_ARRAY: WireValue[] = [null, null, null];
     private static textEncoder = new TextEncoder();
     /** Reused for every outgoing packet; Encoder.encode returns a copy, so callers can keep the bytes. */
     private static msgpackEncoder = new Encoder();
@@ -21,7 +21,7 @@ export default class CustomEncoder {
         [PacketMap.CLIENT_TO_SERVER.PING_MAP]: 0
     };
 
-    static encode(type: keyof MOOMOO_CLIENT_TO_SERVER_MAP, encryptType: any, data: any[], seq?: number) {
+    static encode(type: keyof MOOMOO_CLIENT_TO_SERVER_MAP, encryptType: string | number, data: WireValue[], seq?: number) {
         let offset = 0;
         const isSeqDefined = typeof seq === "number";
         const buf = this.DATA_BUFFER;

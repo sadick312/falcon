@@ -14,6 +14,8 @@ const SEED = 3141592653;
 const gameC2S = ["M", "D", "9", "e", "F", "z", "H", "K", "L", "N", "b", "P", "Q", "c", "6", "S", "0"];
 const gameS2C = ["A", "B", "C", "D", "E", "a", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "X", "Y", "Z", "g", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
 
+// Copied as-is from the game's minified code.
+/* eslint-disable @typescript-eslint/no-unused-expressions */
 function gameRandom(e: number) {
     return function () {
         // eslint-disable-next-line @typescript-eslint/no-unused-expressions -- the game client's code, kept as written

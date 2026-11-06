@@ -127,6 +127,18 @@ describe("PacketRecorder -> PacketReplayer", () => {
 
         expect(savedSpawns(readLog(PacketRecorder.compileBinaryLog()!))).toEqual([]);
     });
+
+    it("merges a very large object packet into the saved object list", () => {
+        // 20,000 objects x 8 numbers: more than a spread push(...list) can pass as arguments.
+        const many = Array.from({ length: 20_000 * 8 }, (_, i) => i);
+        log(S2C.LOAD_GAME_OBJECT, [[1, 2, 3, 4, 5, 6, 7, 8]]);
+        log(S2C.LOAD_GAME_OBJECT, [many]);
+        now += 20_000;
+        log(S2C.UPDATE_HEALTH, [1, 90]);
+
+        const objects = readLog(PacketRecorder.compileBinaryLog()!).find((p) => p.packetData.type === S2C.LOAD_GAME_OBJECT)!;
+        expect((objects.packetData.data as number[][])[0]).toHaveLength(8 + many.length);
+    });
 });
 
 describe("PacketReplayer log parser", () => {

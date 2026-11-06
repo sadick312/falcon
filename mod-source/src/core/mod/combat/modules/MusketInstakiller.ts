@@ -77,5 +77,5 @@ export default class MusketInstakiller extends CombatModule {
         AttackManager.addAttackQueue(attackAction);
     }
 
-    update() { }
+    override update() { }
 }

@@ -1,5 +1,5 @@
 import { GAME_V182 } from "@constants/gameVersion";
-import PacketMap from "@root/utils/socket/PacketMap";
+import PacketMap, { WireValue } from "@root/utils/socket/PacketMap";
 
 const LEGACY_PLAYER_STRIDE = GAME_V182.playerStride;
 const LEGACY_AI_STRIDE = GAME_V182.aiStride;
@@ -18,7 +18,7 @@ export default class LegacyPacketAdapter {
     private visibleAis = new Set<number>();
     private lastAttributes = new Map<number, number[]>();
 
-    adapt(type: string, data: any[] | undefined): any[] | undefined {
+    adapt(type: string, data: WireValue[] | undefined): WireValue[] | undefined {
         const first = Array.isArray(data) ? data[0] : undefined;
 
         switch (type) {

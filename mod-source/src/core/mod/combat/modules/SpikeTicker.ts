@@ -24,6 +24,10 @@ export default class SpikeTicker extends CombatModule {
 
     consider = false;
 
+    override reset() {
+        this.consider = false;
+    }
+
     protected canExecute() {
         // Set by AutoReplacer when it places a spike-tick spike; the hit only makes sense on the next tick. Used up here
         // either way: kept until the hit happened, a flag set while the toggle was off (or while attacking) fired a stray
@@ -64,6 +68,4 @@ export default class SpikeTicker extends CombatModule {
     protected execute() {
         this.commit();
     }
-
-    update() { }
 }

@@ -8,10 +8,10 @@ import Angle from "@core/mod/combat/placing/Angle";
 import ModManager from "@core/ModManager";
 import getAngleDist from "@utils/angle/getAngleDist";
 import getDir from "@utils/angle/getDir";
-import ScriptConfig from "@utils/config/ScriptConfig";
 import getDist from "@utils/geometry/getDist";
 import getDistSq from "@utils/geometry/getDistSq";
 import withinDist from "@utils/geometry/withinDist";
+import { isCactusObject } from "@constants/world";
 
 interface GraderEnemyCache {
     directionMap: Map<number, number>;
@@ -248,7 +248,7 @@ export default abstract class Grader {
                 const willBreak = item.preplace && gameObject.willBreak;
                 const isTrap = gameObject.trap && !isTeam && !willBreak;
                 const isSpike = gameObject.dmg && !isTeam && !willBreak;
-                const isCactus = gameObject.type === 1 && gameObject.y >= ScriptConfig.MAP_SIZE - ScriptConfig.SNOW_BIOME_TOP;
+                const isCactus = isCactusObject(gameObject);
 
                 if (isCactus || isSpike) {
                     spikesNear++;

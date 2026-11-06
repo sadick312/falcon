@@ -12,14 +12,14 @@ import ModManager from "@core/ModManager";
 import Menu from "@menu/Menu";
 import ScriptConfig from "@utils/config/ScriptConfig";
 import withinDist from "@utils/geometry/withinDist";
+import { RIVER_HALF_WIDTH } from "@constants/world";
 
 const gameObjects = new EntityHandler<GameObject>();
 
-const riverWidth = 724;
 
 export default class ObjectManager {
-    private static readonly riverMinY = (ScriptConfig.MAP_SIZE / 2) - (riverWidth / 2);
-    private static readonly riverMaxY = (ScriptConfig.MAP_SIZE / 2) + (riverWidth / 2);
+    private static readonly riverMinY = (ScriptConfig.MAP_SIZE / 2) - RIVER_HALF_WIDTH;
+    private static readonly riverMaxY = (ScriptConfig.MAP_SIZE / 2) + RIVER_HALF_WIDTH;
 
     static pool = new ObjectPool();
     static allTurrets = new EntityHandler<GameObject>(1);
