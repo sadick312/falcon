@@ -1,5 +1,5 @@
 // Feature #52, Packet batching (PacketBatcher): server packets arriving within 0.5 ms of each other are handled together,
-// with the player update (which runs the tick) last, so a tick sees all of its swings, hits and health changes. If a
+// with each player update (which runs a tick) after the packets that came before it, so a tick sees all of its swings, hits and health changes. If a
 // real update is late (by the server tick plus a margin that grows with jitter), a fake empty update runs the tick.
 // Ping, minimap and leaderboard packets skip the batch.
 import { afterEach, describe, expect, it } from "vitest";
@@ -25,10 +25,19 @@ describe("Packet batching", () => {
         expect(await batch(["a", "K", "O"])).toEqual(["K", "O", "a"]);
     });
 
-    it("today handles two ticks' events before either update when they arrive together (possible issue P27)", async () => {
-        // A lag burst: tick N's swing (K1) and update, then tick N+1's swing (K2) and update, in one batch.
-        // Tick N runs after K2 has already been counted.
-        expect(await batch(["K", "a", "O", "a"])).toEqual(["K", "O", "a", "a"]);
+    it("keeps each tick's events with its own update when two ticks arrive together (P27)", async () => {
+        // A lag burst: tick N's swing (K) and update, then tick N+1's health change (O) and update, in one batch.
+        // Tick N used to run after O had already been counted.
+        expect(await batch(["K", "a", "O", "a"])).toEqual(["K", "a", "O", "a"]);
+    });
+
+    it("still puts packets after the last update before it", async () => {
+        expect(await batch(["K", "a", "O", "a", "Q"])).toEqual(["K", "a", "O", "Q", "a"]);
+        expect(await batch(["a", "K", "a", "O", "a"])).toEqual(["a", "K", "a", "O", "a"]);
+    });
+
+    it("keeps the arrival order when there's no update", async () => {
+        expect(await batch(["K", "O", "Q"])).toEqual(["K", "O", "Q"]);
     });
 
     it("waits longer before a fake tick on a jittery connection", async () => {

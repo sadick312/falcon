@@ -16,10 +16,6 @@ export default class PacketBatcher {
     static effectiveBatchWindow = .5; // relative to updatePlayers
     static realBatchWindow = .5; // relative to the actual last packet received
 
-    static PACKET_SCORING = new Map<string, number>([
-        [PacketMap.SERVER_TO_CLIENT.UPDATE_PLAYERS, 0]
-    ]);
-
     static UI_PACKETS = new Set([
         PacketMap.SERVER_TO_CLIENT.PING_RESPONSE, PacketMap.SERVER_TO_CLIENT.PING_MAP,
         PacketMap.SERVER_TO_CLIENT.UPDATE_MINIMAP, PacketMap.SERVER_TO_CLIENT.UPDATE_LEADERBOARD
@@ -60,8 +56,32 @@ export default class PacketBatcher {
         return ScriptConfig.SERVER_UPDATE_SPEED + margin;
     }
 
-    private static getPacketPriority(type: string) {
-        return this.PACKET_SCORING.get(type) ?? 100;
+    private static ordered: IncomingServerPackets[] = [];
+
+    /**
+     * Orders a batch for processing: each player update comes after the packets that arrived before it, and packets
+     * after the last update still go before it. One tick's batch comes out as before (everything, then the update).
+     * Sorting every update to the end made tick N of a lag burst run with tick N+1's swings and health changes
+     * already counted.
+     */
+    private static orderBatch(buffer: IncomingServerPackets[]) {
+        const ordered = this.ordered;
+        ordered.length = 0;
+
+        let lastUpdate = -1;
+        for (let i = buffer.length - 1; i >= 0; i--) {
+            if (buffer[i].type === PacketMap.SERVER_TO_CLIENT.UPDATE_PLAYERS) {
+                lastUpdate = i;
+                break;
+            }
+        }
+
+        for (let i = 0; i < buffer.length; i++) {
+            if (i !== lastUpdate) ordered.push(buffer[i]);
+        }
+        if (lastUpdate !== -1) ordered.push(buffer[lastUpdate]);
+
+        return ordered;
     }
 
     private static flush() {
@@ -69,11 +89,11 @@ export default class PacketBatcher {
         if (!this.socket) return;
 
         let needFakeUpdate = true;
-        this.buffer.sort((a, b) => this.getPacketPriority(b.type) - this.getPacketPriority(a.type));
+        const batch = this.orderBatch(this.buffer);
         this.realBatchWindow = now - this.lastPacketCollected;
 
-        for (let i = 0, len = this.buffer.length; i < len; i++) {
-            const packet = this.buffer[i];
+        for (let i = 0, len = batch.length; i < len; i++) {
+            const packet = batch[i];
 
             try {
                 if (packet.type === PacketMap.SERVER_TO_CLIENT.UPDATE_PLAYERS) {
