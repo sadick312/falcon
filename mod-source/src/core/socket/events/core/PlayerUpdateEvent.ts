@@ -153,8 +153,15 @@ export default class PlayerUpdateEvent extends MessageHandler<UpdatePlayerPacket
             if (player.clowned && player.skinIndex === STORE_HAT_MAP.SHAME)
                 player.shameTimer -= ScriptConfig.SERVER_UPDATE_SPEED;
 
-            player.last_render_position.x = player.render_position.x;
-            player.last_render_position.y = player.render_position.y;
+            // Restart the on-screen slide only for players whose position came in this tick (onTick already did, so
+            // this is the same values). On a fake tick nobody's did: restarting it there pulled everyone back toward
+            // their last real position, then forward again when the late update arrived (rubber-banding on a
+            // jittery connection). Drawing only; no logic reads render_position or deltaTime.
+            const positionUpdated = player.stateUpdate.position;
+            if (positionUpdated) {
+                player.last_render_position.x = player.render_position.x;
+                player.last_render_position.y = player.render_position.y;
+            }
 
             if (!player.stateUpdate.attribute) {
                 if (player.skinIndex !== STORE_HAT_MAP.SHAME) player.lastSkinIndex = player.skinIndex;
@@ -217,7 +224,7 @@ export default class PlayerUpdateEvent extends MessageHandler<UpdatePlayerPacket
                 }
             }
 
-            player.deltaTime = 0;
+            if (positionUpdated) player.deltaTime = 0;
             player.stateUpdate.attribute = false;
             player.stateUpdate.position = false;
             this.tmpSidSet.add(player.sid);
