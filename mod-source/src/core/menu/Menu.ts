@@ -232,6 +232,12 @@ export const menuContent: IMenuContent = {
             }],
             status: true
         }, {
+            label: "Musket Insta",
+            id: "musketInsta",
+            description: "With polearm + musket: bull helmet + polearm, then turret gear + musket, when the damage kills the nearest enemy at its current health (assuming soldier helmet for the second hit).",
+            type: "toggle",
+            status: false
+        }, {
             label: "Auto Push Strikes",
             id: "attackInPush",
             description: "Automatically attacks enemies during auto pushing once collision is made with a spike.",

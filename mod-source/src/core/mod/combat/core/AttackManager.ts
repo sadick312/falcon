@@ -2,6 +2,7 @@ import AntiBuller from "@combat-modules/AntiBuller";
 import AppleInstakiller from "@combat-modules/AppleInstakiller";
 import AutoAttacker from "@combat-modules/AutoAttacker";
 import AutoInstakiller from "@combat-modules/AutoInstakiller";
+import MusketInstakiller from "@combat-modules/MusketInstakiller";
 import AutoMeleeSyncer from "@combat-modules/AutoMeleeSyncer";
 import AutoPusherStriker from "@combat-modules/AutoPushStriker";
 import BarbarianKnockbacker from "@combat-modules/BarbarianKnockbacker";
@@ -39,6 +40,7 @@ export default class AttackManager {
     static modules: ModModule[] = [
         this.antiBuller,
         new AutoInstakiller(),
+        new MusketInstakiller(),
         new AutoAttacker(),
         new ProjectileSyncer(),
         new AutoPusherStriker(),

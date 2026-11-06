@@ -31,12 +31,12 @@ describe("Module base class", () => {
         expect(calls).toEqual(["init", "exec"]);
     });
 
-    it("is used by all 14 attack modules, each run every tick", async () => {
+    it("is used by all 15 attack modules, each run every tick", async () => {
         game = await startGame();
         const { default: AttackManager } = await import("@core/mod/combat/core/AttackManager");
         const { default: ModModule } = await import("@core/mod/utils/ModModule");
-        expect(AttackManager.modules.length).toBe(14);
+        expect(AttackManager.modules.length).toBe(15);
         expect(AttackManager.modules.every(m => m instanceof ModModule)).toBe(true);
-        expect(new Set(AttackManager.modules.map(m => m.constructor.name)).size).toBe(14);
+        expect(new Set(AttackManager.modules.map(m => m.constructor.name)).size).toBe(15);
     });
 });
