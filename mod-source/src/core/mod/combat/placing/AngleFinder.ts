@@ -168,25 +168,17 @@ export default class AngleFinder {
         ctx.samples.trapPreplaceSamplesIndex = 0;
     }
 
-    /**
-     * Values that depend only on the object and the player, not the item: computeAllIntervals sets them once per
-     * object, so its spike and trap calls share them. objDir is NaN until the first call that reaches it.
-     */
-    private static objDistanceSq = 0;
-    private static objScale = 0;
-    private static objDir = NaN;
-
     private static computeInterval(playerPos: Point, obj: GameObject, item: ListItem, interval: Float32Array, index: number, isOurPlayer: boolean, isPreplace?: boolean) {
         const itemScale = item.scale;
         const placementOffset = 35 + itemScale + (item.placeOffset ?? 0);
         const placeDistanceSq = placementOffset * placementOffset;
 
-        const objScale = AngleFinder.objScale;
+        const objScale = (obj.blocker ? obj.blocker : obj.getScale(.6, obj.isItem)) + (isOurPlayer ? .01 : -.05);
 
         const totalRadius = itemScale + objScale;
         const totalRadiusSq = totalRadius * totalRadius;
 
-        const distanceSq = AngleFinder.objDistanceSq;
+        const distanceSq = getDistSq(playerPos, obj);
         const maxReach = placementOffset + totalRadius;
 
         if (distanceSq > maxReach * maxReach) return index;
@@ -218,8 +210,7 @@ export default class AngleFinder {
 
         const thetha = Math.acos(cosVal);
 
-        let dir = AngleFinder.objDir;
-        if (dir !== dir) dir = AngleFinder.objDir = getDir(obj, playerPos);
+        const dir = getDir(obj, playerPos);
         const start = normalizeAngle(dir - thetha);
         const end = normalizeAngle(dir + thetha);
 
@@ -545,10 +536,6 @@ export default class AngleFinder {
         spikeItem: ListItem, trapItem: ListItem,
         ctx: FinderComputeContext, isOurPlayer: boolean, options: Readonly<FinderOptions>
     ) {
-        AngleFinder.objDistanceSq = getDistSq(playerPos, gameObject);
-        AngleFinder.objScale = (gameObject.blocker ? gameObject.blocker : gameObject.getScale(.6, gameObject.isItem)) + (isOurPlayer ? .01 : -.05);
-        AngleFinder.objDir = NaN;
-
         if (gameObject.willBreak && options.preplace) {
             if (!options.trap) ctx.spike.openIndex = this.computeInterval(playerPos, gameObject, spikeItem, ctx.spike.open, ctx.spike.openIndex, isOurPlayer, true);
             if (!options.spike) ctx.trap.openIndex = this.computeInterval(playerPos, gameObject, trapItem, ctx.trap.open, ctx.trap.openIndex, isOurPlayer, true);
