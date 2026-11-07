@@ -15,6 +15,16 @@ function sourceFiles(dir: string): string[] {
     });
 }
 
+/** Lookups the id check below can't read: anything but Menu.getValue("id") / setValue("id", ...), or itemMap access. */
+function uncheckedLookups(text: string) {
+    const found: string[] = [];
+    for (const match of text.matchAll(/Menu\.(?:getValue|setValue)\(\s*([^,)]*)/g)) {
+        if (!/^"[^"]+"$/.test(match[1].trim())) found.push(`Menu.getValue/setValue(${match[1].trim()})`);
+    }
+    for (const match of text.matchAll(/Menu\.itemMap(\[[^\]]*\]|\.\w+)/g)) found.push(`Menu.itemMap${match[1]}`);
+    return found;
+}
+
 describe("setting ids", () => {
     it("every id passed to Menu.getValue or Menu.setValue is a real setting", async () => {
         const { default: Menu } = await import("@menu/Menu");
@@ -33,5 +43,27 @@ describe("setting ids", () => {
 
         expect(checked).toBeGreaterThan(50);
         expect(missing).toEqual([]);
+    });
+
+    it("every lookup outside the menu code uses a plain \"id\", so the check above can read it", () => {
+        // Menu.getValue('id'), a `template`, a variable or itemMap["id"] would slip past the check above, so a typo in
+        // one of them could switch a feature off unnoticed. The menu's own files work on ids generically and are skipped.
+        const unchecked: string[] = [];
+
+        for (const file of sourceFiles(srcDir)) {
+            const relative = path.relative(srcDir, file).split(path.sep).join("/");
+            if (relative.startsWith("core/menu/")) continue;
+            for (const found of uncheckedLookups(fs.readFileSync(file, "utf8"))) unchecked.push(`${relative}: ${found}`);
+        }
+
+        expect(unchecked).toEqual([]);
+    });
+
+    it("would catch the forms it can't read", () => {
+        expect(uncheckedLookups(`Menu.getValue("autoHeal"); Menu.setValue("autoGrind", false);`)).toEqual([]);
+        expect(uncheckedLookups(`Menu.getValue('autoHeal')`)).toHaveLength(1);
+        expect(uncheckedLookups("Menu.getValue(`auto${x}`)")).toHaveLength(1);
+        expect(uncheckedLookups(`Menu.getValue(id)`)).toHaveLength(1);
+        expect(uncheckedLookups(`Menu.itemMap["autoHeal"].status`)).toHaveLength(1);
     });
 });
