@@ -34,6 +34,8 @@ interface EnemyProcessResult {
     primaryDamage: number;
     hasRuby: boolean;
     hasSecondaryHitRecently: boolean;
+    /** Left out on purpose by pattern recognition (a pre-hitter while we're trapped); checkLateHit may count it after all. */
+    ignored?: boolean;
 }
 
 type KnockbackSimActions = [
@@ -303,7 +305,7 @@ export default class DefenseSystem {
             !enemy.profilingData.checkLateHit
         ) {
             sources.push(`ignoredEnemy:${enemy.sid}`);
-            return { primaryDamage: 0, hasRuby: false, hasSecondaryHitRecently: false };
+            return { primaryDamage: 0, hasRuby: false, hasSecondaryHitRecently: false, ignored: true };
         }
 
         const longestTickSinceHit = Math.max(enemy.weaponData.lastPrimaryTickHit, enemy.weaponData.lastSecondaryTickHit, enemy.weaponData.lastTurretTickHit);
@@ -350,6 +352,8 @@ export default class DefenseSystem {
         };
     }
 
+    /** Enemies the first pass of scanEnvironment left out this tick (EnemyProcessResult.ignored). */
+    private static ignoredEnemies = new Set<number>();
     private static secondaryRHitTicks = 0;
     private static normalSpikeSoldiers = 0;
     private static tmpPoint = { x: 0, y: 0 };
@@ -421,9 +425,13 @@ export default class DefenseSystem {
         }
 
         this.canPlaceOnMe = isPlacingOnMe;
+        const ignoredEnemies = this.ignoredEnemies;
+        ignoredEnemies.clear();
+
         for (let i = 0, len = nearby.length; i < len; i++) {
             const enemy = nearby[i];
             const result = this.processEnemy(enemy, isGoingToAutoBreakHit, myPositionalSpot, knockbackVectors, len > 1, highestSpikeDamage);
+            if (result.ignored) ignoredEnemies.add(enemy.sid);
 
             if (result.primaryDamage > highestPrimaryDamage) {
                 highestPrimaryDamage = result.primaryDamage;
@@ -619,10 +627,15 @@ export default class DefenseSystem {
                     if (((enemy.profilingData.preHitAttacks < 2 && player.shameCount <= 3) || enemy.profilingData.preHitAttacks >= 2) && enemy.profilingData.latePreHitAttacks < 2 && this.oldConsiderAutoBreakHit && considerAutoBreakHit) {
                         enemy.profilingData.checkLateHit = true;
                         sources.push(`checkLateHit:${enemy.sid}`);
-                        const res = this.processEnemy(enemy, isGoingToAutoBreakHit, myPositionalSpot, knockbackVectors, len > 1, highestSpikeDamage);
 
-                        if (res.primaryDamage > highestPrimaryDamage) {
-                            highestPrimaryDamage = res.primaryDamage;
+                        // Count the enemy now only if the first pass left it out; otherwise its damage and knockback
+                        // were already added, and processing it again counted them twice.
+                        if (ignoredEnemies.has(enemy.sid)) {
+                            const res = this.processEnemy(enemy, isGoingToAutoBreakHit, myPositionalSpot, knockbackVectors, len > 1, highestSpikeDamage);
+
+                            if (res.primaryDamage > highestPrimaryDamage) {
+                                highestPrimaryDamage = res.primaryDamage;
+                            }
                         }
                     }
                 }
