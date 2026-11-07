@@ -2,7 +2,7 @@
 // (each nearby enemy's ready weapons in range, with bull helmet; turrets; spikes we touch or could be knocked into;
 // arrows and bullets on the way; reflection from hitting a Spike Gear / Corrupt X Wings enemy) and decides whether
 // soldier helmet or EMP helmet are worth it. Auto Heal and the Hat System act on that total.
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { type Game, ME, startGame } from "../helpers/game";
 
 let game: Game | undefined;
@@ -72,5 +72,61 @@ describe("Defense System", () => {
         // The enemy can take the tail off and hit with weapon + turret (25).
         const { default: items } = await import("@constants/items");
         expect(without.total).toBeGreaterThanOrEqual(items.weapons[5].dmg + 25);
+    });
+});
+
+describe("Defense System: no random decisions (B1)", () => {
+    type Internals = {
+        spikeTickPatternRec: { amount: number; currentMax: number; resolveOccurances: number; hasOccuredBefore: boolean };
+        processSpikeTickPotential(reset?: boolean): boolean;
+        handleSpikePlacement(hammer: boolean, primary: number, spike: number, onMe: boolean): void;
+        previousOnMeState: boolean;
+        state: { sources: string[]; totalDamage: number };
+    };
+
+    async function setUp() {
+        game = await startGame({ enable: ["usePatternRec"] });
+        game.spawn({ sid: ME, x: 1000, y: 1000, weaponIndex: 5 });
+        game.spawn({ sid: 2, x: 4000, y: 4000 });
+        game.setLoadout([5], [0, 3, 6, 10, 15]);
+        game.update();
+        const { default: DefenseSystem } = await import("@core/mod/defense/DefenseSystem");
+        const { default: ModManager } = await import("@core/ModManager");
+        return { ds: DefenseSystem as unknown as Internals, ModManager };
+    }
+
+    it("Pattern Recognition leaves out 1 spike-tick threat on even ticks and 2 on odd ones", async () => {
+        const { ds, ModManager } = await setUp();
+        // The coin flip this replaced would say 2 here on every tick.
+        vi.spyOn(Math, "random").mockReturnValue(0.99);
+
+        for (const [tick, expected] of [[10, 1], [11, 2]]) {
+            const data = ds.spikeTickPatternRec;
+            data.currentMax = 3;
+            data.amount = 2;
+            data.hasOccuredBefore = true;
+            data.resolveOccurances = 0;
+            ModManager.tick = tick;
+            ds.processSpikeTickPotential();
+            expect(data.resolveOccurances).toBe(expected);
+        }
+    });
+
+    it("counts a spike that can be placed on us while our shame is 0-2, not from 3", async () => {
+        const { ds } = await setUp();
+        // The coin flip this replaced would have left shame 2 out here.
+        vi.spyOn(Math, "random").mockReturnValue(0);
+        const player = game!.Client.player;
+        player.wasTrapped = false;
+
+        const counted = (shame: number) => {
+            player.shameCount = shame;
+            ds.previousOnMeState = true; // not "just" able to place on us
+            ds.state.sources.length = 0;
+            ds.handleSpikePlacement(false, 30, 20, true);
+            return ds.state.sources.includes("onMeSpike");
+        };
+
+        expect([counted(0), counted(2), counted(3), counted(5)]).toEqual([true, true, false, false]);
     });
 });

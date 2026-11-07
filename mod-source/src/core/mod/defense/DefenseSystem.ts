@@ -147,7 +147,9 @@ export default class DefenseSystem {
         if (data.amount >= data.currentMax) {
             if (data.hasOccuredBefore) {
                 data.currentMax = Math.max(data.currentMax - 1, 1);
-                data.resolveOccurances = Math.floor(Math.random() * 2) + 1;
+                // How many of the next threats to leave out: 1 on even ticks, 2 on odd ones. Was a coin flip (Math.random),
+                // so the same fight could be defended differently; the tick keeps it hard to predict but repeatable.
+                data.resolveOccurances = ModManager.tick % 2 === 0 ? 1 : 2;
             } else {
                 data.resolveOccurances = 1;
             }
@@ -184,7 +186,8 @@ export default class DefenseSystem {
                     activityList.push("resetSpikeTickPR");
                     this.processSpikeTickPotential(true);
                 }
-            } else if (player.shameCount < Math.floor(Math.random() * 2) + 2) {
+            } else if (player.shameCount < 3) {
+                // A spike that can still be placed on us counts while our shame is 0-2. The limit was 2 or 3 at random.
                 state.totalDamage += highestSpikeDamage;
                 state.sources.push("onMeSpike");
                 state.canEMP = false;
