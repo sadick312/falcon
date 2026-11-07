@@ -1,7 +1,7 @@
 import AutoPusher from "@core/mod/combat/core/AutoPusher";
 import Menu from "@menu/Menu";
 import CameraManager from "../../core/CameraManager";
-import { mainContext } from "../../RendererSystem";
+import { mainContext } from "@rendering/RenderContext";
 
 export default function renderPathfindPath() {
     const path = AutoPusher.currentPath;

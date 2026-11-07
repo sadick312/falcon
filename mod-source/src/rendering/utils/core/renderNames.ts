@@ -8,7 +8,7 @@ import PacketTracker from "@core/utils/PacketTracker";
 import Menu from "@menu/Menu";
 import CameraManager from "@rendering/core/CameraManager";
 import SpriteCache from "@rendering/core/SpriteCache";
-import { mainContext } from "@rendering/RendererSystem";
+import { mainContext } from "@rendering/RenderContext";
 import RendererUtils from "@rendering/RendererUtils";
 
 export default function renderNames() {

@@ -3,7 +3,7 @@ import Client from "@core/Client";
 import ObjectManager from "@core/logic/ObjectManager";
 import Menu from "@menu/Menu";
 import CameraManager from "@rendering/core/CameraManager";
-import { mainContext } from "@rendering/RendererSystem";
+import { mainContext } from "@rendering/RenderContext";
 import RendererUtils from "@rendering/RendererUtils";
 import withinDist from "@utils/geometry/withinDist";
 

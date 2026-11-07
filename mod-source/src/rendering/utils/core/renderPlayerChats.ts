@@ -1,6 +1,6 @@
 import PlayerManager from "@core/logic/players/PlayerManager";
 import CameraManager from "@rendering/core/CameraManager";
-import { mainContext } from "@rendering/RendererSystem";
+import { mainContext } from "@rendering/RenderContext";
 
 export default function renderPlayerChats(delta: number) {
     const buf = CameraManager.getOffset();

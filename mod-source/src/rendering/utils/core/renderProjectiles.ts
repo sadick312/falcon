@@ -3,7 +3,7 @@ import Projectile from "@entities/Projectile";
 import ProjectileManager from "@core/logic/ProjectileManager";
 import ModManager from "@core/ModManager";
 import CameraManager from "@rendering/core/CameraManager";
-import { mainContext } from "@rendering/RendererSystem";
+import { mainContext } from "@rendering/RenderContext";
 import RendererUtils, { isOnScreen } from "@rendering/RendererUtils";
 
 const projectileSprites: Record<string, HTMLImageElement> = {};

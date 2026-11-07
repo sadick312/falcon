@@ -1,6 +1,6 @@
 import { ais } from "@entities/Ai";
 import CameraManager from "@rendering/core/CameraManager";
-import { mainContext } from "@rendering/RendererSystem";
+import { mainContext } from "@rendering/RenderContext";
 import renderAI from "@rendering/utils/core/renderAI";
 
 export default function renderAis(dt: number) {

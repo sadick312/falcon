@@ -1,4 +1,5 @@
 import Client, { pingDisplay } from "@core/Client";
+import { mainContext, pixelDensity } from "@rendering/RenderContext";
 import PacketReplayer, { pauseIcon } from "@core/PacketReplayer";
 import PacketBatcher from "@core/utils/PacketBatcher";
 import Menu from "@menu/Menu";
@@ -26,7 +27,6 @@ import renderOneTickLine from "@rendering/utils/mod/renderOneTickLine";
 import renderPathfindPath from "@rendering/utils/mod/renderPathfindPath";
 import renderPlacements from "@rendering/utils/mod/renderPlacements";
 import { profileEnd, profileStart } from "@services/profiler/Profiler";
-import getElem from "@utils/dom/getElem";
 
 CanvasRenderingContext2D.prototype.roundRect = function (x: number, y: number, width: number, height: number, radius: number): CanvasRenderingContext2D {
     radius = Math.max(0, Math.min(radius, width / 2, height / 2));
@@ -42,11 +42,9 @@ CanvasRenderingContext2D.prototype.roundRect = function (x: number, y: number, w
     return this;
 };
 
-export const gameCanvas = getElem<"canvas">("game-canvas");
-export const mainContext = gameCanvas.getContext("2d")!;
 
 export default class RendererSystem {
-    static pixelDensity = window.devicePixelRatio || 1;
+    static pixelDensity = pixelDensity;
 
     private static waterMult = 1;
     private static waterPlus = 0;

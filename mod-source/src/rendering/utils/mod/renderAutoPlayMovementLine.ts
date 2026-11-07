@@ -3,7 +3,7 @@ import MovementManager from "@core/mod/defense/defense-modules/MovementManager";
 import FakeSocket from "@core/socket/FakeSocket";
 import Menu from "@menu/Menu";
 import CameraManager from "@rendering/core/CameraManager";
-import { mainContext } from "@rendering/RendererSystem";
+import { mainContext } from "@rendering/RenderContext";
 
 export default function renderAutoPlayMovementLine() {
     const player = Client.player;

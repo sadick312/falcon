@@ -9,7 +9,7 @@ import ObjectManager from "../../../core/logic/ObjectManager";
 import Menu from "../../../core/menu/Menu";
 import CameraManager from "../../core/CameraManager";
 import SpriteCache from "../../core/SpriteCache";
-import RendererSystem, { mainContext } from "../../RendererSystem";
+import { mainContext, pixelDensity } from "@rendering/RenderContext";
 import RendererUtils, { isOnScreen } from "../../RendererUtils";
 import { NATURAL_OBJECT_OWNER } from "@constants/world";
 
@@ -33,7 +33,7 @@ const volcanoCanvas: VolcanoCanvas = {
 
 export function drawVolcanoImages() {
     const volcanoLand = document.createElement("canvas");
-    const volcanoLandCanvasSize = config.volcanoScale * 2 * RendererSystem.pixelDensity;
+    const volcanoLandCanvasSize = config.volcanoScale * 2 * pixelDensity;
     volcanoLand.width = volcanoLand.height = volcanoLandCanvasSize;
 
     const ctxLand = volcanoLand.getContext("2d")!;
@@ -53,7 +53,7 @@ export function drawVolcanoImages() {
 
     volcanoCanvas.body = volcanoLand;
 
-    const volcanoInnerCanvasSize = config.innerVolcanoScale * 2 * RendererSystem.pixelDensity;
+    const volcanoInnerCanvasSize = config.innerVolcanoScale * 2 * pixelDensity;
     const volcanoLava = document.createElement("canvas");
     volcanoLava.width = volcanoLava.height = volcanoInnerCanvasSize;
 

@@ -1,5 +1,5 @@
 import Menu from "@menu/Menu";
-import RendererSystem, { gameCanvas, mainContext } from "../RendererSystem";
+import { gameCanvas, mainContext, pixelDensity } from "@rendering/RenderContext";
 import RenderingConfig from "../RenderingConfig";
 
 export default class WindowResizer {
@@ -10,15 +10,15 @@ export default class WindowResizer {
         const screenWidth = window.innerWidth;
         const screenHeight = window.innerHeight;
 
-        gameCanvas.width = screenWidth * RendererSystem.pixelDensity;
-        gameCanvas.height = screenHeight * RendererSystem.pixelDensity;
+        gameCanvas.width = screenWidth * pixelDensity;
+        gameCanvas.height = screenHeight * pixelDensity;
         gameCanvas.style.width = `${screenWidth}px`;
         gameCanvas.style.height = `${screenHeight}px`;
 
         const scaleFillNative = Math.max(
             screenWidth / RenderingConfig.maxScreenWidth,
             screenHeight / RenderingConfig.maxScreenHeight
-        ) * RendererSystem.pixelDensity;
+        ) * pixelDensity;
 
         const transformX = (gameCanvas.width - (RenderingConfig.maxScreenWidth * scaleFillNative)) / 2;
         const transformY = (gameCanvas.height - (RenderingConfig.maxScreenHeight * scaleFillNative)) / 2;

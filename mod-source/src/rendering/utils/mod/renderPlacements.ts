@@ -4,7 +4,7 @@ import Client from "../../../core/Client";
 import Menu from "../../../core/menu/Menu";
 import CameraManager from "../../core/CameraManager";
 import SpriteCache from "../../core/SpriteCache";
-import { mainContext } from "../../RendererSystem";
+import { mainContext } from "@rendering/RenderContext";
 import RendererUtils from "../../RendererUtils";
 
 export default function renderPlacements(dt: number) {

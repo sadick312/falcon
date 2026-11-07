@@ -1,6 +1,6 @@
 import TextManager from "../../../core/logic/TextManager";
 import CameraManager from "../../core/CameraManager";
-import { mainContext } from "../../RendererSystem";
+import { mainContext } from "@rendering/RenderContext";
 
 export default function renderText(delta: number) {
     const buf = CameraManager.getOffset();

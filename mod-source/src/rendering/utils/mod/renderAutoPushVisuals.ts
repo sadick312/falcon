@@ -1,7 +1,7 @@
 import Client from "@core/Client";
 import AutoPusher from "@core/mod/combat/core/AutoPusher";
 import CameraManager from "@rendering/core/CameraManager";
-import { mainContext } from "@rendering/RendererSystem";
+import { mainContext } from "@rendering/RenderContext";
 import RendererUtils from "@rendering/RendererUtils";
 
 export default function renderAutoPushVisuals() {

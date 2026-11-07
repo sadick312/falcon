@@ -2,7 +2,7 @@ import Client from "@core/Client";
 import PlayerManager from "@core/logic/players/PlayerManager";
 import Menu from "@menu/Menu";
 import CameraManager from "@rendering/core/CameraManager";
-import { mainContext } from "@rendering/RendererSystem";
+import { mainContext } from "@rendering/RenderContext";
 import { Input } from "@ui/Hook";
 
 export default function renderPlayers(delta: number, layer: number) {

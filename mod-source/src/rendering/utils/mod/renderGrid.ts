@@ -1,6 +1,6 @@
 import Menu from "../../../core/menu/Menu";
 import CameraManager from "../../core/CameraManager";
-import { mainContext } from "../../RendererSystem";
+import { mainContext } from "@rendering/RenderContext";
 import RenderingConfig from "../../RenderingConfig";
 
 export default function renderGrid(xOffset: number, yOffset: number) {

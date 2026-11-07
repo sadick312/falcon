@@ -4,7 +4,7 @@ import Client from "@core/Client";
 import AttackManager from "@core/mod/combat/core/AttackManager";
 import ModManager from "@core/ModManager";
 import Menu from "@menu/Menu";
-import { mainContext } from "@rendering/RendererSystem";
+import { mainContext } from "@rendering/RenderContext";
 import getDirComp from "@utils/angle/getDirComp";
 
 export default function renderOneTickLine(xOffset: number, yOffset: number) {
