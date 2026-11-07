@@ -32,7 +32,7 @@ import PacketBatcher from "@core/utils/PacketBatcher";
 import Menu, { ChatLog } from "@menu/Menu";
 import CameraManager from "@rendering/core/CameraManager";
 import RendererSystem from "@rendering/RendererSystem";
-import PacketMap from "@root/utils/socket/PacketMap";
+import PacketMap, { HandledServerPacket, PacketHandlers } from "@root/utils/socket/PacketMap";
 import PacketRecorder from "@services/packet-recorder/PacketRecorder";
 import { showServerRestarting } from "@ui/ConnectionError";
 import { enterGameBtn } from "@ui/Hook";
@@ -138,343 +138,350 @@ export default class SocketListener {
         }
 
         const playerUpdateEvent = new PlayerUpdateEvent(this.socket);
-        this.socket.on(PacketMap.SERVER_TO_CLIENT.UPDATE_PLAYERS, (positions, attributes, hidden) => playerUpdateEvent.run(positions, attributes, hidden));
-
         const gatherAnimationEvent = new GatherAnimationEvent(this.socket);
-        this.socket.on(PacketMap.SERVER_TO_CLIENT.GATHER_ANIMATION, (sid, didHit, index) => gatherAnimationEvent.run(sid, didHit, index));
-
         const healthUpdateEvent = new HealthUpdateEvent(this.socket);
-        this.socket.on(PacketMap.SERVER_TO_CLIENT.UPDATE_HEALTH, (sid, health) => healthUpdateEvent.run(sid, health));
-
         const storeItemsUpdateEvent = new StoreItemsUpdateEvent(this.socket);
-        this.socket.on(PacketMap.SERVER_TO_CLIENT.UPDATE_STORE_ITEMS, (type, id, index) => storeItemsUpdateEvent.run(type, id, index));
-
         const loadAiEvent = new LoadAiEvent(this.socket);
-        this.socket.on(PacketMap.SERVER_TO_CLIENT.LOAD_AI, (data, hidden) => loadAiEvent.run(data, hidden));
-
         const animateAiEvent = new AnimateAiEvent(this.socket);
-        this.socket.on(PacketMap.SERVER_TO_CLIENT.ANIMATE_AI, (sid) => animateAiEvent.run(sid));
 
-        this.socket.on(PacketMap.SERVER_TO_CLIENT.UPDATE_UPGRADES, (points, age) => {
-            updateUpgrades(points, age);
-        });
+        const handlers: PacketHandlers = {
+            [PacketMap.SERVER_TO_CLIENT.UPDATE_PLAYERS]: (positions, attributes, hidden) => playerUpdateEvent.run(positions, attributes, hidden),
 
-        this.socket.on(PacketMap.SERVER_TO_CLIENT.SET_ALLIANCE_PLAYERS, (data) => {
-            // Every tick reads and truncates this list; a non-array here would make each later tick throw.
-            Client.alliancePlayers = Array.isArray(data) ? data : [];
-            if (allianceHolder.style.display === "flex") updateClanMenu();
-        });
+            [PacketMap.SERVER_TO_CLIENT.GATHER_ANIMATION]: (sid, didHit, index) => gatherAnimationEvent.run(sid, didHit, index),
 
-        this.socket.on(PacketMap.SERVER_TO_CLIENT.SET_UP_GAME, (yourSID) => {
-            Client.mySID = yourSID;
-            ObjectManager.removeAll(NATURAL_OBJECT_OWNER);
-        });
+            [PacketMap.SERVER_TO_CLIENT.UPDATE_HEALTH]: (sid, health) => healthUpdateEvent.run(sid, health),
 
-        this.socket.on(PacketMap.SERVER_TO_CLIENT.SET_PLAYER_TEAM, (team, isOwner) => {
-            const player = Client.player;
-            if (!player) return;
+            [PacketMap.SERVER_TO_CLIENT.UPDATE_STORE_ITEMS]: (type, id, index) => storeItemsUpdateEvent.run(type, id, index),
 
-            handleAllianceUpdates(player, team);
-            player.isOwner = isOwner;
-            if (allianceHolder.style.display === "flex") updateClanMenu();
-        });
+            [PacketMap.SERVER_TO_CLIENT.LOAD_AI]: (data, hidden) => loadAiEvent.run(data, hidden),
 
-        this.socket.on(PacketMap.SERVER_TO_CLIENT.ALLIANCE_NOTIFICATION, (sid, name) => {
-            Client.allianceNotifications.push({ sid, name });
-            updateNotifications();
-        });
+            [PacketMap.SERVER_TO_CLIENT.ANIMATE_AI]: (sid) => animateAiEvent.run(sid),
 
-        this.socket.on(PacketMap.SERVER_TO_CLIENT.KILL_OBJECTS, (ownerSID) => {
-            PotentialObjectManager.remove(ownerSID);
-            ObjectManager.removeAll(ownerSID);
-        });
+            [PacketMap.SERVER_TO_CLIENT.UPDATE_UPGRADES]: (points, age) => {
+                updateUpgrades(points, age);
+            },
 
-        this.socket.on(PacketMap.SERVER_TO_CLIENT.KILL_OBJECT, (sid) => {
-            ObjectManager.remove(sid);
-        });
+            [PacketMap.SERVER_TO_CLIENT.SET_ALLIANCE_PLAYERS]: (data) => {
+                // Every tick reads and truncates this list; a non-array here would make each later tick throw.
+                Client.alliancePlayers = Array.isArray(data) ? data : [];
+                if (allianceHolder.style.display === "flex") updateClanMenu();
+            },
 
-        this.socket.on(PacketMap.SERVER_TO_CLIENT.REMOVE_PLAYER, (id) => {
-            const player = PlayerManager.get(id);
+            [PacketMap.SERVER_TO_CLIENT.SET_UP_GAME]: (yourSID) => {
+                Client.mySID = yourSID;
+                ObjectManager.removeAll(NATURAL_OBJECT_OWNER);
+            },
 
-            if (player) {
-                Menu.addChatLog(new ChatLog(`${player.name} {${player.sid}} has left the game`, "leave"));
-                PlayerManager.remove(player);
+            [PacketMap.SERVER_TO_CLIENT.SET_PLAYER_TEAM]: (team, isOwner) => {
+                const player = Client.player;
+                if (!player) return;
+    
+                handleAllianceUpdates(player, team);
+                player.isOwner = isOwner;
+                if (allianceHolder.style.display === "flex") updateClanMenu();
+            },
 
-                const allySet = Client.allianceMap.get(player.team);
-                if (allySet) allySet.delete(player.sid);
-                if (player.isLeader || allySet?.size === 0) Client.allianceMap.delete(player.team);
-            }
-        });
+            [PacketMap.SERVER_TO_CLIENT.ALLIANCE_NOTIFICATION]: (sid, name) => {
+                Client.allianceNotifications.push({ sid, name });
+                updateNotifications();
+            },
 
-        this.socket.on(PacketMap.SERVER_TO_CLIENT.PING_RESPONSE, () => {
-            if (!this.awaitingPong) return;
-            this.awaitingPong = false;
+            [PacketMap.SERVER_TO_CLIENT.KILL_OBJECTS]: (ownerSID) => {
+                PotentialObjectManager.remove(ownerSID);
+                ObjectManager.removeAll(ownerSID);
+            },
 
-            const rawPing = performance.now() - this.lastPingSocket;
-            PingTracker.update(rawPing);
+            [PacketMap.SERVER_TO_CLIENT.KILL_OBJECT]: (sid) => {
+                ObjectManager.remove(sid);
+            },
 
-            Client.pingTime = Math.round(rawPing * 1e3) / 1e3;
-            pingDisplay.innerText = `Ping: ${Client.pingTime} ms | FPS: ${RendererSystem.fps} | BWin: ${PacketBatcher.effectiveBatchWindow.toFixed(1)} ms | Jitter: ${PacketBatcher.tickJitter.toFixed(1)} ms`;
-        });
-
-        this.socket.on(PacketMap.SERVER_TO_CLIENT.ADD_ALLIANCE, (data) => {
-            Client.alliances.push(data);
-            Client.allianceMap.set(data.sid, new Set([data.owner]));
-            if (allianceHolder.style.display === "flex") updateClanMenu();
-        });
-
-        this.socket.on(PacketMap.SERVER_TO_CLIENT.SHOW_TEXT, (x, y, value, type) => {
-            if (Menu.getValue("stackedText")) return;
-            TextManager.add(x, y, value, type);
-        });
-
-        this.socket.on(PacketMap.SERVER_TO_CLIENT.UPDATE_AGE, (xp, mxp, age) => {
-            const player = Client.player;
-            if (!player) return;
-
-            if (xp != undefined) player.XP = xp;
-            if (mxp != undefined) player.maxXP = mxp;
-            if (age != undefined) player.age = age;
-            if (age === 1) Client.upgradesObtained.clear();
-
-            ageDisplay.innerHTML = `age ${player.age}`;
-            ageBar.style.width = ((player.XP / player.maxXP) * 100) + "%";
-        });
-
-        this.socket.on(PacketMap.SERVER_TO_CLIENT.SET_INIT_DATA, (data) => {
-            const teams = data.teams;
-            Client.alliances = teams;
-
-            for (let i = 0, len = teams.length; i < len; i++) {
-                const team = teams[i];
-                Client.allianceMap.set(team.sid, new Set([team.owner]));
-            }
-
-            if (allianceHolder.style.display === "flex") updateClanMenu();
-        });
-
-        this.socket.on(PacketMap.SERVER_TO_CLIENT.DELETE_ALLIANCE, (sid) => {
-            const alliances = Client.alliances;
-            Client.allianceMap.delete(sid);
-
-            for (let i = 0; i < alliances.length; i++) {
-                const team = alliances[i];
-
-                if (team && team.sid == sid) {
-                    alliances.splice(i, 1);
-                    break;
+            [PacketMap.SERVER_TO_CLIENT.REMOVE_PLAYER]: (id) => {
+                const player = PlayerManager.get(id);
+    
+                if (player) {
+                    Menu.addChatLog(new ChatLog(`${player.name} {${player.sid}} has left the game`, "leave"));
+                    PlayerManager.remove(player);
+    
+                    const allySet = Client.allianceMap.get(player.team);
+                    if (allySet) allySet.delete(player.sid);
+                    if (player.isLeader || allySet?.size === 0) Client.allianceMap.delete(player.team);
                 }
-            }
+            },
 
-            if (allianceHolder.style.display === "flex") updateClanMenu();
-        });
+            [PacketMap.SERVER_TO_CLIENT.PING_RESPONSE]: () => {
+                if (!this.awaitingPong) return;
+                this.awaitingPong = false;
+    
+                const rawPing = performance.now() - this.lastPingSocket;
+                PingTracker.update(rawPing);
+    
+                Client.pingTime = Math.round(rawPing * 1e3) / 1e3;
+                pingDisplay.innerText = `Ping: ${Client.pingTime} ms | FPS: ${RendererSystem.fps} | BWin: ${PacketBatcher.effectiveBatchWindow.toFixed(1)} ms | Jitter: ${PacketBatcher.tickJitter.toFixed(1)} ms`;
+            },
 
-        this.socket.on(PacketMap.SERVER_TO_CLIENT.ADD_PLAYER, (data, isYou) => {
-            let tmpPlayer = PlayerManager.get(data[0]);
+            [PacketMap.SERVER_TO_CLIENT.ADD_ALLIANCE]: (data) => {
+                Client.alliances.push(data);
+                Client.allianceMap.set(data.sid, new Set([data.owner]));
+                if (allianceHolder.style.display === "flex") updateClanMenu();
+            },
 
-            if (!tmpPlayer) {
-                tmpPlayer = new Player(data[0], data[1]);
-                PlayerManager.add(tmpPlayer);
-            }
+            [PacketMap.SERVER_TO_CLIENT.SHOW_TEXT]: (x, y, value, type) => {
+                if (Menu.getValue("stackedText")) return;
+                TextManager.add(x, y, value, type);
+            },
 
-            // SET_UP_GAME normally set this already; spawn() needs it to tell us apart from enemies (resetReloads).
-            if (isYou) Client.mySID = tmpPlayer.sid;
-            tmpPlayer.spawn();
-            tmpPlayer.setData(data);
-            tmpPlayer.visible = false;
+            [PacketMap.SERVER_TO_CLIENT.UPDATE_AGE]: (xp, mxp, age) => {
+                const player = Client.player;
+                if (!player) return;
+    
+                if (xp != undefined) player.XP = xp;
+                if (mxp != undefined) player.maxXP = mxp;
+                if (age != undefined) player.age = age;
+                if (age === 1) Client.upgradesObtained.clear();
+    
+                ageDisplay.innerHTML = `age ${player.age}`;
+                ageBar.style.width = ((player.XP / player.maxXP) * 100) + "%";
+            },
 
-            if (isYou) {
-                MovementManager.onSpawn();
-                Client.isAlive = true;
-                AttackManager.resetModules();
-                Client.upgradesObtained.clear();
-                Client.lastAteTick = -Infinity;
-                Client.mySID = tmpPlayer.sid;
-                Client.player = tmpPlayer;
-                CameraManager.camX = tmpPlayer.render_position.x;
-                CameraManager.camY = tmpPlayer.render_position.y;
+            [PacketMap.SERVER_TO_CLIENT.SET_INIT_DATA]: (data) => {
+                const teams = data.teams;
+                Client.alliances = teams;
+    
+                for (let i = 0, len = teams.length; i < len; i++) {
+                    const team = teams[i];
+                    Client.allianceMap.set(team.sid, new Set([team.owner]));
+                }
+    
+                if (allianceHolder.style.display === "flex") updateClanMenu();
+            },
 
-                if (Client.mode === "normal") {
-                    gameUI.style.display = "block";
-                    respawnPage.style.display = "none";
-                    loadingCirclePage.style.display = "none";
+            [PacketMap.SERVER_TO_CLIENT.DELETE_ALLIANCE]: (sid) => {
+                const alliances = Client.alliances;
+                Client.allianceMap.delete(sid);
+    
+                for (let i = 0; i < alliances.length; i++) {
+                    const team = alliances[i];
+    
+                    if (team && team.sid == sid) {
+                        alliances.splice(i, 1);
+                        break;
+                    }
+                }
+    
+                if (allianceHolder.style.display === "flex") updateClanMenu();
+            },
 
-                    ageBar.style.width = "0%";
-                    ageDisplay.innerText = "age 1";
+            [PacketMap.SERVER_TO_CLIENT.ADD_PLAYER]: (data, isYou) => {
+                let tmpPlayer = PlayerManager.get(data[0]);
+    
+                if (!tmpPlayer) {
+                    tmpPlayer = new Player(data[0], data[1]);
+                    PlayerManager.add(tmpPlayer);
+                }
+    
+                // SET_UP_GAME normally set this already; spawn() needs it to tell us apart from enemies (resetReloads).
+                if (isYou) Client.mySID = tmpPlayer.sid;
+                tmpPlayer.spawn();
+                tmpPlayer.setData(data);
+                tmpPlayer.visible = false;
+    
+                if (isYou) {
+                    MovementManager.onSpawn();
+                    Client.isAlive = true;
+                    AttackManager.resetModules();
+                    Client.upgradesObtained.clear();
+                    Client.lastAteTick = -Infinity;
+                    Client.mySID = tmpPlayer.sid;
+                    Client.player = tmpPlayer;
+                    CameraManager.camX = tmpPlayer.render_position.x;
+                    CameraManager.camY = tmpPlayer.render_position.y;
+    
+                    if (Client.mode === "normal") {
+                        gameUI.style.display = "block";
+                        respawnPage.style.display = "none";
+                        loadingCirclePage.style.display = "none";
+    
+                        ageBar.style.width = "0%";
+                        ageDisplay.innerText = "age 1";
+                    } else {
+                        respawnPage.style.display = "none";
+                        packetReplayerUI.style.display = "block";
+                    }
+    
+                    updatePlayerValue();
+                    updateItems(null, false);
                 } else {
-                    respawnPage.style.display = "none";
-                    packetReplayerUI.style.display = "block";
+                    Menu.addChatLog(new ChatLog(`encountered ${tmpPlayer.name} {${tmpPlayer.sid}}`, "encounter"));
                 }
+            },
 
+            [PacketMap.SERVER_TO_CLIENT.UPDATE_MINIMAP]: (data) => {
+                Client.minimapData = data;
+            },
+
+            [PacketMap.SERVER_TO_CLIENT.RECEIVE_CHAT]: (sid, msg) => {
+                const player = PlayerManager.get(sid);
+    
+                if (player) {
+                    msg = shortnameToUnicode(msg);
+                    msg = msg.replace(/\/shrug|\/shrg|\/shurg|\/shrgu/g, "¯\\_(ツ)_/¯");
+    
+                    player.chatMessages.unshift(new ChatMessage(msg));
+    
+                    if (!/@@@@@/g.test(msg) && msg.trim()) {
+                        Menu.addChatLog(new ChatLog(`${player.name} {${player.sid}} - ${msg}`));
+                    }
+    
+                    if (player.chatMessages.length > 3) player.chatMessages.length = 3;
+                }
+            },
+
+            [PacketMap.SERVER_TO_CLIENT.UPDATE_PLAYER_VALUE]: (index, value) => {
+                const player = Client.player;
+    
+                if (player) {
+                    if (Menu.getValue("killChat") && index === "kills" && value > player.kills) {
+                        Client.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.SEND_CHAT, `Dumbasses Down: ${value}`);
+    
+                        setTimeout(() => {
+                            Client.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.SEND_CHAT, `I'm Super Pro`);
+                        }, 750);
+                    }
+    
+                    Client.player[index] = value;
+                    if (index === "points") AutoBuyer.main(value);
+                }
+    
                 updatePlayerValue();
-                updateItems(null, false);
-            } else {
-                Menu.addChatLog(new ChatLog(`encountered ${tmpPlayer.name} {${tmpPlayer.sid}}`, "encounter"));
-            }
-        });
+            },
 
-        this.socket.on(PacketMap.SERVER_TO_CLIENT.UPDATE_MINIMAP, (data) => {
-            Client.minimapData = data;
-        });
-
-        this.socket.on(PacketMap.SERVER_TO_CLIENT.RECEIVE_CHAT, (sid, msg) => {
-            const player = PlayerManager.get(sid);
-
-            if (player) {
-                msg = shortnameToUnicode(msg);
-                msg = msg.replace(/\/shrug|\/shrg|\/shurg|\/shrgu/g, "¯\\_(ツ)_/¯");
-
-                player.chatMessages.unshift(new ChatMessage(msg));
-
-                if (!/@@@@@/g.test(msg) && msg.trim()) {
-                    Menu.addChatLog(new ChatLog(`${player.name} {${player.sid}} - ${msg}`));
+            [PacketMap.SERVER_TO_CLIENT.LOAD_GAME_OBJECT]: (data) => {
+                for (let i = 0; i < data.length; i += 8) {
+                    ObjectManager.add(data[i], data[i + 1], data[i + 2], data[i + 3], data[i + 4], data[i + 5], data[i + 6], true, data[i + 7]);
                 }
+            },
 
-                if (player.chatMessages.length > 3) player.chatMessages.length = 3;
-            }
-        });
-
-        this.socket.on(PacketMap.SERVER_TO_CLIENT.UPDATE_PLAYER_VALUE, (index, value) => {
-            const player = Client.player;
-
-            if (player) {
-                if (Menu.getValue("killChat") && index === "kills" && value > player.kills) {
-                    Client.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.SEND_CHAT, `Dumbasses Down: ${value}`);
-
-                    setTimeout(() => {
-                        Client.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.SEND_CHAT, `I'm Super Pro`);
-                    }, 750);
+            [PacketMap.SERVER_TO_CLIENT.UPDATE_ITEM_COUNTS]: (index, value) => {
+                if (!Client.player) return;
+                Client.player.itemCounts[index] = value;
+    
+                const itemRanges = itemCountElements[index as keyof typeof itemCountElements];
+                if (itemRanges) {
+                    for (const itemId of itemRanges) {
+                        getElem(`item-count-${itemId}`).innerText = `${value}`;
+                    }
                 }
+            },
 
-                Client.player[index] = value;
-                if (index === "points") AutoBuyer.main(value);
-            }
-
-            updatePlayerValue();
-        });
-
-        this.socket.on(PacketMap.SERVER_TO_CLIENT.LOAD_GAME_OBJECT, (data) => {
-            for (let i = 0; i < data.length; i += 8) {
-                ObjectManager.add(data[i], data[i + 1], data[i + 2], data[i + 3], data[i + 4], data[i + 5], data[i + 6], true, data[i + 7]);
-            }
-        });
-
-        this.socket.on(PacketMap.SERVER_TO_CLIENT.UPDATE_ITEM_COUNTS, (index, value) => {
-            if (!Client.player) return;
-            Client.player.itemCounts[index] = value;
-
-            const itemRanges = itemCountElements[index as keyof typeof itemCountElements];
-            if (itemRanges) {
-                for (const itemId of itemRanges) {
-                    getElem(`item-count-${itemId}`).innerText = `${value}`;
+            [PacketMap.SERVER_TO_CLIENT.SHOOT_TURRET]: (sid, dir) => {
+                const gameObject = ObjectManager.getObject(sid);
+    
+                if (gameObject) {
+                    gameObject.dir = dir;
+                    gameObject.xWiggle += Math.cos(dir + Math.PI) * ScriptConfig.GATHER_WIGGLE;
+                    gameObject.yWiggle += Math.sin(dir + Math.PI) * ScriptConfig.GATHER_WIGGLE;
+                    gameObject.reload = 0;
                 }
-            }
-        });
+            },
 
-        this.socket.on(PacketMap.SERVER_TO_CLIENT.SHOOT_TURRET, (sid, dir) => {
-            const gameObject = ObjectManager.getObject(sid);
+            [PacketMap.SERVER_TO_CLIENT.WIGGLE_GAME_OBJECT]: (dir, sid) => {
+                const gameObject = ObjectManager.getObject(sid);
+                if (!gameObject) return;
+    
+                gameObject.xWiggle += Math.cos(dir) * ScriptConfig.GATHER_WIGGLE;
+                gameObject.yWiggle += Math.sin(dir) * ScriptConfig.GATHER_WIGGLE;
+    
+                // Only buildings: trees, rocks and bushes have endless health (maxHealth Infinity), which counted as one.
+                if (gameObject.hasHealth)
+                    Client.buildingsHit.push(gameObject);
+            },
 
-            if (gameObject) {
-                gameObject.dir = dir;
-                gameObject.xWiggle += Math.cos(dir + Math.PI) * ScriptConfig.GATHER_WIGGLE;
-                gameObject.yWiggle += Math.sin(dir + Math.PI) * ScriptConfig.GATHER_WIGGLE;
-                gameObject.reload = 0;
-            }
-        });
+            [PacketMap.SERVER_TO_CLIENT.ADD_PROJECTILE]: (x, y, dir, range, speed, indx, layer, sid) => {
+                ProjectileManager.add(x, y, dir, range, speed, indx, layer, sid);
+            },
 
-        this.socket.on(PacketMap.SERVER_TO_CLIENT.WIGGLE_GAME_OBJECT, (dir, sid) => {
-            const gameObject = ObjectManager.getObject(sid);
-            if (!gameObject) return;
+            [PacketMap.SERVER_TO_CLIENT.REMOVE_PROJECTILE]: (sid, range) => {
+                ProjectileManager.remove(sid, range);
+                Client.buildingsHit = [];
+            },
 
-            gameObject.xWiggle += Math.cos(dir) * ScriptConfig.GATHER_WIGGLE;
-            gameObject.yWiggle += Math.sin(dir) * ScriptConfig.GATHER_WIGGLE;
-
-            // Only buildings: trees, rocks and bushes have endless health (maxHealth Infinity), which counted as one.
-            if (gameObject.hasHealth)
-                Client.buildingsHit.push(gameObject);
-        });
-
-        this.socket.on(PacketMap.SERVER_TO_CLIENT.ADD_PROJECTILE, (x, y, dir, range, speed, indx, layer, sid) => {
-            ProjectileManager.add(x, y, dir, range, speed, indx, layer, sid);
-        });
-
-        this.socket.on(PacketMap.SERVER_TO_CLIENT.REMOVE_PROJECTILE, (sid, range) => {
-            ProjectileManager.remove(sid, range);
-            Client.buildingsHit = [];
-        });
-
-        this.socket.on(PacketMap.SERVER_TO_CLIENT.UPDATE_LEADERBOARD, (data) => {
-            leaderboardData.innerHTML = "";
-            let placementCounter = 1;
-
-            for (let i = 0; i < data.length; i += 3) {
-                const leaderHolder = document.createElement("div");
-                leaderHolder.classList.add("leaderboard-item");
-
-                const nameDisplay = document.createElement("div");
-                nameDisplay.classList.add("leaderboard-label");
-                nameDisplay.innerText = `${placementCounter}. ${data[i + 1] || "unknown"} {${data[i]}}`;
-
-                const leaderScore = document.createElement("div");
-                leaderScore.classList.add("leaderboard-score");
-                leaderScore.innerText = `${kFormat(data[i + 2] as number)}`;
-
-                if (data[i] == Client.mySID) {
-                    nameDisplay.classList.add("is-owner");
-                    leaderScore.classList.add("is-owner");
+            [PacketMap.SERVER_TO_CLIENT.UPDATE_LEADERBOARD]: (data) => {
+                leaderboardData.innerHTML = "";
+                let placementCounter = 1;
+    
+                for (let i = 0; i < data.length; i += 3) {
+                    const leaderHolder = document.createElement("div");
+                    leaderHolder.classList.add("leaderboard-item");
+    
+                    const nameDisplay = document.createElement("div");
+                    nameDisplay.classList.add("leaderboard-label");
+                    nameDisplay.innerText = `${placementCounter}. ${data[i + 1] || "unknown"} {${data[i]}}`;
+    
+                    const leaderScore = document.createElement("div");
+                    leaderScore.classList.add("leaderboard-score");
+                    leaderScore.innerText = `${kFormat(data[i + 2] as number)}`;
+    
+                    if (data[i] == Client.mySID) {
+                        nameDisplay.classList.add("is-owner");
+                        leaderScore.classList.add("is-owner");
+                    }
+    
+                    leaderHolder.append(nameDisplay, leaderScore);
+                    leaderboardData.append(leaderHolder);
+                    placementCounter++;
                 }
+            },
 
-                leaderHolder.append(nameDisplay, leaderScore);
-                leaderboardData.append(leaderHolder);
-                placementCounter++;
+            [PacketMap.SERVER_TO_CLIENT.KILL_PLAYER]: () => {
+                Client.isAlive = false;
+                Client.upgradesObtained.clear();
+                CombatController.attackState.confirm = false;
+                CombatController.attackState.status = false;
+    
+                if (Client.player) Client.lastDeath = {
+                    x: Client.player.render_position.x,
+                    y: Client.player.render_position.y
+                };
+    
+                respawnPage.style.display = "flex";
+                gameUI.style.display = "none";
+                respawnMainCard.style.display = "none";
+                deathText.style.display = "flex";
+    
+                setTimeout(() => {
+                    if (!document.documentElement.hasAttribute("uhohboring")) this.exportPacketLog();
+                }, 1e3);
+    
+                if (Client.mode === "normal") setTimeout(() => {
+                    deathText.style.display = "none";
+                    respawnMainCard.style.display = "flex";
+    
+                    if (Menu.getValue("autoRespawn"))
+                        enterGameBtn.click();
+                }, 2e3);
+            },
+
+            [PacketMap.SERVER_TO_CLIENT.UPDATE_ITEMS]: (data, wpn) => {
+                updateItems(data, wpn);
+            },
+
+            [PacketMap.SERVER_TO_CLIENT.SERVER_RESTARTING]: (secondsLeft) => {
+                showServerRestarting(secondsLeft);
+            },
+
+            [PacketMap.CUSTOM_PACKETS.SERVER_TO_CLIENT.ADD_PLACEMENT_MARKER]: (x, y, angle, id, placementType) => {
+                PlacementSystem.addMarkerRaw(x, y, angle, id, placementType);
+            },
+
+            [PacketMap.CUSTOM_PACKETS.SERVER_TO_CLIENT.UPDATE_OBJECT_HEALTH]: (sid, health) => {
+                const gameObject = ObjectManager.getObject(sid);
+                if (gameObject) gameObject.health = health;
             }
-        });
+        };
 
-        this.socket.on(PacketMap.SERVER_TO_CLIENT.KILL_PLAYER, () => {
-            Client.isAlive = false;
-            Client.upgradesObtained.clear();
-            CombatController.attackState.confirm = false;
-            CombatController.attackState.status = false;
-
-            if (Client.player) Client.lastDeath = {
-                x: Client.player.render_position.x,
-                y: Client.player.render_position.y
-            };
-
-            respawnPage.style.display = "flex";
-            gameUI.style.display = "none";
-            respawnMainCard.style.display = "none";
-            deathText.style.display = "flex";
-
-            setTimeout(() => {
-                if (!document.documentElement.hasAttribute("uhohboring")) this.exportPacketLog();
-            }, 1e3);
-
-            if (Client.mode === "normal") setTimeout(() => {
-                deathText.style.display = "none";
-                respawnMainCard.style.display = "flex";
-
-                if (Menu.getValue("autoRespawn"))
-                    enterGameBtn.click();
-            }, 2e3);
-        });
-
-        this.socket.on(PacketMap.SERVER_TO_CLIENT.UPDATE_ITEMS, (data, wpn) => {
-            updateItems(data, wpn);
-        });
-
-        this.socket.on(PacketMap.SERVER_TO_CLIENT.SERVER_RESTARTING, (secondsLeft) => {
-            showServerRestarting(secondsLeft);
-        });
-
-        this.socket.on(PacketMap.CUSTOM_PACKETS.SERVER_TO_CLIENT.ADD_PLACEMENT_MARKER, (x, y, angle, id, placementType) => {
-            PlacementSystem.addMarkerRaw(x, y, angle, id, placementType);
-        });
-
-        this.socket.on(PacketMap.CUSTOM_PACKETS.SERVER_TO_CLIENT.UPDATE_OBJECT_HEALTH, (sid, health) => {
-            const gameObject = ObjectManager.getObject(sid);
-            if (gameObject) gameObject.health = health;
-        });
+        const socketRef = this.socket;
+        const register = <K extends HandledServerPacket>(type: K) => socketRef.on(type, handlers[type]);
+        for (const type of Object.keys(handlers) as HandledServerPacket[]) register(type);
     }
 }
 

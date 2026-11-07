@@ -187,4 +187,19 @@ export interface MOOMOO_SERVER_TO_CLIENT_MAP {
     "F": [];
 }
 
+/**
+ * Server packets SocketListener deliberately registers no handler for:
+ * - "io-init" (handshake) and "B" (disconnect reason) are handled inside Socket before batching;
+ * - "9" (minimap ping) is ignored;
+ * - "t" (Falcon's old VALUE_PEEK custom packet) is never sent;
+ * - "W" and "F" exist only in v1.9.0, which sandbox.moomodding.io (v1.8.2) never sends.
+ */
+export const UNHANDLED_SERVER_PACKETS = ["io-init", "B", "9", "t", "W", "F"] as const;
+
+/** Every server packet SocketListener must handle. */
+export type HandledServerPacket = Exclude<keyof MOOMOO_SERVER_TO_CLIENT_MAP, (typeof UNHANDLED_SERVER_PACKETS)[number]>;
+
+/** One handler per handled packet, with the packet's own argument types: a new packet without one won't compile. */
+export type PacketHandlers = { [K in HandledServerPacket]: (...args: MOOMOO_SERVER_TO_CLIENT_MAP[K]) => void };
+
 export default PacketMap;
