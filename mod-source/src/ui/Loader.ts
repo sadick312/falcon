@@ -2,6 +2,7 @@ import items from "@constants/items";
 import Client from "@core/Client";
 import ObjectManager from "@core/logic/ObjectManager";
 import PacketReplayer from "@core/PacketReplayer";
+import PacketRecorder from "@services/packet-recorder/PacketRecorder";
 import { checkGameVersion } from "@core/utils/GameVersionCheck";
 import { stopVanillaGame } from "@core/utils/VanillaGameGuard";
 import Endpoints from "@constants/Endpoints";
@@ -155,12 +156,17 @@ function hookMainMenuBtns() {
         fileReader.readAsArrayBuffer(file);
     };
 
+    // Both came from a desktop build of Falcon. A web page can't open a folder or delete downloaded files, and these
+    // only showed a loading screen that never went away; they now say where the logs are and do what a page can.
     openLogsFolderBtn.onclick = () => {
-        loadingCirclePage.style.display = "flex";
+        alert("Falcon saves packet logs as .fpl files in your browser's Downloads folder.\n\n" +
+            "Press Ctrl+J to open Chrome's downloads list, then click \"Show in folder\" on a log.");
     };
 
     clearAllLogsBtn.onclick = () => {
-        loadingCirclePage.style.display = "flex";
+        PacketRecorder.clearSession();
+        alert("Cleared the packet log Falcon keeps in memory.\n\n" +
+            "Logs you already saved are .fpl files in your Downloads folder; delete them there.");
     };
 
     quitClientBtn.onclick = () => { };

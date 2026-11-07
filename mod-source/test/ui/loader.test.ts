@@ -231,6 +231,28 @@ describe("main menu buttons", () => {
         expect(byId("loading-page").style.display).toBe("none");
     });
 
+    it("Open Logs Folder says where the logs are instead of a loading screen that never ends", async () => {
+        await startLoader();
+        const alert = vi.spyOn(window, "alert").mockImplementation(() => { });
+        byId("open-logs-folder-btn").click();
+
+        expect(byId("loading-page").style.display).not.toBe("flex");
+        expect(alert).toHaveBeenCalledTimes(1);
+        expect(alert.mock.calls[0][0]).toMatch(/Downloads folder/);
+    });
+
+    it("Clear All Logs clears the in-memory packet log and says where saved logs are", async () => {
+        await startLoader();
+        const { default: PacketRecorder } = await import("@services/packet-recorder/PacketRecorder");
+        const clear = vi.spyOn(PacketRecorder, "clearSession");
+        const alert = vi.spyOn(window, "alert").mockImplementation(() => { });
+        byId("clear-all-logs-btn").click();
+
+        expect(byId("loading-page").style.display).not.toBe("flex");
+        expect(clear).toHaveBeenCalledTimes(1);
+        expect(alert.mock.calls[0][0]).toMatch(/Cleared the packet log/);
+    });
+
     it("Discord opens the invite in a new tab", async () => {
         await startLoader();
         const open = vi.spyOn(window, "open").mockReturnValue(null);
