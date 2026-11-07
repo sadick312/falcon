@@ -56,7 +56,7 @@ function isClosableSocket(value: unknown): value is ClosableSocket {
 }
 
 /** Keys the game blocks: F12, Ctrl+Shift+I / J / C, Ctrl+U. */
-export function isDevToolsShortcut(event: KeyboardEvent) {
+function isDevToolsShortcut(event: KeyboardEvent) {
     const key = event.keyCode;
     if (key === 123) return true;
     if (event.ctrlKey && event.shiftKey && (key === 73 || key === 74 || key === 67)) return true;

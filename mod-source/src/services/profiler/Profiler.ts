@@ -103,10 +103,6 @@ export function profileSummary(): Record<string, ProfileSummary> {
     return out;
 }
 
-export function resetProfiler() {
-    for (const name of Object.keys(stats)) delete stats[name];
-}
-
 /** Shows the last second's average and worst time per measurement, plus the worst since load. */
 function startOverlay() {
     const overlay = document.createElement("div");

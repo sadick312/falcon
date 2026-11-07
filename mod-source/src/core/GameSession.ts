@@ -21,7 +21,7 @@ import PacketRecorder from "@services/packet-recorder/PacketRecorder";
  *
  * Kept: settings, the menu, the packet budget, and ModManager.tick (see ModManager.resetSession).
  */
-export function resetGameState() {
+function resetGameState() {
     PlayerManager.removeAll();
     ObjectManager.removeAll();
     ProjectileManager.projectiles.removeAll();
