@@ -91,9 +91,10 @@ function hookMainMenuBtns() {
             ServerBrowser.selectedOption = mostActiveServer;
             Client.connect(mostActiveServer);
         } else {
-            // getHighest() returns undefined both for "no servers in region" and for a failed fetch
-            // (the latter already showed a notice), so only hide the button when the fetch itself worked.
             loadingCirclePage.style.display = "none";
+            // null: the list loaded but the region has no server, so the button can't help. undefined: the list couldn't
+            // be fetched (a notice already said so); keep the button so the player can try again.
+            if (mostActiveServer === null) largestRecentMultiplayerBtn.style.display = "none";
         }
     };
 

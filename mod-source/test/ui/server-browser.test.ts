@@ -279,7 +279,7 @@ describe("quick-connect lookups", () => {
         const { ServerBrowser } = await load("moomodding");
 
         expect((await ServerBrowser.getHighest("1"))?.key).toBe("1:2");
-        expect(await ServerBrowser.getHighest("9")).toBeUndefined();
+        expect(await ServerBrowser.getHighest("9")).toBeNull();
     });
 
     it("find tells 'gone' (null) apart from 'couldn't fetch' (undefined)", async () => {

@@ -294,10 +294,11 @@ export default class ServerBrowser {
         this.showPings(data, renderId);
     }
 
-    static async getHighest(region: string) {
+    /** The busiest server in `region`, null when the region has none, undefined when the list couldn't be fetched. */
+    static async getHighest(region: string): Promise<GameServer | null | undefined> {
         try {
             const data = await this.getData();
-            return data.filter(e => e.region === region).sort((a, b) => b.playerCount - a.playerCount)[0];
+            return data.filter(e => e.region === region).sort((a, b) => b.playerCount - a.playerCount)[0] ?? null;
         } catch (err) {
             showConnectionNotice("server-list", this.errorMessage(err));
             return undefined;

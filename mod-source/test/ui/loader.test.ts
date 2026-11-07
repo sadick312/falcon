@@ -165,7 +165,19 @@ describe("main menu buttons", () => {
             expect(connect).toHaveBeenCalledWith(SERVER);
         });
 
-        it("drops the loading screen when there's no server to join", async () => {
+        it("hides itself when the saved region has no server left", async () => {
+            const { ServerBrowser, connect } = await startLoader();
+            vi.spyOn(ServerBrowser, "getHighest").mockResolvedValue(null);
+
+            byId("largest-recent-multiplayer-btn").click();
+            await settle();
+
+            expect(connect).not.toHaveBeenCalled();
+            expect(byId("loading-page").style.display).toBe("none");
+            expect(byId("largest-recent-multiplayer-btn").style.display).toBe("none");
+        });
+
+        it("stays when the list couldn't be fetched, so you can try again", async () => {
             const { ServerBrowser, connect } = await startLoader();
             vi.spyOn(ServerBrowser, "getHighest").mockResolvedValue(undefined);
 
@@ -174,6 +186,7 @@ describe("main menu buttons", () => {
 
             expect(connect).not.toHaveBeenCalled();
             expect(byId("loading-page").style.display).toBe("none");
+            expect(byId("largest-recent-multiplayer-btn").style.display).not.toBe("none");
         });
     });
 
