@@ -2,7 +2,57 @@
 
 What changed in Falcon, newest first. Each entry names the commit(s) for the details.
 
-## Unreleased (branch improve/phased)
+## Unreleased (branch review/stability, groups A-D)
+
+### Added
+- **Shame Grind** works (it was greyed out and never built). While the enemy is trapped it fakes Apple Insta with
+  bull hits so they eat too fast and gain shame, then lets Apple Insta finish once they're shamed, stop eating
+  right after hits, or after 12 fakes. Off by default. (fe8cbb7)
+- Falcon stops the vanilla 1.8.2 game when it runs underneath (pasted into the console, an old cached site loader,
+  a hook mod): closes its connection, stops its drawing, and gives F12 back. (9f5725b)
+- README: step-by-step Quick Inject and console instructions, Reconnect, and a troubleshooting section for the F12
+  console with what each Falcon message means.
+- `mod-source/bench/analysis/`: the smoothing and batch-wait measurements behind Group C. (a7c71a2)
+
+### Changed
+- **Reconnect** connects to the same server again in the page instead of reloading it, so it also works when
+  Falcon was pasted into the console. (55bd182)
+- Defense System: two decisions that used a coin flip now follow fixed rules. Pattern Recognition leaves out 1
+  spike-tick threat on even ticks and 2 on odd ones; a spike that can be placed on us counts while our shame is
+  0-2. (742b9f2)
+- Safe Walk counts 1.8.2's snow and water slowdowns and the river current, so in the snow and the river it stops
+  only when a spike is really in reach. Plain ground is unchanged. (eaef9eb)
+- Auto Grind asks the packet budget before placing; with room it places exactly as before. (f72da0d)
+
+### Fixed
+- Connecting again without a page reload kept the old server's players, buildings, projectiles, animals,
+  alliances and queued actions, and the new socket got no packet handlers at all. Everything is reset now and the
+  old socket is retired quietly. (1c58924)
+- The river current and the flipper hat ignored platforms: 1.8.2 skips water rules for a player on a platform
+  (`zIndex`). (f7e336e)
+- The late-hit check (pattern recognition while trapped) could count an enemy's damage and knockback twice.
+  (665c1a2)
+- `PlacementSystem.place` couldn't say "building limit full", so hotkeys and Auto Place counted refused
+  placements toward the 4-per-tick cap and drew markers for them. It now returns placed / full / not owned. The
+  1.8.2 limits match Falcon's (99, or 299 for mills, boost pads and teleporters); moomodding.io's own per-group caps
+  aren't public. (8b5fa5d)
+
+### Tests
+- About 190 new tests (477 -> 669): the socket's disconnect, handshake, reconnect and odd-packet paths, every
+  SocketListener handler, the server browser, the page loader, the menu's select / slider / number controls and the
+  config screen (with a save-and-reload round trip of every control), a stricter setting-id check, and branch
+  tests for AttackManager, Auto Place, Push Strikes (Predictive), Object Breaker, Knockback Instakills and Spike
+  Grader. Every fix above has a test that fails on the old code. (3bef003, 59ca5da, 4b1e345, 70f50c7, 3c5a806,
+  adf4e13)
+
+### Measured, not changed (Group C)
+- On-screen smoothing: no rubber-banding for straight movement; 0.7 units in total when a player stops during a
+  lag spike. Matching the tick interval would cut ~7 units of lag but make motion ~50% less even on jittery Wi-Fi.
+- Angle Finder: about 2 ungraded calls per visible enemy per tick plus our own graded one; a merged, grid-based
+  redesign is estimated at 5-8% of a tick, under the 10% noise line.
+- PacketBatcher's 0.5 ms wait costs about 0.6% of one core; every alternative waits longer.
+
+## Earlier unreleased work (branch improve/phased)
 
 ### Fixed
 - The mod no longer runs on the death screen. While you were dead, PacketBatcher kept faking a server tick

@@ -1,7 +1,7 @@
 # Falcon
 
 A custom client for MooMoo.io: automation (combat, defense, placing, healing) and quality-of-life features,
-with 88 settings to fit every play style. It runs as a Chrome extension on sandbox.moomoo.io (v1.9.0) and on
+with about 90 settings to fit every play style. It runs as a Chrome extension on sandbox.moomoo.io (v1.9.0) and on
 moomodding.io game pages (sandbox.moomodding.io, v1.8.2).
 > Client is unpatched for v1.9.0 but not optimized for v1.9.0 combat.
 
@@ -60,10 +60,30 @@ Enter).
 
 ## Quick Inject (moomodding.io, no extension)
 
-1. Run `npm run inject:build`. It writes `mod-source\dist\falcon-quick-inject.js`.
-2. On moomodding.io, open Quick Inject, choose "Bundle Replacement" and paste the whole file.
+Use this if you don't want to install the extension. It only works on moomodding.io.
 
-The file can also be pasted into the DevTools console on a sandbox.moomodding.io game page.
+1. **Build the file** (after steps 1-4 of the setup above):
+   ```bash
+   npm run inject:build
+   ```
+   It writes `mod-source\dist\falcon-quick-inject.js` (about 660 KB).
+2. **Copy all of it.** Open the file in Notepad (right-click > Open with > Notepad), press **Ctrl+A** to select
+   everything, then **Ctrl+C** to copy it.
+3. **Paste it into Quick Inject.** On moomodding.io, open the **Quick Inject** box, choose
+   **Bundle Replacement**, paste with **Ctrl+V**, and start the game. moomodding.io runs it in place of the
+   normal game.
+4. **Or paste it into the console** of an open game page: on a sandbox.moomodding.io game page press **F12**,
+   click the **Console** tab, paste, and press **Enter**. If Chrome says pasting is blocked, type
+   `allow pasting` in the console first and press Enter.
+
+Either way Falcon replaces the page. If the normal game was already running underneath (the console way),
+Falcon stops it: it closes the game's own connection and stops its drawing, and the console shows
+`[Falcon] Stopped the vanilla game underneath Falcon`.
+
+Pasting the file a second time on the same page does nothing; reload the page to start over.
+
+**Disconnected?** Click **Reconnect**. It connects to the same server again without reloading the page, so it
+also works after pasting into the console (a page reload would remove Falcon until you paste it again).
 
 ## Commands
 
@@ -72,7 +92,7 @@ The file can also be pasted into the DevTools console on a sandbox.moomodding.io
 | `npm run install:all` | Installs everything, including the lint tools. |
 | `npm run build` | Builds the mod, the Quick Inject file and the extension. |
 | `npm run dev` | Watches and rebuilds the mod and the extension while you work. |
-| `npm test` | Runs the tests (Vitest). |
+| `npm test` (or `npx vitest run`) | Runs all the tests (Vitest). |
 | `npm run test:smoke` | Builds everything and checks that every output is in place. |
 | `npm run typecheck` | Checks the TypeScript types of the mod, its tests and the extension. |
 | `npm run lint` / `npm run lint:fix` | Finds (or fixes) common mistakes with ESLint. |
@@ -109,11 +129,41 @@ The server may be full, restarting or down. Pick another server in the server li
 Settings are only kept while **Auto Save Configs** (Configs tab) is on. You can also save named configs
 there, or **Export** them to a file and **Import** it later.
 
+**Disconnected, or "Server handshake failed"**
+Click **Reconnect** on the screen that appears. If it keeps failing, the server may be down or restarting;
+try another server from the server list (Multiplayer).
+
 **`eslint is not installed yet`**
 Run `npm run install:all` once (the lint tools have their own install).
 
 **Errors after pulling new code**
 Run `npm run install:all` again, then `npm run build`.
+
+## Troubleshooting with the F12 console
+
+Most problems leave a message in Chrome's console, and it's the quickest way to see what went wrong.
+
+1. On the game page, press **F12** (or **Ctrl+Shift+I**). A panel opens.
+2. Click the **Console** tab.
+3. To see only Falcon's messages, type `Falcon` in the **Filter** box at the top of the console.
+4. Red lines are errors, yellow lines are warnings.
+
+What the common messages mean:
+
+| Message | What it means | What to do |
+|---|---|---|
+| `[Falcon] Game version v1.8.2 (supported).` | All good: Falcon recognised the game. | Nothing. |
+| `[Falcon] This page runs MooMoo.io v..., but Falcon supports v...` | The site updated its game. | Falcon may misbehave; check for a newer Falcon. |
+| `[Falcon] Stopped the vanilla game underneath Falcon ...` | The normal game was running too; Falcon switched it off. | Nothing. |
+| `[Falcon] socket-open: ...` | The game server didn't answer. | Click Reconnect, or pick another server. |
+| `[Falcon] handshake: No init packet from the server within 10s.` | Connected, but the server never started the game. | Click Reconnect, or pick another server. |
+| `[Falcon] server-list: ...` | The server list couldn't be loaded. | Check your internet, then press Refresh in the server list. |
+| `[Falcon] Ignoring unknown packet '...'` | The server sent something Falcon doesn't use. | Harmless. |
+| `[Falcon] Handler for packet '...' failed.` | A bug in Falcon while reading a server message. | Copy the red text (right-click > Copy) and report it. |
+| `[Falcon] initFalconClient failed.` or a red "Falcon could not start" box | Falcon crashed while starting. | Run `npm run build`, reload, and report the red text if it stays. |
+
+To share an error: right-click the red line > **Copy**, or right-click in the console > **Save as...** to save
+the whole log to a file.
 
 ## Documentation
 
