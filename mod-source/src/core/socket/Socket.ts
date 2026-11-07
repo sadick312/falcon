@@ -1,4 +1,5 @@
 import Endpoints, { HANDSHAKE_TIMEOUT_MS } from "@constants/Endpoints";
+import { socketHooks } from "@core/socket/socketHooks";
 import { GAME_V182 } from "@constants/gameVersion";
 import { deathText } from "@core/Client";
 import GameEventTracker from "@core/mod/utils/GameEventTracker";
@@ -34,15 +35,6 @@ export const respawnMainCard = getElem("respawn-page-main-card");
 
 // msgpack's decode() builds a new Decoder per call; reuse one for every server message.
 const decoder = new Decoder();
-
-/**
- * Filled in by SocketListener when it loads (before any socket exists), so this module doesn't import
- * SocketListener back. That import made Socket <-> SocketListener a circular dependency.
- */
-export const socketHooks = {
-    onDispatch: (_type: keyof MOOMOO_SERVER_TO_CLIENT_MAP, _data: unknown) => { },
-    onClose: () => { }
-};
 
 export type MixKeyFunc = (key: Uint8Array, offset: number) => Uint8Array;
 

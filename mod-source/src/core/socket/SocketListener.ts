@@ -26,7 +26,8 @@ import LoadAiEvent from "@core/socket/events/core/LoadAiEvent";
 import PlayerUpdateEvent from "@core/socket/events/core/PlayerUpdateEvent";
 import StoreItemsUpdateEvent from "@core/socket/events/core/StoreItemsUpdateEvent";
 import FakeSocket from "@core/socket/FakeSocket";
-import Socket, { respawnMainCard, socketHooks } from "@core/socket/Socket";
+import Socket, { respawnMainCard } from "@core/socket/Socket";
+import { socketHooks } from "@core/socket/socketHooks";
 import PacketBatcher from "@core/utils/PacketBatcher";
 import Menu, { ChatLog } from "@menu/Menu";
 import { addChatLog } from "@menu/utils/drawChatLog";
@@ -478,6 +479,6 @@ export default class SocketListener {
     }
 }
 
-// Socket calls these instead of importing this module (see socketHooks in Socket.ts).
+// Socket calls these instead of importing this module (see core/socket/socketHooks.ts).
 socketHooks.onDispatch = (type, data) => logPacket(type, data);
 socketHooks.onClose = () => SocketListener.stopPinging();
