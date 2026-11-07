@@ -423,7 +423,8 @@ export default class SocketListener {
             gameObject.xWiggle += Math.cos(dir) * ScriptConfig.GATHER_WIGGLE;
             gameObject.yWiggle += Math.sin(dir) * ScriptConfig.GATHER_WIGGLE;
 
-            if (gameObject.maxHealth)
+            // Only buildings: trees, rocks and bushes have endless health (maxHealth Infinity), which counted as one.
+            if (gameObject.hasHealth)
                 Client.buildingsHit.push(gameObject);
         });
 

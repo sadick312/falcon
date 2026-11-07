@@ -259,6 +259,13 @@ describe("buildings and projectiles", () => {
         expect(Client.buildingsHit).toHaveLength(0);
     });
 
+    it("doesn't count a hit tree or rock as a building hit (they have endless health)", async () => {
+        const { h, Client } = await spawned();
+        game!.addObjects([{ sid: 501, x: 900, y: 900 }]);
+        h.L(1, 501);
+        expect(Client.buildingsHit).toHaveLength(0);
+    });
+
     it("ignores item counts that arrive before we spawned", async () => {
         game = await startGame();
         expect(() => game!.handlers.S(1, 5)).not.toThrow();
