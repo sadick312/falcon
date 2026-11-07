@@ -3,6 +3,7 @@
 // name into a property lookup. Same load order as replay.ts's module mode.
 export * as profiler from "@services/profiler/Profiler";
 import "@core/socket/SocketListener";
+import "@core/Connection";
 export { default as Menu } from "@menu/Menu";
 export { default as Client } from "@core/Client";
 export { default as AngleFinder } from "@placing/AngleFinder";

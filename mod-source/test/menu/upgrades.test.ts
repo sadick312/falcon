@@ -24,6 +24,7 @@ beforeAll(async () => {
     }
 
     Client.mode = "replay";
+    await import("@core/Connection");
     await Client.connect();
 }, 30_000);
 

@@ -1,21 +1,12 @@
-import { LOCAL_SERVER_HOST } from "@constants/Endpoints";
-import GameObject from "@constants/GameObject";
-import Player from "@entities/Player";
+import type GameObject from "@constants/GameObject";
+import type Player from "@entities/Player";
 import PlayerManager from "@core/logic/players/PlayerManager";
-import { PlayerSimulationState } from "@core/mod/simulation/SimulationStates";
-import { endPreviousSession } from "@core/GameSession";
-import FakeSocket from "@core/socket/FakeSocket";
-import Socket, { respawnMainCard } from "@core/socket/Socket";
-import SocketListener from "@core/socket/SocketListener";
-import CaptchaManager from "@core/utils/CaptchaManager";
-import PacketTracker from "@core/utils/PacketTracker";
-import { AllianceDataType, AllianceNotifi, Point } from "@mod-types/index";
-import { PlacementType } from "@placing/utils/Placer";
-import TaskScheduler from "@services/event-timer/TaskScheduler";
-import { reconnect } from "@ui/ConnectionError";
-import { enterGameBtn, resetScreenSize } from "@ui/Hook";
-import { loadingCirclePage, mainMenu, respawnPage } from "@ui/Loader";
-import ServerBrowser, { GameServer, serverBrowserPage } from "@ui/ServerBrowser";
+import type { PlayerSimulationState } from "@core/mod/simulation/SimulationStates";
+import type FakeSocket from "@core/socket/FakeSocket";
+import type Socket from "@core/socket/Socket";
+import type { AllianceDataType, AllianceNotifi, Point } from "@mod-types/index";
+import type { PlacementType } from "@placing/utils/Placer";
+import type { GameServer } from "@ui/ServerBrowser";
 import ScriptConfig from "@utils/config/ScriptConfig";
 import getElem from "@utils/dom/getElem";
 
@@ -43,9 +34,9 @@ export class Marker {
     }
 }
 
-const gameInformationMetadata = getElem("game-information-metadata");
-
-const disconnectedPage = getElem("disconnected-page");
+function notLoaded(): never {
+    throw new Error("Client.connect/reconnect are set by core/Connection.ts; import it before connecting.");
+}
 
 export const pingDisplay = getElem<"div">("ping-display");
 export const deathText = getElem("death-text");
@@ -81,56 +72,11 @@ export default class Client {
     static mode: "replay" | "normal" = "normal";
     static upgradesObtained = new Set<number>();
 
-    /** Connects to `server`, else the server picked in the browser, else the local dev server. */
-    static async connect(server?: GameServer) {
-        loadingCirclePage.style.display = "none";
-        serverBrowserPage.style.display = "none";
-        respawnPage.style.display = "flex";
-        mainMenu.style.display = "none";
+    /** Connects to `server`, else the server picked in the browser, else the local dev server. Set by core/Connection.ts. */
+    static connect: (server?: GameServer) => Promise<void> = notLoaded;
 
-        // Connecting again in the same page: drop the old socket and everything learned from its server.
-        endPreviousSession();
-
-        // Without the packet budget every placement request is refused, so replays (and the replay benchmark)
-        // would never show Falcon's placements.
-        PacketTracker.init();
-
-        if (this.mode === "replay") {
-            this.socket = new FakeSocket();
-            resetScreenSize();
-            SocketListener.hookEvents(this.socket);
-            return;
-        }
-
-        const selection = server ?? ServerBrowser.selectedOption;
-        const wsAddress = selection?.host ?? LOCAL_SERVER_HOST;
-        this.lastServer = selection;
-
-        if (selection) ServerBrowser.saveRecent(selection);
-
-        gameInformationMetadata.innerText = `region: ${selection?.region ?? "local"} | NAME: ${selection?.name ?? "n/a"}`;
-        TaskScheduler.init();
-        CaptchaManager.renderChallenge(wsAddress);
-    }
-
-    /**
-     * The Reconnect button: connects to the same server again without reloading the page. Replays have no server,
-     * so there it still reloads.
-     */
-    static reconnect() {
-        if (this.mode === "replay") {
-            location.reload();
-            return;
-        }
-
-        // Back to the respawn card with Enter Game greyed out until the new socket opens (Socket.onOpen enables it).
-        disconnectedPage.style.display = "none";
-        deathText.style.display = "none";
-        respawnMainCard.style.display = "flex";
-        enterGameBtn.classList.add("disabled");
-
-        this.connect(this.lastServer);
-    }
+    /** The Reconnect button's action: the same server again, without a page reload. Set by core/Connection.ts. */
+    static reconnect: () => void = notLoaded;
 
     static isFriendly(sid: number) {
         return this.mySID === sid || (Client.player?.team && this.alliancePlayers.includes(sid));
@@ -154,4 +100,3 @@ export default class Client {
     static placementTime = ["0", "0", "0", "0", "0"];
     static placementTimeHead = 0;
 }
-reconnect.run = () => Client.reconnect();

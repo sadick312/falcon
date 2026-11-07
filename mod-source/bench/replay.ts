@@ -87,6 +87,7 @@ async function loadMod(mode: "modules" | "bundle"): Promise<ModApi> {
     const profiler = await import("@services/profiler/Profiler");
     // Same load order as the bundle, so the Socket <-> SocketListener cycle resolves.
     await import("@core/socket/SocketListener");
+    await import("@core/Connection");
     const { default: Menu } = await import("@menu/Menu");
     const { default: Client } = await import("@core/Client");
     const { default: AngleFinder } = await import("@placing/AngleFinder");

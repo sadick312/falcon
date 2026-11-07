@@ -17,6 +17,7 @@ beforeEach(async () => {
     await Menu.init();
     Client = (await import("@core/Client")).default;
     Client.mode = "replay";
+    await import("@core/Connection");
     await Client.connect();
     handlers = (Client.socket as unknown as { handlers: Handlers }).handlers;
 }, 30_000);

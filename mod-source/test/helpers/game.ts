@@ -58,6 +58,8 @@ export async function startGame(options: StartOptions = {}) {
     vi.spyOn(console, "log").mockImplementation(() => { });
 
     await import("@core/socket/SocketListener");
+
+    await import("@core/Connection");
     const { default: items } = await import("@constants/items");
     // Loader.prepareUI's hotbar elements, without the icons.
     const actionBar = document.getElementById("action-bar")!;

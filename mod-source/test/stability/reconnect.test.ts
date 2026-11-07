@@ -44,6 +44,8 @@ describe("reconnecting without a page reload", () => {
         expect(m.ais.all.length).toBe(1);
         expect(Client.allianceMap.size).toBeGreaterThan(0);
 
+        await import("@core/Connection");
+
         await Client.connect();
 
         expect(m.PlayerManager.players.handler.all).toHaveLength(0);
@@ -71,6 +73,8 @@ describe("reconnecting without a page reload", () => {
         const m = await playedGame();
         const { Client } = game!;
         const oldSocket = Client.socket;
+
+        await import("@core/Connection");
 
         await Client.connect();
         const newSocket = Client.socket as unknown as { handlers: Record<string, (...args: unknown[]) => void> };
@@ -202,6 +206,7 @@ describe("the Reconnect button", () => {
         const { default: Client } = await import("@core/Client");
         const { encode } = await import("@msgpack/msgpack");
         Client.mode = "normal";
+        await import("@core/Connection");
         await Client.connect(SERVER);
 
         const first = Client.socket as unknown as WebSocket;

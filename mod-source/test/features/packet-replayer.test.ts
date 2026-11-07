@@ -41,6 +41,7 @@ describe("Packet replayer", () => {
         const { default: PacketTracker } = await import("@core/utils/PacketTracker");
         const { default: Client } = await import("@core/Client");
         Client.mode = "replay";
+        await import("@core/Connection");
         await Client.connect();
         expect(PacketTracker.request("PLACE", 4)).toBe(4);
     });

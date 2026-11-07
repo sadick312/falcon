@@ -1,4 +1,6 @@
 import Loader from "./ui/Loader";
+// Puts connect/reconnect on Client (see core/Connection.ts).
+import "./core/Connection";
 
 declare global {
     interface Window {

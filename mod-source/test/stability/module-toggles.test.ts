@@ -77,6 +77,7 @@ async function replay(setup: (menu: MenuApi, toggles: string[]) => void, midway?
 
         const { default: Client } = await import("@core/Client");
         Client.mode = "replay";
+        await import("@core/Connection");
         await Client.connect();
 
         const socket = Client.socket as unknown as { handlers: Record<string, (...args: unknown[]) => void> };

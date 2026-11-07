@@ -28,6 +28,7 @@ async function spawnedClient(): Promise<Handlers> {
     await Menu.init();
     const { default: Client } = await import("@core/Client");
     Client.mode = "replay";
+    await import("@core/Connection");
     await Client.connect();
 
     const handlers = (Client.socket as unknown as { handlers: Handlers }).handlers;
@@ -90,6 +91,7 @@ describe("packets before we spawn", () => {
         await Menu.init();
         const { default: Client } = await import("@core/Client");
         Client.mode = "replay";
+        await import("@core/Connection");
         await Client.connect();
         const handlers = (Client.socket as unknown as { handlers: Handlers }).handlers;
 
