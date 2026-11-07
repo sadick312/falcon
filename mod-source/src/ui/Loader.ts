@@ -3,6 +3,8 @@ import Client from "@core/Client";
 import ObjectManager from "@core/logic/ObjectManager";
 import PacketReplayer from "@core/PacketReplayer";
 import { checkGameVersion } from "@core/utils/GameVersionCheck";
+import { stopVanillaGame } from "@core/utils/VanillaGameGuard";
+import Endpoints from "@constants/Endpoints";
 import CameraManager from "@rendering/core/CameraManager";
 import SpriteCache from "@rendering/core/SpriteCache";
 import RenderingConfig from "@rendering/RenderingConfig";
@@ -261,6 +263,9 @@ export default class Loader {
     }
 
     static async main() {
+        // On sandbox.moomodding.io the vanilla 1.8.2 game can be running underneath (see VanillaGameGuard);
+        // stop it before Falcon opens its own connection.
+        if (Endpoints.mode === "moomodding") stopVanillaGame({ isOwnSocket: (socket) => socket === Client.socket });
         checkGameVersion();
         importTemporaryObjects();
         this.prepareUI();
