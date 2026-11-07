@@ -36,6 +36,18 @@ export default class PacketBatcher {
         this.channel.port1.onmessage = () => this.poll();
     }
 
+    /** Drops packets still waiting from the previous connection and stops its fake-tick watchdog. */
+    static reset() {
+        this.buffer.length = 0;
+        this.ordered.length = 0;
+        if (this.watchdogTimer !== null) {
+            clearTimeout(this.watchdogTimer);
+            this.watchdogTimer = null;
+        }
+        this.tickJitter = 0;
+        this.lastRealTick = 0;
+    }
+
     private static trackTickJitter(now: number) {
         const interval = now - this.lastRealTick;
         this.lastRealTick = now;

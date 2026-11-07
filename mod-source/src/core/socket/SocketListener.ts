@@ -156,15 +156,17 @@ export default class SocketListener {
         this.pingTimer = undefined;
     }
 
+    /** Attaches every packet handler to `socket`. Again for a new socket after a reconnect; once per socket. */
     static hookEvents(socket: Socket | FakeSocket) {
-        if (this.isInitialized) return;
+        if (this.isInitialized && this.socket === socket) return;
 
         this.isInitialized = true;
         this.socket = socket;
+        // A previous socket's ping loop must not keep running (also when the new one is a replay's FakeSocket).
+        this.stopPinging();
 
         if (socket instanceof Socket) {
-            // Stop first: stopPinging() clears awaitingPong, which would make us ignore the reply to this first ping.
-            this.stopPinging();
+            // Stop first (above): stopPinging() clears awaitingPong, which would make us ignore the reply to this first ping.
             this.pingSocket();
             this.pingTimer = window.setInterval(() => this.pingSocket(), 1e3);
         }

@@ -37,6 +37,14 @@ export default class PacketRecorder {
         window.setInterval(() => this.advanceSlots(performance.now()), 1000);
     }
 
+    /** Forgets everything recorded from the previous connection, so a log never mixes two servers' players. */
+    static clearSession() {
+        this.permanentData.clear();
+        for (const slot of this.timeSlots) slot.length = 0;
+        this.idToSidMap = {};
+        this.lastSlotTime = performance.now();
+    }
+
     private static advanceSlots(now: number) {
         const elapsed = Math.floor((now - this.lastSlotTime) / 1e3);
         if (elapsed <= 0) return;

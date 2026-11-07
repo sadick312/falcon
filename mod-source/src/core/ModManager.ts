@@ -97,6 +97,26 @@ export default class ModManager {
     static brainState: ModBrainState = this.createDefaultState();
     private static tickQueue: TickTask[] = [];
 
+    /**
+     * Clears what belongs to one connection: queued actions, enemy lists, buildings about to break. `tick` keeps
+     * counting on purpose; modules remember the tick they last did something and compare it with the current one.
+     */
+    static resetSession() {
+        this.tickQueue.length = 0;
+        this.willBreakObjects.length = 0;
+        this.justAttacked.length = 0;
+        this.activityList.length = 0;
+
+        const enemies = this.enemyData;
+        enemies.nearby.length = 0;
+        enemies.nearest = null;
+        enemies.all.length = 0;
+        enemies.angle = 0;
+        enemies.rangedInstaThreats = 0;
+
+        this.brainState = this.createDefaultState();
+    }
+
     private static createDefaultState(): ModBrainState {
         return {
             tick: -1,

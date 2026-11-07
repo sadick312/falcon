@@ -52,6 +52,13 @@ export default class PotentialObjectManager {
     /** Where add() last found an object in range. Adds come from neighbouring angles, so the next match is usually close by. */
     private static lastMatchIndex = 0;
 
+    static removeAll() {
+        this.allObjects.length = 0;
+        this.closeObjects.length = 0;
+        this.onRenderObjects.length = 0;
+        this.lastMatchIndex = 0;
+    }
+
     static update(x: number, y: number, scale: number) {
         const allObjects = this.allObjects;
         const radius = 50 + scale;

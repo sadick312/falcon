@@ -69,6 +69,8 @@ export default class Socket extends NativeWebSocket {
     private legacyAdapter = Endpoints.gameVersion === GAME_V182.version ? new LegacyPacketAdapter() : null;
 
     private hasOpened = false;
+    /** Set when a newer connection replaces this one: its late messages, close event and queued sends are ignored. */
+    private disposed = false;
     private handshakeDone = false;
     private errorShown = false;
     /** Reason from the server's DISCONNECT packet, shown when the socket closes. */
@@ -89,6 +91,21 @@ export default class Socket extends NativeWebSocket {
         this.onclose = (ev) => this.onClose(ev);
     }
 
+    /**
+     * Ends this connection for good before a new one starts: no disconnect screen, no more packets into the game
+     * state, no sends (also none queued by the artificial ping setting).
+     */
+    dispose() {
+        if (this.disposed) return;
+        this.disposed = true;
+        this.clearHandshakeTimer();
+        if (this.readyState === WebSocket.CONNECTING || this.readyState === WebSocket.OPEN) this.close();
+    }
+
+    get isDisposed() {
+        return this.disposed;
+    }
+
     private clearHandshakeTimer() {
         if (this.handshakeTimer === undefined) return;
         clearTimeout(this.handshakeTimer);
@@ -97,6 +114,7 @@ export default class Socket extends NativeWebSocket {
 
     private onClose(ev: CloseEvent) {
         this.clearHandshakeTimer();
+        if (this.disposed) return;
         socketHooks.onClose();
 
         if (this.errorShown) return;
@@ -121,6 +139,7 @@ export default class Socket extends NativeWebSocket {
     }
 
     private onOpen(_ev: Event) {
+        if (this.disposed) return;
         this.hasOpened = true;
 
         // Local private servers use the plain encoder and may never send io-init, so don't police them.
@@ -167,6 +186,7 @@ export default class Socket extends NativeWebSocket {
     }
 
     private onMessage(ev: MessageEvent) {
+        if (this.disposed) return;
         const bytes = new Uint8Array(ev.data);
         this.manager.maskIncoming(bytes);
 
@@ -243,6 +263,7 @@ export default class Socket extends NativeWebSocket {
         type: K,
         data: unknown
     ) {
+        if (this.disposed) return;
         socketHooks.onDispatch(type, data);
 
         const callback = this.handlers[type];
@@ -290,6 +311,7 @@ export default class Socket extends NativeWebSocket {
     }
 
     private sendActualMsg(type: keyof MOOMOO_CLIENT_TO_SERVER_MAP) {
+        if (this.disposed) return;
         if (this.plainPackets) {
             const binary = CustomEncoder.encode(type, type, this.DATA_BUFFER);
             PacketTracker.add();

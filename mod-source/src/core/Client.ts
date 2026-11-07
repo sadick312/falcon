@@ -3,6 +3,7 @@ import GameObject from "@constants/GameObject";
 import Player from "@entities/Player";
 import PlayerManager from "@core/logic/players/PlayerManager";
 import { PlayerSimulationState } from "@core/mod/simulation/SimulationStates";
+import { endPreviousSession } from "@core/GameSession";
 import FakeSocket from "@core/socket/FakeSocket";
 import Socket from "@core/socket/Socket";
 import SocketListener from "@core/socket/SocketListener";
@@ -81,6 +82,9 @@ export default class Client {
         serverBrowserPage.style.display = "none";
         respawnPage.style.display = "flex";
         mainMenu.style.display = "none";
+
+        // Connecting again in the same page: drop the old socket and everything learned from its server.
+        endPreviousSession();
 
         // Without the packet budget every placement request is refused, so replays (and the replay benchmark)
         // would never show Falcon's placements.
