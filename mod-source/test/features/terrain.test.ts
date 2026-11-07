@@ -95,3 +95,45 @@ describe("flipper hat", () => {
         expect(await hatAt(RIVER_Y, 1)).toBe(BOOSTER);
     });
 });
+
+describe("Safe Walk on snow and water", () => {
+    /**
+     * We walk right toward an enemy spike placed `gap` beyond the touching distance. Safe Walk checks how far one tick
+     * of movement plus coasting to a stop takes us: about 34.6 with booster hat on plain ground (or a platform), 32.4
+     * with flipper hat in the water (current included), 29.9 with winter cap in the snow.
+     */
+    async function walk(y: number, gap: number, zIndex = 0) {
+        const { LIST_ID_MAP, player } = await setUp(y, zIndex);
+        game!.Menu.itemMap.safeWalk.status = true;
+        const { default: ObjectManager } = await import("@core/logic/ObjectManager");
+        game!.addObjects([{ sid: 701, x: 9000, y: 9000, itemId: LIST_ID_MAP.SPIKES, owner: 2 }]);
+        const reach = 35 + ObjectManager.getObject(701)!.getScale();
+        game!.addObjects([{ sid: 700, x: player.real_position.x + reach + gap, y, itemId: LIST_ID_MAP.SPIKES, owner: 2 }]);
+        game!.update([{ sid: ME, zIndex }]);
+
+        game!.Client.lastMoveDir = 0;
+        const before = game!.sent.length;
+        game!.update([{ sid: ME, zIndex }]);
+        return game!.sent.slice(before).filter(p => p.type === "9").map(p => p.args[0]);
+    }
+
+    it("still stops on plain ground when booster speed would reach the spike", async () => {
+        expect(await walk(4000, 33.5)).toEqual([null]);
+    });
+
+    it("lets us walk in the snow, where we can't get that far", async () => {
+        expect(await walk(1000, 33.5)).toEqual([0]);
+    });
+
+    it("lets us walk in the river, slowdown and current included", async () => {
+        expect(await walk(RIVER_Y, 33.5)).toEqual([0]);
+    });
+
+    it("stops on a platform over the river, where the water doesn't slow us", async () => {
+        expect(await walk(RIVER_Y, 33.5, 1)).toEqual([null]);
+    });
+
+    it("still stops in the snow when the spike is within reach", async () => {
+        expect(await walk(1000, 25)).toEqual([null]);
+    });
+});
