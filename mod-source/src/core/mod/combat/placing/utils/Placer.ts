@@ -106,14 +106,17 @@ export default abstract class Placer {
         return bestAngles;
     }
 
+    /** Places `item`. Returns false when nothing was sent (building limit full, or the item isn't ours). */
     protected place(item: Angle | Replacement | Preplacement, placementType: PlacementType = PlacementTypes.NORMAL) {
+        if (PlacementSystem.place(item.id, item.angle) !== "placed") return false;
+
         PlacementSystem.usedAngles[PlacementSystem.usedAnglesHead].redefine(item.angle, ModManager.tick);
         PlacementSystem.usedAnglesHead = (PlacementSystem.usedAnglesHead + 1) % PlacementSystem.usedAngles.length;
         PlacementSystem.usedAnglesCount = Math.min(PlacementSystem.usedAnglesCount + 1, PlacementSystem.usedAngles.length);
         if (placementType !== PlacementTypes.PREPLACE) PlacementSystem.totalPlacements++;
 
-        PlacementSystem.place(item.id, item.angle);
         PlacementSystem.sendMarker(item, placementType);
+        return true;
     }
 
     protected emptyBestAngles: Angle[] = [];

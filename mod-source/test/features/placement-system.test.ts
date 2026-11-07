@@ -50,6 +50,38 @@ describe("Placement System: placing one item", () => {
         PlacementSystem.place(SPIKES, 0);
         expect(placedNow()).toEqual([]);
     });
+
+    it("tells the caller what happened: placed, full or not owned (B4)", async () => {
+        const PlacementSystem = await setUp();
+        const { default: items } = await import("@constants/items");
+        const group = items.list[SPIKES].group;
+
+        expect(PlacementSystem.place(SPIKES, 0)).toBe("placed");
+        expect(PlacementSystem.place(7, 0)).toBe("not-owned");
+
+        game!.Client.player.itemCounts[group.id] = 99;
+        expect(PlacementSystem.place(SPIKES, 0)).toBe("full");
+        // A caller's own running count (several placements before the server's count arrives) is used when given.
+        expect(PlacementSystem.place(SPIKES, 0, 98)).toBe("placed");
+        expect(placedNow()).toEqual([SPIKES, SPIKES]);
+    });
+
+    it("uses 1.8.2's sandbox limits: 299 for windmills, 99 for spikes", async () => {
+        const PlacementSystem = await setUp();
+        expect(PlacementSystem.getPlaceLimit(10)).toBe(299);
+        expect(PlacementSystem.getPlaceLimit(SPIKES)).toBe(99);
+        expect(PlacementSystem.getPlaceLimit(0)).toBeUndefined(); // food has no limit
+    });
+
+    it("checkPlace says no, and draws no marker, when the building limit is full", async () => {
+        const PlacementSystem = await setUp();
+        const { default: items } = await import("@constants/items");
+        game!.Client.player.itemCounts[items.list[SPIKES].group.id] = 99;
+        game!.Client.markers.length = 0;
+
+        expect(PlacementSystem.checkPlace(SPIKES, Math.PI)).toBe(false);
+        expect(game!.Client.markers).toHaveLength(0);
+    });
 });
 
 describe("Placement System: hotkeys", () => {
@@ -73,6 +105,25 @@ describe("Placement System: hotkeys", () => {
             expect(PlacementSystem.totalPlacements).toBe(0);
         } finally {
             Input.keys["KeyV"] = false;
+        }
+    });
+
+    it("F doesn't count toward the cap when the trap limit is full (B4)", async () => {
+        const PlacementSystem = await setUp();
+        const { default: items } = await import("@constants/items");
+        const { Input } = await import("@ui/Hook");
+        vi.spyOn(Input, "getAttackDir").mockReturnValue(Math.PI);
+        const macro = (PlacementSystem as unknown as { macro(): void }).macro.bind(PlacementSystem);
+        game!.Client.player.itemCounts[items.list[15].group.id] = 99;
+
+        Input.keys["KeyF"] = true;
+        try {
+            PlacementSystem.totalPlacements = 0;
+            macro();
+            expect(PlacementSystem.totalPlacements).toBe(0);
+            expect(placedNow()).toEqual([]);
+        } finally {
+            Input.keys["KeyF"] = false;
         }
     });
 });

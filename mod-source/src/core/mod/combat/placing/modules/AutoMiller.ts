@@ -24,15 +24,15 @@ export default class AutoMiller {
                 const direction = Client.lastMoveDir + Math.PI;
                 const id = player.items[3];
                 const item = items.list[id];
-                const limit = PlacementSystem.getPlaceLimit(id);
-                let count = player.itemCounts[item.group.id];
+                let count = player.itemCounts[item.group.id] ?? 0;
 
                 // Windmills share the 4-per-tick cap with the other placements; they used to go out on top of it.
                 for (let i = 0; i < AutoMiller.OFFSETS.length; i++) {
                     if (PlacementSystem.totalPlacements >= 4) break;
-                    if (limit !== undefined && count + 1 > limit) break;
+                    // Stops at the building limit: the server's count arrives later, so pass our running count.
+                    if (PlacementSystem.place(id, direction + AutoMiller.OFFSETS[i], count) !== "placed") break;
 
-                    count = PlacementSystem.place(id, direction + AutoMiller.OFFSETS[i], count);
+                    count++;
                     PlacementSystem.totalPlacements++;
                 }
 

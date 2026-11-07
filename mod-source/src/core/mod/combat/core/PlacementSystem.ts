@@ -28,6 +28,9 @@ class Placement {
     }
 }
 
+/** What PlacementSystem.place did: sent the placement, or nothing because of the building limit or a missing item. */
+export type PlaceResult = "placed" | "full" | "not-owned";
+
 export default class PlacementSystem {
     static AutoPlacer = new AutoPlacer();
     static AutoReplacer = new AutoReplacer();
@@ -105,9 +108,10 @@ export default class PlacementSystem {
         const tmpY = realPos.y + Math.sin(angle) * tmpScale;
 
         if (!ObjectManager.checkItem(tmpX, tmpY, item.scale, id)) return false;
-        this.bufferAngle.redefine(tmpX, tmpY, item.scale, angle, id);
+        // At the building limit nothing is sent: no marker, and the caller doesn't count it as a placement.
+        if (this.place(id, angle) !== "placed") return false;
 
-        this.place(id, angle);
+        this.bufferAngle.redefine(tmpX, tmpY, item.scale, angle, id);
         this.sendMarker(this.bufferAngle, PlacementTypes.NORMAL);
         return true;
     }
@@ -119,27 +123,24 @@ export default class PlacementSystem {
         return item.group.sandboxLimit ?? 99;
     }
 
-    static place(id: number, angle: number = Input.getAttackDir(), itemCount?: number) {
+    /**
+     * Sends the packets that place item `id` at `angle` (select it, then "hit"). Nothing is sent when we don't have the
+     * item ("not-owned") or its group is at the building limit ("full"). `itemCount` overrides how many of the group we
+     * own, for callers placing several in one tick before the server's count arrives.
+     */
+    static place(id: number, angle: number = Input.getAttackDir(), itemCount?: number): PlaceResult {
         const player = Client.player;
-        if (!player.items.includes(id)) return 0;
+        if (!player.items.includes(id)) return "not-owned";
 
         const item = items.list[id];
         const limit = this.getPlaceLimit(id);
-        let count = 0;
-
-        if (limit !== undefined) {
-            count = itemCount ?? player.itemCounts[item.group.id];
-            const isFull = count + 1 > limit;
-
-            if (isFull) return limit;
-            count++;
-        }
+        if (limit !== undefined && (itemCount ?? player.itemCounts[item.group.id] ?? 0) + 1 > limit) return "full";
 
         Client.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.SELECT_TO_BUILD, id, false);
         Client.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.SEND_HIT, 1, angle);
         if (item.group.id === FOOD_GROUP_ID) Client.lastAteTick = ModManager.tick;
         CombatController.selectWeapon();
-        return count;
+        return "placed";
     }
 
     /**
