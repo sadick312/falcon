@@ -49,6 +49,8 @@ export default class AppleInstakiller extends CombatModule {
         // them on replacement spikes next to a trapped enemy). It checked "replacer" before.
         if (!Menu.getValue("preplacer")) return false;
         if (!Menu.getValue("appleInsta")) return false;
+        // Shame Grind fakes Apple Insta first and lets it go once the enemy can't (or doesn't) heal in time.
+        if (AttackManager.shameGrinder.holdsAppleInsta()) return false;
         if (!Menu.getValue("appleInstaWhileTrapped") && Client.player.trap) return false;
 
         if (Menu.getValue("appleInstaWhileTrapped") && Client.player.trap && AutoBreaker.allSpikesBuffer.length)

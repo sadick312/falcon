@@ -159,10 +159,9 @@ export const combatSettings: IMenuItem[] = [{
     settings: [{
         label: "Shame Grind",
         id: "shameGrind",
-        description: "Fakes appleInstas repeatedly and once the enemy stops shaming, finishes off with appleInsta. Must have appleInsta and preplacements toggled on for this to work.",
+        description: "While the enemy is trapped, fakes Apple Insta with bull hits so they eat too fast and gain shame. Lets Apple Insta finish once they're shamed (can't heal) or stop eating right after hits, or after 12 fakes. Needs a great hammer, Apple Insta, Auto Place and Preplacements.",
         type: "toggle",
         icon: SHAME_HAT_ICON,
-        disabled: true,
         status: false
     }, {
         label: "Apple Insta",

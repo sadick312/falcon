@@ -27,7 +27,7 @@ The **Favorites** tab lists the settings you starred; **Credits** has no setting
   - **Turret Gear Knockback** (`turretGearKB`, toggle, default: on) — Automatically uses turret gear's knockback to kill enemies if possible.
   - **Barbarian Knockback** (`barbKnockback`, toggle, default: on) — Automatically uses barbarian armor if the knockback kills the enemy.
 - **Spike Oneshots** (group) — Modules that customize oneshots using spikes
-  - **Shame Grind** (`shameGrind`, toggle, default: off) — Fakes appleInstas repeatedly and once the enemy stops shaming, finishes off with appleInsta. Must have appleInsta and preplacements toggled on for this to work.
+  - **Shame Grind** (`shameGrind`, toggle, default: off) — While the enemy is trapped, fakes Apple Insta with bull hits so they eat too fast and gain shame. Lets Apple Insta finish once they're shamed (can't heal) or stop eating right after hits, or after 12 fakes. Needs a great hammer, Apple Insta, Auto Place and Preplacements.
   - **Apple Insta** (`appleInsta`, toggle, default: on) — Automatically breaks enemy traps and spike one shots them. Requires preplacements module to be turned on.
     - **Allow While Trapped** (`appleInstaWhileTrapped`, toggle, default: on) — Triggers even when trapped.
     - **Allow Low Damage Primaries** (`appleAllowsLowDamagePri`, toggle, default: on) — Triggers even for daggers, bat, etc.

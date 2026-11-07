@@ -8,6 +8,7 @@ import AutoPusherStriker from "@combat-modules/AutoPushStriker";
 import BarbarianKnockbacker from "@combat-modules/BarbarianKnockbacker";
 import OneTicker from "@combat-modules/OneTicker";
 import ProjectileSyncer from "@combat-modules/ProjectileSyncer";
+import ShameGrinder from "@combat-modules/ShameGrinder";
 import SpikeTicker from "@combat-modules/SpikeTicker";
 import TurretAPAssister from "@combat-modules/TurretAPAssister";
 import TurretGearKnockbacker from "@combat-modules/TurretGearKnockbacker";
@@ -34,6 +35,7 @@ export default class AttackManager {
 
     static spikeTicker = new SpikeTicker();
     static appleInstakiller = new AppleInstakiller();
+    static shameGrinder = new ShameGrinder();
     static antiBuller = new AntiBuller();
     static oneTicker = new OneTicker();
 
@@ -50,6 +52,8 @@ export default class AttackManager {
         new AutoMeleeSyncer(),
         new TurretGearKnockbacker(),
         new BarbarianKnockbacker(),
+        // Before Apple Insta: while it grinds the enemy's shame, Apple Insta waits (holdsAppleInsta).
+        this.shameGrinder,
         this.appleInstakiller,
         this.spikeTicker,
         this.oneTicker
