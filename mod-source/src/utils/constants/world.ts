@@ -5,6 +5,19 @@ import ScriptConfig from "@utils/config/ScriptConfig";
 /** The river crosses the middle of the map (y = MAP_SIZE / 2) and is this tall. */
 export const RIVER_WIDTH = 724;
 export const RIVER_HALF_WIDTH = RIVER_WIDTH / 2;
+/** 1.8.2 `waterCurrent`: speed added eastward per ms in the river (× 0.4 with a water-immune hat). */
+export const WATER_CURRENT = 0.0011;
+/** 1.8.2 `snowSpeed`: movement multiplier at y <= SNOW_BIOME_TOP without a cold-immune hat (coldM). */
+export const SNOW_SPEED = 0.75;
+
+/**
+ * Whether 1.8.2's water rules (slowdown and current) apply: inside the river band and not on a platform. Player.update
+ * checks `!this.zIndex` before resetting it, so it's the zIndex from the previous tick's collisions, which is what
+ * the server sends us in each player update.
+ */
+export function isInWater(y: number, zIndex: number) {
+    return !zIndex && Math.abs(y - ScriptConfig.MAP_SIZE / 2) <= RIVER_HALF_WIDTH;
+}
 
 /** Owner sid given to map objects (trees, stones, bushes, cacti) so they never match a player's sid. */
 export const NATURAL_OBJECT_OWNER = 6967;

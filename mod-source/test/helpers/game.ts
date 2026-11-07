@@ -25,6 +25,8 @@ export interface PlayerState {
     team?: string | null;
     skinIndex?: number;
     tailIndex?: number;
+    /** 1 while standing on a platform (sent by the server for the previous tick). */
+    zIndex?: number;
 }
 
 /** [sid, x, y, dir, scale, type, itemId, ownerSid], as in LOAD_GAME_OBJECT. Natural objects have no item or owner. */
@@ -137,7 +139,7 @@ export async function startGame(options: StartOptions = {}) {
             for (const sid of order ?? [...players.keys()]) {
                 const p = players.get(sid)!;
                 positions.push(p.sid, p.x, p.y, Math.round((p.dir ?? 0) * 100));
-                attributes.push(p.sid, p.buildIndex ?? -1, p.weaponIndex ?? 0, p.weaponVariant ?? 0, p.team ?? null, 0, p.skinIndex ?? 0, p.tailIndex ?? 0, 0, 0);
+                attributes.push(p.sid, p.buildIndex ?? -1, p.weaponIndex ?? 0, p.weaponVariant ?? 0, p.team ?? null, 0, p.skinIndex ?? 0, p.tailIndex ?? 0, 0, p.zIndex ?? 0);
             }
             handlers.a(positions, attributes, []);
         },

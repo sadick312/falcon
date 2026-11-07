@@ -15,6 +15,7 @@ import Menu from "@menu/Menu";
 import PacketMap from "@root/utils/socket/PacketMap";
 import ScriptConfig from "@utils/config/ScriptConfig";
 import getDistSq from "@utils/geometry/getDistSq";
+import { isInWater } from "@constants/world";
 
 export default class HatSystem {
     /** Soldier helmet against most weapons only when the enemy is this close. */
@@ -131,7 +132,6 @@ export default class HatSystem {
         return true;
     }
 
-    private static readonly RIVER_HALF_WIDTH = 724 / 2;
 
     private static fetchBestHat(): STORE_HAT_ID {
         const player = Client.player;
@@ -198,8 +198,8 @@ export default class HatSystem {
 
         if (canUseSpikeGear) return STORE_HAT_MAP.SPIKE_GEAR;
 
-        // 1.8.2 slows players in water when |y - MAP_SIZE / 2| <= riverWidth / 2 (724 / 2); this used 6850-7550.
-        if (Math.abs(player.real_position.y - ScriptConfig.MAP_SIZE / 2) <= this.RIVER_HALF_WIDTH) {
+        // 1.8.2 slows players in water when |y - MAP_SIZE / 2| <= riverWidth / 2 (724 / 2), but not on a platform.
+        if (isInWater(player.real_position.y, player.zIndex)) {
             return STORE_HAT_MAP.FLIPPER_HAT;
         }
 

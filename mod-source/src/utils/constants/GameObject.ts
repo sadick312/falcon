@@ -133,6 +133,7 @@ export default class GameObject implements Entity {
         teleport: false,
         boostSpeed: 0,
         ignoreCollision: false,
+        zIndex: 0,
         trap: false,
         health: Infinity,
         ownerSID: undefined,
@@ -152,6 +153,7 @@ export default class GameObject implements Entity {
         this.simulationState.scale = this.getScale();
         this.simulationState.trap = this.trap;
         this.simulationState.ignoreCollision = this.ignoreCollision;
+        this.simulationState.zIndex = this.zIndex;
         this.simulationState.dir = this.dir;
         this.simulationState.health = this.health;
         this.simulationState.ownerSID = this.ownerSID;

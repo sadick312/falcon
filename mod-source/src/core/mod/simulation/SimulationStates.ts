@@ -11,6 +11,8 @@ export interface PlayerSimulationState {
     skinIndex: number;
     tailIndex: number;
     lockMove: boolean;
+    /** Highest zIndex of the objects touched last tick (1 = on a platform); the river skips players on platforms. */
+    zIndex: number;
     weaponIndex: number;
     buildIndex: number;
     slowMult: number;
@@ -29,6 +31,8 @@ export interface GameObjectSimulationState {
     teleport: boolean;
     boostSpeed: number;
     ignoreCollision: boolean;
+    /** 1 for platforms: a player touching one counts as on it next tick. */
+    zIndex: number;
     trap: boolean;
     ownerSID: number | undefined;
     dir: number;

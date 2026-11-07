@@ -13,7 +13,7 @@ import ScriptConfig from "@utils/config/ScriptConfig";
 import getDistSq from "@utils/geometry/getDistSq";
 import getMag from "@utils/geometry/getMag";
 import getMagSq from "@utils/geometry/getMagSq";
-import { RIVER_HALF_WIDTH, isCactusObject } from "@constants/world";
+import { isCactusObject, isInWater, SNOW_SPEED, WATER_CURRENT } from "@constants/world";
 
 interface BaseSimAction {
     dontUse?: boolean;
@@ -266,6 +266,7 @@ export default class MovementPhysicsSimulator {
             victim.velY += mag * Math.sin(gameObject.dir);
         }
 
+        if (gameObject.zIndex > victim.zIndex) victim.zIndex = gameObject.zIndex;
         this.markCollision(gameObject.sid);
     }
 
@@ -290,14 +291,12 @@ export default class MovementPhysicsSimulator {
         const skin = hatMap.get(victim.skinIndex)!;
         const tail = accessoryMap.get(victim.tailIndex)!;
 
-        const halfRiverWidth = RIVER_HALF_WIDTH;
-        const mapScaleHalf = ScriptConfig.MAP_SIZE / 2;
-
-        const isOnRiver = victim.y >= mapScaleHalf - halfRiverWidth && victim.y <= mapScaleHalf + halfRiverWidth;
+        // Not on a platform last tick (zIndex), as in 1.8.2.
+        const isOnRiver = isInWater(victim.y, victim.zIndex);
         let spdMult = (victim.buildIndex >= 0 ? .5 : 1) * (wpn?.spdMult || 1) * (skin?.spdMult ?? 1) * (tail?.spdMult ?? 1) * victim.slowMult;
 
         if (isOnRiver) {
-            const waterCurrent = .0011;
+            const waterCurrent = WATER_CURRENT;
 
             if (skin && skin.watrImm) {
                 spdMult *= 0.75;
@@ -310,7 +309,7 @@ export default class MovementPhysicsSimulator {
 
         if (typeof moveDir !== "number") return;
         const isInSnow = victim.y <= ScriptConfig.SNOW_BIOME_TOP;
-        const snowMult = (isInSnow ? (skin?.coldM ?? .75) : 1);
+        const snowMult = (isInSnow ? (skin?.coldM ?? SNOW_SPEED) : 1);
         const spdMag = ScriptConfig.PLAYER_SPEED * spdMult * snowMult * dt;
 
         const xVel = Math.cos(moveDir);
@@ -364,6 +363,8 @@ export default class MovementPhysicsSimulator {
         const tMlt = 1 / depth;
         const totalLength = gameObjects.length;
         newState.lockMove = false;
+        // 1.8.2 resets zIndex right after movement; this tick's collisions set it again for the next tick.
+        newState.zIndex = 0;
 
         for (let i = 0; i < depth; i++) {
             if (newState.velX) newState.x += newState.velX * tMlt * dt;
@@ -435,6 +436,7 @@ export default class MovementPhysicsSimulator {
             const internalTmpObjectsLength = internalTmpObjects.length;
 
             victim.lockMove = false;
+            victim.zIndex = 0;
             currentSpikeHits = result.spikesHit;
             this.clearCollisionMap();
 

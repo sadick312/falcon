@@ -462,7 +462,7 @@ export default class Player implements Entity {
     private static playerSimStateBuffer: PlayerSimulationState[] = Array.from({ length: 50 }, () => this.createSimState());
 
     private static createSimState(): PlayerSimulationState {
-        return { sid: -1, x: 0, y: 0, velX: 0, slowMult: 1, velY: 0, spikeDamages: 0, team: null, scale: 35, health: 100, skinIndex: 0, tailIndex: 0, maxHealth: 100, buildIndex: -1, weaponIndex: 0, lockMove: false };
+        return { sid: -1, x: 0, y: 0, velX: 0, slowMult: 1, velY: 0, spikeDamages: 0, team: null, scale: 35, health: 100, skinIndex: 0, tailIndex: 0, maxHealth: 100, buildIndex: -1, weaponIndex: 0, lockMove: false, zIndex: 0 };
     }
 
     static getEmptyState() {
@@ -485,6 +485,7 @@ export default class Player implements Entity {
         toState.weaponIndex = fromState.weaponIndex;
         toState.slowMult = fromState.slowMult;
         toState.lockMove = fromState.lockMove;
+        toState.zIndex = fromState.zIndex;
         toState.spikeDamages = fromState.spikeDamages;
     }
 
@@ -503,6 +504,7 @@ export default class Player implements Entity {
         state.buildIndex = fromState.buildIndex;
         state.weaponIndex = fromState.weaponIndex;
         state.lockMove = fromState.lockMove;
+        state.zIndex = fromState.zIndex;
         state.slowMult = fromState.slowMult;
         state.spikeDamages = fromState.spikeDamages;
         return state;
@@ -536,6 +538,7 @@ export default class Player implements Entity {
         state.buildIndex = this.buildIndex;
         state.weaponIndex = this.weaponIndex;
         state.lockMove = !!this.trap;
+        state.zIndex = this.zIndex;
         state.spikeDamages = 0;
         state.slowMult = this.justAttacked ? 1 - (items.weapons[this.weaponIndex].hitSlow ?? .3) : 1;
 
