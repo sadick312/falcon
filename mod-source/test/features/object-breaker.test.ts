@@ -88,7 +88,7 @@ describe("Pit-Spike Breaker", () => {
         game.spawn({ sid: 2, x: s.trapped === false ? 1300 : 1090, y: 1000 });
         game.setLoadout([POLEARM, GREAT_HAMMER], [0, 3, 6, 10, 15]);
         const wall = s.wallAt ?? { x: 1020, y: 1085 };
-        const objects = [
+        const objects: { sid: number; x: number; y: number; itemId: number; owner: number }[] = [
             { sid: 700, x: 1090, y: 1000, itemId: LIST_ID_MAP.PIT_TRAP, owner: ME },
             { sid: 701, x: wall.x, y: wall.y, itemId: LIST_ID_MAP.WOOD_WALL, owner: ME }
         ];
