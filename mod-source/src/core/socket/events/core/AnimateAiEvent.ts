@@ -1,8 +1,8 @@
 import { ais } from "@entities/Ai";
+import { logPacket } from "@core/socket/packetLog";
 import Client from "@core/Client";
 import ModManager from "@core/ModManager";
 import MessageHandler from "@core/socket/events/utils/MessageHandler";
-import SocketListener from "@core/socket/SocketListener";
 import PacketMap from "@root/utils/socket/PacketMap";
 
 type AnimateAiPacket = typeof PacketMap.SERVER_TO_CLIENT.ANIMATE_AI;
@@ -25,7 +25,7 @@ export default class AnimateAiEvent extends MessageHandler<AnimateAiPacket> {
                     obj.health -= 232;
                     if (obj.health <= 0) obj.health = obj.maxHealth - 232;
 
-                    SocketListener.logPacket(
+                    logPacket(
                         PacketMap.CUSTOM_PACKETS.SERVER_TO_CLIENT.UPDATE_OBJECT_HEALTH,
                         [obj.sid, obj.health]
                     );

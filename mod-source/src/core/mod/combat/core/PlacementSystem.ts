@@ -1,10 +1,10 @@
 import GameObject from "@constants/GameObject";
+import { logPacket } from "@core/socket/packetLog";
 import items, { FOOD_GROUP_ID, LIST_ID_MAP } from "@constants/items";
 import Client, { Marker } from "@core/Client";
 import ObjectManager from "@core/logic/ObjectManager";
 import CombatController from "@core/mod/combat/core/CombatController";
 import ModManager from "@core/ModManager";
-import SocketListener from "@core/socket/SocketListener";
 import PacketTracker from "@core/utils/PacketTracker";
 import Menu from "@menu/Menu";
 import Angle from "@placing/Angle";
@@ -179,7 +179,7 @@ export default class PlacementSystem {
         this.addMarker(angleData, placementType);
 
         // allows the packet replayer to show where our player wanted to place
-        SocketListener.logPacket(
+        logPacket(
             PacketMap.CUSTOM_PACKETS.SERVER_TO_CLIENT.ADD_PLACEMENT_MARKER,
             [angleData.x, angleData.y, angleData.angle, angleData.id, placementType]
         );

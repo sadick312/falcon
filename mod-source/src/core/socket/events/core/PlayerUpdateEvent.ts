@@ -1,5 +1,6 @@
 
 import { LIST_ID_MAP, WEAPON_ID_MAP, WEAPON_VARIANT_MAP } from "@constants/items";
+import { handleAllianceUpdates } from "@core/logic/alliances";
 import { STORE_HAT_MAP } from "@constants/store";
 import Client from "@core/Client";
 import PlayerCombatManager from "@core/logic/players/core/PlayerCombatManager";
@@ -11,7 +12,6 @@ import ModManager from "@core/ModManager";
 import PacketReplayer from "@core/PacketReplayer";
 import MessageHandler from "@core/socket/events/utils/MessageHandler";
 import FakeSocket from "@core/socket/FakeSocket";
-import SocketListener from "@core/socket/SocketListener";
 import Menu from "@menu/Menu";
 import CameraManager from "@rendering/core/CameraManager";
 import PacketMap, { WireValue } from "@root/utils/socket/PacketMap";
@@ -90,7 +90,7 @@ export default class PlayerUpdateEvent extends MessageHandler<UpdatePlayerPacket
             player.weaponVariant = attributes[i + 3];
 
             const newTeam = attributes[i + 4];
-            SocketListener.handleAllianceUpdates(player, newTeam);
+            handleAllianceUpdates(player, newTeam);
 
             player.isLeader = attributes[i + 5];
             if (player.skinIndex !== STORE_HAT_MAP.SHAME) player.lastSkinIndex = player.skinIndex;

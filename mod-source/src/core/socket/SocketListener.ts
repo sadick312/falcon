@@ -1,4 +1,6 @@
 import Player, { ChatMessage } from "@entities/Player";
+import { logPacket } from "@core/socket/packetLog";
+import { handleAllianceUpdates } from "@core/logic/alliances";
 import Client, { deathText, pingDisplay } from "@core/Client";
 import updateClanMenu, { allianceHolder } from "@core/events/updateClanMenu";
 import updateItems from "@core/events/updateItems";
@@ -16,7 +18,6 @@ import PlacementSystem from "@core/mod/combat/core/PlacementSystem";
 import MovementManager from "@core/mod/defense/defense-modules/MovementManager";
 import AutoBuyer from "@core/mod/utils/AutoBuyer";
 import PingTracker from "@core/mod/utils/PingTracker";
-import ModManager from "@core/ModManager";
 import { packetReplayerUI } from "@core/PacketReplayer";
 import AnimateAiEvent from "@core/socket/events/core/AnimateAiEvent";
 import GatherAnimationEvent from "@core/socket/events/core/GatherAnimationEvent";
@@ -31,8 +32,7 @@ import Menu, { ChatLog } from "@menu/Menu";
 import { addChatLog } from "@menu/utils/drawChatLog";
 import CameraManager from "@rendering/core/CameraManager";
 import RendererSystem from "@rendering/RendererSystem";
-import { IncomingServerPackets } from "@root/utils/socket/PacketLogging";
-import PacketMap, { MOOMOO_SERVER_TO_CLIENT_MAP } from "@root/utils/socket/PacketMap";
+import PacketMap from "@root/utils/socket/PacketMap";
 import PacketRecorder from "@services/packet-recorder/PacketRecorder";
 import { showServerRestarting } from "@ui/ConnectionError";
 import { enterGameBtn } from "@ui/Hook";
@@ -81,40 +81,6 @@ export default class SocketListener {
         this.awaitingPong = true;
         this.lastPingSocket = now;
         this.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.PING_SOCKET);
-    }
-
-    static logPacket(type: keyof MOOMOO_SERVER_TO_CLIENT_MAP, typedData: unknown) {
-        if (!PacketRecorder.shouldRecord(type)) return;
-
-        PacketRecorder.add(type, {
-            timestamp: performance.now(),
-            brainState: type === PacketMap.SERVER_TO_CLIENT.UPDATE_PLAYERS ? ModManager.brainState : undefined,
-            packetData: {
-                type: type,
-                data: typedData
-            } as IncomingServerPackets
-        });
-    }
-
-    static handleAllianceUpdates(player: Player, newTeam: string) {
-        const oldTeam = player.team;
-        const allianceMap = Client.allianceMap;
-
-        if (newTeam !== oldTeam && allianceMap.has(oldTeam)) {
-            const members = allianceMap.get(oldTeam)!;
-            members.delete(player.sid);
-            if (members.size === 0) allianceMap.delete(oldTeam);
-        }
-
-        player.team = newTeam;
-
-        if (newTeam) {
-            if (!allianceMap.has(newTeam)) {
-                allianceMap.set(newTeam, new Set());
-            }
-
-            allianceMap.get(newTeam)!.add(player.sid);
-        }
     }
 
     /** Downloads the last ~15s of packets as an .fpl file (always when manual; on death, depending on the logging toggles). */
@@ -208,7 +174,7 @@ export default class SocketListener {
             const player = Client.player;
             if (!player) return;
 
-            this.handleAllianceUpdates(player, team);
+            handleAllianceUpdates(player, team);
             player.isOwner = isOwner;
             if (allianceHolder.style.display === "flex") updateClanMenu();
         });
@@ -513,5 +479,5 @@ export default class SocketListener {
 }
 
 // Socket calls these instead of importing this module (see socketHooks in Socket.ts).
-socketHooks.onDispatch = (type, data) => SocketListener.logPacket(type, data);
+socketHooks.onDispatch = (type, data) => logPacket(type, data);
 socketHooks.onClose = () => SocketListener.stopPinging();

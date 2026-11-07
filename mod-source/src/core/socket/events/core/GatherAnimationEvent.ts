@@ -1,4 +1,5 @@
 import items from "@constants/items";
+import { logPacket } from "@core/socket/packetLog";
 import { STORE_HAT_MAP } from "@constants/store";
 import Client from "@core/Client";
 import PlayerCombatManager from "@core/logic/players/core/PlayerCombatManager";
@@ -7,7 +8,6 @@ import PotentialObjectManager from "@core/logic/PotentialObjectManager";
 import BreakerUtils from "@core/mod/defense/utils/BreakerUtils";
 import ModManager from "@core/ModManager";
 import MessageHandler from "@core/socket/events/utils/MessageHandler";
-import SocketListener from "@core/socket/SocketListener";
 import PacketMap from "@root/utils/socket/PacketMap";
 import getAngleDist from "@utils/angle/getAngleDist";
 import getDir from "@utils/angle/getDir";
@@ -69,7 +69,7 @@ export default class GatherAnimationEvent extends MessageHandler<GatherAnimation
                             obj.playerDamageDealt += totalDamage;
                         }
 
-                        SocketListener.logPacket(
+                        logPacket(
                             PacketMap.CUSTOM_PACKETS.SERVER_TO_CLIENT.UPDATE_OBJECT_HEALTH,
                             [obj.sid, obj.health]
                         );
