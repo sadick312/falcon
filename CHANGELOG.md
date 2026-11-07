@@ -37,8 +37,13 @@ What changed in Falcon, newest first. Each entry names the commit(s) for the det
   1.8.2 limits match Falcon's (99, or 299 for mills, boost pads and teleporters); moomodding.io's own per-group caps
   aren't public. (8b5fa5d)
 
+- Hit trees and rocks were counted as building hits (they have endless health), adding packet-log noise. (b0a55ab)
+- The "most active server" button never hid when its region had no server left. (bd1dfd0)
+- Packet Replayer: "Open Logs Folder" and "Clear All Logs" left a loading screen up for good; they now say where
+  the logs are (Downloads) and clear the in-memory log.
+
 ### Tests
-- About 190 new tests (477 -> 669): the socket's disconnect, handshake, reconnect and odd-packet paths, every
+- About 195 new tests (477 -> 673): the socket's disconnect, handshake, reconnect and odd-packet paths, every
   SocketListener handler, the server browser, the page loader, the menu's select / slider / number controls and the
   config screen (with a save-and-reload round trip of every control), a stricter setting-id check, and branch
   tests for AttackManager, Auto Place, Push Strikes (Predictive), Object Breaker, Knockback Instakills and Spike
