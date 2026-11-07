@@ -83,8 +83,7 @@ export function profileLap(name: string, start: number): number {
 export function profileSummary(): Record<string, ProfileSummary> {
     const out: Record<string, ProfileSummary> = {};
 
-    for (const name of Object.keys(stats)) {
-        const s = stats[name];
+    for (const [name, s] of Object.entries(stats)) {
         const summary: ProfileSummary = {
             calls: s.sessionCount,
             totalMs: s.sessionTotal,
@@ -119,6 +118,7 @@ function startOverlay() {
         const lines = [`${"".padEnd(width)}  avg/1s  worst/1s  worst  calls/s`];
         for (const name of names) {
             const s = stats[name];
+            if (!s) continue;
             const avg = s.count ? s.total / s.count : 0;
             lines.push(`${name.padEnd(width)} ${ms(avg)}  ${ms(s.worst)}  ${ms(s.sessionWorst)}  ${String(s.count).padStart(7)}`);
             s.count = 0;

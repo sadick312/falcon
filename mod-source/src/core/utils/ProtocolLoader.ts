@@ -28,7 +28,7 @@ function findProtocolPath(): string | null {
 
         // Fallback: tolerate markup the parser mangled.
         const match = oldHTML.match(/"moomoo-protocol"\s*:\s*"([^"]+)"/);
-        if (match) return match[1];
+        if (match?.[1]) return match[1];
     }
 
     return importMapFrom(document);

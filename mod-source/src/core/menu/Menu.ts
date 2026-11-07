@@ -44,7 +44,8 @@ export default class Menu {
     static backwardStack: Stack<IMenuItem> = new Stack();
     static forwardStack: Stack<IMenuItem> = new Stack();
 
-    static currentItem: IMenuItem;
+    /** The first item of what's shown; undefined when that's empty (e.g. Favorites with nothing favorited). */
+    static currentItem: IMenuItem | undefined;
 
     /**
      * The current value of a setting: true/false for toggles, the chosen option's value for selects, a number or
@@ -82,13 +83,13 @@ export default class Menu {
             if (id === SETTINGS_VERSION_KEY) continue;
 
             // Own keys only: `in` would also match inherited names such as "__proto__".
-            if (!Object.hasOwn(this.itemMap, id)) {
+            const item = Object.hasOwn(this.itemMap, id) ? this.itemMap[id] : undefined;
+            if (!item) {
                 skipped++;
                 continue;
             }
 
             // A value that no longer fits its setting (e.g. a toggle that became a slider) keeps the default.
-            const item = this.itemMap[id];
             if (isValidSettingValue(item, data[id])) {
                 item.status = data[id];
                 applied++;
@@ -149,8 +150,7 @@ export default class Menu {
     static collectSettings() {
         const settings: Record<string, unknown> = { [SETTINGS_VERSION_KEY]: SETTINGS_VERSION };
 
-        for (const id in this.itemMap) {
-            const item = this.itemMap[id];
+        for (const item of Object.values(this.itemMap)) {
             if (item.neverSave) continue;
             if (item.type === "paragraph") continue;
             settings[item.id] = item.status;
@@ -163,9 +163,7 @@ export default class Menu {
         const allFavorites = readJson<unknown>("falcon-favorites", null);
         if (!Array.isArray(allFavorites)) return;
 
-        for (const id in this.itemMap) {
-            const item = this.itemMap[id];
-
+        for (const item of Object.values(this.itemMap)) {
             if (allFavorites.includes(item.id)) {
                 item.isFavorited = true;
             }
@@ -175,8 +173,7 @@ export default class Menu {
     static saveFavorites() {
         const allFavorites: string[] = [];
 
-        for (const id in this.itemMap) {
-            const item = this.itemMap[id];
+        for (const item of Object.values(this.itemMap)) {
             if (!item.isFavorited) continue;
             allFavorites.push(item.id);
         }
@@ -308,7 +305,7 @@ export default class Menu {
 
             if (!this.backwardStack.isEmpty()) {
                 const prev = this.backwardStack.pop()!;
-                this.forwardStack.push(this.currentItem);
+                if (this.currentItem) this.forwardStack.push(this.currentItem);
                 this.goToItem(prev);
             }
         };
@@ -319,7 +316,7 @@ export default class Menu {
 
             if (!this.forwardStack.isEmpty()) {
                 const next = this.forwardStack.pop()!;
-                this.backwardStack.push(this.currentItem);
+                if (this.currentItem) this.backwardStack.push(this.currentItem);
                 this.goToItem(next);
             }
         };
@@ -332,7 +329,7 @@ export default class Menu {
             }
         });
 
-        this.updateUtilsBar(menuTabs[1].label);
+        this.updateUtilsBar(menuTabs[1]?.label);
         this.makeDraggable(menuElement, headerElement);
         this.buildItemMap();
 
@@ -360,7 +357,7 @@ export default class Menu {
 
         for (const item of items) {
             if (item === stackItem) {
-                const title = parentLabel || menuTabs[tabIndex].label;
+                const title = parentLabel || menuTabs[tabIndex]?.label;
                 this.updateUtilsBar(title);
                 this.renderItems(items);
                 this.currentItem = item;
@@ -485,8 +482,7 @@ export default class Menu {
     static renderTabs() {
         const tabHolder = this.tabHolder;
 
-        for (let i = 0; i < menuTabs.length; i++) {
-            const tab = menuTabs[i];
+        for (const [i, tab] of menuTabs.entries()) {
 
             const tabElem = document.createElement("div");
             tabElem.id = `menuTab:${i}`;
@@ -510,12 +506,12 @@ export default class Menu {
                 // not isTrusted, which this used to check.)
                 if (this.selectedTab !== i) {
                     const oldElem = getElem(`menuTab:${this.selectedTab}`);
-                    const tab = menuTabs[this.selectedTab];
+                    const oldTab = menuTabs[this.selectedTab];
 
                     oldElem.classList.remove("activeTab");
-                    oldElem.innerHTML = `
-                        ${tab.icon.replace(/REPLACE_WITH_COLOR/g, "var(--generic-white)")}
-                        ${tab.label}
+                    if (oldTab) oldElem.innerHTML = `
+                        ${oldTab.icon.replace(/REPLACE_WITH_COLOR/g, "var(--generic-white)")}
+                        ${oldTab.label}
                     `;
                     this.selectedTab = i;
                 }
@@ -531,8 +527,7 @@ export default class Menu {
                 if (i === 0) {
                     const favoriteItems = [];
 
-                    for (const id in this.itemMap) {
-                        const item = this.itemMap[id];
+                    for (const item of Object.values(this.itemMap)) {
                         if (!item.isFavorited) continue;
                         favoriteItems.push(item);
                     }

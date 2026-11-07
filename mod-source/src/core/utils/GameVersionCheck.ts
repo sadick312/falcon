@@ -4,10 +4,10 @@ import { GAME_V182, SUPPORTED_GAME_VERSION } from "@constants/gameVersion";
 /** The game version the original page was built for, from its `<base href="/x.y.z/">` or `app_version = 'x.y.z'`. */
 export function readGameVersion(pageHtml: string): string | null {
     const fromBase = pageHtml.match(/<base\s+href=["']\/(\d+\.\d+\.\d+)\/["']/i);
-    if (fromBase) return fromBase[1];
+    if (fromBase?.[1]) return fromBase[1];
 
     const fromScript = pageHtml.match(/app_version\s*=\s*["'](\d+\.\d+\.\d+)["']/);
-    return fromScript ? fromScript[1] : null;
+    return fromScript?.[1] ?? null;
 }
 
 /**

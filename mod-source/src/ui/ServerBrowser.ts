@@ -176,7 +176,7 @@ export default class ServerBrowser {
         const regionDescription = document.createElement("div");
         const descriptions = regionDescriptions[serverData.region] ?? [serverData.host];
         regionDescription.style = `text-align: left; max-width: 500px; color: var(--generic-white-2); font-size: 12px;`;
-        regionDescription.innerText = descriptions[Math.floor(descriptions.length * Math.random())];
+        regionDescription.innerText = descriptions[Math.floor(descriptions.length * Math.random())] ?? "";
 
         const playerCountLabel = document.createElement("div");
         playerCountLabel.classList.add("server-browser-option-player-count");
@@ -264,7 +264,7 @@ export default class ServerBrowser {
 
         serverBrowserLoadingText.style.display = "flex";
         for (let i = 1; i < serverBrowser.children.length; i++) {
-            serverBrowser.children[i].remove();
+            serverBrowser.children[i]?.remove();
             i--;
         }
 
@@ -280,14 +280,15 @@ export default class ServerBrowser {
 
         data.sort((a, b) => b.playerCount - a.playerCount);
 
-        for (let i = 0; i < data.length; i++) {
-            this.appendOption(data[i], i);
+        for (const [i, server] of data.entries()) {
+            this.appendOption(server, i);
         }
 
         // Preselect the server the page was opened with (sandbox.moomodding.io/?server=1:1).
         const requested = Endpoints.requestedServerKey();
         const requestedIndex = requested ? data.findIndex(e => e.key === requested) : -1;
-        if (requestedIndex >= 0) this.select(requestedIndex, data[requestedIndex]);
+        const requestedServer = data[requestedIndex];
+        if (requestedIndex >= 0 && requestedServer) this.select(requestedIndex, requestedServer);
 
         serverBrowserLoadingText.style.display = "none";
         refreshServersBtn.classList.remove("disabled");

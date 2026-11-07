@@ -18,8 +18,7 @@ export default function updateUpgrades(points: number, age: number) {
         tmpUpgradeList.length = 0;
         upgradeHolder.innerHTML = "";
 
-        for (let i = 0; i < items.weapons.length; i++) {
-            const wpn = items.weapons[i];
+        for (const [i, wpn] of items.weapons.entries()) {
             const isWithinAge = wpn.pre === undefined || Client.player.weapons.indexOf(wpn.pre) >= 0;
 
             if (wpn.age === age && (Client.socket.isPrivateServer || isWithinAge)) {
@@ -33,8 +32,7 @@ export default function updateUpgrades(points: number, age: number) {
             }
         }
 
-        for (let i = 0; i < items.list.length; i++) {
-            const item = items.list[i];
+        for (const [i, item] of items.list.entries()) {
             // Like weapons above, and like the game: a building is only offered once you own its prerequisite.
             const hasPrerequisite = item.pre === undefined || Client.player.items.indexOf(item.pre) >= 0;
 
@@ -52,8 +50,11 @@ export default function updateUpgrades(points: number, age: number) {
 
         if (Menu.getValue("autoUpgrade")) {
             if (tmpList.length === 1) {
-                Client.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.SEND_UPGRADE, tmpList[0]);
-                return;
+                const only = tmpList[0];
+                if (only !== undefined) {
+                    Client.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.SEND_UPGRADE, only);
+                    return;
+                }
             } else {
                 const _7thSlot = parseInt(Menu.getValue("7thSlot"));
 
@@ -66,8 +67,7 @@ export default function updateUpgrades(points: number, age: number) {
             }
         }
 
-        for (let i = 0; i < tmpList.length; i++) {
-            const tmpId = tmpList[i];
+        for (const tmpId of tmpList) {
             const elem = getElem(`upgrade-item-${tmpId}`);
 
             elem.onclick = () => {

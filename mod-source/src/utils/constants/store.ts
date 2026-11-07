@@ -360,8 +360,8 @@ export const hats: Hat[] = [{
 
 export const hatMap = new Map<number, Hat>();
 
-for (let i = 0; i < hats.length; i++) {
-    hatMap.set(hats[i].id, hats[i]);
+for (const hat of hats) {
+    hatMap.set(hat.id, hat);
 }
 
 export interface Accessory {
@@ -530,8 +530,8 @@ export const accessories: Accessory[] = [{
 
 export const accessoryMap = new Map<number, Accessory>();
 
-for (let i = 0; i < accessories.length; i++) {
-    accessoryMap.set(accessories[i].id, accessories[i]);
+for (const accessory of accessories) {
+    accessoryMap.set(accessory.id, accessory);
 }
 
 export const STORE_HAT_MAP = {

@@ -44,11 +44,11 @@ export const packetReplayerOptionsPage = getElem("packet-replayer-options-page")
 function updateSkinColorPicker() {
     skinSelector.innerHTML = "";
 
-    for (let i = 0; i < RenderingConfig.skinColors.length; i++) {
+    for (const [i, color] of RenderingConfig.skinColors.entries()) {
         const buttonItem = document.createElement("div");
         buttonItem.classList.add("skin-item");
         if (i == Loader.skinColor) buttonItem.classList.add("active");
-        buttonItem.style.backgroundColor = RenderingConfig.skinColors[i];
+        buttonItem.style.backgroundColor = color;
 
         buttonItem.onclick = () => {
             localStorage.setItem("moo_skin", i.toString());
@@ -135,12 +135,12 @@ function hookMainMenuBtns() {
         loadingCirclePage.style.display = "flex";
         const files: FileList | null = packetReplayerFileInput.files;
 
-        if (!files || files.length !== 1) {
+        const file = files?.length === 1 ? files[0] : undefined;
+        if (!file) {
             loadingCirclePage.style.display = "none";
             return;
         }
 
-        const file: File = files[0];
         const fileReader = new FileReader();
 
         fileReader.onload = () => {
@@ -174,12 +174,12 @@ function hookMainMenuBtns() {
 
 function importTemporaryObjects() {
     const tmpObjects = AllTemporaryObjects[Math.floor(AllTemporaryObjects.length * Math.random())];
+    if (!tmpObjects) return;
 
     CameraManager.camX = tmpObjects.player.x;
     CameraManager.camY = tmpObjects.player.y;
 
-    for (let i = 0; i < tmpObjects.objects.length; i++) {
-        const obj = tmpObjects.objects[i];
+    for (const [i, obj] of tmpObjects.objects.entries()) {
         ObjectManager.add(i, obj.x, obj.y, obj.dir, obj.scale, obj.type ?? -1000, obj.id, true, NATURAL_OBJECT_OWNER);
     }
 }
@@ -201,7 +201,8 @@ export default class Loader {
         }
 
         for (let i = 0; i < items.weapons.length + items.list.length; i++) {
-            const tmp = items.weapons[i] || items.list[i - items.weapons.length];
+            const weapon = items.weapons[i];
+            const listItem = items.list[i - items.weapons.length];
 
             const tmpCanvas = document.createElement("canvas");
             tmpCanvas.width = tmpCanvas.height = 66;
@@ -214,18 +215,18 @@ export default class Loader {
             const actionElem = getElem<"div">(`action-bar-item-${i}`);
             actionElem.style.position = "relative";
 
-            if (items.weapons[i]) {
+            if (weapon) {
                 tmpContext.rotate((Math.PI / 4) + Math.PI);
 
                 const tmpSprite = new Image();
                 tmpSprite.crossOrigin = "anonymous";
-                this.toolSprites[tmp.src] = tmpSprite;
+                this.toolSprites[weapon.src] = tmpSprite;
 
                 tmpSprite.onload = () => {
                     tmpSprite.isLoaded = true;
 
                     const tmpPad = 1 / (tmpSprite.height / tmpSprite.width);
-                    const tmpMlt = (tmp.iPad || 1);
+                    const tmpMlt = (weapon.iPad || 1);
 
                     tmpContext.drawImage(
                         tmpSprite,
@@ -242,9 +243,10 @@ export default class Loader {
                     actionElem.style.backgroundImage = `url('${tmpCanvas.toDataURL()}')`;
                 };
 
-                tmpSprite.src = `../../img/weapons/${tmp.src}.png`;
-            } else {
-                const tmpSprite = SpriteCache.getItemSprite(items.list[i - items.weapons.length], true);
+                tmpSprite.src = `../../img/weapons/${weapon.src}.png`;
+            } else if (listItem) {
+                const tmpSprite = SpriteCache.getItemSprite(listItem, true);
+                if (!tmpSprite) continue;
                 const tmpScale = Math.min(tmpCanvas.width - RenderingConfig.iconPadding, tmpSprite.width);
 
                 tmpContext.globalAlpha = 1;

@@ -89,7 +89,7 @@ export interface ListItem {
 }
 
 interface Items {
-    groups: ItemGroup[];
+    groups: readonly ItemGroup[];
     projectiles: IProjectile[];
     weapons: Weapon[];
     list: ListItem[];
@@ -98,7 +98,8 @@ interface Items {
 /** Group id of apple, cookie and cheese: using one of these is eating. */
 export const FOOD_GROUP_ID = 0;
 
-const groups: ItemGroup[] = [{
+// A fixed tuple, so groups[0] .. groups[13] are known to exist.
+const groups = [{
     id: FOOD_GROUP_ID,
     name: "food",
     layer: 0
@@ -183,7 +184,7 @@ const groups: ItemGroup[] = [{
     sandboxLimit: 299,
     limit: 2,
     layer: -1
-}];
+}] as const satisfies readonly ItemGroup[];
 
 const projectiles: IProjectile[] = [{
     indx: 0,

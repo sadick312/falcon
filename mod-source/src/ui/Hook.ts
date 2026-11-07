@@ -35,6 +35,7 @@ function getMoveDir(): number | null {
 
         if (Input.keys[keyNum]) {
             const buf = moveKeys[keyNum];
+            if (!buf) continue;
             const mx = buf[0], my = buf[1];
 
             dx += mx;
@@ -248,19 +249,21 @@ document.addEventListener("keydown", (event) => {
                 AutoMiller.data.status = !AutoMiller.data.status;
             } else if (/Digit[0-9]/.test(event.code)) {
                 const player = Client.player;
-                const id = parseInt(event.code.split("Digit")[1]) - 1;
+                const id = parseInt(event.code.split("Digit")[1] ?? "") - 1;
+                const weapon = player.weapons[id];
+                const item = player.items[id - player.weapons.length];
 
-                if (typeof player.weapons[id] === "number") {
-                    Client.weaponIndex = AutoGrinder.weaponIndex = player.weapons[id];
+                if (typeof weapon === "number") {
+                    Client.weaponIndex = AutoGrinder.weaponIndex = weapon;
                     Client.socket.sendMsg(
                         PacketMap.CLIENT_TO_SERVER.SELECT_TO_BUILD,
-                        player.weapons[id],
+                        weapon,
                         true
                     );
-                } else if (typeof player.items[id - player.weapons.length] === "number") {
+                } else if (typeof item === "number") {
                     Client.socket.sendMsg(
                         PacketMap.CLIENT_TO_SERVER.SELECT_TO_BUILD,
-                        player.items[id - player.weapons.length],
+                        item,
                         false
                     );
                 }

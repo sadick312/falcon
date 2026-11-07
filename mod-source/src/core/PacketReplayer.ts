@@ -243,6 +243,7 @@ export default class PacketReplayer {
 
             for (let i = this.currentIndex; i < this.allData.length; i++) {
                 const logData = this.allData[i];
+                if (!logData) break;
                 const packet = logData.packetData!;
 
                 if (logData.timestamp > this.currentDelta) break;
@@ -309,11 +310,12 @@ export default class PacketReplayer {
         }
 
         const first = this.allData.find(e => e.timestamp > 0);
-        if (!first) return false;
+        const last = this.allData.at(-1);
+        if (!first || !last) return false;
 
         Client.mode = "replay";
         const startTimestamp = first.timestamp;
-        const endTimestamp = this.allData[this.allData.length - 1].timestamp;
+        const endTimestamp = last.timestamp;
         const replayStart = Math.max(startTimestamp, endTimestamp - this.MAX_DURATION);
 
         this.currentIndex = 0;
@@ -322,12 +324,11 @@ export default class PacketReplayer {
         this.quickTime = replayStart > startTimestamp;
         this.isPaused = false;
 
-        for (let i = 0; i < this.allData.length; i++) {
-            const current = this.allData[i];
+        for (const current of this.allData) {
             current.timestamp = current.timestamp === 0 ? 0 : current.timestamp - replayStart;
         }
 
-        this.totalDuration = Math.min(this.MAX_DURATION, Math.max(0, this.allData[this.allData.length - 1].timestamp));
+        this.totalDuration = Math.min(this.MAX_DURATION, Math.max(0, last.timestamp));
         durationSlider.max = this.totalDuration.toString();
 
         const parsed = Math.ceil(this.totalDuration / 1e3);

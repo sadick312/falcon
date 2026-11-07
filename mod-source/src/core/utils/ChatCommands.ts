@@ -36,11 +36,11 @@ export default class ChatCommands {
         },
         pl: {
             desc: "same as !plog",
-            run: (args) => ChatCommands.commands.plog.run(args)
+            run: (args) => ChatCommands.commands.plog?.run(args)
         },
         ping: {
             desc: "show ping",
-            run: () => `Ping ${Math.round(PingTracker.getCurrentPing())}ms, stable ${Math.round(PingTracker.getStablePing())}ms`
+            run: () => `Ping ${Math.round(PingTracker.getCurrentPing())}ms, stable ${Math.round(PingTracker.getStablePing() ?? 0)}ms`
         },
         packets: {
             desc: "packets used this second",
@@ -69,7 +69,7 @@ export default class ChatCommands {
         const prefix = input[0];
         if (prefix !== "!" && prefix !== "/") return [];
 
-        const typed = input.slice(1).split(" ")[0].toLowerCase();
+        const typed = (input.slice(1).split(" ")[0] ?? "").toLowerCase();
         const source = prefix === "!" ?
             Object.entries(this.commands).map(([name, cmd]) => [name, cmd.desc] as const) :
             Object.entries(this.serverCommands);
@@ -87,10 +87,11 @@ export default class ChatCommands {
         if (!input.startsWith("!")) return false;
 
         const [name, ...args] = input.slice(1).trim().split(/\s+/);
-        const key = name.toLowerCase();
+        const key = (name ?? "").toLowerCase();
         // Own commands only: "!constructor" or "!tostring" used to find Object's built-ins and throw on `.run`.
         if (!Object.hasOwn(this.commands, key)) return false;
         const command = this.commands[key];
+        if (!command) return false;
 
         const reply = command.run(args);
         if (reply) this.reply(reply);
