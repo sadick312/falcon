@@ -25,6 +25,8 @@ if (typeof globalThis.CanvasRenderingContext2D === "undefined") {
 HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement) {
     return fakeContext(this);
 } as unknown as typeof HTMLCanvasElement.prototype.getContext;
+// Loader.prepareUI turns each hotbar icon into a data URL; jsdom only logs "not implemented" for it.
+HTMLCanvasElement.prototype.toDataURL = () => "data:,";
 
 beforeEach(() => {
     localStorage.clear();
