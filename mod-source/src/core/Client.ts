@@ -5,14 +5,15 @@ import PlayerManager from "@core/logic/players/PlayerManager";
 import { PlayerSimulationState } from "@core/mod/simulation/SimulationStates";
 import { endPreviousSession } from "@core/GameSession";
 import FakeSocket from "@core/socket/FakeSocket";
-import Socket from "@core/socket/Socket";
+import Socket, { respawnMainCard } from "@core/socket/Socket";
 import SocketListener from "@core/socket/SocketListener";
 import CaptchaManager from "@core/utils/CaptchaManager";
 import PacketTracker from "@core/utils/PacketTracker";
 import { AllianceDataType, AllianceNotifi, Point } from "@mod-types/index";
 import { PlacementType } from "@placing/utils/Placer";
 import TaskScheduler from "@services/event-timer/TaskScheduler";
-import { resetScreenSize } from "@ui/Hook";
+import { reconnect } from "@ui/ConnectionError";
+import { enterGameBtn, resetScreenSize } from "@ui/Hook";
 import { loadingCirclePage, mainMenu, respawnPage } from "@ui/Loader";
 import ServerBrowser, { GameServer, serverBrowserPage } from "@ui/ServerBrowser";
 import ScriptConfig from "@utils/config/ScriptConfig";
@@ -44,6 +45,8 @@ export class Marker {
 
 const gameInformationMetadata = getElem("game-information-metadata");
 
+const disconnectedPage = getElem("disconnected-page");
+
 export const pingDisplay = getElem<"div">("ping-display");
 export const deathText = getElem("death-text");
 
@@ -73,6 +76,8 @@ export default class Client {
     static weaponIndex = 0;
 
     static allianceMap = new Map<string, Set<number>>();
+    /** The server of the last live connection (undefined for the local dev server), for the Reconnect button. */
+    static lastServer: GameServer | undefined;
     static mode: "replay" | "normal" = "normal";
     static upgradesObtained = new Set<number>();
 
@@ -99,12 +104,32 @@ export default class Client {
 
         const selection = server ?? ServerBrowser.selectedOption;
         const wsAddress = selection?.host ?? LOCAL_SERVER_HOST;
+        this.lastServer = selection;
 
         if (selection) ServerBrowser.saveRecent(selection);
 
         gameInformationMetadata.innerText = `region: ${selection?.region ?? "local"} | NAME: ${selection?.name ?? "n/a"}`;
         TaskScheduler.init();
         CaptchaManager.renderChallenge(wsAddress);
+    }
+
+    /**
+     * The Reconnect button: connects to the same server again without reloading the page. Replays have no server,
+     * so there it still reloads.
+     */
+    static reconnect() {
+        if (this.mode === "replay") {
+            location.reload();
+            return;
+        }
+
+        // Back to the respawn card with Enter Game greyed out until the new socket opens (Socket.onOpen enables it).
+        disconnectedPage.style.display = "none";
+        deathText.style.display = "none";
+        respawnMainCard.style.display = "flex";
+        enterGameBtn.classList.add("disabled");
+
+        this.connect(this.lastServer);
     }
 
     static isFriendly(sid: number) {
@@ -129,3 +154,4 @@ export default class Client {
     static placementTime = ["0", "0", "0", "0", "0"];
     static placementTimeHead = 0;
 }
+reconnect.run = () => Client.reconnect();

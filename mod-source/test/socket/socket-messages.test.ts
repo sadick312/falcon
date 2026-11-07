@@ -109,10 +109,10 @@ describe("Socket messages (moomodding.io v1.8.2)", () => {
         expect(reasonText()).toBe("Kicked for spam (code 1000)");
     });
 
-    it("offers a Reconnect button on the disconnected screen, which reloads the page", async () => {
+    it("offers a Reconnect button on the disconnected screen", async () => {
         const { socket, receive } = await connect();
         const { reconnect } = await import("@ui/ConnectionError");
-        const reload = vi.spyOn(reconnect, "run").mockImplementation(() => { });
+        const run = vi.spyOn(reconnect, "run").mockImplementation(() => { });
         socket.onopen!(new Event("open"));
         receive(["io-init", ["id"]]);
         socket.onclose!({ code: 1006, reason: "" } as CloseEvent);
@@ -122,7 +122,7 @@ describe("Socket messages (moomodding.io v1.8.2)", () => {
         expect(page.style.display).toBe("flex");
         expect(page.contains(button)).toBe(true);
         button.click();
-        expect(reload).toHaveBeenCalledTimes(1);
+        expect(run).toHaveBeenCalledTimes(1);
     });
 
     it("explains a connection that never opened", async () => {

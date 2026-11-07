@@ -18,8 +18,9 @@ const STEP_LABELS: Record<ConnectionStep, string> = {
 };
 
 /**
- * Reloads the page: the only way to connect again, since the main menu is gone once we've connected. A reload also
- * starts every manager from a clean state (Quick Inject and the extension both run Falcon again on load).
+ * What the Reconnect button does. Client replaces this with an in-page reconnect to the same server (state is reset
+ * by GameSession), which also works when Falcon was pasted into the console and a reload would lose it. Reloading
+ * is only the fallback before Client has loaded.
  */
 export const reconnect = { run: () => location.reload() };
 

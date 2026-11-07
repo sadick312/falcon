@@ -167,3 +167,83 @@ describe("the replaced socket (Socket.dispose)", () => {
         expect(native.closeCalls).toBe(1);
     });
 });
+
+describe("the Reconnect button", () => {
+    const originalWebSocket = globalThis.WebSocket;
+    const created: { url: string; closeCalls: number }[] = [];
+
+    class FakeNativeWebSocket {
+        static readonly CONNECTING = 0;
+        static readonly OPEN = 1;
+        readyState = 1;
+        binaryType = "blob";
+        closeCalls = 0;
+        constructor(public url: string) { created.push(this); }
+        send() { }
+        close() { this.closeCalls++; }
+    }
+
+    afterEach(() => {
+        globalThis.WebSocket = originalWebSocket;
+        vi.useRealTimers();
+    });
+
+    const SERVER = { key: "2:1", region: "2", name: "1", label: "Miami 1", playerCount: 4, capacity: 30, host: "s2.moomodding.io" };
+
+    async function disconnectedFromServer() {
+        created.length = 0;
+        vi.resetModules();
+        vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval"] });
+        vi.spyOn(console, "log").mockImplementation(() => { });
+        globalThis.WebSocket = FakeNativeWebSocket as unknown as typeof WebSocket;
+        localStorage.setItem("falcon-host-mode", "moomodding");
+
+        await import("@core/socket/SocketListener");
+        const { default: Client } = await import("@core/Client");
+        const { encode } = await import("@msgpack/msgpack");
+        Client.mode = "normal";
+        await Client.connect(SERVER);
+
+        const first = Client.socket as unknown as WebSocket;
+        first.onopen!(new Event("open"));
+        first.onmessage!({ data: encode(["io-init", ["id"]]).slice().buffer } as MessageEvent);
+        first.onclose!(new CloseEvent("close", { code: 1006 }));
+        return { Client, first };
+    }
+
+    it("connects to the same server again in the page instead of reloading", async () => {
+        const { Client, first } = await disconnectedFromServer();
+        const reload = vi.spyOn(Client, "connect");
+        expect(document.getElementById("disconnected-page")!.style.display).toBe("flex");
+
+        document.getElementById("reconnect-btn")!.click();
+
+        expect(reload).toHaveBeenCalledWith(SERVER);
+        expect(created).toHaveLength(2);
+        expect(created[1].url).toBe(created[0].url);
+        expect(Client.socket).not.toBe(first);
+        expect(created[0].closeCalls).toBe(1); // the old socket is retired (it was still "open" in this fake)
+    });
+
+    it("goes back to the respawn card, with Enter Game greyed out until the new socket opens", async () => {
+        const { Client } = await disconnectedFromServer();
+        document.getElementById("reconnect-btn")!.click();
+
+        const enter = document.getElementById("enter-game-btn")!;
+        expect(document.getElementById("disconnected-page")!.style.display).toBe("none");
+        expect(document.getElementById("respawn-page-main-card")!.style.display).toBe("flex");
+        expect(document.getElementById("respawn-page")!.style.display).toBe("flex");
+        expect(enter.classList.contains("disabled")).toBe(true);
+
+        (Client.socket as unknown as WebSocket).onopen!(new Event("open"));
+        expect(enter.classList.contains("disabled")).toBe(false);
+    });
+
+    it("doesn't show the old connection's disconnect screen again", async () => {
+        const { first } = await disconnectedFromServer();
+        document.getElementById("reconnect-btn")!.click();
+
+        first.onclose!(new CloseEvent("close", { code: 1006 }));
+        expect(document.getElementById("disconnected-page")!.style.display).toBe("none");
+    });
+});
