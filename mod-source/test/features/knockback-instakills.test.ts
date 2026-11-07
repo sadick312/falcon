@@ -1,7 +1,7 @@
 // Feature #3, Knockback Instakills (AutoInstakiller): a two-hit combo, bull helmet + primary then turret gear +
 // secondary (reversed against a great hammer or a Spike Gear target), when the simulated combo pushes the enemy
 // into a spike, kills or pit-traps them. Checked from the packets sent during real ticks.
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { type Game, ME, startGame } from "../helpers/game";
 
 let game: Game | undefined;
@@ -92,5 +92,113 @@ describe("Knockback Instakills damage estimate", () => {
         module.modifySimulationActions(player, true, true, true, primary, secondary);
         // Musket: 50 damage, not 50 x 0.2.
         expect(module.simulationActions[0][1].damage).toBe(50);
+    });
+});
+
+describe("Knockback Instakills: when it holds back, and Auto Insta (ATOS)", () => {
+    interface Setup {
+        enable?: string[];
+        weapons?: number[];
+        enemyX?: number;
+        /** Server update order for the checked tick (default: us first). */
+        order?: number[];
+        before?: (ctx: { game: Game }) => Promise<void> | void;
+    }
+
+    /** Polearm + musket, greater spike behind the enemy (as in play()); returns the attack started on the checked tick. */
+    async function reason(s: Setup = {}) {
+        const { LIST_ID_MAP } = await import("@constants/items");
+        game = await startGame({ enable: s.enable ?? ["attackFactoringKB:insta"] });
+        game.spawn({ sid: ME, x: 1000, y: 1000, weaponIndex: (s.weapons ?? [5, 15])[0] });
+        game.spawn({ sid: 2, x: s.enemyX ?? 1100, y: 1000 });
+        game.setLoadout(s.weapons ?? [5, 15], [0, 3, 6, 10, 15]);
+        game.addObjects([{ sid: 500, x: (s.enemyX ?? 1100) + 80, y: 1000, itemId: LIST_ID_MAP.GREATER_SPIKES, owner: ME }]);
+        game.update();
+        const { default: AttackManager } = await import("@core/mod/combat/core/AttackManager");
+        // The setup tick may already have started a combo; only an attack started on the checked tick counts.
+        AttackManager.stopAttackAction();
+        await s.before?.({ game });
+        game.update([], s.order);
+        return AttackManager.currentAttackAction?.reason;
+    }
+
+    it("runs the combo when the enemy updates before us too", async () => {
+        expect(await reason({ order: [2, ME] })).toBe("autoInstaKill");
+    });
+
+    it("waits when the enemy is out of reach", async () => {
+        expect(await reason({ enemyX: 1400 })).toBeUndefined();
+    });
+
+    it("never runs with a tool hammer as the primary", async () => {
+        expect(await reason({ weapons: [0, 15] })).toBeUndefined();
+    });
+
+    it("leaves a trapped enemy alone, unless Auto Insta (ATOS) asked for it", async () => {
+        const trap = async ({ game }: { game: Game }) => {
+            const { LIST_ID_MAP } = await import("@constants/items");
+            game.addObjects([{ sid: 600, x: 1100, y: 1000, itemId: LIST_ID_MAP.PIT_TRAP, owner: ME }]);
+        };
+        expect(await reason({ before: trap })).toBeUndefined();
+
+        const atos = await reason({
+            before: async (ctx) => {
+                await trap(ctx);
+                const { default: AttackManager } = await import("@core/mod/combat/core/AttackManager");
+                AttackManager.autoInstaToggle = true;
+            }
+        });
+        expect(atos).toBe("ATOS");
+        const { default: AttackManager } = await import("@core/mod/combat/core/AttackManager");
+        expect(AttackManager.autoInstaToggle).toBe(false);
+    });
+
+    it("Auto Insta (ATOS) runs even with the toggle off", async () => {
+        expect(await reason({
+            enable: [],
+            before: async () => {
+                const { default: AttackManager } = await import("@core/mod/combat/core/AttackManager");
+                AttackManager.autoInstaToggle = true;
+            }
+        })).toBe("ATOS");
+    });
+
+    it("stands down while Auto Place is about to re-trap the enemy", async () => {
+        expect(await reason({
+            before: async () => {
+                const { default: AttackManager } = await import("@core/mod/combat/core/AttackManager");
+                // probePlacements sets this each tick; keep it set for the checked tick.
+                const probe = vi.spyOn(AttackManager as unknown as { probePlacements(): void }, "probePlacements");
+                probe.mockImplementation(() => { AttackManager.placeIntent.retrap = true; });
+            }
+        })).toBeUndefined();
+    });
+
+    it("waits while we're trapped, unless 'Allow In Trap' is on", async () => {
+        const trapUs = async ({ game }: { game: Game }) => {
+            const { LIST_ID_MAP } = await import("@constants/items");
+            game.addObjects([{ sid: 601, x: 1000, y: 1000, itemId: LIST_ID_MAP.PIT_TRAP, owner: 2 }]);
+        };
+        expect(await reason({ before: trapUs })).toBeUndefined();
+        expect(await reason({ enable: ["attackFactoringKB:insta", "attackFactoringKB:insta:allowInTrap"], before: trapUs })).toBe("autoInstaKill");
+    });
+
+    it("waits on a fake tick, when the update order is unknown", async () => {
+        game = await startGame({ enable: ["attackFactoringKB:insta"] });
+        const { LIST_ID_MAP } = await import("@constants/items");
+        game.spawn({ sid: ME, x: 1000, y: 1000, weaponIndex: 5 });
+        game.spawn({ sid: 2, x: 1100, y: 1000 });
+        game.setLoadout([5, 15], [0, 3, 6, 10]);
+        game.addObjects([{ sid: 500, x: 1180, y: 1000, itemId: LIST_ID_MAP.GREATER_SPIKES, owner: ME }]);
+        game.update();
+        const { default: PlayerStateManager } = await import("@core/logic/players/core/PlayerStateManager");
+        const { default: AutoInstakiller } = await import("@combat-modules/AutoInstakiller");
+        const { default: AttackManager } = await import("@core/mod/combat/core/AttackManager");
+        PlayerStateManager.placementMap.clear();
+        const queued = vi.spyOn(AttackManager, "addAttackQueue");
+        const module = new AutoInstakiller();
+        module.init();
+        module.run();
+        expect(queued).not.toHaveBeenCalled();
     });
 });

@@ -94,3 +94,104 @@ describe("Graders", () => {
         expect(damageSkipped.some(Boolean)).toBe(false);
     });
 });
+
+describe("Spike Grader: more cases (B6)", () => {
+    /** A spike spot straight at the enemy (100 to our right, inside the spike's hit range), with optional extras. */
+    async function spike(opts: {
+        objects?: { sid: number; x: number; y: number; itemId: keyof typeof import("@constants/items").LIST_ID_MAP; owner?: number }[];
+        moveDir?: number | null;
+        order?: number[];
+        fakeTick?: boolean;
+        spikeTick?: boolean;
+        clowned?: boolean;
+        weapons?: number[];
+    } = {}) {
+        const { LIST_ID_MAP, default: items } = await import("@constants/items");
+        game = await startGame();
+        game.spawn({ sid: ME, x: 1000, y: 1000, weaponIndex: (opts.weapons ?? [5, 10])[0] });
+        game.spawn({ sid: 2, x: 1100, y: 1000 });
+        game.setLoadout(opts.weapons ?? [5, 10], [0, 3, 6, 10, 15]);
+        game.addObjects((opts.objects ?? []).map(o => ({ sid: o.sid, x: o.x, y: o.y, itemId: LIST_ID_MAP[o.itemId], owner: o.owner ?? ME })));
+        game.update([], opts.order);
+        game.update(opts.clowned ? [{ sid: 2, skinIndex: 45 }] : [], opts.order);
+
+        const { default: Angle } = await import("@placing/Angle");
+        const { default: AngleGrader } = await import("@placing/AngleGrader");
+        const { default: ModManager } = await import("@core/ModManager");
+        const { default: PlayerStateManager } = await import("@core/logic/players/core/PlayerStateManager");
+        const { default: MovementPhysicsSimulator } = await import("@core/mod/simulation/MovementPhysicsSimulator");
+        const grader = (AngleGrader as unknown as { spikeGrader: Grader }).spikeGrader;
+        const enemy = ModManager.enemyData.nearest!;
+        game.Client.lastMoveDir = opts.moveDir ?? null;
+        if (opts.fakeTick) PlayerStateManager.placementMap.clear();
+
+        const kb: { same: boolean; next: boolean; damage: boolean }[] = [];
+        const simulate = MovementPhysicsSimulator.simulate.bind(MovementPhysicsSimulator);
+        vi.spyOn(MovementPhysicsSimulator, "simulate").mockImplementation((state, actions, ...rest) => {
+            const first = actions[0] as { dontUse?: boolean }[];
+            const second = actions[1] as { dontUse?: boolean }[] | undefined;
+            if (first?.[1] && first[2]) kb.push({ damage: !first[1].dontUse, same: !first[2].dontUse, next: !!second && !second[0].dontUse });
+            return simulate(state, actions, ...rest);
+        });
+
+        const scale = items.list[LIST_ID_MAP.SPIKES].scale;
+        const spot = new Angle(1000 + 35 + scale, 1000, scale, 0, LIST_ID_MAP.SPIKES);
+        spot.spikeTick = !!opts.spikeTick;
+        grader.prepare(spot, [enemy], false);
+        grader.grade(spot, enemy);
+        return { spot, kb, enemy };
+    }
+
+    it("marks down a spot our own next step would run into", async () => {
+        const still = (await spike()).spot.grade;
+        game!.done();
+        const walking = (await spike({ moveDir: 0 })).spot.grade;
+        expect(still - walking).toBeCloseTo(2.5, 5);
+    });
+
+    it("times a spike tick's knockback by the update order", async () => {
+        const first = (await spike({ spikeTick: true, order: [ME, 2] })).kb[0];
+        expect(first).toEqual({ damage: true, same: true, next: false });
+        game!.done();
+        const second = (await spike({ spikeTick: true, order: [2, ME] })).kb[0];
+        expect(second).toEqual({ damage: true, same: false, next: true });
+    });
+
+    it("leaves the spike tick's hit out on a fake tick (unknown update order)", async () => {
+        const { kb } = await spike({ spikeTick: true, fakeTick: true });
+        expect(kb[0]).toEqual({ damage: false, same: false, next: false });
+    });
+
+    it("rates a spike that knocks the enemy into our pit trap higher", async () => {
+        const alone = (await spike()).spot.grade;
+        game!.done();
+        const intoTrap = (await spike({ objects: [{ sid: 801, x: 1170, y: 1000, itemId: "PIT_TRAP" }] })).spot.grade;
+        expect(intoTrap).toBeGreaterThan(alone);
+    });
+
+    it("never uses a spike that would knock the enemy onto a teleporter", async () => {
+        const { spot } = await spike({ objects: [{ sid: 802, x: 1160, y: 1000, itemId: "TELEPORTER" }] });
+        expect(spot.dontUse).toBe(true);
+    });
+
+    it("counts a pit spike on a trapped enemy, without spike tick or Apple Insta", async () => {
+        const { spot, enemy } = await spike({ spikeTick: true, objects: [{ sid: 803, x: 1100, y: 1000, itemId: "PIT_TRAP" }] });
+        expect(enemy.trap).toBeTruthy();
+        expect(spot.pitSpike.has(2)).toBe(true);
+        expect(spot.spikeTick).toBe(false);
+        expect(spot.appleInsta).toBe(false);
+    });
+
+    it("gives a little extra against a shamed enemy", async () => {
+        const normal = (await spike()).spot.grade;
+        game!.done();
+        const shamed = (await spike({ clowned: true })).spot.grade;
+        expect(shamed - normal).toBeCloseTo(0.25, 5);
+    });
+
+    it("drops spike-tick plans when our primary can't make them count", async () => {
+        // Tool hammer + great hammer: no attack primary, and nothing important about this spot.
+        const { spot } = await spike({ spikeTick: true, weapons: [0, 10] });
+        expect(spot.spikeTick).toBe(false);
+    });
+});
