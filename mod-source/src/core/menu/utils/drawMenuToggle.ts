@@ -1,12 +1,13 @@
 import getElem from "@utils/dom/getElem";
-import Menu, { IMenuItem } from "../Menu";
+import type Menu from "@menu/Menu";
+import type { IMenuItem } from "@menu/Menu";
 import drawItemBody from "./drawItemBody";
 import drawItemLabel from "./drawItemLabel";
 import drawResetButton from "./drawResetButton";
 import { makeKeyboardClickable } from "./keyboard";
 
-export default function drawMenuToggle(item: IMenuItem, contentElement: HTMLElement, isNested: boolean) {
-    const isInDropdownContent = contentElement !== Menu.contentElement;
+export default function drawMenuToggle(item: IMenuItem, contentElement: HTMLElement, isNested: boolean, menu: typeof Menu) {
+    const isInDropdownContent = contentElement !== menu.contentElement;
 
     const body = drawItemBody();
     body.classList.add("menuToggle");
@@ -28,7 +29,7 @@ export default function drawMenuToggle(item: IMenuItem, contentElement: HTMLElem
     }
 
     drawItemLabel(item, toggle, isInDropdownContent);
-    drawResetButton(item, toggle);
+    drawResetButton(item, toggle, menu);
 
     if (item.status) toggle.classList.add("activeMenuItem");
 
@@ -68,8 +69,8 @@ export default function drawMenuToggle(item: IMenuItem, contentElement: HTMLElem
                 favoriteIcon.classList.remove("active");
             }
 
-            Menu.saveFavorites();
-            if (Menu.isInFavoritesTab) getElem(`menuTab:0`).click();
+            menu.saveFavorites();
+            if (menu.isInFavoritesTab) getElem(`menuTab:0`).click();
         };
 
         favoriteButton.appendChild(favoriteIcon);
@@ -91,7 +92,7 @@ export default function drawMenuToggle(item: IMenuItem, contentElement: HTMLElem
         settingIcon.style.fontSize = `${useDropdown ? 22 : 16}px`;
         settingIcon.innerHTML = useDropdown ? item.isDropdownToggled ? "keyboard_arrow_up" : "keyboard_arrow_down" : "settings";
         dropdownContent.style.display = item.isDropdownToggled ? "block" : "none";
-        if (item.isDropdownToggled) Menu.renderItems(item.settings!, dropdownContent, undefined, true);
+        if (item.isDropdownToggled) menu.renderItems(item.settings!, dropdownContent, undefined, true);
 
         settingButton.appendChild(settingIcon);
         toggle.appendChild(settingButton);
@@ -104,16 +105,16 @@ export default function drawMenuToggle(item: IMenuItem, contentElement: HTMLElem
                 item.isDropdownToggled = !item.isDropdownToggled;
                 settingIcon.innerHTML = item.isDropdownToggled ? "keyboard_arrow_up" : "keyboard_arrow_down";
                 dropdownContent.style.display = item.isDropdownToggled ? "flex" : "none";
-                Menu.renderItems(item.settings!, dropdownContent, undefined, true);
+                menu.renderItems(item.settings!, dropdownContent, undefined, true);
                 return;
             }
 
-            Menu.renderItems(item.settings!, undefined, undefined, true);
-            Menu.currentItem = item.settings![0];
+            menu.renderItems(item.settings!, undefined, undefined, true);
+            menu.currentItem = item.settings![0];
 
-            Menu.backwardStack.push(item);
-            Menu.forwardStack.clear();
-            Menu.updateUtilsBar(`${item.label} Settings`);
+            menu.backwardStack.push(item);
+            menu.forwardStack.clear();
+            menu.updateUtilsBar(`${item.label} Settings`);
         };
 
         if (useDropdown)
@@ -145,7 +146,7 @@ export default function drawMenuToggle(item: IMenuItem, contentElement: HTMLElem
 
     toggle.onclick = () => {
         item.status = !item.status;
-        Menu.saveSettings();
+        menu.saveSettings();
         if (typeof item.update === "function") item.update();
     };
 

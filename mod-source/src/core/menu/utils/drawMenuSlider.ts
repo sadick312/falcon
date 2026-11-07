@@ -1,9 +1,10 @@
-import Menu, { IMenuItem } from "../Menu";
+import type Menu from "@menu/Menu";
+import type { IMenuItem } from "@menu/Menu";
 import drawItemBody from "./drawItemBody";
 import drawItemLabel from "./drawItemLabel";
 import drawResetButton from "./drawResetButton";
 
-export default function drawMenuSlider(item: IMenuItem, contentElement: HTMLElement) {
+export default function drawMenuSlider(item: IMenuItem, contentElement: HTMLElement, menu: typeof Menu) {
     const body = drawItemBody();
     body.style.pointerEvents = "none";
 
@@ -18,7 +19,7 @@ export default function drawMenuSlider(item: IMenuItem, contentElement: HTMLElem
         body.appendChild(iconHolderElem);
     }
 
-    drawItemLabel(item, body, contentElement !== Menu.contentElement);
+    drawItemLabel(item, body, contentElement !== menu.contentElement);
 
     const slider = document.createElement("input");
     slider.classList.add("menuSlider");
@@ -31,7 +32,7 @@ export default function drawMenuSlider(item: IMenuItem, contentElement: HTMLElem
 
     slider.value = item.status as string;
     slider.setAttribute("aria-label", item.label);
-    drawResetButton(item, body);
+    drawResetButton(item, body, menu);
     body.appendChild(slider);
 
     const sliderDisplay = document.createElement("div");
@@ -43,7 +44,7 @@ export default function drawMenuSlider(item: IMenuItem, contentElement: HTMLElem
     slider.addEventListener("input", () => {
         item.status = slider.value;
         sliderDisplay.innerText = item.status as string;
-        Menu.saveSettings();
+        menu.saveSettings();
         item.refreshReset?.();
     });
 

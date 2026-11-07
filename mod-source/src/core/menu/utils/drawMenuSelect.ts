@@ -1,11 +1,12 @@
-import Menu, { IMenuItem } from "../Menu";
+import type Menu from "@menu/Menu";
+import type { IMenuItem } from "@menu/Menu";
 import drawItemBody from "./drawItemBody";
 import drawItemLabel from "./drawItemLabel";
 import drawResetButton from "./drawResetButton";
 
-export default function drawMenuSelect(item: IMenuItem, contentElement: HTMLElement) {
+export default function drawMenuSelect(item: IMenuItem, contentElement: HTMLElement, menu: typeof Menu) {
     if (!item.options) return;
-    const isInDropdownContent = contentElement !== Menu.contentElement;
+    const isInDropdownContent = contentElement !== menu.contentElement;
 
     const body = drawItemBody();
     body.style.pointerEvents = "none";
@@ -38,12 +39,12 @@ export default function drawMenuSelect(item: IMenuItem, contentElement: HTMLElem
     }
 
     selector.setAttribute("aria-label", item.label);
-    drawResetButton(item, body);
+    drawResetButton(item, body, menu);
     body.appendChild(selector);
     selector.onchange = (ev) => {
         if (ev.target === selector) {
             item.status = selector.value;
-            Menu.saveSettings();
+            menu.saveSettings();
             item.refreshReset?.();
         }
     }

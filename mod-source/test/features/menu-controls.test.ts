@@ -25,7 +25,7 @@ describe("Chat log", () => {
     it("keeps the last 500 entries, as text", async () => {
         game = await startGame();
         const { default: Menu, ChatLog } = await import("@menu/Menu");
-        const { addChatLog } = await import("@menu/utils/drawChatLog");
+        const addChatLog = (log: InstanceType<typeof ChatLog>) => Menu.addChatLog(log);
         Menu.chatLogs.length = 0;
         for (let i = 0; i < 510; i++) addChatLog(new ChatLog(`<b>${i}</b>`));
         expect(Menu.chatLogs.length).toBe(500);

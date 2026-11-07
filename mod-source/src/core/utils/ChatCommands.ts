@@ -4,7 +4,6 @@ import PingTracker from "@core/mod/utils/PingTracker";
 import SocketListener from "@core/socket/SocketListener";
 import PacketTracker from "@core/utils/PacketTracker";
 import Menu, { ChatLog } from "@menu/Menu";
-import { addChatLog } from "@menu/utils/drawChatLog";
 
 interface ChatCommand {
     desc: string;
@@ -99,7 +98,7 @@ export default class ChatCommands {
     }
 
     private static reply(msg: string) {
-        addChatLog(new ChatLog(msg));
+        Menu.addChatLog(new ChatLog(msg));
 
         const player = Client.player;
         if (!player) return;

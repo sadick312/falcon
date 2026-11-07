@@ -1,5 +1,7 @@
 import readJson from "@utils/storage/readJson";
-import Menu, { menuContent, SavedConfigs } from "../Menu";
+import type Menu from "@menu/Menu";
+import type { SavedConfigs } from "@menu/Menu";
+import { menuContent } from "@menu/content";
 import drawItemBody from "./drawItemBody";
 import { keepEnterInInput, makeKeyboardClickable } from "./keyboard";
 
@@ -12,8 +14,8 @@ function makeButton(text: string, label: string) {
 }
 
 /** Saves the current settings as a .json file the player can keep or share. */
-function exportSettings() {
-    const json = JSON.stringify(Menu.collectSettings(), null, 2);
+function exportSettings(menu: typeof Menu) {
+    const json = JSON.stringify(menu.collectSettings(), null, 2);
     const url = URL.createObjectURL(new Blob([json], { type: "application/json" }));
     const link = document.createElement("a");
     link.href = url;
@@ -24,7 +26,7 @@ function exportSettings() {
 }
 
 /** Reads a settings file chosen by the player and applies it. Returns a message for the status line. */
-async function importSettings(file: File) {
+async function importSettings(file: File, menu: typeof Menu) {
     let data: unknown;
 
     try {
@@ -36,12 +38,12 @@ async function importSettings(file: File) {
     if (!data || typeof data !== "object" || Array.isArray(data))
         return `"${file.name}" is not a valid settings file (expected an object of settings).`;
 
-    const { applied, skipped } = await Menu.applySettings(data as Record<string, unknown>);
+    const { applied, skipped } = await menu.applySettings(data as Record<string, unknown>);
     const skippedText = skipped ? `, skipped ${skipped} that don't exist or don't fit anymore` : "";
     return `Imported ${applied} setting${applied === 1 ? "" : "s"}${skippedText}.`;
 }
 
-export default function drawConfigUI() {
+export default function drawConfigUI(menu: typeof Menu) {
     const body = drawItemBody();
     body.style.pointerEvents = "none";
     body.classList.add("menuConfigUI");
@@ -74,14 +76,14 @@ export default function drawConfigUI() {
     saveButton.onclick = async () => {
         if (nameInput.value) {
             const savedConfigs = readJson<SavedConfigs>("falcon-configs", {});
-            savedConfigs[nameInput.value] = Menu.collectSettings();
+            savedConfigs[nameInput.value] = menu.collectSettings();
             localStorage.setItem("falcon-configs", JSON.stringify(savedConfigs));
-            Menu.renderItems(menuContent.configs);
+            menu.renderItems(menuContent.configs);
         }
     };
 
     exportButton.onclick = () => {
-        exportSettings();
+        exportSettings(menu);
         status.textContent = "Saved falcon-settings.json to your downloads.";
     };
 
@@ -91,12 +93,12 @@ export default function drawConfigUI() {
         fileInput.value = "";
         if (!file) return;
 
-        const message = await importSettings(file);
+        const message = await importSettings(file, menu);
         // Applying redraws the Configs tab, so write the message into the new status line.
-        const newStatus = Menu.contentElement.querySelector(".menuConfigUIStatus");
+        const newStatus = menu.contentElement.querySelector(".menuConfigUIStatus");
         (newStatus ?? status).textContent = message;
     };
 
-    Menu.contentElement.appendChild(body);
-    Menu.contentElement.appendChild(status);
+    menu.contentElement.appendChild(body);
+    menu.contentElement.appendChild(status);
 }

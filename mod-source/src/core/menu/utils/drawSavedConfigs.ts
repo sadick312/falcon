@@ -1,5 +1,7 @@
 import readJson from "@utils/storage/readJson";
-import Menu, { menuContent, SavedConfigs } from "../Menu";
+import type Menu from "@menu/Menu";
+import type { SavedConfigs } from "@menu/Menu";
+import { menuContent } from "@menu/content";
 import drawItemBody from "./drawItemBody";
 import { makeKeyboardClickable } from "./keyboard";
 
@@ -9,7 +11,7 @@ const ICON = `
 </svg>
 `;
 
-export default async function drawSavedConfigs() {
+export default async function drawSavedConfigs(menu: typeof Menu) {
     const savedConfigs = readJson<SavedConfigs>("falcon-configs", {});
 
     for (const key in savedConfigs) {
@@ -50,7 +52,7 @@ export default async function drawSavedConfigs() {
             ev.stopPropagation();
             savedConfigs[key] = undefined;
             localStorage.setItem("falcon-configs", JSON.stringify(savedConfigs));
-            Menu.renderItems(menuContent.configs);
+            menu.renderItems(menuContent.configs);
         };
 
         const settingButton = document.createElement("div");
@@ -67,9 +69,9 @@ export default async function drawSavedConfigs() {
         makeKeyboardClickable(body, `Load config ${key}`);
         body.onclick = () => {
             // applySettings also saves them as the current settings and redraws, so the toggles show the change.
-            Menu.applySettings(savedConfigs[key]!);
+            menu.applySettings(savedConfigs[key]!);
         };
 
-        Menu.contentElement.appendChild(body);
+        menu.contentElement.appendChild(body);
     }
 }

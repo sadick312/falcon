@@ -1,9 +1,10 @@
-import Menu, { IMenuItem } from "../Menu";
+import type Menu from "@menu/Menu";
+import type { IMenuItem } from "@menu/Menu";
 import drawItemBody from "./drawItemBody";
 import drawItemLabel from "./drawItemLabel";
 import { makeKeyboardClickable } from "./keyboard";
 
-export default function drawMenuGroup(item: IMenuItem, contentElement: HTMLElement) {
+export default function drawMenuGroup(item: IMenuItem, contentElement: HTMLElement, menu: typeof Menu) {
     if (!item.settings) return;
 
     const body = drawItemBody();
@@ -34,13 +35,13 @@ export default function drawMenuGroup(item: IMenuItem, contentElement: HTMLEleme
 
     makeKeyboardClickable(body, item.label);
     body.onclick = () => {
-        Menu.renderItems(item.settings!);
+        menu.renderItems(item.settings!);
 
-        Menu.currentItem = item.settings![0];
+        menu.currentItem = item.settings![0];
 
-        Menu.backwardStack.push(item);
-        Menu.forwardStack.clear();
-        Menu.updateUtilsBar(item.label);
+        menu.backwardStack.push(item);
+        menu.forwardStack.clear();
+        menu.updateUtilsBar(item.label);
     };
 
     contentElement.appendChild(body);

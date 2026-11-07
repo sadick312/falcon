@@ -30,7 +30,6 @@ import Socket, { respawnMainCard } from "@core/socket/Socket";
 import { socketHooks } from "@core/socket/socketHooks";
 import PacketBatcher from "@core/utils/PacketBatcher";
 import Menu, { ChatLog } from "@menu/Menu";
-import { addChatLog } from "@menu/utils/drawChatLog";
 import CameraManager from "@rendering/core/CameraManager";
 import RendererSystem from "@rendering/RendererSystem";
 import PacketMap from "@root/utils/socket/PacketMap";
@@ -198,7 +197,7 @@ export default class SocketListener {
             const player = PlayerManager.get(id);
 
             if (player) {
-                addChatLog(new ChatLog(`${player.name} {${player.sid}} has left the game`, "leave"));
+                Menu.addChatLog(new ChatLog(`${player.name} {${player.sid}} has left the game`, "leave"));
                 PlayerManager.remove(player);
 
                 const allySet = Client.allianceMap.get(player.team);
@@ -310,7 +309,7 @@ export default class SocketListener {
                 updatePlayerValue();
                 updateItems(null, false);
             } else {
-                addChatLog(new ChatLog(`encountered ${tmpPlayer.name} {${tmpPlayer.sid}}`, "encounter"));
+                Menu.addChatLog(new ChatLog(`encountered ${tmpPlayer.name} {${tmpPlayer.sid}}`, "encounter"));
             }
         });
 
@@ -328,7 +327,7 @@ export default class SocketListener {
                 player.chatMessages.unshift(new ChatMessage(msg));
 
                 if (!/@@@@@/g.test(msg) && msg.trim()) {
-                    addChatLog(new ChatLog(`${player.name} {${player.sid}} - ${msg}`));
+                    Menu.addChatLog(new ChatLog(`${player.name} {${player.sid}} - ${msg}`));
                 }
 
                 if (player.chatMessages.length > 3) player.chatMessages.length = 3;

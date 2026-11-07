@@ -1,4 +1,5 @@
-import Menu, { ChatLog } from "../Menu";
+import type Menu from "@menu/Menu";
+import type { ChatLog } from "@menu/ChatLog";
 
 const CHAT_LOGGER_ID = "such_a_sigma_chat_logger";
 /** Oldest entries are dropped past this, one at a time. */
@@ -34,36 +35,36 @@ function scrollToBottom(chatLogger: HTMLElement) {
 }
 
 /** Rebuilds the whole log. Used when the console tab is opened. */
-export default function drawChatLog() {
+export default function drawChatLog(menu: typeof Menu) {
     const chatLogger = document.getElementById(CHAT_LOGGER_ID) || document.createElement("div");
 
     chatLogger.id = CHAT_LOGGER_ID;
     chatLogger.innerHTML = "";
     chatLogger.classList.add("chatLogger");
 
-    for (const log of Menu.chatLogs) chatLogger.appendChild(createRow(log));
+    for (const log of menu.chatLogs) chatLogger.appendChild(createRow(log));
 
-    Menu.contentElement.appendChild(chatLogger);
+    menu.contentElement.appendChild(chatLogger);
     scrollToBottom(chatLogger);
 }
 
-/** Adds one entry and, while the console tab is open, one row instead of redrawing every row. */
-export function addChatLog(log: ChatLog) {
-    Menu.chatLogs.push(log);
-    if (Menu.chatLogs.length > MAX_CHAT_LOGS) Menu.chatLogs.shift();
+/** Adds one entry and, while the console tab is open, one row instead of redrawing every row. Called as menu.addChatLog. */
+export function appendChatLog(menu: typeof Menu, log: ChatLog) {
+    menu.chatLogs.push(log);
+    if (menu.chatLogs.length > MAX_CHAT_LOGS) menu.chatLogs.shift();
 
-    if (Menu.selectedTab !== 5) return;
+    if (menu.selectedTab !== 5) return;
 
     const chatLogger = document.getElementById(CHAT_LOGGER_ID);
     if (!chatLogger) {
-        drawChatLog();
+        drawChatLog(menu);
         return;
     }
 
     chatLogger.appendChild(createRow(log));
     // Drop the oldest rows to match chatLogs (also after "!clear" emptied it).
-    while (chatLogger.childElementCount > Menu.chatLogs.length) chatLogger.firstElementChild!.remove();
+    while (chatLogger.childElementCount > menu.chatLogs.length) chatLogger.firstElementChild!.remove();
 
-    if (chatLogger.childElementCount !== Menu.chatLogs.length) drawChatLog();
+    if (chatLogger.childElementCount !== menu.chatLogs.length) drawChatLog(menu);
     else scrollToBottom(chatLogger);
 }

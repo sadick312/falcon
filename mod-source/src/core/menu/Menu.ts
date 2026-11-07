@@ -4,7 +4,7 @@ import { profileEnd, profileStart } from "@services/profiler/Profiler";
 import readJson from "@utils/storage/readJson";
 import "./menuStyle";
 import Stack from "./misc/Stack";
-import drawChatLog from "./utils/drawChatLog";
+import drawChatLog, { appendChatLog } from "./utils/drawChatLog";
 import drawConfigUI from "./utils/drawConfigUI";
 import drawMenuGroup from "./utils/drawMenuGroup";
 import drawMenuParagraph from "./utils/drawMenuParagraph";
@@ -27,6 +27,11 @@ export { menuContent } from "./content";
 
 export default class Menu {
     static chatLogs: ChatLog[] = [new ChatLog("Loaded Falcon Mod")];
+
+    /** Adds a line to the console tab's chat log (see appendChatLog). */
+    static addChatLog(log: ChatLog) {
+        appendChatLog(Menu, log);
+    }
 
     static tabHolder: HTMLDivElement;
     static contentElement: HTMLDivElement;
@@ -323,7 +328,7 @@ export default class Menu {
             if (event.key === "Escape") {
                 menuElement.style.display =
                     menuElement.style.display === "none" ? "block" : "none";
-                if (this.selectedTab === 5) drawChatLog();
+                if (this.selectedTab === 5) drawChatLog(Menu);
             }
         });
 
@@ -405,15 +410,15 @@ export default class Menu {
 
         if (items.length) {
             for (const item of items) {
-                if (item.type === "toggle") drawMenuToggle(item, contentElement, isNested);
-                else if (item.type === "select") drawMenuSelect(item, contentElement);
-                else if (item.type === "slider") drawMenuSlider(item, contentElement);
+                if (item.type === "toggle") drawMenuToggle(item, contentElement, isNested, Menu);
+                else if (item.type === "select") drawMenuSelect(item, contentElement, Menu);
+                else if (item.type === "slider") drawMenuSlider(item, contentElement, Menu);
                 else if (item.type === "paragraph") drawMenuParagraph(item, contentElement);
-                else if (item.type === "group") drawMenuGroup(item, contentElement);
-                else if (item.type === "number") drawNumberInput(item, contentElement);
-                else if (item.type === "chat-log") drawChatLog();
-                else if (item.type === "config-ui") drawConfigUI();
-                else if (item.type === "saved-configs") drawSavedConfigs();
+                else if (item.type === "group") drawMenuGroup(item, contentElement, Menu);
+                else if (item.type === "number") drawNumberInput(item, contentElement, Menu);
+                else if (item.type === "chat-log") drawChatLog(Menu);
+                else if (item.type === "config-ui") drawConfigUI(Menu);
+                else if (item.type === "saved-configs") drawSavedConfigs(Menu);
             }
         } else {
             const noItemsElem = document.createElement("div");
