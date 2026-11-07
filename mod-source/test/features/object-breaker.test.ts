@@ -74,3 +74,55 @@ describe("Object Breaker", () => {
         expect(held).toContain(POLEARM);
     });
 });
+
+describe("Pit-Spike Breaker", () => {
+    /**
+     * The enemy is caught in our pit trap 90 to our right; our wall sits next to the trap, down-right of us (out of the
+     * swing arc toward the trap). Returns where we aimed and what we held on the checked tick.
+     */
+    async function pitSpike(s: { enable?: boolean; trapped?: boolean; ourSpike?: boolean; wallAt?: { x: number; y: number } } = {}) {
+        const { LIST_ID_MAP } = await import("@constants/items");
+        const enable = s.enable === false ? ["walkBreaker"] : ["walkBreaker", "objectBreaker:pit_spike"];
+        game = await startGame({ enable });
+        game.spawn({ sid: ME, x: 1000, y: 1000, weaponIndex: POLEARM });
+        game.spawn({ sid: 2, x: s.trapped === false ? 1300 : 1090, y: 1000 });
+        game.setLoadout([POLEARM, GREAT_HAMMER], [0, 3, 6, 10, 15]);
+        const wall = s.wallAt ?? { x: 1020, y: 1085 };
+        const objects = [
+            { sid: 700, x: 1090, y: 1000, itemId: LIST_ID_MAP.PIT_TRAP, owner: ME },
+            { sid: 701, x: wall.x, y: wall.y, itemId: LIST_ID_MAP.WOOD_WALL, owner: ME }
+        ];
+        if (s.ourSpike) objects.push({ sid: 702, x: 1090, y: 920, itemId: LIST_ID_MAP.SPIKES, owner: ME });
+        game.addObjects(objects);
+        game.update();
+
+        const { default: ObjectBreaker } = await import("@core/mod/defense/modules/ObjectBreaker");
+        ObjectBreaker.aimAngle = 99;
+        const before = game.sent.length;
+        game.update();
+        const sent = game.sent.slice(before);
+        return { aim: ObjectBreaker.aimAngle, hit: sent.some(p => p.type === "F" && p.args[0] === 1) };
+    }
+
+    it("breaks our own building next to a trapped enemy's trap, to make room for a spike", async () => {
+        const { aim } = await pitSpike();
+        expect(aim).toBeCloseTo(Math.atan2(85, 20), 1);
+    });
+
+    it("does nothing when the toggle is off or the enemy isn't trapped", async () => {
+        expect((await pitSpike({ enable: false })).aim).toBe(99);
+        expect((await pitSpike({ trapped: false })).aim).toBe(99);
+    });
+
+    it("leaves it alone when one of our spikes already sits by the trap", async () => {
+        expect((await pitSpike({ ourSpike: true })).aim).toBe(99);
+    });
+
+    it("skips a building in the same swing arc as the trap (hitting it would hit the trap too)", async () => {
+        expect((await pitSpike({ wallAt: { x: 1060, y: 1080 } })).aim).toBe(99);
+    });
+
+    it("skips a building we're standing against", async () => {
+        expect((await pitSpike({ wallAt: { x: 1010, y: 1070 } })).aim).toBe(99);
+    });
+});

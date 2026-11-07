@@ -117,3 +117,164 @@ describe("Auto Push Strikes: Predictive (polearm)", () => {
         expect(hits.map(h => h.reason)).toEqual(["predictiveSpikeStrikes"]);
     });
 });
+
+describe("Auto Push Strikes: Predictive, learning the enemy's tank-gear timing", () => {
+    const KATANA = 4;
+    const POLEARM = 5;
+
+    /**
+     * The Predictive method on its own, with the enemy touching Auto Push's spike (as in strike()). Default: katana and
+     * spinning spikes, so a bull hit + the spike can kill (40 × 1.5 + 45 >= 100); a polearm with plain spikes can't.
+     */
+    async function predictive(opts: { enemyX?: number; spike?: boolean; weak?: boolean } = {}) {
+        const { LIST_ID_MAP } = await import("@constants/items");
+        game = await startGame({ enable: ["attackInPush"] });
+        const primaryId = opts.weak ? POLEARM : KATANA;
+        game.spawn({ sid: ME, x: 1000, y: 1000, weaponIndex: primaryId });
+        game.spawn({ sid: 2, x: opts.enemyX ?? 1095, y: 1000 });
+        game.setLoadout([primaryId, 10], [0, 3, 6, 15]);
+        game.addObjects([{ sid: 700, x: 1150, y: 1000, itemId: opts.weak ? LIST_ID_MAP.SPIKES : LIST_ID_MAP.SPINNING_SPIKES, owner: ME }]);
+        game.update();
+        game.update();
+
+        const { default: ModManager } = await import("@core/ModManager");
+        const { default: ObjectManager } = await import("@core/logic/ObjectManager");
+        const { default: AutoPusher } = await import("@core/mod/combat/core/AutoPusher");
+        const { default: AttackManager } = await import("@core/mod/combat/core/AttackManager");
+        const { default: GameEventTracker } = await import("@core/mod/utils/GameEventTracker");
+        const { default: PlayerCombatManager } = await import("@core/logic/players/core/PlayerCombatManager");
+        const { default: PredictiveMethod } = await import("@core/mod/combat/modules/push-strikes/modules/PredictiveMethod");
+
+        const spike = ObjectManager.getObject(700)!;
+        AutoPusher.theSpike = opts.spike === false ? undefined as never : spike;
+        const method = new PredictiveMethod();
+        method.initialize();
+        const queued = vi.spyOn(AttackManager, "addAttackQueue").mockImplementation(() => { });
+        const enemy = ModManager.enemyData.nearest!;
+        const player = game.Client.player;
+        const ctx = () => ({ nearestEnemy: enemy, primary: PlayerCombatManager.fetch(player, 0), spike, scale: spike.scale + 35.8, player, tick: ModManager.tick });
+        return { method, enemy, ModManager, GameEventTracker, queued, ctx, player, primaryId };
+    }
+
+    it("counts the tick (since reload) at which a tank-gear enemy swung", async () => {
+        const { STORE_HAT_MAP } = await import("@constants/store");
+        const t = await predictive();
+        vi.spyOn(t.GameEventTracker, "confirm").mockReturnValue(true);
+        t.enemy.skinIndex = STORE_HAT_MAP.TANK_GEAR;
+        t.enemy.profilingData.tankUseHits[0] = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+        t.enemy.weaponData.lastTickSincePrimaryReloaded = t.ModManager.tick - 4;
+
+        t.method.update();
+        expect(t.enemy.profilingData.tankUseHits[0]).toEqual([0, 0, 0, 0, 1, 0, 0, 0, 0]);
+    });
+
+    it("ignores a swing more ticks after the reload than it keeps slots for", async () => {
+        const { STORE_HAT_MAP } = await import("@constants/store");
+        const t = await predictive();
+        vi.spyOn(t.GameEventTracker, "confirm").mockReturnValue(true);
+        t.enemy.skinIndex = STORE_HAT_MAP.TANK_GEAR;
+        t.enemy.profilingData.tankUseHits[0] = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+        t.enemy.weaponData.lastTickSincePrimaryReloaded = t.ModManager.tick - 20;
+
+        t.method.update();
+        expect(t.enemy.profilingData.tankUseHits[0]).toEqual([0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    });
+
+    it("learns nothing when the enemy isn't in tank gear, or didn't swing", async () => {
+        const { STORE_HAT_MAP } = await import("@constants/store");
+        const t = await predictive();
+        const confirm = vi.spyOn(t.GameEventTracker, "confirm").mockReturnValue(false);
+        t.enemy.skinIndex = STORE_HAT_MAP.TANK_GEAR;
+        t.enemy.profilingData.tankUseHits[0] = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+        t.enemy.weaponData.lastTickSincePrimaryReloaded = t.ModManager.tick - 4;
+        t.method.update();
+
+        confirm.mockReturnValue(true);
+        t.enemy.skinIndex = STORE_HAT_MAP.BULL_HELMET;
+        t.method.update();
+        expect(t.enemy.profilingData.tankUseHits[0]).toEqual([0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    });
+
+    it("learns only while the enemy is at the spike, our primary is ready, and hit + spike can kill", async () => {
+        const { STORE_HAT_MAP } = await import("@constants/store");
+        let t = await predictive({ enemyX: 1300 });
+        const track = vi.spyOn(t.GameEventTracker, "track");
+        t.enemy.skinIndex = STORE_HAT_MAP.TANK_GEAR;
+        t.method.update();
+        expect(track).not.toHaveBeenCalled();
+        game!.done();
+
+        t = await predictive();
+        const track2 = vi.spyOn(t.GameEventTracker, "track");
+        t.player.reloads[t.primaryId] = 0.5;
+        t.method.update();
+        expect(track2).not.toHaveBeenCalled();
+        game!.done();
+
+        t = await predictive({ spike: false });
+        const track3 = vi.spyOn(t.GameEventTracker, "track");
+        t.method.update();
+        expect(track3).not.toHaveBeenCalled();
+        game!.done();
+
+        t = await predictive({ weak: true });
+        const track4 = vi.spyOn(t.GameEventTracker, "track");
+        t.method.update();
+        expect(track4).not.toHaveBeenCalled();
+        game!.done();
+
+        // And the normal case does look (so the checks above can fail).
+        t = await predictive();
+        const track5 = vi.spyOn(t.GameEventTracker, "track");
+        t.method.update();
+        expect(track5).toHaveBeenCalled();
+    });
+
+    it("after a strike: a slot loses a point if the enemy is still there, gains one if it's gone", async () => {
+        let t = await predictive();
+        t.enemy.profilingData.tankUseHits[0] = [0, 0, 0, 5, 0, 0, 0, 0, 0];
+        t.enemy.weaponData.lastTickSincePrimaryReloaded = t.ModManager.tick - 2;
+        t.method.execute(t.ctx() as never);
+        expect(t.queued).toHaveBeenCalledTimes(1);
+        t.method.update();
+        expect(t.enemy.profilingData.tankUseHits[0][3]).toBe(4);
+        game!.done();
+
+        t = await predictive();
+        t.enemy.profilingData.tankUseHits[0] = [0, 0, 0, 5, 0, 0, 0, 0, 0];
+        t.enemy.weaponData.lastTickSincePrimaryReloaded = t.ModManager.tick - 2;
+        t.method.execute(t.ctx() as never);
+        t.enemy.visible = false;
+        t.method.update();
+        expect(t.enemy.profilingData.tankUseHits[0][3]).toBe(6);
+    });
+
+    it("doesn't strike at the wrong tick, with the primary reloading, or away from the spike", async () => {
+        let t = await predictive();
+        t.enemy.profilingData.tankUseHits[0] = [0, 0, 0, 5, 0, 0, 0, 0, 0];
+        t.enemy.weaponData.lastTickSincePrimaryReloaded = t.ModManager.tick - 1;
+        t.method.execute(t.ctx() as never);
+        expect(t.queued).not.toHaveBeenCalled();
+
+        t.enemy.weaponData.lastTickSincePrimaryReloaded = t.ModManager.tick - 2;
+        t.player.reloads[t.primaryId] = 0.5;
+        t.method.execute(t.ctx() as never);
+        expect(t.queued).not.toHaveBeenCalled();
+        game!.done();
+
+        t = await predictive({ enemyX: 1300 });
+        t.enemy.profilingData.tankUseHits[0] = [0, 0, 0, 5, 0, 0, 0, 0, 0];
+        t.enemy.weaponData.lastTickSincePrimaryReloaded = t.ModManager.tick - 2;
+        t.method.execute(t.ctx() as never);
+        expect(t.queued).not.toHaveBeenCalled();
+    });
+
+    it("clears negative slots while looking for the most used one", async () => {
+        const t = await predictive();
+        t.enemy.profilingData.tankUseHits[0] = [-3, 0, 0, 5, -1, 0, 0, 0, 0];
+        t.enemy.weaponData.lastTickSincePrimaryReloaded = t.ModManager.tick - 2;
+        t.method.execute(t.ctx() as never);
+        expect(t.enemy.profilingData.tankUseHits[0]).toEqual([0, 0, 0, 5, 0, 0, 0, 0, 0]);
+        expect(t.queued).toHaveBeenCalledTimes(1);
+    });
+});

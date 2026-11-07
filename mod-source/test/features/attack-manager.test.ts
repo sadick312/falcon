@@ -1,6 +1,6 @@
 // Feature #14, Attack Manager: runs every combat module each tick, starts one of the attacks they queued, and plays its
 // (up to 2) steps on consecutive ticks. Modules are replaced with stubs here so only the manager is tested.
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { type Game, ME, startGame } from "../helpers/game";
 
 let game: Game | undefined;
@@ -122,5 +122,84 @@ describe("Attack Manager", () => {
         queue = m.AttackQueuePool.createAttackQueue();
         m.AttackManager.prepareBullHitSequence(queue.sequence);
         expect([queue.sequence[0].skinData[0], queue.sequence[0].reason]).toEqual([STORE_HAT_MAP.SOLDIER_HELMET, "autoBullHit"]);
+    });
+});
+
+describe("Attack Manager: is the pushed enemy on the spike?", () => {
+    async function pushing(spikeX: number | null, autoPushing = true) {
+        const m = await setUp();
+        const { LIST_ID_MAP } = await import("@constants/items");
+        const { default: AutoPusher } = await import("@core/mod/combat/core/AutoPusher");
+        const { default: ObjectManager } = await import("@core/logic/ObjectManager");
+        if (spikeX !== null) game!.addObjects([{ sid: 700, x: spikeX, y: 1000, itemId: LIST_ID_MAP.SPIKES, owner: ME }]);
+        AutoPusher.autoPushing = autoPushing;
+        AutoPusher.theSpike = spikeX === null ? undefined as never : ObjectManager.getObject(700)!;
+        try {
+            return m.AttackManager.checkForAutoPushingStatus();
+        } finally {
+            AutoPusher.autoPushing = false;
+        }
+    }
+
+    it("yes when Auto Push is on and the enemy touches its spike", async () => {
+        expect(await pushing(1150)).toBe(true);
+    });
+
+    it("no when the enemy is away from the spike, there's no spike, or Auto Push is off", async () => {
+        expect(await pushing(1400)).toBe(false);
+        expect(await pushing(null)).toBe(false);
+        expect(await pushing(1150, false)).toBe(false);
+    });
+});
+
+describe("Attack Manager: what Auto Place is about to do to a trapped enemy", () => {
+    /** The enemy (sid 2, at 1100) is trapped; returns the intents after one AttackManager tick with no modules. */
+    async function intents(opts: { trapped?: boolean; preplace?: { id: number; x: number; appleInsta?: boolean }; replace?: { id: number; x: number; appleInsta?: boolean } | "none" }) {
+        const m = await setUp();
+        const { LIST_ID_MAP } = await import("@constants/items");
+        const { default: ModManager } = await import("@core/ModManager");
+        const { default: PlacementSystem } = await import("@core/mod/combat/core/PlacementSystem");
+        const { default: Angle } = await import("@placing/Angle");
+        game!.addObjects([{ sid: 710, x: 1100, y: 1000, itemId: LIST_ID_MAP.PIT_TRAP, owner: ME }]);
+        const enemy = ModManager.enemyData.nearest!;
+        const { default: ObjectManager } = await import("@core/logic/ObjectManager");
+        enemy.trap = opts.trapped === false ? undefined : ObjectManager.getObject(710)!;
+
+        const queue = PlacementSystem.AutoPlacer.potentialPreplacements;
+        queue.count = 0;
+        if (opts.preplace) {
+            const item = queue.placements[queue.count++];
+            item.id = opts.preplace.id;
+            item.x = opts.preplace.x;
+            item.y = 1000;
+            item.appleInsta = !!opts.preplace.appleInsta;
+        }
+        const replacements = opts.replace === undefined || opts.replace === "none" ? undefined : [Object.assign(new Angle(opts.replace.x, 1000, 50, 0, opts.replace.id), { appleInsta: !!opts.replace.appleInsta })];
+        vi.spyOn(PlacementSystem.AutoReplacer, "execute").mockReturnValue(replacements);
+
+        runTicks(m, [], 1);
+        return { ...m.AttackManager.placeIntent };
+    }
+
+    it("nothing while the enemy isn't trapped", async () => {
+        expect(await intents({ trapped: false, preplace: { id: 15, x: 1100 } })).toEqual({ retrap: false, appleInstaIntent: false });
+    });
+
+    it("a re-trap when a preplaced trap lands on the enemy", async () => {
+        expect(await intents({ preplace: { id: 15, x: 1100 } })).toEqual({ retrap: true, appleInstaIntent: false });
+    });
+
+    it("an Apple Insta when a marked preplaced spike lands on the enemy", async () => {
+        expect(await intents({ preplace: { id: 6, x: 1100, appleInsta: true } })).toEqual({ retrap: false, appleInstaIntent: true });
+        expect(await intents({ preplace: { id: 6, x: 1100 } })).toEqual({ retrap: false, appleInstaIntent: false });
+    });
+
+    it("ignores placements that don't reach the enemy", async () => {
+        expect(await intents({ preplace: { id: 15, x: 1300 }, replace: { id: 15, x: 1300 } })).toEqual({ retrap: false, appleInstaIntent: false });
+    });
+
+    it("also looks at replacements: a trap re-traps, a marked spike is an Apple Insta", async () => {
+        expect(await intents({ replace: { id: 15, x: 1100 } })).toEqual({ retrap: true, appleInstaIntent: false });
+        expect(await intents({ replace: { id: 6, x: 1100, appleInsta: true } })).toEqual({ retrap: false, appleInstaIntent: true });
     });
 });
