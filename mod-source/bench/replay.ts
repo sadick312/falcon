@@ -66,6 +66,8 @@ export interface ReplayOptions {
     profile?: boolean;
     /** Also hash every AngleFinder.compute result (each angle's position, grade and flags), not only sent packets. */
     traceAngles?: boolean;
+    /** Also hash the whole game state after every server tick (players, objects, projectiles, animals, us, the brain). */
+    traceState?: boolean;
     /** How to load the mod (see the top of this file). Default "modules". */
     mode?: "modules" | "bundle";
 }
@@ -75,6 +77,11 @@ interface ModApi {
     Menu: typeof import("@menu/Menu").default;
     Client: typeof import("@core/Client").default;
     AngleFinder: typeof import("@placing/AngleFinder").default;
+    PlayerManager: typeof import("@core/logic/players/PlayerManager").default;
+    ObjectManager: typeof import("@core/logic/ObjectManager").default;
+    ProjectileManager: typeof import("@core/logic/ProjectileManager").default;
+    ModManager: typeof import("@core/ModManager").default;
+    ais: typeof import("@entities/Ai").ais;
 }
 
 async function loadMod(mode: "modules" | "bundle"): Promise<ModApi> {
@@ -91,7 +98,12 @@ async function loadMod(mode: "modules" | "bundle"): Promise<ModApi> {
     const { default: Menu } = await import("@menu/Menu");
     const { default: Client } = await import("@core/Client");
     const { default: AngleFinder } = await import("@placing/AngleFinder");
-    return { profiler, Menu, Client, AngleFinder };
+    const { default: PlayerManager } = await import("@core/logic/players/PlayerManager");
+    const { default: ObjectManager } = await import("@core/logic/ObjectManager");
+    const { default: ProjectileManager } = await import("@core/logic/ProjectileManager");
+    const { default: ModManager } = await import("@core/ModManager");
+    const { ais } = await import("@entities/Ai");
+    return { profiler, Menu, Client, AngleFinder, PlayerManager, ObjectManager, ProjectileManager, ModManager, ais };
 }
 
 export interface ReplayResult {
@@ -103,7 +115,16 @@ export interface ReplayResult {
     angleFingerprint?: string;
     angleComputes: number;
     sentPackets: number;
+    /** Hash of the game state after every server tick, with traceState. */
+    stateFingerprint?: string;
+    /** A readable summary of the state at the end, with traceState (shown when a fingerprint changes). */
+    finalState?: StateSummary;
     errors: string[];
+}
+
+export interface StateSummary {
+    players: number; objects: number; projectiles: number; animals: number;
+    me: { sid: number; x: number; y: number; health: number; alive: boolean; weapon: number; hat: number; shame: number } | null;
 }
 
 interface TracedAngle {
@@ -111,6 +132,45 @@ interface TracedAngle {
     priority: boolean; dontUse: boolean; spikeTick: boolean; appleInsta: boolean; preplace: boolean; overlap: boolean;
     alignment: number; breaking: boolean; predict: boolean; replace: boolean; predictBoost: number;
     spikePush: Set<number>; pitSpike: Set<number>; kill: Set<number>; reasons: string[];
+}
+
+/**
+ * The game state after one tick as text, in a fixed order: every known player (position, health, gear, team, shame,
+ * trap), every object (sid, position, health), projectile and animal, our own flags, and the brain state the mod
+ * acted on. Rounding isn't needed: replays are deterministic (fake timers, seeded Math.random).
+ */
+function snapshotState(mod: ModApi, tick: number) {
+    const { Client, PlayerManager, ObjectManager, ProjectileManager, ModManager, ais } = mod;
+    const parts: string[] = [`t${tick}`];
+
+    const players = [...PlayerManager.players.handler.all].sort((a, b) => a.sid - b.sid);
+    for (const p of players) {
+        parts.push(`p${p.sid}:${p.real_position.x},${p.real_position.y},${p.health},${p.weaponIndex},${p.weaponVariant},`
+            + `${p.skinIndex},${p.tailIndex},${p.team},${p.shameCount},${+p.visible},${p.trap?.sid ?? -1}`);
+    }
+
+    for (const o of ObjectManager.allObjects) parts.push(`o${o.sid}:${o.x},${o.y},${o.health},${+o.active}`);
+    for (const pr of ProjectileManager.projectiles.all) parts.push(`j${pr.sid}:${pr.x},${pr.y},${+pr.active}`);
+    for (const a of ais.all) parts.push(`a${a.sid}:${a.real_position.x},${a.real_position.y},${a.health},${+a.visible}`);
+
+    parts.push(`me:${Client.mySID},${+Client.isAlive},${Client.weaponIndex},${Client.lastAteTick}`);
+    parts.push(`brain:${JSON.stringify(ModManager.brainState)}`);
+    return parts.join("|") + "\n";
+}
+
+function summarizeState(mod: ModApi): StateSummary {
+    const { Client, PlayerManager, ObjectManager, ProjectileManager, ais } = mod;
+    const me = Client.player;
+    return {
+        players: PlayerManager.players.handler.all.length,
+        objects: ObjectManager.allObjects.length,
+        projectiles: ProjectileManager.projectiles.all.length,
+        animals: ais.all.length,
+        me: me ? {
+            sid: me.sid, x: me.real_position.x, y: me.real_position.y, health: me.health, alive: Client.isAlive,
+            weapon: me.weaponIndex, hat: me.skinIndex, shame: me.shameCount
+        } : null
+    };
 }
 
 function hashAngles(hash: Hash, buffer: TracedAngle[], count: number) {
@@ -139,7 +199,9 @@ export async function replay(packets: Packet[], options: ReplayOptions = {}): Pr
     vi.spyOn(console, "log").mockImplementation(() => { });
 
     try {
-        const { profiler, Menu, Client, AngleFinder } = await loadMod(options.mode ?? "modules");
+        const mod = await loadMod(options.mode ?? "modules");
+        const { profiler, Menu, Client, AngleFinder } = mod;
+        const stateHash = options.traceState ? createHash("sha256") : null;
         if (options.profile) profiler.enableProfiler({ overlay: false, keepSamples: true, clock: () => realPerformance.now() });
 
         // Loader.main's setup minus rendering: the menu loads the saved settings the modules read every tick.
@@ -181,7 +243,10 @@ export async function replay(packets: Packet[], options: ReplayOptions = {}): Pr
                 errors.push(`packet '${packet.type}': ${err instanceof Error ? err.message : String(err)}`);
             }
             profiler.profileEnd(`packet.${packet.type}`, start);
-            if (packet.type === "a") tick++;
+            if (packet.type === "a") {
+                tick++;
+                if (stateHash) stateHash.update(snapshotState(mod, tick));
+            }
         }
 
         return {
@@ -191,6 +256,8 @@ export async function replay(packets: Packet[], options: ReplayOptions = {}): Pr
             angleFingerprint: angleHash?.digest("hex").slice(0, 16),
             angleComputes,
             sentPackets: sent.length,
+            stateFingerprint: stateHash?.digest("hex").slice(0, 16),
+            finalState: stateHash ? summarizeState(mod) : undefined,
             errors
         };
     } finally {

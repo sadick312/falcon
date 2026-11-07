@@ -2,19 +2,70 @@
     "sample-base": {
         "packets": "6aca8484bdbe212d",
         "angles": "fad3316ca3ab111c",
+        "state": "da63e2c1087a4290",
         "sentPackets": 1618,
-        "angleComputes": 5275
+        "angleComputes": 5275,
+        "finalState": {
+            "players": 5,
+            "objects": 169,
+            "projectiles": 0,
+            "animals": 0,
+            "me": {
+                "sid": 1,
+                "x": 4982,
+                "y": 4964,
+                "health": 100,
+                "alive": true,
+                "weapon": 5,
+                "hat": 6,
+                "shame": 2
+            }
+        }
     },
     "sample-busy": {
         "packets": "c0427ed3be9988ca",
         "angles": "04d861ddf8e1321f",
+        "state": "756dbe55d88d8140",
         "sentPackets": 2884,
-        "angleComputes": 14551
+        "angleComputes": 14551,
+        "finalState": {
+            "players": 7,
+            "objects": 169,
+            "projectiles": 0,
+            "animals": 0,
+            "me": {
+                "sid": 1,
+                "x": 5033,
+                "y": 5022,
+                "health": 100,
+                "alive": true,
+                "weapon": 5,
+                "hat": 6,
+                "shame": 6
+            }
+        }
     },
     "sample-synthetic": {
         "packets": "f815fbedf6756a5e",
         "angles": "b216068658d07d06",
+        "state": "c97dc6ace208ba45",
         "sentPackets": 372,
-        "angleComputes": 773
+        "angleComputes": 773,
+        "finalState": {
+            "players": 3,
+            "objects": 49,
+            "projectiles": 0,
+            "animals": 0,
+            "me": {
+                "sid": 1,
+                "x": 4969,
+                "y": 4974,
+                "health": 100,
+                "alive": true,
+                "weapon": 5,
+                "hat": 6,
+                "shame": 3
+            }
+        }
     }
 }

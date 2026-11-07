@@ -24,6 +24,11 @@ export default class ObjectManager {
     static pool = new ObjectPool();
     static allTurrets = new EntityHandler<GameObject>(1);
 
+    /** Every object Falcon knows about, read-only (the replay tests snapshot it). */
+    static get allObjects(): readonly GameObject[] {
+        return gameObjects.all;
+    }
+
     private static gridMap: Map<number, GameObject[]> = new Map();
     private static chunkSize = 1440;
 
