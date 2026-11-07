@@ -9,6 +9,7 @@ import CombatUtils from "@core/mod/combat/utils/CombatUtils";
 import HatSystem from "@core/mod/defense/defense-modules/HatSystem";
 import ModManager from "@core/ModManager";
 import Menu from "@menu/Menu";
+import { BULL_DAMAGE_MULT } from "@constants/world";
 
 export default class ProjectileSyncer extends CombatModule {
     private attackAction!: AttackQueue;
@@ -45,7 +46,7 @@ export default class ProjectileSyncer extends CombatModule {
             totalDamage += nearestEnemy.projDamages[i];
         }
 
-        if (primary.dmg * 1.5 + totalDamage < 100) return;
+        if (primary.dmg * BULL_DAMAGE_MULT + totalDamage < 100) return;
 
         const attackAction = this.attackAction;
         AttackManager.prepareBullHitSequence(attackAction.sequence, "projSync");

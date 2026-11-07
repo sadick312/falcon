@@ -24,6 +24,7 @@ import ScriptConfig from "@utils/config/ScriptConfig";
 import getDistSq from "@utils/geometry/getDistSq";
 import getMagSq from "@utils/geometry/getMagSq";
 import withinDist from "@utils/geometry/withinDist";
+import { PLAYER_SCALE, BULL_DAMAGE_MULT } from "@constants/world";
 
 export interface AutoBreakerInternal {
     replaceSpike: boolean;
@@ -93,7 +94,7 @@ export default class AutoBreaker {
 
         for (let i = 0; i < count; i++) {
             const item = buffer[i];
-            if (withinDist(playerPos, item, 35 + obj.scale)) return true;
+            if (withinDist(playerPos, item, PLAYER_SCALE + obj.scale)) return true;
         }
 
         return false;
@@ -133,12 +134,12 @@ export default class AutoBreaker {
         const enemyToPlayerSin = Math.sin(enemyToPlayer);
         const spikePos = this.katanaSpikesSpikePosBuffer;
 
-        let totalDamage = enemyPrimary.dmg * 1.5 + 45;
+        let totalDamage = enemyPrimary.dmg * BULL_DAMAGE_MULT + 45;
         let targetSpike: GameObject | undefined = undefined;
 
         for (let i = 0, len = katanaSpikesBuffer.length; i < len; i++) {
             const spike = katanaSpikesBuffer[i];
-            const hitRadius = 35 + spike.scale;
+            const hitRadius = PLAYER_SCALE + spike.scale;
             const hitRadiusSq = hitRadius * hitRadius;
 
             for (let j = 0; j < arcCount; j++) {
@@ -261,7 +262,7 @@ export default class AutoBreaker {
             const enemy = nearby[i];
             const primary = PlayerCombatManager.fetch(enemy, 0);
             if (primary.reload !== 1) continue;
-            if (primary.dmg * 1.5 + 45 < 100) continue;
+            if (primary.dmg * BULL_DAMAGE_MULT + 45 < 100) continue;
             if (enemy.profilingData.preHitAttacks === 0 && DefenseSystem.preHitChances > 1) continue;
             if (enemy.profilingData.preHitAttacks === 0 && enemy.profilingData.latePreHitAttacks > 1) continue;
 
@@ -283,7 +284,7 @@ export default class AutoBreaker {
 
         for (let i = 0; i < allSpikesBuffer.length; i++) {
             const spike = allSpikesBuffer[i];
-            const willHitSpike = withinDist(player.next_position, spike, spike.scale + 35);
+            const willHitSpike = withinDist(player.next_position, spike, spike.scale + PLAYER_SCALE);
             const isHittingSpike = withinDist(player.real_position, spike, spike.scale + 36);
 
             if (!willHitSpike && !isHittingSpike) continue;

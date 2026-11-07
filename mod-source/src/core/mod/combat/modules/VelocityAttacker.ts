@@ -14,6 +14,7 @@ import AutoBreaker from "@core/mod/defense/modules/AutoBreaker";
 import ModManager from "@core/ModManager";
 import Menu from "@menu/Menu";
 import withinDist from "@utils/geometry/withinDist";
+import { BULL_DAMAGE_MULT } from "@constants/world";
 
 export default class VelocityAttacker extends CombatModule {
     private attackAction!: AttackQueue;
@@ -50,7 +51,7 @@ export default class VelocityAttacker extends CombatModule {
         if (enemy.trap) return;
         if (primary.reload !== 1) return;
 
-        let damage = primary.dmg * 1.5;
+        let damage = primary.dmg * BULL_DAMAGE_MULT;
         for (let i = 0, len = allSpikes.length; i < len; i++) {
             const gameObj = allSpikes[i];
             if (!gameObj) continue;

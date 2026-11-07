@@ -19,6 +19,7 @@ import ScriptConfig from "@utils/config/ScriptConfig";
 import getDist from "@utils/geometry/getDist";
 import getDistSq from "@utils/geometry/getDistSq";
 import inRange from "@utils/math/inRange";
+import { BULL_DAMAGE_MULT } from "@constants/world";
 
 interface OneTickStep {
     moveIndex: number;
@@ -186,7 +187,7 @@ export default class OneTicker extends CombatModule {
         const fullyReloaded = primary.reload === 1 && turretReloaded;
         const isInLineOfSight = CombatUtils.canTurretHit(nearestEnemy);
 
-        return fullyReloaded && isInLineOfSight && primary.dmg * 1.5 + 25 >= 100;
+        return fullyReloaded && isInLineOfSight && primary.dmg * BULL_DAMAGE_MULT + 25 >= 100;
     }
 
     protected execute() {
@@ -265,7 +266,7 @@ export default class OneTicker extends CombatModule {
         const isFasterExecution = PlayerStateManager.updatesBefore(player.sid, nearestEnemy.sid);
         if (isFasterExecution === null) return;
 
-        let totalDmg = 25 + primary.dmg * 1.5;
+        let totalDmg = 25 + primary.dmg * BULL_DAMAGE_MULT;
         const bTickOffset = ModManager.tick - nearestEnemy.bullTick;
 
         const knockbackAction = this.simActions[0][0];

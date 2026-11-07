@@ -10,6 +10,7 @@ import renderWall from "@rendering/utils/items/renderWall";
 import renderWindmill from "@rendering/utils/items/renderWindmill";
 import { WeaponVariant } from "@utils/config/scriptConfigTypes";
 import * as Shapes from "@rendering/shapes";
+import { RIVER_WIDTH } from "@constants/world";
 import randInt from "@utils/random/randInt";
 
 export function isOnScreen(x: number, y: number, s: number) {
@@ -200,7 +201,7 @@ export default class RendererUtils {
     static outlineColor = "#525252";
     static darkOutlineColor = "#3d3f42";
 
-    static riverWidth = 724;
+    static riverWidth = RIVER_WIDTH;
     static riverPadding = 114;
 
     static healthBarWidth = 50;

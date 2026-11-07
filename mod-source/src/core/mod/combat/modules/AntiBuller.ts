@@ -10,6 +10,7 @@ import DefenseSystem from "@core/mod/defense/DefenseSystem";
 import ModManager from "@core/ModManager";
 import Menu from "@menu/Menu";
 import withinDist from "@utils/geometry/withinDist";
+import { BULL_DAMAGE_MULT } from "@constants/world";
 
 export default class AntiBuller extends CombatModule {
     private attackAction!: AttackQueue;
@@ -56,7 +57,7 @@ export default class AntiBuller extends CombatModule {
         const lowestTotalDamage = enemyPrimary.dmg * (sgReflection + cxReflection);
 
         this.consider = false;
-        if (primary.dmg * 1.5 + lowestTotalDamage >= 100 && player.health + enemyPrimary.dmg <= 100) {
+        if (primary.dmg * BULL_DAMAGE_MULT + lowestTotalDamage >= 100 && player.health + enemyPrimary.dmg <= 100) {
             this.commit();
             return true;
         }
@@ -117,7 +118,7 @@ export default class AntiBuller extends CombatModule {
                 consider = true;
             }
 
-            totalDamage += enemyPrimary.dmg * 1.5;
+            totalDamage += enemyPrimary.dmg * BULL_DAMAGE_MULT;
         }
 
         if (totalDamage >= 100) return;

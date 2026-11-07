@@ -13,6 +13,7 @@ import HatSystem from "@core/mod/defense/defense-modules/HatSystem";
 import ModManager from "@core/ModManager";
 import Menu from "@menu/Menu";
 import getDir from "@utils/angle/getDir";
+import { BULL_DAMAGE_MULT } from "@constants/world";
 
 export default class AutoMeleeSyncer extends CombatModule {
     private attackAction!: AttackQueue;
@@ -55,7 +56,7 @@ export default class AutoMeleeSyncer extends CombatModule {
         const ourPrimary = PlayerCombatManager.fetch(player, 0);
         const partnerPrimary = PlayerCombatManager.fetch(partner, 0);
         if (ourPrimary.reload !== 1 || partnerPrimary.reload !== 1) return;
-        if (ourPrimary.dmg * 1.5 + partnerPrimary.dmg * 1.5 < 100) return;
+        if (ourPrimary.dmg * BULL_DAMAGE_MULT + partnerPrimary.dmg * BULL_DAMAGE_MULT < 100) return;
 
         const allEnemies = ModManager.enemyData.all;
 

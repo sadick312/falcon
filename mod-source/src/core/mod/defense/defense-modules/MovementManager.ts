@@ -12,7 +12,7 @@ import PacketMap from "@root/utils/socket/PacketMap";
 import { Input } from "@ui/Hook";
 import ScriptConfig from "@utils/config/ScriptConfig";
 import lineInCircle from "@utils/geometry/lineInCircle";
-import { isCactusObject, isInWater, SNOW_SPEED, WATER_CURRENT } from "@constants/world";
+import { isCactusObject, isInWater, PLAYER_SCALE, SNOW_SPEED, WATER_CURRENT } from "@constants/world";
 import type { Hat } from "@constants/store";
 
 export default class MovementManager {
@@ -166,7 +166,7 @@ export default class MovementManager {
             if (!isBoostPad && !isTeleport && !isDangerousObject)
                 continue;
 
-            const scale = 35 + gameObject.getScale();
+            const scale = PLAYER_SCALE + gameObject.getScale();
             const projectCollision = lineInCircle(realPos, project, gameObject, scale);
             const finalProjectCollision = lineInCircle(realPos, finalProjection, gameObject, scale);
 

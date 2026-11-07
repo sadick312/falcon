@@ -16,7 +16,7 @@ import ModManager from "@core/ModManager";
 import Menu from "@menu/Menu";
 import lineInRect from "@utils/geometry/lineInRect";
 import withinDist from "@utils/geometry/withinDist";
-import { isCactusObject } from "@constants/world";
+import { BULL_DAMAGE_MULT, isCactusObject } from "@constants/world";
 
 type AutoInstakillerSimActions = [
     [DamageSimAction, DamageSimAction, KnockbackSimAction],
@@ -163,7 +163,7 @@ export default class AutoInstakiller extends CombatModule {
             // second tick
             const primaryDmgAction = secondStep[0];
             const primaryKbAction = isFasterExecution ? sourceOneKB_2 : sourceOneKB_3;
-            primaryDmgAction.damage = CombatUtils.getMonkeyDamage(primary.dmg * 1.5);
+            primaryDmgAction.damage = CombatUtils.getMonkeyDamage(primary.dmg * BULL_DAMAGE_MULT);
             primaryKbAction.dontUse = false;
 
             primaryKbAction.pos = player.next_position;
@@ -172,7 +172,7 @@ export default class AutoInstakiller extends CombatModule {
             // first tick
             const primaryDmgAction = firstStep[0];
             const primaryKbAction = isFasterExecution ? sourceOneKB_1 : sourceOneKB_2;
-            primaryDmgAction.damage = CombatUtils.getMonkeyDamage(primary.dmg * 1.5);
+            primaryDmgAction.damage = CombatUtils.getMonkeyDamage(primary.dmg * BULL_DAMAGE_MULT);
             primaryKbAction.dontUse = false;
 
             primaryKbAction.pos = player.real_position;

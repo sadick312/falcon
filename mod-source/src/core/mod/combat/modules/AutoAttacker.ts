@@ -11,6 +11,7 @@ import HatSystem from "@core/mod/defense/defense-modules/HatSystem";
 import ModManager from "@core/ModManager";
 import Menu from "@menu/Menu";
 import MovementPhysicsSimulator, { DamageSimAction, KnockbackSimAction } from "@simulation/MovementPhysicsSimulator";
+import { BULL_DAMAGE_MULT } from "@constants/world";
 
 type AutoAttackerSimActions = [
     [DamageSimAction, KnockbackSimAction],
@@ -63,7 +64,7 @@ export default class AutoAttacker extends CombatModule {
         const sameTickKbAction = firstActions[1];
         const nextTickKbAction = secondActions[0];
 
-        damageAction.damage = CombatUtils.getMonkeyDamage(primary.dmg * 1.5);
+        damageAction.damage = CombatUtils.getMonkeyDamage(primary.dmg * BULL_DAMAGE_MULT);
         sameTickKbAction.knockPower = nextTickKbAction.knockPower = primary.totalKnock;
         sameTickKbAction.pos = nextTickKbAction.pos = player.real_position;
 

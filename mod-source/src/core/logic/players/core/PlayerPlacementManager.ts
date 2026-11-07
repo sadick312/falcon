@@ -4,6 +4,7 @@ import Client from "@core/Client";
 import PotentialObjectManager from "@core/logic/PotentialObjectManager";
 import AngleFinder, { FinderOptions } from "@placing/AngleFinder";
 import withinDist from "@utils/geometry/withinDist";
+import { PLAYER_SCALE } from "@constants/world";
 
 type PlacementArrs = "onMe" | "all";
 type PlacementBuffers = `${PlacementArrs}BufferIndex`;
@@ -22,7 +23,7 @@ export default class PlayerPlacementManager {
 
         const spikeItem = items.list[9];
         const spikeScale = spikeItem.scale;
-        const totalScale = spikeScale + 35;
+        const totalScale = spikeScale + PLAYER_SCALE;
         const placeScale = totalScale + (spikeItem.placeOffset ?? 0);
         const placePotential = player.placePotential;
         const arr = placePotential[arrType];
@@ -34,7 +35,7 @@ export default class PlayerPlacementManager {
             const item = buffer[i];
 
             if (arrType === "onMe") {
-                if (withinDist(myPos, item, 35 + item.scale))
+                if (withinDist(myPos, item, PLAYER_SCALE + item.scale))
                     arr[placePotential[bufType]++].redefine(item.x, item.y, item.scale, item.angle, item.id);
 
                 continue;

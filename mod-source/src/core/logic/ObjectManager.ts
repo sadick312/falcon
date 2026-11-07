@@ -12,7 +12,7 @@ import ModManager from "@core/ModManager";
 import Menu from "@menu/Menu";
 import ScriptConfig from "@utils/config/ScriptConfig";
 import withinDist from "@utils/geometry/withinDist";
-import { RIVER_HALF_WIDTH } from "@constants/world";
+import { PLAYER_SCALE, RIVER_HALF_WIDTH } from "@constants/world";
 
 const gameObjects = new EntityHandler<GameObject>();
 
@@ -49,7 +49,7 @@ export default class ObjectManager {
             for (let i = 0, len = path.length; i < len; i++) {
                 const node = path[i];
 
-                if (withinDist(node, gameObject, 35 + gameObject.scale)) {
+                if (withinDist(node, gameObject, PLAYER_SCALE + gameObject.scale)) {
                     path.length = 0;
                     break;
                 }

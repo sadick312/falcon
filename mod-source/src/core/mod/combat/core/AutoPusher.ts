@@ -12,6 +12,7 @@ import getDist from "@utils/geometry/getDist";
 import getDistSq from "@utils/geometry/getDistSq";
 import withinDist from "@utils/geometry/withinDist";
 import Pathfinder from "../../../../services/pathfinding/Pathfinder";
+import { PLAYER_SCALE } from "@constants/world";
 
 export default class AutoPusher {
     static moveDir: number | null = 0;
@@ -131,7 +132,7 @@ export default class AutoPusher {
     }
 
     private static calculateMoveTarget(enemyPos: Point, pushVector: Vec2, closestSpike: GameObject) {
-        const totalScale = 35 + closestSpike.scale;
+        const totalScale = PLAYER_SCALE + closestSpike.scale;
         const distanceFromSpike = getDist(closestSpike, enemyPos) - totalScale;
 
         const pushAngle = Math.atan2(pushVector.y, pushVector.x);
@@ -152,7 +153,7 @@ export default class AutoPusher {
         const enemyNext = nearestEnemy.real_position;
         const activityList = ModManager.activityList;
 
-        const realScale = 35 + closestSpike.getScale();
+        const realScale = PLAYER_SCALE + closestSpike.getScale();
         const totalScale = 35.7 + closestSpike.getScale();
         const distanceFromSpike = getDist(closestSpike, enemyPos) - totalScale;
 

@@ -19,6 +19,12 @@ export function isInWater(y: number, zIndex: number) {
     return !zIndex && Math.abs(y - ScriptConfig.MAP_SIZE / 2) <= RIVER_HALF_WIDTH;
 }
 
+/** A player's collision radius (1.8.2 `scale: 35`): placement distance and touch checks are this + the object's size. */
+export const PLAYER_SCALE = 35;
+
+/** Bull Helmet's melee damage multiplier (1.8.2 `dmgMultO: 1.5`); worst-case hits assume it. */
+export const BULL_DAMAGE_MULT = 1.5;
+
 /** Owner sid given to map objects (trees, stones, bushes, cacti) so they never match a player's sid. */
 export const NATURAL_OBJECT_OWNER = 6967;
 

@@ -10,6 +10,7 @@ import GameEventTracker from "@core/mod/utils/GameEventTracker";
 import ModManager from "@core/ModManager";
 import PacketMap from "@root/utils/socket/PacketMap";
 import withinDist from "@utils/geometry/withinDist";
+import { BULL_DAMAGE_MULT } from "@constants/world";
 
 interface PredictiveHitData {
     enemy: Player | undefined;
@@ -65,7 +66,7 @@ export default class PredictiveMethod extends PushSpikeMethod {
         if (!willHitSpike && !isHittingSpike) return;
 
         const myPrimary = PlayerCombatManager.fetch(player, 0);
-        if (myPrimary.reload !== 1 || myPrimary.dmg * 1.5 + spike.dmg < 100) return;
+        if (myPrimary.reload !== 1 || myPrimary.dmg * BULL_DAMAGE_MULT + spike.dmg < 100) return;
 
         if (
             nearestEnemy.skinIndex === STORE_HAT_MAP.TANK_GEAR &&

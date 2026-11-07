@@ -13,6 +13,7 @@ import normalizeAngle from "@utils/angle/normalizeAngle";
 import { profileEnd, profileStart } from "@services/profiler/Profiler";
 import ScriptConfig from "@utils/config/ScriptConfig";
 import getDistSq from "@utils/geometry/getDistSq";
+import { PLAYER_SCALE, RIVER_HALF_WIDTH } from "@constants/world";
 
 type AngleItemContextIntervals = "open" | "raw" | "invalid" | "valid";
 type AngleItemContextIndexs = `${AngleItemContextIntervals}Index`;
@@ -97,7 +98,7 @@ function insertionSortIntervals(arr: Float32Array, n: number) {
 
 export default class AngleFinder {
     /** 1.8.2 `checkItemLocation`: a building whose centre's y is within this of the map's middle is refused. */
-    private static readonly RIVER_HALF_WIDTH = 724 / 2;
+    private static readonly RIVER_HALF_WIDTH = RIVER_HALF_WIDTH;
 
     static readonly HIGHEST_ANGLE_COUNT = 140;
     static readonly CLOSEST_OBJ_DISTANCE_SQ = 20 * 20;
@@ -170,7 +171,7 @@ export default class AngleFinder {
 
     private static computeInterval(playerPos: Point, obj: GameObject, item: ListItem, interval: Float32Array, index: number, isOurPlayer: boolean, isPreplace?: boolean) {
         const itemScale = item.scale;
-        const placementOffset = 35 + itemScale + (item.placeOffset ?? 0);
+        const placementOffset = PLAYER_SCALE + itemScale + (item.placeOffset ?? 0);
         const placeDistanceSq = placementOffset * placementOffset;
 
         const objScale = (obj.blocker ? obj.blocker : obj.getScale(.6, obj.isItem)) + (isOurPlayer ? .01 : -.05);
@@ -233,7 +234,7 @@ export default class AngleFinder {
      * `|y - MAP_SIZE / 2| <= 362`: a band, not a circle, and the building's own size doesn't count.
      */
     private static computeRiverInterval(playerPos: Point, item: ListItem, interval: Float32Array, index: number, isOurPlayer: boolean) {
-        const offset = 35 + item.scale + (item.placeOffset ?? 0);
+        const offset = PLAYER_SCALE + item.scale + (item.placeOffset ?? 0);
         const halfWidth = AngleFinder.RIVER_HALF_WIDTH + (isOurPlayer ? .01 : -.05);
         const center = ScriptConfig.MAP_SIZE / 2;
 
@@ -446,7 +447,7 @@ export default class AngleFinder {
         isPreplacement: boolean, options: Readonly<FinderOptions>
     ) {
         const scale = item.scale;
-        const offset = 35 + scale + (item.placeOffset ?? 0);
+        const offset = PLAYER_SCALE + scale + (item.placeOffset ?? 0);
 
         for (let i = 0; i < samplesIndex; i++) {
             const ang = samples[i];
@@ -473,7 +474,7 @@ export default class AngleFinder {
         // can't be in range of any of them (Grader.prepare's 15 + item + object). Pick those once for all angles.
         const previousCandidates = Grader.candidates;
         if (options.grade) {
-            const reachOf = (item: ListItem) => 35 + item.scale + (item.placeOffset ?? 0) + 15 + item.scale;
+            const reachOf = (item: ListItem) => PLAYER_SCALE + item.scale + (item.placeOffset ?? 0) + 15 + item.scale;
             Grader.setCandidates(playerPos, Math.max(reachOf(trapItem), reachOf(spikeItem)));
         }
 

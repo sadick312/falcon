@@ -9,6 +9,7 @@ import PlayerManager from "@core/logic/players/PlayerManager";
 import getDir from "@utils/angle/getDir";
 import getDistSq from "@utils/geometry/getDistSq";
 import lineInRect from "@utils/geometry/lineInRect";
+import { PLAYER_SCALE } from "@constants/world";
 
 export default class DefenseUtils {
     static canUseEMP(enemy: Player) {
@@ -46,7 +47,7 @@ export default class DefenseUtils {
 
         if (closest && lineInRect(
             realPlayerPos.x - 35, realPlayerPos.y - 35,
-            realPlayerPos.x + 35, realPlayerPos.y + 35,
+            realPlayerPos.x + PLAYER_SCALE, realPlayerPos.y + PLAYER_SCALE,
             realEnemyPos.x, realEnemyPos.y,
             closest.real_position.x, closest.real_position.y
         )) {

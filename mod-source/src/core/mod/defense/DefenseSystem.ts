@@ -28,7 +28,7 @@ import ScriptConfig from "@utils/config/ScriptConfig";
 import getDistSq from "@utils/geometry/getDistSq";
 import lineInCircle from "@utils/geometry/lineInCircle";
 import withinDist from "@utils/geometry/withinDist";
-import { isCactusObject } from "@constants/world";
+import { BULL_DAMAGE_MULT, isCactusObject, PLAYER_SCALE } from "@constants/world";
 
 interface EnemyProcessResult {
     primaryDamage: number;
@@ -269,7 +269,7 @@ export default class DefenseSystem {
         const hasMonkeyTailOn = enemy.skinIndex !== STORE_HAT_MAP.BULL_HELMET && enemy.tailIndex === STORE_ACCESSORY_MAP.MONKEY_TAIL;
         const canThisEnemyPlaceOnMe = enemy.placePotential.onMeBufferIndex > 0;
 
-        let primaryDamage = primary.reload >= HealerUtils.RELOAD_BUFFER && this.isInRange(player, enemy, primary) ? (hasMonkeyTailOn ? primary.dmg : primary.dmg * 1.5) : 0;
+        let primaryDamage = primary.reload >= HealerUtils.RELOAD_BUFFER && this.isInRange(player, enemy, primary) ? (hasMonkeyTailOn ? primary.dmg : primary.dmg * BULL_DAMAGE_MULT) : 0;
         let secondaryDamage = secondary.reload >= HealerUtils.RELOAD_BUFFER && this.isInRange(player, enemy, secondary) && DefenseUtils.isInLineOfSight(enemy, secondary) ? secondary.dmg : 0;
         const turretDamage = turret.reload >= HealerUtils.RELOAD_BUFFER && DefenseUtils.isInLineOfSight(enemy, turret) ? 25 : 0;
 
@@ -538,11 +538,11 @@ export default class DefenseSystem {
 
                 this.tmpPoint.x = tmpX;
                 this.tmpPoint.y = tmpY;
-                const isHitSpike = lineInCircle(player.real_position, this.tmpPoint, gameObject, 35 + objectScale);
+                const isHitSpike = lineInCircle(player.real_position, this.tmpPoint, gameObject, PLAYER_SCALE + objectScale);
 
                 this.tmpPoint.x = nextTmpX;
                 this.tmpPoint.y = nextTmpY;
-                const willHitSpike = lineInCircle(player.real_position, this.tmpPoint, gameObject, 35 + objectScale);
+                const willHitSpike = lineInCircle(player.real_position, this.tmpPoint, gameObject, PLAYER_SCALE + objectScale);
 
                 if (!isHitSpike && !willHitSpike) continue;
 
@@ -729,7 +729,7 @@ export default class DefenseSystem {
         const weapon = PlayerCombatManager.fetch(player, Client.weaponIndex < 9 ? 0 : 1);
         if (weapon.reload !== 1) return;
 
-        const weaponDamage = weapon.dmg * 1.5;
+        const weaponDamage = weapon.dmg * BULL_DAMAGE_MULT;
         const spikeGearReflection = hats[SPIKE_GEAR_INDEX].dmg!;
         const cxWingsReflection = accessories[CORRUPT_X_WINGS_INDEX].dmg!;
         const state = this.state;

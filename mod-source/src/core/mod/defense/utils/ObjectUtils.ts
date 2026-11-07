@@ -4,6 +4,7 @@ import ObjectManager from "@core/logic/ObjectManager";
 import getDir from "@utils/angle/getDir";
 import getDist from "@utils/geometry/getDist";
 import IntervalHelper, { Interval } from "@utils/geometry/IntervalHelper";
+import { PLAYER_SCALE } from "@constants/world";
 
 export default class ObjectUtils {
     private static readonly MAX_INTERVALS = 64;
@@ -19,8 +20,8 @@ export default class ObjectUtils {
         const dist = getDist(builderPos, victimPos);
         const builderToVictim = getDir(victimPos, builderPos);
 
-        const placementRadius = 35 + item.scale + (item.placeOffset ?? 0);
-        const hitBoxScale = item.scale + 35;
+        const placementRadius = PLAYER_SCALE + item.scale + (item.placeOffset ?? 0);
+        const hitBoxScale = item.scale + PLAYER_SCALE;
 
         if (dist > placementRadius + hitBoxScale) {
             ObjectUtils.spikeArcBufferLength = 0;

@@ -10,6 +10,7 @@ import HatSystem from "@core/mod/defense/defense-modules/HatSystem";
 import DefenseUtils from "@core/mod/defense/utils/DefenseUtils";
 import ModManager from "@core/ModManager";
 import Menu from "@menu/Menu";
+import { BULL_DAMAGE_MULT } from "@constants/world";
 
 /** Soldier helmet's damage multiplier (1.8.2: dmgMult .75). */
 const SOLDIER_MULT = 0.75;
@@ -54,7 +55,7 @@ export default class MusketInstakiller extends CombatModule {
     static comboDamage(polearmDmg: number, enemySkin: number) {
         const firstMult = enemySkin === STORE_HAT_MAP.SOLDIER_HELMET ? SOLDIER_MULT : 1;
         const musketDmg = items.projectiles[items.weapons[WEAPON_ID_MAP.MUSKET].projectile!].dmg;
-        return polearmDmg * 1.5 * firstMult + (musketDmg + TURRET_BULLET_DMG) * SOLDIER_MULT;
+        return polearmDmg * BULL_DAMAGE_MULT * firstMult + (musketDmg + TURRET_BULLET_DMG) * SOLDIER_MULT;
     }
 
     protected execute() {

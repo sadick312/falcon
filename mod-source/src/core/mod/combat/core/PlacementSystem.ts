@@ -17,6 +17,7 @@ import PlacerUtils from "@placing/utils/PlacerUtils";
 import PacketMap from "@root/utils/socket/PacketMap";
 import { Input } from "@ui/Hook";
 import getDistSq from "@utils/geometry/getDistSq";
+import { PLAYER_SCALE } from "@constants/world";
 
 class Placement {
     tick: number = -1000000;
@@ -103,7 +104,7 @@ export default class PlacementSystem {
         const item = items.list[id];
         const realPos = player.real_position;
 
-        const tmpScale = 35 + item.scale + (item.placeOffset || 0);
+        const tmpScale = PLAYER_SCALE + item.scale + (item.placeOffset || 0);
         const tmpX = realPos.x + Math.cos(angle) * tmpScale;
         const tmpY = realPos.y + Math.sin(angle) * tmpScale;
 

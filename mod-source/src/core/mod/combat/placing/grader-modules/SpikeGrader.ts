@@ -14,7 +14,7 @@ import MovementPhysicsSimulator, { DamageSimAction, KnockbackSimAction, Placemen
 import getAngleDist from "@utils/angle/getAngleDist";
 import getDistSq from "@utils/geometry/getDistSq";
 import withinDist from "@utils/geometry/withinDist";
-import { isCactusObject } from "@constants/world";
+import { BULL_DAMAGE_MULT, isCactusObject, PLAYER_SCALE } from "@constants/world";
 
 type GraderSimActions = [
     [PlacementSimAction, DamageSimAction, KnockbackSimAction],
@@ -36,7 +36,7 @@ export default class SpikeGrader extends Grader {
         const spikesNear = this.trapsNearMap.get(enemy.sid)!;
         const isEnemyInTrap = enemy.trap && enemy.trap.active && !enemy.trap.isGhost && (!spike.preplace || !enemy.trap.willBreak);
 
-        if (!withinDist(projection, spike, spike.scale + 35)) return;
+        if (!withinDist(projection, spike, spike.scale + PLAYER_SCALE)) return;
         spike.grade -= spikesNear > 0 && isEnemyInTrap ? 4 : 2.5;
     }
 
@@ -92,7 +92,7 @@ export default class SpikeGrader extends Grader {
         // (fake tick), the hit is left out of the simulation, like a spike without one.
         if (spike.spikeTick && weUpdateFirst !== null) {
             const primary = PlayerCombatManager.fetch(player, 0);
-            damageAction.damage = CombatUtils.getMonkeyDamage(primary.dmg * 1.5);
+            damageAction.damage = CombatUtils.getMonkeyDamage(primary.dmg * BULL_DAMAGE_MULT);
             damageAction.dontUse = false;
 
             if (weUpdateFirst) {
