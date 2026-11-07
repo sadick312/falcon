@@ -5,6 +5,7 @@ import Client from "@core/Client";
 import ObjectManager from "@core/logic/ObjectManager";
 import CombatController from "@core/mod/combat/core/CombatController";
 import PlacementSystem from "@core/mod/combat/core/PlacementSystem";
+import PacketTracker from "@core/utils/PacketTracker";
 import BreakerUtils from "@core/mod/defense/utils/BreakerUtils";
 import ModManager from "@core/ModManager";
 import Menu from "@menu/Menu";
@@ -21,6 +22,7 @@ export default class AutoGrinder {
     static aimDir = 0;
 
     private static lastTick = -1;
+    private static spots: number[] = [];
     private static lastResult = false;
 
     /**
@@ -100,16 +102,19 @@ export default class AutoGrinder {
             break;
         }
 
+        const spots = this.spots;
+        spots.length = 0;
         if (tpId === LIST_ID_MAP.TURRET) {
-            if (!hasTurrets) {
-                PlacementSystem.checkPlace(tpId, aimDir);
-                PlacementSystem.checkPlace(tpId, aimDir + offset);
-                PlacementSystem.checkPlace(tpId, aimDir - offset);
-            }
+            if (!hasTurrets) spots.push(aimDir, aimDir + offset, aimDir - offset);
         } else {
             const Q_PI = Math.PI * .25;
-            PlacementSystem.checkPlace(tpId, aimDir + Q_PI);
-            PlacementSystem.checkPlace(tpId, aimDir - Q_PI);
+            spots.push(aimDir + Q_PI, aimDir - Q_PI);
+        }
+
+        // Like the other placers, ask the packet budget first; it only says no close to the server's packet limit.
+        let allowed = spots.length ? PacketTracker.request("PLACE", spots.length) : 0;
+        for (let i = 0; i < spots.length && allowed > 0; i++) {
+            if (PlacementSystem.checkPlace(tpId, spots[i])) allowed--;
         }
 
         CombatController.selectWeapon(targetId, true);

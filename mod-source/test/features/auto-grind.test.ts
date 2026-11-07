@@ -14,6 +14,8 @@ const TANK_GEAR = 40;
 
 interface Scenario {
     enable?: boolean;
+    /** What the packet budget allows this tick (default: whatever it really says). */
+    budget?: number;
     primaryVariant?: number;
     secondaryVariant?: number;
     /** Hold the hammer once before grinding (default true). */
@@ -41,6 +43,10 @@ async function grind(s: Scenario = {}) {
     game.Menu.itemMap.autoGrind.status = s.enable !== false;
     const { Input } = await import("@ui/Hook");
     vi.spyOn(Input, "getAttackDir").mockReturnValue(0);
+    if (s.budget !== undefined) {
+        const { default: PacketTracker } = await import("@core/utils/PacketTracker");
+        vi.spyOn(PacketTracker, "request").mockReturnValue(s.budget);
+    }
     const before = game.sent.length;
     game.update();
     const sent = game.sent.slice(before);
@@ -82,5 +88,14 @@ describe("Auto Grind", () => {
         const { placed, tank } = await grind({ enable: false });
         expect(placed).toEqual([]);
         expect(tank).toBe(false);
+    });
+
+    it("places only what the packet budget allows (B5)", async () => {
+        expect((await grind({ budget: 1 })).placed).toEqual([TURRET]);
+        expect((await grind({ budget: 0 })).placed).toEqual([]);
+    });
+
+    it("still places all three turrets when the budget has room", async () => {
+        expect((await grind({ budget: 3 })).placed).toEqual([TURRET, TURRET, TURRET]);
     });
 });
