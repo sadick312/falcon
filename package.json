@@ -20,7 +20,7 @@
         "inject:build": "npm run build --workspace=mod-source && npm run build:inject --workspace=mod-source",
         "ext:build": "npm run build --workspace=falcon-launcher",
         "ext:dev": "npm run dev --workspace=falcon-launcher",
-        "typecheck": "npm run typecheck --workspace=mod-source && npm exec --workspace=falcon-launcher -- tsc --noEmit",
+        "typecheck": "npm run typecheck --workspace=mod-source && npm exec --workspace=falcon-launcher -- tsc --noEmit && node scripts/check-indexed-access.mjs",
         "lint": "node scripts/tool.mjs eslint -c tools/lint/eslint.config.mjs .",
         "lint:fix": "node scripts/tool.mjs eslint -c tools/lint/eslint.config.mjs . --fix",
         "format": "node scripts/tool.mjs prettier --write .",
@@ -31,7 +31,8 @@
         "bench": "vitest run --config vitest.bench.config.mts",
         "stats": "node scripts/dev-stats.mjs",
         "stats:report": "node scripts/lib/report.mjs",
-        "postinstall": "npm ci --prefix tools/lint --no-workspaces --no-audit --no-fund"
+        "postinstall": "npm ci --prefix tools/lint --no-workspaces --no-audit --no-fund",
+        "typecheck:indexed": "node scripts/check-indexed-access.mjs"
     },
     "allowScripts": {
         "esbuild@0.27.7": true,
