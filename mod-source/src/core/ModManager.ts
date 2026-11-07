@@ -11,6 +11,7 @@ import PlayerManager from "@core/logic/players/PlayerManager";
 import PotentialObjectManager, { PotentialObject } from "@core/logic/PotentialObjectManager";
 import ProjectileManager from "@core/logic/ProjectileManager";
 import AttackManager from "@core/mod/combat/core/AttackManager";
+import "@core/mod/combat/core/attackModules";
 import AutoPusher from "@core/mod/combat/core/AutoPusher";
 import CombatController from "@core/mod/combat/core/CombatController";
 import PlacementSystem from "@core/mod/combat/core/PlacementSystem";

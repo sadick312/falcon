@@ -1,25 +1,14 @@
-import AntiBuller from "@combat-modules/AntiBuller";
-import AppleInstakiller from "@combat-modules/AppleInstakiller";
-import AutoAttacker from "@combat-modules/AutoAttacker";
-import AutoInstakiller from "@combat-modules/AutoInstakiller";
-import MusketInstakiller from "@combat-modules/MusketInstakiller";
-import AutoMeleeSyncer from "@combat-modules/AutoMeleeSyncer";
-import AutoPusherStriker from "@combat-modules/AutoPushStriker";
-import BarbarianKnockbacker from "@combat-modules/BarbarianKnockbacker";
-import OneTicker from "@combat-modules/OneTicker";
-import ProjectileSyncer from "@combat-modules/ProjectileSyncer";
-import ShameGrinder from "@combat-modules/ShameGrinder";
-import SpikeTicker from "@combat-modules/SpikeTicker";
-import TurretAPAssister from "@combat-modules/TurretAPAssister";
-import TurretGearKnockbacker from "@combat-modules/TurretGearKnockbacker";
-import VelocityAttacker from "@combat-modules/VelocityAttacker";
+import type AntiBuller from "@combat-modules/AntiBuller";
+import type AppleInstakiller from "@combat-modules/AppleInstakiller";
+import type OneTicker from "@combat-modules/OneTicker";
+import type ShameGrinder from "@combat-modules/ShameGrinder";
+import type SpikeTicker from "@combat-modules/SpikeTicker";
 import items, { LIST_ID_MAP, WEAPON_ID_MAP } from "@constants/items";
 import { STORE_HAT_MAP } from "@constants/store";
 import Client from "@core/Client";
 import AttackQueuePool, { AttackAction, AttackQueue } from "@core/mod/combat/core/AttackQueuePool";
 import AutoPusher from "@core/mod/combat/core/AutoPusher";
 import PlacementSystem from "@core/mod/combat/core/PlacementSystem";
-import DefensiveKnockbacker from "@core/mod/defense/modules/DefensiveKnockbacker";
 import ModModule from "@core/mod/utils/ModModule";
 import ModManager from "@core/ModManager";
 import { SimulationResult } from "@simulation/MovementPhysicsSimulator";
@@ -33,31 +22,16 @@ export default class AttackManager {
 
     private static attackQueue: Readonly<AttackQueue>[] = [];
 
-    static spikeTicker = new SpikeTicker();
-    static appleInstakiller = new AppleInstakiller();
-    static shameGrinder = new ShameGrinder();
-    static antiBuller = new AntiBuller();
-    static oneTicker = new OneTicker();
+    // Created and filled in by attackModules.ts, which ModManager loads. Creating them here made every attack module
+    // and AttackManager import each other.
+    static spikeTicker: SpikeTicker;
+    static appleInstakiller: AppleInstakiller;
+    static shameGrinder: ShameGrinder;
+    static antiBuller: AntiBuller;
+    static oneTicker: OneTicker;
 
-    static modules: ModModule[] = [
-        this.antiBuller,
-        new AutoInstakiller(),
-        new MusketInstakiller(),
-        new AutoAttacker(),
-        new ProjectileSyncer(),
-        new AutoPusherStriker(),
-        new TurretAPAssister(),
-        new VelocityAttacker(),
-        new DefensiveKnockbacker(),
-        new AutoMeleeSyncer(),
-        new TurretGearKnockbacker(),
-        new BarbarianKnockbacker(),
-        // Before Apple Insta: while it grinds the enemy's shame, Apple Insta waits (holdsAppleInsta).
-        this.shameGrinder,
-        this.appleInstakiller,
-        this.spikeTicker,
-        this.oneTicker
-    ];
+    /** Every attack module, in the order they run (and win ties). Set by attackModules.ts. */
+    static modules: ModModule[] = [];
 
     /** Called when we spawn, so no module acts on something it remembered from the previous life. */
     static resetModules() {
