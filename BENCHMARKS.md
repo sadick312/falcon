@@ -64,6 +64,25 @@ AngleFinder is 35–48% of a tick, so it is the first thing to look at in Phase 
 Even the slowest (the signature, only on servers that need it) costs about 5 µs, and the mod sends a few packets
 per tick, so packet code is not worth optimizing.
 
+## Phase 3 results
+
+Each change is measured with alternating old/new runs (old, new, old, new...), comparing the median of the
+new/old ratios, because single runs on this PC vary by 2× or more. A change is kept only if it saves about 5% or
+more and every fingerprint (packets, angles, game state) stays identical.
+
+| Change | Result | Kept? |
+|---|---|---|
+| AngleFinder: the second call per enemy (without preplace) reuses the first call's pass over nearby objects (80b487a) | Tick: base −8%, busy −9%, synthetic no change. `updatePlacementAngles`: base/busy 18–26% faster. Garbage per tick 165 KB → 124 KB (busy). | Yes |
+| Grader: per-enemy numbers in an array instead of `Map` (avoids boxing decimals) | busy −2%, synthetic +5%, base within noise | No, reverted |
+
+**Slow ticks are not garbage collection.** During a whole replay there were 0–1 GC pauses (3–4 ms at most),
+while the slowest ticks took 17–24 ms. Those come from the JIT compiling freshly loaded code (each benchmark run
+loads the mod again) or from the PC being busy, so cutting allocations would not remove them.
+
+**Where a tick goes now** (busy replay, sampled CPU self time, profiler on): `computeAngles` 10%, `updateObjects`
+9%, `Grader.prepare` 8%, `isInLineOfSight` 7%, `computeInterval` 6%, and a long tail. None of these has an
+obvious large saving left; each has already been tuned (candidate lists, cached aims, cheap tests first).
+
 ## Not measured here: drawing
 
 The renderer (canvas drawing every frame) can't be timed in Node; it needs a real browser. To measure it, open the
