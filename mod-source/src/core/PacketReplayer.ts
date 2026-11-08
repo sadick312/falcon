@@ -10,12 +10,13 @@ import { Decoder } from "@msgpack/msgpack";
 import { frameStats } from "@rendering/FrameStats";
 import { PacketLog } from "@root/utils/socket/PacketLogging";
 import PacketMap, { MOOMOO_SERVER_TO_CLIENT_MAP } from "@root/utils/socket/PacketMap";
-import { packetReplayerOptionsPage } from "@ui/Loader";
 import getElem from "@utils/dom/getElem";
 
 const replayDecoder = new Decoder();
 
 export const packetReplayerUI = getElem("packet-replayer-ui");
+// Looked up here rather than imported from Loader, which imports PacketReplayer.
+const packetReplayerOptionsPage = getElem("packet-replayer-options-page");
 const brainStateDump = getElem("brain-state-dumper");
 const durationSlider = getElem<"input">("duration-slider");
 
