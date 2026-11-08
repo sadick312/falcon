@@ -41,7 +41,7 @@ export default class MovementManager {
 
     /**
      * Where `moveDir` takes the player by the next tick. With `withTerrain`, 1.8.2's snow and water slowdowns and the
-     * river current are included (Safe Walk); without, it's plain ground (SpikeGrader's use).
+     * river current are included (Safe Walk and SpikeGrader); without, plain ground.
      */
     static project(
         player: Player,

@@ -32,7 +32,9 @@ export default class SpikeGrader extends Grader {
         const moveDir = MovementManager.getMoveDir(true);
         if (typeof moveDir !== "number") return;
 
-        const projection = MovementManager.project(player, moveDir);
+        // With 1.8.2's snow and water slowdowns and the river current (as Safe Walk), so in the snow or the river the
+        // step we'd take is measured at the speed we really have there.
+        const projection = MovementManager.project(player, moveDir, false, undefined, true);
         const spikesNear = this.trapsNearMap.get(enemy.sid)!;
         const isEnemyInTrap = enemy.trap && enemy.trap.active && !enemy.trap.isGhost && (!spike.preplace || !enemy.trap.willBreak);
 

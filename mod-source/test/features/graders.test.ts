@@ -195,3 +195,67 @@ describe("Spike Grader: more cases (B6)", () => {
         expect(spot.spikeTick).toBe(false);
     });
 });
+
+describe("Spike Grader: our own next step in the snow and the water", () => {
+    /**
+     * We walk right. A spike spot on the circle around us (35 + its size away) is marked down when our next step would
+     * end inside it. The spot's angle is chosen so that the step at plain-ground speed ends just outside it and the
+     * slower step at the real snow / water speed just inside: only the second counts it.
+     */
+    async function markedDown(y: number, zIndex = 0, stepToUse?: (plain: number, real: number) => number) {
+        game = await startGame();
+        game.spawn({ sid: ME, x: 3000, y, weaponIndex: 5, zIndex });
+        game.spawn({ sid: 2, x: 3300, y, weaponIndex: 5 });
+        game.setLoadout([5, 10], [0, 3, 6, 10, 15]);
+        game.update([{ sid: ME, zIndex }]);
+        game.update([{ sid: ME, zIndex }]);
+
+        const { default: Angle } = await import("@placing/Angle");
+        const { default: AngleGrader } = await import("@placing/AngleGrader");
+        const { default: ModManager } = await import("@core/ModManager");
+        const { default: MovementManager } = await import("@core/mod/defense/defense-modules/MovementManager");
+        const { LIST_ID_MAP, default: items } = await import("@constants/items");
+        const grader = (AngleGrader as unknown as { spikeGrader: Grader }).spikeGrader;
+        const enemy = ModManager.enemyData.nearest!;
+        const player = game.Client.player;
+
+        const plain = MovementManager.project(player, 0).x - 3000;
+        const real = MovementManager.project(player, 0, false, undefined, true).x - 3000;
+        const scale = items.list[LIST_ID_MAP.SPIKES].scale;
+        const r = 35 + scale;
+        // A step of p along x ends inside the spot at angle t when p < 2r cos(t); pick cos(t) between the two steps.
+        const angle = Math.acos((stepToUse ? stepToUse(plain, real) : (plain + real) / 2) / (2 * r));
+
+        const gradeWith = (moveDir: number | null) => {
+            game!.Client.lastMoveDir = moveDir;
+            const spot = new Angle(3000 + Math.cos(angle) * r, y + Math.sin(angle) * r, scale, angle, LIST_ID_MAP.SPIKES);
+            grader.prepare(spot, [enemy], false);
+            grader.grade(spot, enemy);
+            return spot.grade;
+        };
+        return { penalty: gradeWith(null) - gradeWith(0), plain, real };
+    }
+
+    it("in the snow, uses the slower snow speed", async () => {
+        const { penalty, plain, real } = await markedDown(1000);
+        expect(real).toBeLessThan(plain);
+        expect(penalty).toBeCloseTo(2.5, 5);
+    });
+
+    it("on plain ground, nothing changes: a spot our step reaches is marked down, one it misses isn't", async () => {
+        const reached = await markedDown(4000, 0, (plain) => plain * 1.1);
+        expect(reached.real).toBeCloseTo(reached.plain, 5);
+        expect(reached.penalty).toBeCloseTo(2.5, 5);
+        game!.done();
+        const missed = await markedDown(4000, 0, (plain) => plain * 0.9);
+        expect(missed.penalty).toBeCloseTo(0, 5);
+    });
+
+    it("in the river, uses the water speed; on a platform over it, plain-ground speed", async () => {
+        const water = await markedDown(7200);
+        expect(water.real).not.toBeCloseTo(water.plain, 1);
+        game!.done();
+        const platform = await markedDown(7200, 1);
+        expect(platform.real).toBeCloseTo(platform.plain, 5);
+    });
+});
