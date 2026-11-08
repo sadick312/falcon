@@ -125,8 +125,31 @@ which turned out to be the test harness: Vitest's spies remember every call, and
 The soak test now clears the spies, and the replay hashes sent packets as they go; the packet fingerprints are
 unchanged.)
 
-## Not measured here: drawing
+## Drawing (renderer)
 
-The renderer (canvas drawing every frame) can't be timed in Node; it needs a real browser. To measure it, open the
-game in Chrome, press F12 → Performance → record ~10 seconds of play, and look at the time per frame and which
-functions take the most of it.
+Measured in a real browser: a development build (`npm run build:dev`, profiler on with the `falcon-profiler`
+localStorage key set to "1") on a local page, replaying `sample-busy.fpl` with the Packet Replayer, at a steady 60
+frames per second. Development builds time each drawing step; the profiler overlay shows them as `draw.*`.
+
+| Step | ms per frame (median of 8 one-second averages) |
+|---|---:|
+| `draw.update` (camera, entity smoothing; in a replay also the replayed ticks) | 0.32 |
+| `draw.background` (background, river, grid) | 0.07 |
+| `draw.world` (buildings, trees, players, animals, projectiles) | 1.64 |
+| `draw.health+placements+border+tint` | 0.04 |
+| `draw.overlays+names+text` | 0.30 |
+| `draw.minimap` | 0.01 |
+| **whole frame** | **2.38** |
+
+Within the world step, buildings and trees take most of the time, then players; preparing the visible list,
+projectiles and animals cost almost nothing.
+
+A frame uses about 2.4 ms of the 16.7 ms it has at 60 fps (the GPU's own time not counted). What the plan suggested
+is already in place: only objects on screen are drawn (a bounds query plus `isOnScreen`), buildings and resources
+are cached sprites, the volcano is drawn from pre-rendered canvases, the grid and minimap cost 0.01–0.07 ms, and
+the menu is HTML that is only rebuilt when something changes. What is left is the canvas drawing calls
+themselves; changing those risks a slightly different picture, and 5% of a frame is about 0.1 ms, which the browser
+pane can't measure reliably. So the renderer was left unchanged.
+
+To check it yourself in the real game: open it in Chrome, F12 > Performance, record ~10 seconds of play, and look at
+the time per frame.
