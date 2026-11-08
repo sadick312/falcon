@@ -1,5 +1,5 @@
 import CombatUtils from "@combat-utils/CombatUtils";
-import items from "@constants/items";
+import { getWeapon } from "@constants/items";
 import { STORE_HAT_MAP } from "@constants/store";
 import Client from "@core/Client";
 import ObjectManager from "@core/logic/ObjectManager";
@@ -46,7 +46,7 @@ export default class DefensiveKnockbacker extends DefenseModule {
         if (turretReload !== 1 && defKBRequireTurret) return;
         if (!player.trap) return;
         if (nearestEnemy.trap) return;
-        if (!CombatUtils.getCombatDistance(player, nearestEnemy, items.weapons[primary.id].range)) return;
+        if (!CombatUtils.getCombatDistance(player, nearestEnemy, getWeapon(primary.id).range)) return;
         if (getDistSq(player.next_position, player.real_position) <= 3) return;
 
         // How far we move before the enemy does depends on the update order; unknown on fake ticks, so wait.

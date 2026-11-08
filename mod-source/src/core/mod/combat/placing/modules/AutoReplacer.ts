@@ -1,3 +1,4 @@
+import { at } from "@utils/array/at";
 import CombatUtils from "@combat-utils/CombatUtils";
 import GameObject from "@constants/GameObject";
 import Player from "@entities/Player";
@@ -35,7 +36,7 @@ export default class AutoReplacer extends Placer {
     ];
 
     private appendReplacement(item: Angle | Replacement) {
-        const replacement = this.replacements[this.replacementHead];
+        const replacement = at(this.replacements, this.replacementHead);
         this.replacementHead = (this.replacementHead + 1) % 4;
         replacement.copyFrom(item);
     }
@@ -57,7 +58,7 @@ export default class AutoReplacer extends Placer {
         if (peek) {
             this.peekAngles.length = len;
             for (let i = 0; i < len; i++) {
-                this.peekAngles[i] = bestAngles[i];
+                this.peekAngles[i] = at(bestAngles, i);
             }
 
             return this.peekAngles;
@@ -65,6 +66,7 @@ export default class AutoReplacer extends Placer {
 
         for (let i = 0; i < len; i++) {
             const item = bestAngles[i];
+            if (item === undefined) continue;
             if (this.shouldSkip(item)) continue;
             if (item.isSpike && item.spikeTick) isSpikeTick = true;
 
@@ -72,7 +74,7 @@ export default class AutoReplacer extends Placer {
             this.appendReplacement(item);
         }
 
-        if (isSpikeTick && CombatUtils.isAttackPrimary(player.weapons[0]))
+        if (isSpikeTick && CombatUtils.isAttackPrimary(player.weapons[0] ?? NaN))
             AttackManager.spikeTicker.consider = true;
 
         tickState.activityList.push("autoReplace");

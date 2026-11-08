@@ -86,7 +86,7 @@ export default class SpikeGrader extends Grader {
         placementAction.placementData.pos.y = spike.y;
         placementAction.placementData.id = spike.id;
         placementAction.placementData.ownerSID = Client.mySID;
-        const isAttackPrimary = CombatUtils.isAttackPrimary(player.weapons[0]);
+        const isAttackPrimary = CombatUtils.isAttackPrimary(player.weapons[0] ?? NaN);
 
         // The spike-tick hit's knockback lands this tick or next depending on the update order. When that's unknown
         // (fake tick), the hit is left out of the simulation, like a spike without one.

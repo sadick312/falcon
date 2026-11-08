@@ -1,6 +1,6 @@
 import CombatModule from "@combat-utils/CombatModule";
 import CombatUtils from "@combat-utils/CombatUtils";
-import items from "@constants/items";
+import { getWeapon } from "@constants/items";
 import { STORE_HAT_MAP } from "@constants/store";
 import Client from "@core/Client";
 import PlayerCombatManager from "@core/logic/players/core/PlayerCombatManager";
@@ -59,7 +59,7 @@ export default class BarbarianKnockbacker extends CombatModule {
         const player = Client.player;
         const nearestEnemy = tickState.enemyData.nearest!;
 
-        const wpnData = items.weapons[nearestEnemy.weaponIndex];
+        const wpnData = getWeapon(nearestEnemy.weaponIndex);
         if (wpnData.projectile !== undefined) return;
         if (nearestEnemy.trap) return;
 

@@ -1,4 +1,5 @@
-import items, { LIST_ID_MAP } from "@constants/items";
+import { at } from "@utils/array/at";
+import { getItem, LIST_ID_MAP } from "@constants/items";
 import Player from "@entities/Player";
 import Client from "@core/Client";
 import PlacementSystem from "@core/mod/combat/core/PlacementSystem";
@@ -34,7 +35,7 @@ export default abstract class Placer {
         if (item.id !== LIST_ID_MAP.PIT_TRAP) return false;
         if (tickState.tick > placementBlock.untilTick) return false;
 
-        const scale = items.list[item.id].scale;
+        const scale = getItem(item.id).scale;
         return withinDist(item, placementBlock, scale + placementBlock.scale);
     }
 
@@ -77,6 +78,7 @@ export default abstract class Placer {
 
             for (let i = 0, len = candidates.length; i < len; i++) {
                 const currentAngle = candidates[i];
+                if (currentAngle === undefined) continue;
                 const isPreemptive = currentAngle.preplace;
 
                 if (PlacementSystem.totalPlacements + bestAngles.length >= 4) break;
@@ -110,7 +112,7 @@ export default abstract class Placer {
     protected place(item: Angle | Replacement | Preplacement, placementType: PlacementType = PlacementTypes.NORMAL) {
         if (PlacementSystem.place(item.id, item.angle) !== "placed") return false;
 
-        PlacementSystem.usedAngles[PlacementSystem.usedAnglesHead].redefine(item.angle, tickState.tick);
+        at(PlacementSystem.usedAngles, PlacementSystem.usedAnglesHead).redefine(item.angle, tickState.tick);
         PlacementSystem.usedAnglesHead = (PlacementSystem.usedAnglesHead + 1) % PlacementSystem.usedAngles.length;
         PlacementSystem.usedAnglesCount = Math.min(PlacementSystem.usedAnglesCount + 1, PlacementSystem.usedAngles.length);
         if (placementType !== PlacementTypes.PREPLACE) PlacementSystem.totalPlacements++;

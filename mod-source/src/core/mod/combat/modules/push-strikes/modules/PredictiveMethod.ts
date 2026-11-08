@@ -43,8 +43,9 @@ export default class PredictiveMethod extends PushSpikeMethod {
 
             if (this.attackData.enemy) {
                 const enemy = this.attackData.enemy;
-                if (enemy.visible) enemy.profilingData.tankUseHits[this.attackData.id][this.attackData.dt]--;
-                else enemy.profilingData.tankUseHits[this.attackData.id][this.attackData.dt]++;
+                const hits = enemy.profilingData.tankUseHits[this.attackData.id];
+                const dt = this.attackData.dt;
+                if (hits) hits[dt] = (hits[dt] ?? NaN) + (enemy.visible ? -1 : 1);
             }
 
             this.attackData.dt = 0;
@@ -76,7 +77,7 @@ export default class PredictiveMethod extends PushSpikeMethod {
             const dt = tickState.tick - tickSinceReloaded;
             const hits = nearestEnemy.profilingData.tankUseHits[nearestEnemy.weaponIndex];
             // One slot per tick since reload (9). Later ticks used to grow the list with NaN entries.
-            if (dt >= 0 && dt < hits.length) hits[dt]++;
+            if (hits && dt >= 0 && dt < hits.length) hits[dt] = (hits[dt] ?? NaN) + 1;
         }
 
         GameEventTracker.track(nearestEnemy.sid, PacketMap.SERVER_TO_CLIENT.GATHER_ANIMATION);
@@ -93,17 +94,19 @@ export default class PredictiveMethod extends PushSpikeMethod {
         if (primary.reload !== 1) return;
 
         const tankUseHits = nearestEnemy.profilingData.tankUseHits[nearestEnemy.weaponIndex];
+        if (!tankUseHits) return;
         let highestHits = -Infinity;
         let highestIndex = -Infinity;
 
         for (let i = 0; i < tankUseHits.length; i++) {
-            if (tankUseHits[i] <= 0) {
+            const hits = tankUseHits[i] ?? NaN;
+            if (hits <= 0) {
                 tankUseHits[i] = 0;
                 continue;
             }
 
-            if (highestHits < tankUseHits[i]) {
-                highestHits = tankUseHits[i];
+            if (highestHits < hits) {
+                highestHits = hits;
                 highestIndex = i;
             }
         }

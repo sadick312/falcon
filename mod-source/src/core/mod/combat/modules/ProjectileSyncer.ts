@@ -1,4 +1,4 @@
-import items from "@constants/items";
+import { getWeapon } from "@constants/items";
 import { STORE_ACCESSORY_MAP } from "@constants/store";
 import Client from "@core/Client";
 import PlayerCombatManager from "@core/logic/players/core/PlayerCombatManager";
@@ -36,15 +36,13 @@ export default class ProjectileSyncer extends CombatModule {
         const nearestEnemy = tickState.enemyData.nearest!;
 
         const primary = PlayerCombatManager.fetch(myPlayer, 0);
-        const weaponRange = items.weapons[primary.id].range;
+        const weaponRange = getWeapon(primary.id).range;
 
         if (primary.reload !== 1) return;
         if (!CombatUtils.getCombatDistance(myPlayer, nearestEnemy, weaponRange)) return;
 
         let totalDamage = nearestEnemy.turretThreats * 25;
-        for (let i = 0, len = nearestEnemy.projDamages.length; i < len; i++) {
-            totalDamage += nearestEnemy.projDamages[i];
-        }
+        for (const damage of nearestEnemy.projDamages) totalDamage += damage;
 
         if (primary.dmg * BULL_DAMAGE_MULT + totalDamage < 100) return;
 

@@ -1,5 +1,6 @@
+import { at } from "@utils/array/at";
 import GameObject from "@constants/GameObject";
-import items, { LIST_ID_MAP, WEAPON_ID_MAP } from "@constants/items";
+import { getItem, getWeapon, LIST_ID_MAP, WEAPON_ID_MAP } from "@constants/items";
 import Player from "@entities/Player";
 import { STORE_HAT_MAP } from "@constants/store";
 import Client from "@core/Client";
@@ -53,10 +54,11 @@ export default class AutoBreaker {
 
         for (let i = 0, len = allSpikes.length; i < len; i++) {
             const gameObject = allSpikes[i];
+            if (gameObject === undefined) continue;
             const isDangerous = !Client.isFriendly(gameObject.ownerSID ?? -1);
-            const withinRange = BreakerUtils.getObjectAttackDistance(playerPos, gameObject, items.weapons[bestId].range - 1);
+            const withinRange = BreakerUtils.getObjectAttackDistance(playerPos, gameObject, getWeapon(bestId).range - 1);
             const isWithinAutoPushRange = withinDist(playerPos, gameObject, gameObject.scale + AutoPusher.AUTO_PUSH_DISTANCE);
-            const canKatanaHit = BreakerUtils.getObjectAttackDistance(playerPos, gameObject, items.weapons[WEAPON_ID_MAP.KATANA].range - 1);
+            const canKatanaHit = BreakerUtils.getObjectAttackDistance(playerPos, gameObject, getWeapon(WEAPON_ID_MAP.KATANA).range - 1);
 
             if (!isDangerous) continue;
             if (!gameObject.hasHealth) continue;
@@ -73,7 +75,7 @@ export default class AutoBreaker {
         this.targetObject.y = y;
         this.targetObject.id = id;
         // main() reads dmg to tell a spike target from the trap; it was never updated after construction (always 0).
-        this.targetObject.dmg = items.list[id].dmg ?? 0;
+        this.targetObject.dmg = getItem(id).dmg ?? 0;
         this.targetObject.scale = scale;
         this.targetObject.health = health;
     }
@@ -94,6 +96,7 @@ export default class AutoBreaker {
 
         for (let i = 0; i < count; i++) {
             const item = buffer[i];
+            if (item === undefined) continue;
             if (withinDist(playerPos, item, PLAYER_SCALE + obj.scale)) return true;
         }
 
@@ -112,7 +115,7 @@ export default class AutoBreaker {
         const enemyPrimary = PlayerCombatManager.fetch(nearestEnemy, 0);
         if (enemyPrimary.reload !== 1) return;
 
-        const spikeData = items.list[LIST_ID_MAP.SPINNING_SPIKES];
+        const spikeData = getItem(LIST_ID_MAP.SPINNING_SPIKES);
         const arcCount = ObjectUtils.getSpikeBounceArc(nearestEnemy, player, spikeData, trap.sid);
         if (arcCount === 0) return;
 
@@ -139,12 +142,14 @@ export default class AutoBreaker {
 
         for (let i = 0, len = katanaSpikesBuffer.length; i < len; i++) {
             const spike = katanaSpikesBuffer[i];
+            if (spike === undefined) continue;
             const hitRadius = PLAYER_SCALE + spike.scale;
             const hitRadiusSq = hitRadius * hitRadius;
 
             for (let j = 0; j < arcCount; j++) {
-                const start = spikeArcsBuffer[j][0];
-                const end = spikeArcsBuffer[j][1];
+                const arc = at(spikeArcsBuffer, j);
+                const start = arc[0];
+                const end = arc[1];
                 const step = (end - start) / sampleSteps;
 
                 for (let k = 0; k <= sampleSteps; k++) {
@@ -220,6 +225,7 @@ export default class AutoBreaker {
 
         for (let i = 1, len = this.allSpikesBuffer.length; i < len; i++) {
             const otherTarget = this.allSpikesBuffer[i];
+            if (otherTarget === undefined) continue;
             const toOther = getDir(otherTarget, playerPos);
 
             midPoint.x = (targetSpike.x + otherTarget.x) / 2;
@@ -260,6 +266,7 @@ export default class AutoBreaker {
 
         for (let i = 0, len = nearby.length; i < len; i++) {
             const enemy = nearby[i];
+            if (enemy === undefined) continue;
             const primary = PlayerCombatManager.fetch(enemy, 0);
             if (primary.reload !== 1) continue;
             if (primary.dmg * BULL_DAMAGE_MULT + 45 < 100) continue;
@@ -284,6 +291,7 @@ export default class AutoBreaker {
 
         for (let i = 0; i < allSpikesBuffer.length; i++) {
             const spike = allSpikesBuffer[i];
+            if (spike === undefined) continue;
             const willHitSpike = withinDist(player.next_position, spike, spike.scale + PLAYER_SCALE);
             const isHittingSpike = withinDist(player.real_position, spike, spike.scale + 36);
 

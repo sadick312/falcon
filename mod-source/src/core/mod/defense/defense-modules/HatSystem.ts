@@ -1,4 +1,5 @@
-import items, { WEAPON_ID_MAP, WEAPON_VARIANT_MAP } from "@constants/items";
+import { at } from "@utils/array/at";
+import { getWeapon, WEAPON_ID_MAP, WEAPON_VARIANT_MAP } from "@constants/items";
 import Player from "@entities/Player";
 import { STORE_ACCESSORY_ID, STORE_ACCESSORY_MAP, STORE_HAT_ID, STORE_HAT_MAP } from "@constants/store";
 import Client from "@core/Client";
@@ -55,7 +56,7 @@ export default class HatSystem {
     private static isDaggerInRange(enemy: Player) {
         const player = Client.player;
         const HITBOX_OFFSET = 63;
-        const range = (items.weapons[WEAPON_ID_MAP.DAGGERS].range + HITBOX_OFFSET) * 1.3;
+        const range = (getWeapon(WEAPON_ID_MAP.DAGGERS).range + HITBOX_OFFSET) * 1.3;
 
         const rangeSq = range * range;
         const distSq = getDistSq(player.real_position, enemy.real_position);
@@ -65,7 +66,7 @@ export default class HatSystem {
         return nextDistSq < distSq && nextDistSq <= rangeSq;
     }
 
-    private static weaponDataArrayBuffer: [0 | 1, number][] = [[0, 0], [1, 15]];
+    private static weaponDataArrayBuffer: [[0 | 1, number], [0 | 1, number]] = [[0, 0], [1, 15]];
 
     private static canDaggerEscape(enemy: Player) {
         const trap = enemy.trap;
@@ -83,8 +84,9 @@ export default class HatSystem {
         }
 
         for (let i = 0; i < checkLength; i++) {
-            const group = breakWeapons[i][0];
-            const weaponId = breakWeapons[i][1];
+            const breakWeapon = at(breakWeapons, i);
+            const group = breakWeapon[0];
+            const weaponId = breakWeapon[1];
             const hitsUntilBreak = BreakerUtils.hitsUntilBreak(enemy, weaponId, trap.health);
             if (hitsUntilBreak !== 1) continue;
 
@@ -101,7 +103,7 @@ export default class HatSystem {
         return this.isDaggerInRange(enemy);
     }
 
-    private static readonly POLEARM_SPEED = items.weapons[WEAPON_ID_MAP.POLEARM].speed;
+    private static readonly POLEARM_SPEED = getWeapon(WEAPON_ID_MAP.POLEARM).speed;
 
     private static shouldUsePolearmSoldier(enemy: Player) {
         const player = Client.player;
@@ -283,7 +285,7 @@ export default class HatSystem {
         // Monkey Tail). An attack's own accessory, push-strike wings and Blood Wings above still come first.
         if (this.useSoldierAngelWings(player)) return STORE_ACCESSORY_MAP.ANGEL_WINGS;
 
-        if (nearestEnemy && CombatUtils.isAttackPrimary(player.weapons[0])) {
+        if (nearestEnemy && CombatUtils.isAttackPrimary(player.weapons[0] ?? NaN)) {
             const distSq = getDistSq(player.real_position, nearestEnemy.real_position);
 
             const isWithinRange = distSq <= this.CLOSE_DISTANCE_SQ;

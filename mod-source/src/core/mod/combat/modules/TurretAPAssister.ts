@@ -64,6 +64,7 @@ export default class TurretAPAssister extends CombatModule {
         const allSpikes = ObjectManager.pool.allSpikes;
         for (let i = 0, len = allSpikes.length; i < len; i++) {
             const obj = allSpikes[i];
+            if (obj === undefined) continue;
             const canDamage = !Client.isTeam(enemy, obj.ownerSID ?? -1);
 
             if (!canDamage) continue;

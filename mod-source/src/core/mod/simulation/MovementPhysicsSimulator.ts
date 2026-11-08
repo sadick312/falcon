@@ -1,5 +1,6 @@
 import GameObject from "@constants/GameObject";
-import items from "@constants/items";
+import { getItem, getWeapon } from "@constants/items";
+import { at } from "@utils/array/at";
 import Player from "@entities/Player";
 import { accessoryMap, hatMap, STORE_HAT_MAP } from "@constants/store";
 import Client from "@core/Client";
@@ -67,7 +68,7 @@ export class SimulationOptions {
     ];
 
     static get() {
-        const options = this.optionsBuffer[this.optionsBufferHead];
+        const options = at(this.optionsBuffer, this.optionsBufferHead);
         this.optionsBufferHead = (this.optionsBufferHead + 1) % this.optionsBuffer.length;
 
         options.clearVelocity = false;
@@ -128,7 +129,7 @@ export default class MovementPhysicsSimulator {
         const head = this.resultBufferHead;
         this.resultBufferHead = (this.resultBufferHead + 1) % this.resultBuffer.length;
 
-        const res = this.resultBuffer[head];
+        const res = at(this.resultBuffer, head);
         res.spikesHit = 0;
         res.trap = undefined;
         res.gameObjectsHit.clear();
@@ -139,7 +140,7 @@ export default class MovementPhysicsSimulator {
         res.teleported = false;
         res.totalDamage = 0;
 
-        return this.resultBuffer[head];
+        return res;
     }
 
     private static createEmptyResult(): SimulationResult {
@@ -153,7 +154,7 @@ export default class MovementPhysicsSimulator {
 
         for (let i = 0, len = actionsQueue.length; i < len; i++) {
             const action = actionsQueue[i];
-            if (action.dontUse) continue;
+            if (!action || action.dontUse) continue;
 
             if (action.type === "knockback") {
                 const pos = action.pos;
@@ -167,7 +168,7 @@ export default class MovementPhysicsSimulator {
                     this.damageVictim(victim, action.damage, res, options);
             } else if (action.type === "place") {
                 const data = action.placementData!;
-                const item = items.list[data.id];
+                const item = getItem(data.id);
                 const gameObject = new GameObject(data.pos.x, data.pos.y, 0, item.scale, item.type!, data.id, data.ownerSID);
                 this.internalTmpObjects.push(gameObject.getSimulationState());
             } else if (action.type === "damage") {
@@ -287,7 +288,7 @@ export default class MovementPhysicsSimulator {
         result.pitTrapped = false;
         result.trap = undefined;
 
-        const wpn = items.weapons[victim.weaponIndex];
+        const wpn = getWeapon(victim.weaponIndex);
         const skin = hatMap.get(victim.skinIndex)!;
         const tail = accessoryMap.get(victim.tailIndex)!;
 
@@ -372,7 +373,7 @@ export default class MovementPhysicsSimulator {
 
             for (let j = 0; j < totalLength; j++) {
                 const item = gameObjects[j];
-                if (item.sid === options.ignoreObjectSID || !item.active) continue;
+                if (!item || item.sid === options.ignoreObjectSID || !item.active) continue;
                 this.handleCollision(newState, item, tMlt, result, options);
             }
         }
@@ -385,7 +386,8 @@ export default class MovementPhysicsSimulator {
         const index = spot === undefined ? playersLength : spot + 1;
 
         for (let i = index; i < playersLength; i++) {
-            this.checkPlayerCollision(newState, players[i]);
+            const other = players[i];
+            if (other) this.checkPlayerCollision(newState, other);
         }
 
         this.postTick(newState);
@@ -446,19 +448,20 @@ export default class MovementPhysicsSimulator {
 
                 for (let j = 0; j < gameObjectsLength; j++) {
                     const item = gameObjects[j];
-                    if (item.sid === options.ignoreObjectSID || !item.active) continue;
+                    if (!item || item.sid === options.ignoreObjectSID || !item.active) continue;
                     this.handleCollision(victim, item, tMlt, result, options);
                 }
 
                 for (let j = 0; j < internalTmpObjectsLength; j++) {
                     const item = internalTmpObjects[j];
-                    if (item.sid === options.ignoreObjectSID || !item.active) continue;
+                    if (!item || item.sid === options.ignoreObjectSID || !item.active) continue;
                     this.handleCollision(victim, item, tMlt, result, options);
                 }
             }
 
             for (let i = index; i < playersLength; i++) {
-                this.checkPlayerCollision(victim, players[i]);
+                const other = players[i];
+                if (other) this.checkPlayerCollision(victim, other);
             }
 
             if (victim.health <= 0 || result.teleported) {

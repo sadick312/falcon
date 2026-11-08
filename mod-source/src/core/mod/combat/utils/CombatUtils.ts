@@ -1,4 +1,4 @@
-import items, { WEAPON_ID_MAP } from "@constants/items";
+import { getWeapon, WEAPON_ID_MAP } from "@constants/items";
 import Player from "@entities/Player";
 import { STORE_ACCESSORY_MAP } from "@constants/store";
 import Client from "@core/Client";
@@ -26,6 +26,7 @@ export default class CombatUtils {
 
         for (let i = 0; i < closeObjects.length; i++) {
             const gameObject = closeObjects[i];
+            if (gameObject === undefined) continue;
             const tmpScale = gameObject.getScale();
 
             if (gameObject.ignoreCollision) continue;
@@ -58,7 +59,7 @@ export default class CombatUtils {
     }
 
     static canAttack(victim: Player, attacker: Player, weaponId: number) {
-        const range = items.weapons[weaponId].range;
+        const range = getWeapon(weaponId).range;
         return this.getCombatDistance(attacker, victim, range);
     }
 }

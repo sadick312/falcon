@@ -154,6 +154,7 @@ export default class MovementManager {
 
         for (let i = 0; i < closeObjects.length; i++) {
             const gameObject = closeObjects[i];
+            if (gameObject === undefined) continue;
 
             const isEnemy = !Client.isFriendly(gameObject.ownerSID ?? -1);
             const isSpike = gameObject.dmg;

@@ -1,4 +1,5 @@
-import items, { LIST_ID_MAP, WEAPON_ID_MAP, WEAPON_VARIANT_MAP } from "@constants/items";
+import { at } from "@utils/array/at";
+import { getItem, getWeapon, LIST_ID_MAP, WEAPON_ID_MAP, WEAPON_VARIANT_MAP } from "@constants/items";
 import Player from "@entities/Player";
 import { accessories, CORRUPT_X_WINGS_INDEX, hats, SPIKE_GEAR_INDEX, STORE_ACCESSORY_MAP, STORE_HAT_ID, STORE_HAT_MAP } from "@constants/store";
 import Client from "@core/Client";
@@ -112,7 +113,7 @@ export default class DefenseSystem {
         [], []
     ];
 
-    static delayedKnockbackVectors: KnockbackVector[] = this.delayedKnockbackVectorBuffers[0];
+    static delayedKnockbackVectors: KnockbackVector[] = at(this.delayedKnockbackVectorBuffers, 0);
 
     static trapHitState = 0;
     static preHitChances = 0;
@@ -202,7 +203,7 @@ export default class DefenseSystem {
     private static oldConsiderAutoBreakHit = false;
 
     private static isInRange(player: Player, enemy: Player, weapon: WeaponFetchData) {
-        const wpnData = items.weapons[weapon.id];
+        const wpnData = getWeapon(weapon.id);
         const HITBOX_OFFSET = 63;
 
         if (typeof wpnData.projectile !== "undefined") return true;
@@ -219,11 +220,11 @@ export default class DefenseSystem {
         const playerPos = player.real_position;
         const enemyPos = enemy.real_position;
 
-        const playerPrimarySpd = items.weapons[player.weaponData.primary].spdMult ?? 1;
-        const playerSecondarySpd = items.weapons[player.weaponData.secondary].spdMult ?? 1;
+        const playerPrimarySpd = getWeapon(player.weaponData.primary).spdMult ?? 1;
+        const playerSecondarySpd = getWeapon(player.weaponData.secondary).spdMult ?? 1;
 
-        const enemyPrimarySpd = items.weapons[enemy.weaponData.primary].spdMult ?? 1;
-        const enemySecondarySpd = items.weapons[enemy.weaponData.secondary].spdMult ?? 1;
+        const enemyPrimarySpd = getWeapon(enemy.weaponData.primary).spdMult ?? 1;
+        const enemySecondarySpd = getWeapon(enemy.weaponData.secondary).spdMult ?? 1;
 
         const fastestPlayerWeapon = !player.trap || !player.wasTrapped ? Math.max(playerPrimarySpd, playerSecondarySpd) : 0;
         const fastestEnemyWeapon = !enemy.trap || !enemy.wasTrapped ? Math.max(enemyPrimarySpd, enemySecondarySpd) : 0;
@@ -282,13 +283,13 @@ export default class DefenseSystem {
             primaryDamage = Math.max(priTurretDamage, primaryDamage);
         }
 
-        if (secondary.dmg > 0 && turretDamage === 0 && typeof items.weapons[secondary.id].projectile !== "number" && !hasMonkeyTailOn) {
+        if (secondary.dmg > 0 && turretDamage === 0 && typeof getWeapon(secondary.id).projectile !== "number" && !hasMonkeyTailOn) {
             secondaryDamage *= 1.5;
         }
 
         const hasHammer = primary.id === WEAPON_ID_MAP.TOOL_HAMMER;
         if (primary.id === WEAPON_ID_MAP.TOOL_HAMMER) {
-            primaryDamage = items.weapons[WEAPON_ID_MAP.POLEARM].dmg * (hasMonkeyTailOn ? 1 : 1.5);
+            primaryDamage = getWeapon(WEAPON_ID_MAP.POLEARM).dmg * (hasMonkeyTailOn ? 1 : 1.5);
         }
 
         const effectiveSecondary = hasHammer ? 0 : secondaryDamage + turretDamage;
@@ -380,13 +381,13 @@ export default class DefenseSystem {
         knockbackVectors.length = 0;
 
         const myPositionalSpot = PlayerStateManager.placementMap.get(player.sid)!;
-        const additionalKnockbackVectors = this.delayedKnockbackVectorBuffers[this.delayedKnockbackVectorHead];
+        const additionalKnockbackVectors = at(this.delayedKnockbackVectorBuffers, this.delayedKnockbackVectorHead);
         const isAutoBreakableWeaponReloaded = player.getReload(AutoBreaker.currentBestGroup) === 1;
         const considerAutoBreakHit = isAutoBreakableWeaponReloaded;
         const isGoingToAutoBreakHit = !this.oldConsiderAutoBreakHit && considerAutoBreakHit;
 
         this.delayedKnockbackVectorHead = (this.delayedKnockbackVectorHead + 1) % this.delayedKnockbackVectorBuffers.length;
-        this.delayedKnockbackVectors = this.delayedKnockbackVectorBuffers[this.delayedKnockbackVectorHead];
+        this.delayedKnockbackVectors = at(this.delayedKnockbackVectorBuffers, this.delayedKnockbackVectorHead);
         this.delayedKnockbackVectors.length = 0;
 
         let highestPrimaryDamage = -Infinity;
@@ -401,6 +402,7 @@ export default class DefenseSystem {
 
         for (let i = 0, len = nearby.length; i < len; i++) {
             const enemy = nearby[i];
+            if (enemy === undefined) continue;
             const primary = PlayerCombatManager.fetch(enemy, 0);
             const secondary = PlayerCombatManager.fetch(enemy, 1);
             const turret = PlayerCombatManager.fetch(enemy, 2);
@@ -409,7 +411,7 @@ export default class DefenseSystem {
                 isPlacingOnMe = true;
 
                 const spikeId = primary.id === WEAPON_ID_MAP.TOOL_HAMMER ? LIST_ID_MAP.SPIKES : enemy.spikeId;
-                const spikeDamage = items.list[spikeId].dmg ?? 45;
+                const spikeDamage = getItem(spikeId).dmg ?? 45;
                 if (spikeDamage > highestSpikeDamage) highestSpikeDamage = spikeDamage;
             }
 
@@ -420,6 +422,7 @@ export default class DefenseSystem {
             if (!primary.recentlyHit && !secondary.recentlyHit && !turret.recentlyHit) {
                 for (let j = 0, vLen = additionalKnockbackVectors.length; j < vLen; j++) {
                     const vec = additionalKnockbackVectors[j];
+                    if (vec === undefined) continue;
 
                     if (vec && vec.attacker === enemy.sid) {
                         vec.canceled = true;
@@ -434,6 +437,7 @@ export default class DefenseSystem {
 
         for (let i = 0, len = nearby.length; i < len; i++) {
             const enemy = nearby[i];
+            if (enemy === undefined) continue;
             const result = this.processEnemy(enemy, isGoingToAutoBreakHit, myPositionalSpot, knockbackVectors, len > 1, highestSpikeDamage);
             if (result.ignored) ignoredEnemies.add(enemy.sid);
 
@@ -454,6 +458,7 @@ export default class DefenseSystem {
 
         for (let j = 0, len = knockbackVectors.length + additionalKnockbackVectors.length; j < len; j++) {
             const vector = knockbackVectors[j] ?? additionalKnockbackVectors[j - knockbackVectors.length];
+            if (vector === undefined) continue;
             if (player.trap && willStillBeInTrap) break;
             if (vector.canceled) continue;
 
@@ -488,6 +493,7 @@ export default class DefenseSystem {
 
         for (let i = 0, len = allSpikes.length; i < len; i++) {
             const gameObject = allSpikes[i];
+            if (gameObject === undefined) continue;
 
             const objectScale = gameObject.getScale();
             const isDangerousSpike = !Client.isFriendly(gameObject.ownerSID ?? -1);
@@ -525,6 +531,7 @@ export default class DefenseSystem {
 
             for (let j = 0, len = knockbackVectors.length + additionalKnockbackVectors.length; j < len; j++) {
                 const vector = knockbackVectors[j] ?? additionalKnockbackVectors[j - knockbackVectors.length];
+                if (vector === undefined) continue;
                 if (player.trap && willStillBeInTrap) break;
                 if (vector.canceled || vector.used) continue;
 
@@ -605,6 +612,7 @@ export default class DefenseSystem {
 
             for (let i = 0, len = nearby.length; i < len; i++) {
                 const enemy = nearby[i];
+                if (enemy === undefined) continue;
 
                 if (
                     GameEventTracker.confirm(enemy.sid, PacketMap.SERVER_TO_CLIENT.GATHER_ANIMATION) ||
@@ -666,6 +674,7 @@ export default class DefenseSystem {
 
             for (let i = 0, len = nearby.length; i < len; i++) {
                 const enemy = nearby[i];
+                if (enemy === undefined) continue;
                 enemy.profilingData.randomHitAttacks = 0;
                 enemy.profilingData.latePreHitAttacks = 0;
             }
@@ -699,11 +708,13 @@ export default class DefenseSystem {
         let oneTickThreat = false;
 
         for (let i = 0, len = projDamages.length; i < len; i++) {
-            state.totalDamage += projDamages[i];
-            totalProjDamage += projDamages[i];
+            const projDamage = projDamages[i];
+            if (projDamage === undefined) continue;
+            state.totalDamage += projDamage;
+            totalProjDamage += projDamage;
 
             // Keep adding up: this used to `break` here, leaving the remaining projectiles out of the total.
-            if (projDamages[i] === 25 && projDamages[i] + highestPrimaryDamage >= 100) {
+            if (projDamage === 25 && projDamage + highestPrimaryDamage >= 100) {
                 oneTickThreat = true;
             }
         }
@@ -731,13 +742,14 @@ export default class DefenseSystem {
         if (weapon.reload !== 1) return;
 
         const weaponDamage = weapon.dmg * BULL_DAMAGE_MULT;
-        const spikeGearReflection = hats[SPIKE_GEAR_INDEX].dmg!;
-        const cxWingsReflection = accessories[CORRUPT_X_WINGS_INDEX].dmg!;
+        const spikeGearReflection = at(hats, SPIKE_GEAR_INDEX).dmg!;
+        const cxWingsReflection = at(accessories, CORRUPT_X_WINGS_INDEX).dmg!;
         const state = this.state;
         let hasChanged = false;
 
         for (let i = 0, len = nearby.length; i < len; i++) {
             const enemy = nearby[i];
+            if (enemy === undefined) continue;
             const tmpDir = getDir(enemy.real_position, player.real_position);
             if (getAngleDist(aimDir, tmpDir) > ScriptConfig.GATHER_ANGLE) continue;
 
@@ -764,7 +776,7 @@ export default class DefenseSystem {
     /** Phase 1 of the tick: works out how much damage we could take this tick and from what. */
     static start() {
         this.skinIndex = STORE_HAT_MAP.IGNORE;
-        PacketTracker.adjustFoodAllocation(Client.player.items[0]);
+        PacketTracker.adjustFoodAllocation(Client.player.items[0] ?? NaN);
 
         if (this.forceSoldierTicks > 0) {
             this.skinIndex = STORE_HAT_MAP.SOLDIER_HELMET;

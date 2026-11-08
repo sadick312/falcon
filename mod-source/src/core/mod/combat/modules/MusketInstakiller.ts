@@ -1,4 +1,4 @@
-import items, { WEAPON_ID_MAP } from "@constants/items";
+import { getProjectile, getWeapon, WEAPON_ID_MAP } from "@constants/items";
 import { STORE_HAT_MAP } from "@constants/store";
 import Client from "@core/Client";
 import PlayerCombatManager from "@core/logic/players/core/PlayerCombatManager";
@@ -15,7 +15,7 @@ import { BULL_DAMAGE_MULT } from "@constants/world";
 /** Soldier helmet's damage multiplier (1.8.2: dmgMult .75). */
 const SOLDIER_MULT = 0.75;
 /** Turret gear's own bullet (projectile 1). */
-const TURRET_BULLET_DMG = items.projectiles[1].dmg;
+const TURRET_BULLET_DMG = getProjectile(1).dmg;
 
 /**
  * Polearm + musket insta: bull helmet + polearm hit, then on the next tick turret gear + musket shot (the turret gear
@@ -54,7 +54,7 @@ export default class MusketInstakiller extends CombatModule {
     /** The damage the combo deals to `enemy`: the bull polearm hit plus the musket shot and turret bullet. */
     static comboDamage(polearmDmg: number, enemySkin: number) {
         const firstMult = enemySkin === STORE_HAT_MAP.SOLDIER_HELMET ? SOLDIER_MULT : 1;
-        const musketDmg = items.projectiles[items.weapons[WEAPON_ID_MAP.MUSKET].projectile!].dmg;
+        const musketDmg = getProjectile(getWeapon(WEAPON_ID_MAP.MUSKET).projectile!).dmg;
         return polearmDmg * BULL_DAMAGE_MULT * firstMult + (musketDmg + TURRET_BULLET_DMG) * SOLDIER_MULT;
     }
 
@@ -69,7 +69,7 @@ export default class MusketInstakiller extends CombatModule {
         const secondary = PlayerCombatManager.fetch(player, 1);
         if (primary.reload !== 1 || secondary.reload !== 1 || player.getReload(2) !== 1) return;
 
-        if (!CombatUtils.getCombatDistance(player, enemy, items.weapons[WEAPON_ID_MAP.POLEARM].range - 1)) return;
+        if (!CombatUtils.getCombatDistance(player, enemy, getWeapon(WEAPON_ID_MAP.POLEARM).range - 1)) return;
         if (!DefenseUtils.isInLineOfSight(enemy, secondary)) return;
         if (MusketInstakiller.comboDamage(primary.dmg, enemy.skinIndex) < enemy.health) return;
 

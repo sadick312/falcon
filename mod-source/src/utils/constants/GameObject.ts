@@ -3,7 +3,7 @@ import items, { ListItem } from "@constants/items";
 import { GameObjectSimulationState } from "@simulation/SimulationStates";
 
 export default class GameObject implements Entity {
-    isFakeObject = false;
+    readonly isFakeObject = false as const;
 
     sid: number = -1;
     listHandlerIndex: number = -1;

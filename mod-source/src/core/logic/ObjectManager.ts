@@ -53,6 +53,7 @@ export default class ObjectManager {
 
             for (let i = 0, len = path.length; i < len; i++) {
                 const node = path[i];
+                if (node === undefined) continue;
 
                 if (withinDist(node, gameObject, PLAYER_SCALE + gameObject.scale)) {
                     path.length = 0;
@@ -90,7 +91,8 @@ export default class ObjectManager {
 
                 if (objects && objects.length) {
                     for (let i = 0, len = objects.length; i < len; i++) {
-                        targetArray.push(objects[i]);
+                        const object = objects[i];
+                        if (object !== undefined) targetArray.push(object);
                     }
                 }
             }
@@ -110,7 +112,8 @@ export default class ObjectManager {
 
                 if (objects && objects.length) {
                     for (let i = 0, len = objects.length; i < len; i++) {
-                        targetArray.push(objects[i]);
+                        const object = objects[i];
+                        if (object !== undefined) targetArray.push(object);
                     }
                 }
             }
@@ -129,8 +132,9 @@ export default class ObjectManager {
             const index = objects.indexOf(gameObject);
 
             if (index >= 0) {
-                objects[index] = objects[objects.length - 1];
-                objects.pop();
+                // Move the last object into its place (a no-op when it was the last one).
+                const last = objects.pop();
+                if (last && last !== gameObject) objects[index] = last;
             }
         }
     }
@@ -180,6 +184,7 @@ export default class ObjectManager {
 
                 for (let i = 0, len = nearby.length; i < len; i++) {
                     const enemy = nearby[i];
+                    if (enemy === undefined) continue;
                     enemy.profilingData.randomHitAttacks = 0;
                 }
             }

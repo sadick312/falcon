@@ -1,6 +1,6 @@
 import CombatModule from "@combat-utils/CombatModule";
 import CombatUtils from "@combat-utils/CombatUtils";
-import items from "@constants/items";
+import { getWeapon } from "@constants/items";
 import Player from "@entities/Player";
 import { STORE_ACCESSORY_MAP } from "@constants/store";
 import Client from "@core/Client";
@@ -44,9 +44,9 @@ export default class AutoMeleeSyncer extends CombatModule {
         let partner: Player | undefined = undefined;
         const players = PlayerManager.players.visible.all;
 
-        for (let i = 0; i < players.length; i++) {
-            if (players[i].sid === meleeSyncTarget) {
-                partner = players[i];
+        for (const other of players) {
+            if (other.sid === meleeSyncTarget) {
+                partner = other;
                 break;
             }
         }
@@ -66,6 +66,7 @@ export default class AutoMeleeSyncer extends CombatModule {
 
         for (let i = 0; i < allEnemies.length; i++) {
             const enemy = allEnemies[i];
+            if (enemy === undefined) continue;
             if (enemy.sid === meleeSyncTarget) continue;
 
             // Who updates before this enemy decides which positions the hits are measured from; skip the enemy on fake ticks.
@@ -76,8 +77,8 @@ export default class AutoMeleeSyncer extends CombatModule {
             const allyRangeDecrement = 1;
             const myRangeDecrement = 1;
 
-            const canPartnerHit = CombatUtils.getCombatDistance(partner, enemy, items.weapons[partnerPrimary.id].range - allyRangeDecrement, partnerFirst);
-            const canWeHit = CombatUtils.getCombatDistance(player, enemy, items.weapons[ourPrimary.id].range - myRangeDecrement, weFirst);
+            const canPartnerHit = CombatUtils.getCombatDistance(partner, enemy, getWeapon(partnerPrimary.id).range - allyRangeDecrement, partnerFirst);
+            const canWeHit = CombatUtils.getCombatDistance(player, enemy, getWeapon(ourPrimary.id).range - myRangeDecrement, weFirst);
 
             if (canPartnerHit && canWeHit) {
                 const angleTo = getDir(enemy.next_position, player.next_position);

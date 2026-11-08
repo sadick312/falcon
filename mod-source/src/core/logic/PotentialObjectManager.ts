@@ -1,4 +1,4 @@
-import items, { LIST_ID_MAP } from "@constants/items";
+import { getItem, LIST_ID_MAP } from "@constants/items";
 import Client from "@core/Client";
 import { tickState } from "@core/TickState";
 import withinDist from "@utils/geometry/withinDist";
@@ -9,11 +9,11 @@ export class PotentialObject {
     isBreaking = false;
     willBreak = false;
     totalDamagePotential = 0;
-    isFakeObject = true;
+    readonly isFakeObject = true as const;
 
     readonly scale = 50;
 
-    static readonly maxHealth = items.list[LIST_ID_MAP.PIT_TRAP].health!;
+    static readonly maxHealth = getItem(LIST_ID_MAP.PIT_TRAP).health!;
     health = PotentialObject.maxHealth;
 
     /** The last tick an enemy could still place here (`tick` stays the creation tick, which the grader reads). */
@@ -111,6 +111,7 @@ export default class PotentialObjectManager {
 
         for (let i = 0; i < length; i++) {
             const obj = allObjects[i];
+            if (obj === undefined) continue;
 
             if (obj && !obj.active) {
                 obj.redefine(x, y, ownerSID, tickState.tick);

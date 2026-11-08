@@ -1,6 +1,6 @@
 import CombatModule from "@combat-utils/CombatModule";
 import CombatUtils from "@combat-utils/CombatUtils";
-import items from "@constants/items";
+import { getWeapon } from "@constants/items";
 import { STORE_ACCESSORY_MAP } from "@constants/store";
 import Client from "@core/Client";
 import ObjectManager from "@core/logic/ObjectManager";
@@ -47,7 +47,7 @@ export default class VelocityAttacker extends CombatModule {
         // Only when we update first; when the order is unknown (fake tick), wait for a real one.
         if (PlayerStateManager.updatesBefore(player.sid, enemy.sid) !== true) return;
         if (!CombatUtils.isAttackPrimary(primary.id)) return;
-        if (!CombatUtils.getCombatDistance(player, enemy, items.weapons[primary.id].range)) return;
+        if (!CombatUtils.getCombatDistance(player, enemy, getWeapon(primary.id).range)) return;
         if (enemy.trap) return;
         if (primary.reload !== 1) return;
 

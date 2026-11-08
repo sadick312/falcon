@@ -1,3 +1,4 @@
+import { at } from "@utils/array/at";
 import CombatUtils from "@combat-utils/CombatUtils";
 import { accessories, CORRUPT_X_WINGS_INDEX, hats, SPIKE_GEAR_INDEX, STORE_ACCESSORY_MAP, STORE_HAT_MAP } from "@constants/store";
 import Client from "@core/Client";
@@ -49,8 +50,8 @@ export default class AntiBuller extends CombatModule {
 
         const primary = PlayerCombatManager.fetch(player, 0);
         const enemyPrimary = PlayerCombatManager.fetch(nearestEnemy, 0);
-        const sgReflection = hats[SPIKE_GEAR_INDEX].dmg!;
-        const cxReflection = accessories[CORRUPT_X_WINGS_INDEX].dmg!;
+        const sgReflection = at(hats, SPIKE_GEAR_INDEX).dmg!;
+        const cxReflection = at(accessories, CORRUPT_X_WINGS_INDEX).dmg!;
 
         // Spike Gear (0.45) and Corrupt X Wings (0.25) each reflect a share of the hit taken. This used to add the
         // enemy's whole hit plus a flat 0.25 (dmg * 0.45 + dmg + 0.25).
@@ -78,7 +79,7 @@ export default class AntiBuller extends CombatModule {
         const nearby = tickState.enemyData.nearby;
         const nearestEnemy = tickState.enemyData.nearest;
 
-        if (!CombatUtils.isAttackPrimary(player.weapons[0])) return;
+        if (!CombatUtils.isAttackPrimary(player.weapons[0] ?? NaN)) return;
         if (!nearestEnemy) {
             this.consider = false;
             return;
@@ -109,6 +110,7 @@ export default class AntiBuller extends CombatModule {
 
         for (let i = 0, len = nearby.length; i < len; i++) {
             const enemy = nearby[i];
+            if (enemy === undefined) continue;
             const enemyPrimary = PlayerCombatManager.fetch(enemy, 0);
             const wasPrimaryReloaded = enemy.getLastReload(0) === 1;
             const isCorrectPrimary = CombatUtils.isAttackPrimary(enemyPrimary.id);

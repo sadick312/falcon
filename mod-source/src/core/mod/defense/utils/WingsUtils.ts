@@ -31,6 +31,7 @@ export default class WingsUtils {
 
         for (let i = 0, len = nearby.length; i < len; i++) {
             const enemy = nearby[i];
+            if (enemy === undefined) continue;
             if (!CombatUtils.canAttack(enemy, player, weaponId)) continue;
             if (getAngleDist(getDir(enemy.real_position, player.real_position), aim) <= ScriptConfig.GATHER_ANGLE) return true;
         }

@@ -1,5 +1,5 @@
 import GameObject from "@constants/GameObject";
-import items, { Weapon } from "@constants/items";
+import { getWeapon, Weapon } from "@constants/items";
 import { STORE_HAT_MAP } from "@constants/store";
 import Client from "@core/Client";
 import ObjectManager from "@core/logic/ObjectManager";
@@ -27,12 +27,12 @@ export default class ObjectBreaker {
     static getDoubleHitId(originalId: number, originalGroup: 0 | 1 | 2, targetObject: GameObject): [number, boolean] {
         const player = Client.player;
 
-        const primaryId = player.weapons[0];
+        const primaryId = player.weapons[0] ?? NaN;
         const primaryIsNotBest = primaryId !== originalId;
         const primaryReloaded = player.getReload(0) === 1;
         const canBreakWithoutTank = BreakerUtils.getObjectDamage(player, 0, true) >= targetObject.health;
         const canBreakWithTank = BreakerUtils.getObjectDamage(player, 0) >= targetObject.health;
-        const canAttack = BreakerUtils.getObjectAttackDistance(player, targetObject, items.weapons[primaryId].range - 1);
+        const canAttack = BreakerUtils.getObjectAttackDistance(player, targetObject, getWeapon(primaryId).range - 1);
         const bestWeaponReloaded = player.getReload(originalGroup) === 1;
         const shouldDoubleHit = BreakerUtils.isDoubleHitPrimary(primaryId, targetObject.id);
         const canBreak = canBreakWithTank || canBreakWithoutTank;
@@ -63,6 +63,7 @@ export default class ObjectBreaker {
 
         for (let i = 0, len = closeObjects.length; i < len; i++) {
             const gameObject = closeObjects[i];
+            if (gameObject === undefined) continue;
 
             const isSpike = gameObject.dmg && !Client.isTeam(nearestEnemy, gameObject.ownerSID ?? -1);
             const isCactus = isCactusObject(gameObject);
@@ -77,6 +78,7 @@ export default class ObjectBreaker {
 
         for (let i = 0, len = closeObjects.length; i < len; i++) {
             const gameObject = closeObjects[i];
+            if (gameObject === undefined) continue;
             const isNearEnemyTrap = withinDist(enemyTrap, gameObject, 75 + gameObject.scale);
             const isNotEnemyTrap = gameObject !== enemyTrap;
             const canAttack = BreakerUtils.getObjectAttackDistance(player, gameObject, wpn.range - 1);
@@ -105,11 +107,12 @@ export default class ObjectBreaker {
         const bestWpnId = CombatController.bestWeaponForBreak();
         const closeObjects = ObjectManager.pool.closeObjects;
 
-        const wpn = items.weapons[bestWpnId];
+        const wpn = getWeapon(bestWpnId);
         this.inQueueObjects.clear();
 
         for (let i = 0, len = closeObjects.length; i < len; i++) {
             const gameObject = closeObjects[i];
+            if (gameObject === undefined) continue;
 
             const isSpike = gameObject.dmg;
             const isTeleport = gameObject.teleport;
@@ -136,6 +139,7 @@ export default class ObjectBreaker {
         if (!this.gameObjectQueue.length) return false;
 
         const currentTarget = this.gameObjectQueue[0];
+        if (!currentTarget) return false;
         const toTarget = getDir(currentTarget, playerPos);
 
         this.targetObject.x = currentTarget.x;
@@ -150,6 +154,7 @@ export default class ObjectBreaker {
 
         for (let i = 1, len = this.gameObjectQueue.length; i < len; i++) {
             const otherTarget = this.gameObjectQueue[i];
+            if (otherTarget === undefined) continue;
             const toOther = getDir(otherTarget, playerPos);
 
             midPoint.x = (currentTarget.x + otherTarget.x) / 2;

@@ -1,4 +1,4 @@
-import items, { WEAPON_ID_MAP } from "@constants/items";
+import { getWeapon, WEAPON_ID_MAP } from "@constants/items";
 import { STORE_ACCESSORY_ID, STORE_ACCESSORY_MAP, STORE_HAT_ID, STORE_HAT_MAP } from "@constants/store";
 import Client from "@core/Client";
 import AttackManager from "@core/mod/combat/core/AttackManager";
@@ -35,7 +35,7 @@ export default class CombatController {
         const hasHammer = weapons[1] === WEAPON_ID_MAP.GREAT_HAMMER;
 
         if (mode === "id")
-            return hasHammer ? WEAPON_ID_MAP.GREAT_HAMMER : weapons[0];
+            return hasHammer ? WEAPON_ID_MAP.GREAT_HAMMER : (weapons[0] ?? NaN);
 
         return (hasHammer ? 1 : 0) as (0 | 1 | 2);
     }
@@ -79,6 +79,7 @@ export default class CombatController {
 
             for (let i = 0; i < damages.length; i++) {
                 const dmg = nearestEnemy.damages[i];
+                if (dmg === undefined) continue;
                 const dmgAfterSoldier = dmg / .75;
 
                 if (Math.abs(dmgAfterSoldier - 25) <= .001 || dmg === 25) {
@@ -105,7 +106,7 @@ export default class CombatController {
         if (!currentKillAction) return;
 
         const wpnId = currentKillAction.wpnId;
-        if (!currentKillAction.noAttack && player.weapons.includes(wpnId) && items.weapons[wpnId].projectile !== undefined)
+        if (!currentKillAction.noAttack && player.weapons.includes(wpnId) && getWeapon(wpnId).projectile !== undefined)
             player.reloads[currentKillAction.wpnId] = 0;
     }
 
@@ -142,7 +143,7 @@ export default class CombatController {
 
             if (this.tankSpam) {
                 this.currentMode = "tankspam";
-                const bestId = Input.keys["ShiftLeft"] ? player.weapons[0] : this.bestWeaponForBreak();
+                const bestId = Input.keys["ShiftLeft"] ? (player.weapons[0] ?? NaN) : this.bestWeaponForBreak();
                 this.selectWeapon(bestId, true);
                 activityList.push("tankSpam");
 

@@ -79,6 +79,7 @@ export default class AutoPusher {
 
         for (let i = 0, len = allSpikes.length; i < len; i++) {
             const gameObject = allSpikes[i];
+            if (gameObject === undefined) continue;
             const distanceSq = getDistSq(enemyPos, gameObject);
 
             if (Client.isTeam(nearestEnemy, gameObject.ownerSID ?? -1)) continue;
@@ -92,7 +93,8 @@ export default class AutoPusher {
 
         for (let i = 0, len = allSpikes.length + 1; i < len; i++) {
             // closestTarget should always be processed first
-            const gameObject: GameObject = (i === 0 ? target : allSpikes[i - 1]);
+            const gameObject: GameObject | undefined = i === 0 ? target : allSpikes[i - 1];
+            if (!gameObject) continue;
             const distance = getDist(enemyTrap, gameObject);
             const radius = this.AUTO_PUSH_DISTANCE + gameObject.getScale();
 
@@ -242,7 +244,8 @@ export default class AutoPusher {
 
         const path = this.currentPath;
 
-        if (!withinDist(path[path.length - 1], goal, 35)) {
+        const lastNode = path[path.length - 1];
+        if (!lastNode || !withinDist(lastNode, goal, 35)) {
             this.currentPath.length = 0;
             return this.pathfind(start, goal);
         }
@@ -253,6 +256,7 @@ export default class AutoPusher {
 
         for (let i = 0, len = path.length; i < len; i++) {
             const node = path[i];
+            if (node === undefined) continue;
             const distanceSq = getDistSq(start, node);
 
             if (distanceSq < closestDistanceSq) {

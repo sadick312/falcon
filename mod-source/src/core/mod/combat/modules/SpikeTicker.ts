@@ -47,7 +47,7 @@ export default class SpikeTicker extends CombatModule {
 
     process(angle: Angle, enemy: Player) {
         const player = Client.player;
-        const primaryId = player.weapons[0];
+        const primaryId = player.weapons[0] ?? NaN;
 
         const isReloaded = player.getReload(0) === 1;
         const canAttackEnemy = isReloaded && CombatUtils.canAttack(enemy, player, primaryId);

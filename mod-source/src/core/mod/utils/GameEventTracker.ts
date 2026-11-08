@@ -14,7 +14,7 @@ export default class GameEventTracker {
     }
 
     private static getKey(sid: number, eventType: TrackableGameEvents) {
-        const type = this.textCache[eventType] ?? this.textEncoder.encode(eventType)[0];
+        const type = this.textCache[eventType] ?? this.textEncoder.encode(eventType)[0] ?? 0;
         if (typeof this.textCache[eventType] !== "number") this.textCache[eventType] = type;
         return (sid << 16) | (type & 0xFFFF);
     }

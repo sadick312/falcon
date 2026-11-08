@@ -1,12 +1,13 @@
+import { at } from "@utils/array/at";
 import type AntiBuller from "@combat-modules/AntiBuller";
 import type AppleInstakiller from "@combat-modules/AppleInstakiller";
 import type OneTicker from "@combat-modules/OneTicker";
 import type ShameGrinder from "@combat-modules/ShameGrinder";
 import type SpikeTicker from "@combat-modules/SpikeTicker";
-import items, { LIST_ID_MAP, WEAPON_ID_MAP } from "@constants/items";
+import { getItem, LIST_ID_MAP, WEAPON_ID_MAP } from "@constants/items";
 import { STORE_HAT_MAP } from "@constants/store";
 import Client from "@core/Client";
-import AttackQueuePool, { AttackAction, AttackQueue } from "@core/mod/combat/core/AttackQueuePool";
+import AttackQueuePool, { AttackAction, AttackQueue, AttackSequence } from "@core/mod/combat/core/AttackQueuePool";
 import AutoPusher from "@core/mod/combat/core/AutoPusher";
 import PlacementSystem from "@core/mod/combat/core/PlacementSystem";
 import ModModule from "@core/mod/utils/ModModule";
@@ -17,7 +18,7 @@ import withinDist from "@utils/geometry/withinDist";
 
 export default class AttackManager {
     static autoInstaToggle = false;
-    private static _currentAttackActions: AttackAction[] = AttackQueuePool.createAttackSequence();
+    private static _currentAttackActions: AttackSequence = AttackQueuePool.createAttackSequence();
     private static _currentAttackAction: AttackAction | undefined;
     private static currentAttackActionHead = 3;
 
@@ -69,9 +70,9 @@ export default class AttackManager {
         this.attackQueue.push(queue);
     }
 
-    static prepareBullHitSequence(seq: AttackAction[], reason?: string) {
+    static prepareBullHitSequence(seq: AttackSequence, reason?: string) {
         const player = Client.player;
-        const primaryId = player.weapons[0];
+        const primaryId = player.weapons[0] ?? NaN;
         const attackHat = primaryId === WEAPON_ID_MAP.DAGGERS ? STORE_HAT_MAP.SOLDIER_HELMET : STORE_HAT_MAP.BULL_HELMET;
 
         const firstAction = seq[0];
@@ -114,12 +115,13 @@ export default class AttackManager {
         if (!nearestEnemy) return;
         if (!nearestEnemy.trap) return;
 
-        const spikeCollisionScale = items.list[Client.player.items[2]].scale + 34;
+        const spikeCollisionScale = getItem(Client.player.items[2] ?? NaN).scale + 34;
         const preplacement = PlacementSystem.AutoPlacer.potentialPreplacements;
 
         for (let i = 0; i < preplacement.count; i++) {
             const item = preplacement.placements[i];
-            const itemData = items.list[item.id];
+            if (item === undefined) continue;
+            const itemData = getItem(item.id);
 
             const isTrap = item.id === LIST_ID_MAP.PIT_TRAP;
             const isSpike = itemData.dmg;
@@ -135,6 +137,7 @@ export default class AttackManager {
 
         for (let i = 0; i < replacements.length; i++) {
             const item = replacements[i];
+            if (item === undefined) continue;
             const isTrap = item.isTrap;
             const isSpike = item.isSpike;
             const isOverlapping = withinDist(item, nearestEnemy.next_position, isSpike ? spikeCollisionScale : 49);
@@ -153,20 +156,23 @@ export default class AttackManager {
 
         this.probePlacements();
         for (let i = 0; i < modulesLength; i++) {
-            modules[i].init();
-            modules[i].update();
+            const module = modules[i];
+            if (!module) continue;
+            module.init();
+            module.update();
         }
 
         for (let i = 0; i < modulesLength; i++) {
-            modules[i].run();
+            modules[i]?.run();
         }
 
-        if (attackQueue.length) {
-            // The highest grade wins (One Tick: Infinity; gradeAttackQueue adds spike and pit bonuses); on a tie, the
-            // module listed first. It used to always take attackQueue[0] and ignore the grades.
-            let bestQueue = attackQueue[0];
+        // The highest grade wins (One Tick: Infinity; gradeAttackQueue adds spike and pit bonuses); on a tie, the
+        // module listed first. It used to always take attackQueue[0] and ignore the grades.
+        let bestQueue = attackQueue[0];
+        if (bestQueue) {
             for (let i = 1; i < attackQueue.length; i++) {
-                if (attackQueue[i].grade > bestQueue.grade) bestQueue = attackQueue[i];
+                const queue = attackQueue[i];
+                if (queue && queue.grade > bestQueue.grade) bestQueue = queue;
             }
 
             AttackQueuePool.copySequenceOver(bestQueue.sequence, this._currentAttackActions)
@@ -175,7 +181,7 @@ export default class AttackManager {
         }
 
         if (this.currentAttackActionHead < 2) {
-            this._currentAttackAction = this.currentAttackActions[this.currentAttackActionHead];
+            this._currentAttackAction = at(this.currentAttackActions, this.currentAttackActionHead);
             if (this._currentAttackAction.dontUse) this._currentAttackAction = undefined;
         } else {
             this._currentAttackAction = undefined;

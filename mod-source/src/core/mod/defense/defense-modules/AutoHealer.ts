@@ -28,7 +28,7 @@ export default class AutoHealer {
         const player = Client.player;
         const remainingHealth = player.maxHealth - player.health;
 
-        const foodId = player.items[0];
+        const foodId = player.items[0] ?? NaN;
         const amount = HealerUtils.getFoodValue(foodId);
         const times = Math.ceil(remainingHealth / amount);
 

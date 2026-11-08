@@ -29,7 +29,9 @@ export default class TurretManager {
         let closestAI: (typeof allAis)[number] | undefined;
         let closestAiDistance = Infinity;
         for (let i = 0; i < allAis.length; i++) {
-            const distSq = getDistSq(allAis[i].real_position, turret);
+            const ai = allAis[i];
+            if (!ai) continue;
+            const distSq = getDistSq(ai.real_position, turret);
             if (distSq < closestAiDistance) {
                 closestAiDistance = distSq;
                 closestAI = allAis[i];
@@ -41,6 +43,7 @@ export default class TurretManager {
         let closestEnemyDistance = Infinity;
         for (let i = 0; i < visible.length; i++) {
             const enemy = visible[i];
+            if (enemy === undefined) continue;
             if (Client.isTeam(enemy, turret.ownerSID ?? -1) || enemy.skinIndex === STORE_HAT_MAP.EMP_HELMET) continue;
 
             const distSq = getDistSq(enemy.real_position, turret);
@@ -77,9 +80,7 @@ export default class TurretManager {
             gameObject.reload = 0;
 
             this.updatePlayer(player, gameObject);
-            for (let j = 0; j < nearby.length; j++) {
-                this.updatePlayer(nearby[j], gameObject);
-            }
+            for (const other of nearby) this.updatePlayer(other, gameObject);
         }
     }
 }

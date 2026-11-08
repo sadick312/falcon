@@ -1,3 +1,4 @@
+import { at } from "@utils/array/at";
 import Player from "@entities/Player";
 import PlacementSystem from "@core/mod/combat/core/PlacementSystem";
 import { FinderOptions } from "@core/mod/combat/placing/AngleFinder";
@@ -72,16 +73,18 @@ export default class AutoPlacer extends Placer {
     }
 
     updatePreplacement(i: number, item: Angle) {
-        const preplacement = this.preplacements[i];
-        const arr = preplacement.placements[preplacement.count++];
+        const preplacement = at(this.preplacements, i);
+        const arr = at(preplacement.placements, preplacement.count++);
         arr.copyFrom(item);
         preplacement.tick = tickState.tick;
     }
 
     private executePreplaceBatch(arr: Preplacement[], count: number, originalWaitMs: number) {
         for (let i = 0; i < count; i++) {
-            if (originalWaitMs > 0 && this.shouldSkip(arr[i])) continue;
-            this.place(arr[i], arr[i].predict ? PlacementTypes.PREDICTIVE : PlacementTypes.PREPLACE);
+            const preplacement = arr[i];
+            if (!preplacement) continue;
+            if (originalWaitMs > 0 && this.shouldSkip(preplacement)) continue;
+            this.place(preplacement, preplacement.predict ? PlacementTypes.PREDICTIVE : PlacementTypes.PREPLACE);
             if (originalWaitMs > 0) PacketTracker.freeAfterUse("PLACE", 1);
         }
 
@@ -92,7 +95,7 @@ export default class AutoPlacer extends Placer {
         const padding = Menu.getValue("prenorounding") ? 0 : .5;
         let waitMs = ScriptConfig.SERVER_UPDATE_SPEED - PingTracker.getStablePing() + padding;
 
-        const preplacement = this.preplacements[index];
+        const preplacement = at(this.preplacements, index);
         const arr = preplacement.placements;
         const count = preplacement.count;
         PlacementSystem.totalPlacements += count;
@@ -124,7 +127,8 @@ export default class AutoPlacer extends Placer {
 
         for (let i = 0; i < bestAngles.length; i++) {
             const item = bestAngles[i];
-            this.cachedBestAngles[i].redefine(item.x, item.y, item.scale, item.angle, item.id, item.preplace, item.predict);
+            if (item === undefined) continue;
+            at(this.cachedBestAngles, i).redefine(item.x, item.y, item.scale, item.angle, item.id, item.preplace, item.predict);
             if (item.preplace || item.predict) requirePadding++;
             else if (!shouldTick) offset++;
         }
@@ -132,9 +136,10 @@ export default class AutoPlacer extends Placer {
         const totalActions = PacketTracker.request("PLACE", bestAngles.length - offset, requirePadding);
         for (let i = 0, len = Math.min(bestAngles.length, totalActions); i < len; i++) {
             const item = bestAngles[i];
+            if (item === undefined) continue;
 
             if (item.preplace && !item.overlap) {
-                const arr = preplacement.placements[preplacement.count++];
+                const arr = at(preplacement.placements, preplacement.count++);
                 arr.copyFrom(item);
             }
         }
@@ -152,12 +157,13 @@ export default class AutoPlacer extends Placer {
         let requirePadding = 0;
         let offset = 0;
 
-        this.preplacements[currentIndex].count = 0;
+        at(this.preplacements, currentIndex).count = 0;
         this.preplacementsBufferHead = (this.preplacementsBufferHead + 1) % this.preplacements.length;
         const shouldTick = tickState.tick % 2 === 0 || !Menu.getValue("twoTickPlacements");
 
         for (let i = 0; i < bestAnglesCount; i++) {
             const item = bestAngles[i];
+            if (item === undefined) continue;
 
             if (item.preplace || item.predict) {
                 requirePadding++;
@@ -170,6 +176,7 @@ export default class AutoPlacer extends Placer {
         const totalActions = PacketTracker.request("PLACE", bestAnglesCount - offset, requirePadding);
         for (let i = 0, len = Math.min(bestAnglesCount, totalActions); i < len; i++) {
             const item = bestAngles[i];
+            if (item === undefined) continue;
             if (this.shouldSkip(item)) continue;
 
             if (item.preplace || item.predict) {

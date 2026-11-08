@@ -1,6 +1,6 @@
 import CombatUtils from "@combat-utils/CombatUtils";
 import GameObject from "@constants/GameObject";
-import items, { WEAPON_ID_MAP } from "@constants/items";
+import { getWeapon, WEAPON_ID_MAP } from "@constants/items";
 import Player from "@entities/Player";
 import Client from "@core/Client";
 import ObjectManager from "@core/logic/ObjectManager";
@@ -123,11 +123,12 @@ export default class ModManager {
 
         for (let j = 0, len = players.length; j < len; j++) {
             const player = players[j];
+            if (player === undefined) continue;
             const primary = PlayerCombatManager.fetch(player, 0);
             const secondary = PlayerCombatManager.fetch(player, 1);
 
-            const primaryWpn = items.weapons[primary.id];
-            const secondaryWpn = items.weapons[secondary.id];
+            const primaryWpn = getWeapon(primary.id);
+            const secondaryWpn = getWeapon(secondary.id);
 
             // The reload time recorded at the last swing (Samurai Armor shortens it, P25), else the weapon's speed.
             const primaryReloadTime = player.reloadTimes[primary.id] ?? primaryWpn.speed;
@@ -161,13 +162,16 @@ export default class ModManager {
         const { primaryRange, primaryDamage, secondaryRange, secondaryDamage } = this.breakPotential;
 
         for (let i = 0; i < totalLength; i++) {
-            const gameObject: GameObject | PotentialObject = closeObjects[i] ?? onRenderObjects[i - closeObjectsLength];
+            // Widened on purpose: without it TypeScript assumes every entry is a real GameObject.
+            const gameObject = (closeObjects[i] ?? onRenderObjects[i - closeObjectsLength]) as GameObject | PotentialObject | undefined;
+            if (gameObject === undefined) continue;
             gameObject.willBreak = false;
             gameObject.totalDamagePotential = 0;
             gameObject.isBreaking = false;
 
             for (let j = 0, player_len = players.length; j < player_len; j++) {
                 const player = players[j];
+                if (player === undefined) continue;
                 const isMe = player.sid === Client.mySID;
 
                 if (isMe) {
@@ -179,8 +183,10 @@ export default class ModManager {
                     if (!withinPrevIntentArc && !withinCurrentMouseArc) continue;
                 }
 
-                const primaryHitDamage = primaryDamage[j] && BreakerUtils.getObjectAttackDistance(player, gameObject, primaryRange[j]) ? primaryDamage[j] : 0;
-                const secondaryHitDamage = secondaryDamage[j] && BreakerUtils.getObjectAttackDistance(player, gameObject, secondaryRange[j]) ? secondaryDamage[j] : 0;
+                const primaryJ = primaryDamage[j] ?? 0;
+                const secondaryJ = secondaryDamage[j] ?? 0;
+                const primaryHitDamage = primaryJ && BreakerUtils.getObjectAttackDistance(player, gameObject, primaryRange[j] ?? NaN) ? primaryJ : 0;
+                const secondaryHitDamage = secondaryJ && BreakerUtils.getObjectAttackDistance(player, gameObject, secondaryRange[j] ?? NaN) ? secondaryJ : 0;
                 const weaponDamage = Math.max(primaryHitDamage, secondaryHitDamage);
 
                 if (isMe) {
@@ -224,7 +230,7 @@ export default class ModManager {
 
     private static resolveQueuedActions() {
         const queue = tickState.tickQueue;
-        for (let i = 0, len = queue.length; i < len; i++) queue[i]();
+        for (let i = 0, len = queue.length; i < len; i++) queue[i]?.();
         queue.length = 0;
     }
 
@@ -233,6 +239,7 @@ export default class ModManager {
 
         for (let i = 0, len = allEnemies.length; i < len; i++) {
             const enemy = allEnemies[i];
+            if (enemy === undefined) continue;
             PlayerPlacementManager.update(enemy);
         }
     }
@@ -259,7 +266,7 @@ export default class ModManager {
             if (!otherPlayer || Client.isFriendly(otherPlayer.sid)) continue;
 
             const wpnId = otherPlayer.weaponIndex;
-            const wpn = items.weapons[wpnId];
+            const wpn = getWeapon(wpnId);
             const tmpDir = getDir(player.real_position, otherPlayer.real_position);
 
             const otherSpot = PlayerStateManager.placementMap.get(otherPlayer.sid);
@@ -281,7 +288,7 @@ export default class ModManager {
             if (!otherPlayer || Client.isFriendly(otherPlayer.sid)) continue;
 
             const wpnId = otherPlayer.weaponIndex;
-            const wpn = items.weapons[wpnId];
+            const wpn = getWeapon(wpnId);
             const tmpDir = getDir(player.real_position, otherPlayer.real_position);
 
             const otherSpot = PlayerStateManager.placementMap.get(otherPlayer.sid);
@@ -360,9 +367,9 @@ export default class ModManager {
         Client.player.projDamages.length = 0;
         Client.player.justAttacked = false;
 
-        for (let i = 0, len = this.enemyData.all.length; i < len; i++) {
-            this.enemyData.all[i].projDamages.length = 0;
-            this.enemyData.all[i].justAttacked = false;
+        for (const enemy of this.enemyData.all) {
+            enemy.projDamages.length = 0;
+            enemy.justAttacked = false;
         }
 
         this.updateBrainUI();

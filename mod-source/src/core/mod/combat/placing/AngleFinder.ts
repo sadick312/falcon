@@ -1,5 +1,6 @@
 import GameObject from "@constants/GameObject";
-import items, { ListItem } from "@constants/items";
+import { at } from "@utils/array/at";
+import { getItem, ListItem } from "@constants/items";
 import Player from "@entities/Player";
 import Client from "@core/Client";
 import ObjectManager from "@core/logic/ObjectManager";
@@ -104,14 +105,14 @@ interface ObjectPassCache {
 
 function insertionSortIntervals(arr: Float32Array, n: number) {
     for (let i = 2; i < n; i += 2) {
-        const currentStart = arr[i];
-        const currentEnd = arr[i + 1];
+        const currentStart = arr[i] ?? NaN;
+        const currentEnd = arr[i + 1] ?? NaN;
 
         let j = i - 2;
 
-        while (j >= 0 && arr[j] > currentStart) {
-            arr[j + 2] = arr[j];
-            arr[j + 3] = arr[j + 1];
+        while (j >= 0 && (arr[j] ?? NaN) > currentStart) {
+            arr[j + 2] = arr[j] ?? NaN;
+            arr[j + 3] = arr[j + 1] ?? NaN;
 
             j -= 2;
         }
@@ -371,13 +372,13 @@ export default class AngleFinder {
 
         const source = itemCtx[sourceInterval];
 
-        let currentStart = source[0];
-        let currentEnd = source[1];
+        let currentStart = source[0] ?? NaN;
+        let currentEnd = source[1] ?? NaN;
         let writeIdx = 0;
 
         for (let i = 2; i < sourceCount; i += 2) {
-            const nextStart = source[i];
-            const nextEnd = source[i + 1];
+            const nextStart = source[i] ?? NaN;
+            const nextEnd = source[i + 1] ?? NaN;
 
             if (nextStart <= currentEnd) {
                 currentEnd = Math.max(currentEnd, nextEnd);
@@ -394,7 +395,7 @@ export default class AngleFinder {
         tmpBuffer[writeIdx++] = currentEnd;
 
         for (let i = 0; i < writeIdx; i++) {
-            itemCtx[destInterval][i] = tmpBuffer[i];
+            itemCtx[destInterval][i] = tmpBuffer[i] ?? NaN;
         }
 
         itemCtx[destIntervalIndex] = writeIdx;
@@ -411,8 +412,8 @@ export default class AngleFinder {
         let index = 0;
 
         for (let i = 0; i < invalidIndex; i += 2) {
-            const start = invalid[i];
-            const end = invalid[i + 1];
+            const start = invalid[i] ?? NaN;
+            const end = invalid[i + 1] ?? NaN;
 
             if (start > lastEnd) {
                 valid[index++] = lastEnd;
@@ -437,7 +438,7 @@ export default class AngleFinder {
         const level = isNaN(parsed) ? 7 : parsed;
         const budgetMlt = options.budgetMlt ?? 1;
 
-        return (this.budgets[level - 1] * budgetMlt) | 0;
+        return ((this.budgets[level - 1] ?? NaN) * budgetMlt) | 0;
     }
 
     private static optionalDefaultOther = new Float32Array(0);
@@ -452,8 +453,8 @@ export default class AngleFinder {
         let index = 0;
 
         for (let i = 0; i < intervalIndex; i += 2) {
-            const sampleStart = intervals[i];
-            const sampleEnd = intervals[i + 1];
+            const sampleStart = intervals[i] ?? NaN;
+            const sampleEnd = intervals[i + 1] ?? NaN;
 
             const trueWidth = sampleEnd - sampleStart;
             const ratio = trueWidth / totalWidth;
@@ -494,11 +495,11 @@ export default class AngleFinder {
         let preplaceWidth = 0;
 
         for (let i = 0; i < validIndex; i += 2) {
-            validWidth += valid[i + 1] - valid[i];
+            validWidth += (valid[i + 1] ?? NaN) - (valid[i] ?? NaN);
         }
 
         for (let i = 0; i < otherIndex; i += 2) {
-            preplaceWidth += other[i + 1] - other[i];
+            preplaceWidth += (other[i + 1] ?? NaN) - (other[i] ?? NaN);
         }
 
         const totalWidth = validWidth + preplaceWidth;
@@ -529,10 +530,11 @@ export default class AngleFinder {
 
         for (let i = 0; i < samplesIndex; i++) {
             const ang = samples[i];
+            if (ang === undefined) continue;
             const x = playerPos.x + Math.cos(ang) * offset;
             const y = playerPos.y + Math.sin(ang) * offset;
 
-            this.angleBuffer[currentIdx].redefine(x, y, scale, ang, item.id, isPreplacement);
+            at(this.angleBuffer, currentIdx).redefine(x, y, scale, ang, item.id, isPreplacement);
             if (options.grade) AngleGrader.grade(currentIdx, options);
             currentIdx++;
         }
@@ -546,7 +548,7 @@ export default class AngleFinder {
         samples: FinderSampleContext, spikeSamplesIndex: number, trapSamplesIndex: number,
         options: Readonly<FinderOptions>
     ) {
-        const trapItem = items.list[15];
+        const trapItem = getItem(15);
 
         // Every angle sits at most this far from the player, so a spike or trap farther than this plus its own size
         // can't be in range of any of them (Grader.prepare's 15 + item + object). Pick those once for all angles.
@@ -634,14 +636,14 @@ export default class AngleFinder {
         const tmpBuffer = this.tmpBuffer;
 
         for (let i = 0; i < ctx[shrinkerIntervalIndex]; i += 2) {
-            const invStart = ctx[shrinkerInterval][i];
-            const invEnd = ctx[shrinkerInterval][i + 1];
+            const invStart = ctx[shrinkerInterval][i] ?? NaN;
+            const invEnd = ctx[shrinkerInterval][i + 1] ?? NaN;
 
             let index = 0;
 
             for (let j = 0; j < count; j += 2) {
-                let openStart = ctx[shrinkenInterval][j];
-                let openEnd = ctx[shrinkenInterval][j + 1];
+                let openStart = ctx[shrinkenInterval][j] ?? NaN;
+                let openEnd = ctx[shrinkenInterval][j + 1] ?? NaN;
 
                 const isIntervalsNotOverlapping = invEnd <= openStart || invStart >= openEnd;
                 const isInvalidBiggerThanOpen = invStart <= openStart && invEnd >= openEnd;
@@ -668,7 +670,7 @@ export default class AngleFinder {
                 }
             }
 
-            for (let k = 0; k < index; k++) ctx[shrinkenInterval][k] = tmpBuffer[k];
+            for (let k = 0; k < index; k++) ctx[shrinkenInterval][k] = tmpBuffer[k] ?? NaN;
             count = index;
         }
 
@@ -702,8 +704,8 @@ export default class AngleFinder {
         const ctx = this.data;
         this.resetCtx(ctx);
 
-        const spikeItem = items.list[player.items[2]];
-        const trapItem = items.list[15];
+        const spikeItem = getItem(player.items[2] ?? NaN);
+        const trapItem = getItem(15);
         if (options.replace && options.preplace) return 0;
 
         const isOurPlayer = player.sid === Client.mySID;
@@ -793,8 +795,8 @@ export default class AngleFinder {
             options.preplace ? ctx.spike.openIndex : undefined
         );
 
-        const spikeSamplesIndex = this.getSampleResponse[0];
-        const spikePreplaceSamplesIndex = ctx.samples.spikePreplaceSamplesIndex = this.getSampleResponse[1];
+        const spikeSamplesIndex = this.getSampleResponse[0] ?? NaN;
+        const spikePreplaceSamplesIndex = ctx.samples.spikePreplaceSamplesIndex = this.getSampleResponse[1] ?? NaN;
 
         this.resetSampleResponse();
 
@@ -808,8 +810,8 @@ export default class AngleFinder {
             options.preplace ? ctx.trap.openIndex : undefined
         );
 
-        const trapSamplesIndex = this.getSampleResponse[0];
-        const trapPreplaceSamplesIndex = ctx.samples.trapPreplaceSamplesIndex = this.getSampleResponse[1];
+        const trapSamplesIndex = this.getSampleResponse[0] ?? NaN;
+        const trapPreplaceSamplesIndex = ctx.samples.trapPreplaceSamplesIndex = this.getSampleResponse[1] ?? NaN;
 
         const gradeStart = __DEV__ ? profileStart() : 0;
         this.gradeAll(playerPos, spikeItem, ctx.samples, spikeSamplesIndex, trapSamplesIndex, options);

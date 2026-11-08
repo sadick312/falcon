@@ -1,4 +1,4 @@
-import items, { WEAPON_ID_MAP } from "@constants/items";
+import { getWeapon, WEAPON_ID_MAP } from "@constants/items";
 import Client from "@core/Client";
 import PlayerCombatManager from "@core/logic/players/core/PlayerCombatManager";
 import AttackManager from "@core/mod/combat/core/AttackManager";
@@ -64,7 +64,7 @@ export default class AutoPusherStriker extends CombatModule {
         if (primary.id === WEAPON_ID_MAP.STICK) return;
 
         const nearestEnemy = tickState.enemyData.nearest!;
-        const isEnemyInRange = CombatUtils.getCombatDistance(nearestEnemy, player, items.weapons[primary.id].range);
+        const isEnemyInRange = CombatUtils.getCombatDistance(nearestEnemy, player, getWeapon(primary.id).range);
         if (!isEnemyInRange) return;
 
         const spike = AutoPusher.theSpike!;

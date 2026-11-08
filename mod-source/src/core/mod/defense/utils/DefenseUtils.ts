@@ -1,5 +1,5 @@
 import Ai, { ais } from "@entities/Ai";
-import items from "@constants/items";
+import items, { getProjectile } from "@constants/items";
 import Player from "@entities/Player";
 import { STORE_HAT_MAP } from "@constants/store";
 import Client from "@core/Client";
@@ -27,12 +27,13 @@ export default class DefenseUtils {
 
         for (let i = 0, len = playersLength + ais.all.length; i < len; i++) {
             const entity = playersVisible[i] || ais.all[i - playersLength];
+            if (!entity) continue;
             const isInvalidPlayer = entity.isPlayer && (
                 entity.sid === enemy.sid || entity.sid === player.sid ||
-                entity.skinIndex === STORE_HAT_MAP.EMP_HELMET ||
+                (entity as Player).skinIndex === STORE_HAT_MAP.EMP_HELMET ||
                 // The turret won't shoot the enemy's teammates. This was `isTeam(entity, entity.sid)`, true for every
                 // player, so only animals were ever considered.
-                Client.isTeam(entity, enemy.sid)
+                Client.isTeam(entity as Player, enemy.sid)
             );
 
             if (isInvalidPlayer) continue;
@@ -71,7 +72,7 @@ export default class DefenseUtils {
         const tmpDir = getDir(playerPos, enemyPos);
 
         const playerDistSq = getDistSq(playerPos, enemyPos);
-        const projData = items.projectiles[projectileWeapon.id === STORE_HAT_MAP.TURRET_GEAR ? 1 : wpn.projectile!];
+        const projData = getProjectile(projectileWeapon.id === STORE_HAT_MAP.TURRET_GEAR ? 1 : (wpn?.projectile ?? NaN));
         const projRange = projData.range ?? 700;
 
         // The rays are the same for every object.
@@ -80,6 +81,7 @@ export default class DefenseUtils {
 
         for (let i = 0, len = closeObjects.length; i < len; i++) {
             const gameObject = closeObjects[i];
+            if (gameObject === undefined) continue;
             if (gameObject.ignoreCollision) continue;
 
             // Cheap tests before the raycasts.

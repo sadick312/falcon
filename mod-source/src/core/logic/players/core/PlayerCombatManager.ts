@@ -1,4 +1,5 @@
-import items, { WEAPON_ID_MAP, WEAPON_VARIANT_MAP } from "@constants/items";
+import { at } from "@utils/array/at";
+import { getWeapon, WEAPON_ID_MAP, WEAPON_VARIANT_MAP } from "@constants/items";
 import { hatMap } from "@constants/store";
 import Player from "@entities/Player";
 import Client from "@core/Client";
@@ -121,11 +122,11 @@ export default class PlayerCombatManager {
      */
     static startReload(player: Player, weaponId: number) {
         player.reloads[weaponId] = 0;
-        player.reloadTimes[weaponId] = items.weapons[weaponId].speed;
+        player.reloadTimes[weaponId] = getWeapon(weaponId).speed;
 
         nextTick(() => {
             const atkSpd = hatMap.get(player.skinIndex)?.atkSpd ?? 1;
-            player.reloadTimes[weaponId] = items.weapons[weaponId].speed * atkSpd;
+            player.reloadTimes[weaponId] = getWeapon(weaponId).speed * atkSpd;
         });
     }
 
@@ -136,15 +137,17 @@ export default class PlayerCombatManager {
         const lastHit = player.weaponIndex < 9 ? weaponData.lastPrimaryTickHit : weaponData.lastSecondaryTickHit;
 
         if (player.buildIndex === -1 && tick - lastHit > 1) {
-            const wpn = items.weapons[weaponIndex];
+            const wpn = getWeapon(weaponIndex);
 
-            weaponData.lastPrimaryReload = player.reloads[weaponData.primary];
-            weaponData.lastSecondaryReload = player.reloads[weaponData.secondary];
-            const wasReloaded = player.reloads[weaponIndex] === 1;
+            // NaN for a weapon with no reload yet: compares and adds up just like the missing entry did.
+            weaponData.lastPrimaryReload = player.reloads[weaponData.primary] ?? NaN;
+            weaponData.lastSecondaryReload = player.reloads[weaponData.secondary] ?? NaN;
+            const reload = player.reloads[weaponIndex] ?? NaN;
+            const wasReloaded = reload === 1;
 
             player.reloads[weaponIndex] = Math.min(
                 1,
-                player.reloads[weaponIndex] + (delta / (player.reloadTimes[weaponIndex] ?? wpn.speed))
+                reload + (delta / (player.reloadTimes[weaponIndex] ?? wpn.speed))
             );
 
             if (player.reloads[weaponIndex] === 1 && !wasReloaded) {
@@ -155,7 +158,7 @@ export default class PlayerCombatManager {
 
         if (tick - weaponData.lastTurretTickHit > 1) player.reloads[53] = Math.min(
             1,
-            player.reloads[53] + (delta / ScriptConfig.TURRET_GEAR_RELOAD)
+            (player.reloads[53] ?? NaN) + (delta / ScriptConfig.TURRET_GEAR_RELOAD)
         );
     }
 
@@ -174,14 +177,14 @@ export default class PlayerCombatManager {
     }
 
     static fetch(player: Player, group: 0 | 1 | 2): WeaponFetchData {
-        const data = this.weaponFetchDataBuffer[this.dataBufferHead];
+        const data = at(this.weaponFetchDataBuffer, this.dataBufferHead);
         this.dataBufferHead = (this.dataBufferHead + 1) % this.weaponFetchDataBuffer.length;
 
         const tick = tickState.tick;
 
         const weaponData = player.weaponData;
         const id = group === 0 ? weaponData.primary : weaponData.secondary;
-        const weapon = items.weapons[id];
+        const weapon = getWeapon(id);
 
         const variant = group === 0 ? weaponData.primaryVariant : weaponData.secondaryVariant;
         const reload = player.getReload(group);
@@ -191,7 +194,7 @@ export default class PlayerCombatManager {
             group === 0 ? weaponData.lastPrimaryTickHit : weaponData.lastSecondaryTickHit;
         const recentlyHit = tick - lastHitTick <= 2;
 
-        const dmg = weapon.dmg * (hasProjectile ? 1 : ScriptConfig.WEAPON_VARIANTS[variant].val);
+        const dmg = weapon.dmg * (hasProjectile ? 1 : at(ScriptConfig.WEAPON_VARIANTS, variant).val);
         const knock = weapon.knock ?? 0;
         const totalKnock = knock + .3;
 

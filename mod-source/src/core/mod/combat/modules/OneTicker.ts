@@ -1,6 +1,6 @@
 import CombatModule from "@combat-utils/CombatModule";
 import CombatUtils from "@combat-utils/CombatUtils";
-import items, { WEAPON_ID_MAP, WEAPON_VARIANT_MAP } from "@constants/items";
+import { getWeapon, WEAPON_ID_MAP, WEAPON_VARIANT_MAP } from "@constants/items";
 import Player from "@entities/Player";
 import { STORE_ACCESSORY_MAP, STORE_HAT_ID, STORE_HAT_MAP } from "@constants/store";
 import Client from "@core/Client";
@@ -114,7 +114,7 @@ export default class OneTicker extends CombatModule {
         if (!enemy.findHat(STORE_HAT_MAP.TANK_GEAR)) return true;
 
         const wpnIndex = enemy.weaponIndex;
-        const speed = items.weapons[wpnIndex].speed;
+        const speed = getWeapon(wpnIndex).speed;
         const wpnReload = enemy.getReload(wpnIndex < 9 ? 0 : 1);
 
         const tickReload = ScriptConfig.SERVER_UPDATE_SPEED / speed;
@@ -229,6 +229,7 @@ export default class OneTicker extends CombatModule {
 
         for (let i = 0, len = possibleMovements.length; i < len; i++) {
             const moveModifier = possibleMovements[i];
+            if (moveModifier === undefined) continue;
             const moveDir = typeof moveModifier !== "number" ? null : enemyAngle + moveModifier;
             const state = MovementPhysicsSimulator.simTick(playerState, moveDir);
             const isTooClose = getDistSq(state, enemyState) <= minDistSq;
@@ -241,7 +242,7 @@ export default class OneTicker extends CombatModule {
         if (!firstStep) return;
 
         const firstStepState = firstStep.state;
-        const primaryRange = items.weapons[primary.id].range;
+        const primaryRange = getWeapon(primary.id).range;
         firstStepState.skinIndex = STORE_HAT_MAP.BULL_HELMET;
 
         let secondStep: OneTickStep | null = null;
@@ -250,6 +251,7 @@ export default class OneTicker extends CombatModule {
 
         for (let i = 0, len = possibleMovements.length; i < len; i++) {
             const moveModifier = possibleMovements[i];
+            if (moveModifier === undefined) continue;
             const moveDir = typeof moveModifier !== "number" ? null : stepTwoEnemyAngle + moveModifier;
 
             firstStepState.weaponIndex = primary.id;

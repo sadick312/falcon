@@ -1,6 +1,7 @@
+import { at } from "@utils/array/at";
 import GameObject from "@constants/GameObject";
 import { logPacket } from "@core/socket/packetLog";
-import items, { FOOD_GROUP_ID, LIST_ID_MAP } from "@constants/items";
+import { FOOD_GROUP_ID, getItem, LIST_ID_MAP } from "@constants/items";
 import Client, { Marker } from "@core/Client";
 import ObjectManager from "@core/logic/ObjectManager";
 import CombatController from "@core/mod/combat/core/CombatController";
@@ -72,17 +73,17 @@ export default class PlacementSystem {
         }
 
         if (keys["KeyQ"]) {
-            this.place(player.items[0], ModManager.getAttackDir());
+            this.place(player.items[0] ?? NaN, ModManager.getAttackDir());
             activityList.push("macroKeyQ");
         }
 
         if (keys["KeyF"]) {
-            if (this.checkPlace(player.items[4], angle)) this.totalPlacements++;
+            if (this.checkPlace(player.items[4] ?? NaN, angle)) this.totalPlacements++;
             activityList.push("macroKeyF");
         }
 
         if (keys["KeyV"]) {
-            if (this.checkPlace(player.items[2], angle)) this.totalPlacements++;
+            if (this.checkPlace(player.items[2] ?? NaN, angle)) this.totalPlacements++;
             activityList.push("macroKeyV");
         }
     }
@@ -102,7 +103,7 @@ export default class PlacementSystem {
 
         if (!player.items.includes(id)) return false;
 
-        const item = items.list[id];
+        const item = getItem(id);
         const realPos = player.real_position;
 
         const tmpScale = PLAYER_SCALE + item.scale + (item.placeOffset || 0);
@@ -120,7 +121,7 @@ export default class PlacementSystem {
 
     /** The building limit `place()` enforces for this item, or undefined when it doesn't enforce one. */
     static getPlaceLimit(id: number) {
-        const item = items.list[id];
+        const item = getItem(id);
         if (typeof item.group.limit !== "number" || Client.socket.isPrivateServer) return undefined;
         return item.group.sandboxLimit ?? 99;
     }
@@ -134,7 +135,7 @@ export default class PlacementSystem {
         const player = Client.player;
         if (!player.items.includes(id)) return "not-owned";
 
-        const item = items.list[id];
+        const item = getItem(id);
         const limit = this.getPlaceLimit(id);
         if (limit !== undefined && (itemCount ?? player.itemCounts[item.group.id] ?? 0) + 1 > limit) return "full";
 
@@ -157,6 +158,7 @@ export default class PlacementSystem {
 
         for (let i = 0; i < markers.length; i++) {
             const marker = markers[i];
+            if (marker === undefined) continue;
 
             if (marker && !marker.active) {
                 marker.redefine(x, y, angle, id, placementType);
@@ -169,7 +171,7 @@ export default class PlacementSystem {
             return;
         }
 
-        markers[this.oldestMarker].redefine(x, y, angle, id, placementType);
+        at(markers, this.oldestMarker).redefine(x, y, angle, id, placementType);
         this.oldestMarker = (this.oldestMarker + 1) % this.MAX_MARKERS;
     }
 

@@ -1,3 +1,5 @@
+import { at } from "@utils/array/at";
+
 export interface AttackAction {
     skinData: [id: number, isAccessory: boolean];
     wpnId: number;
@@ -12,8 +14,11 @@ export interface AttackAction {
 
 type AttackQueueCallback = () => void;
 
+/** Every attack is two steps (the second may be unused: dontUse). */
+export type AttackSequence = [first: AttackAction, second: AttackAction];
+
 export interface AttackQueue {
-    sequence: AttackAction[];
+    sequence: AttackSequence;
     cost: number;
     grade: number;
     onSelect: AttackQueueCallback | undefined;
@@ -34,12 +39,10 @@ export default class AttackQueuePool {
         };
     }
 
-    static copySequenceOver(fromSeq: AttackAction[], toSeq: AttackAction[]) {
-        // fromSeq and toSeq should be both length of 2, if not we fucked up
-
+    static copySequenceOver(fromSeq: AttackSequence, toSeq: AttackSequence) {
         for (let i = 0; i < 2; i++) {
-            const fromAction = fromSeq[i];
-            const toAction = toSeq[i];
+            const fromAction = at(fromSeq, i);
+            const toAction = at(toSeq, i);
 
             toAction.skinData[0] = fromAction.skinData[0];
             toAction.skinData[1] = fromAction.skinData[1];
@@ -54,7 +57,7 @@ export default class AttackQueuePool {
         }
     }
 
-    static createAttackSequence(): AttackAction[] {
+    static createAttackSequence(): AttackSequence {
         const actionOne = this.createAttackAction();
         const actionTwo = this.createAttackAction();
         return [actionOne, actionTwo];

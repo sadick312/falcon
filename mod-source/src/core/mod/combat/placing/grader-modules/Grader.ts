@@ -86,13 +86,15 @@ export default abstract class Grader {
 
         // Any point in reach gives the same result, and neighbouring angles usually hit the same point.
         const lastHit = placePotential.allLastHit;
-        if (lastHit < count && getDistSq(all[lastHit], item) <= scaleSq) {
+        const lastHitPoint = lastHit < count ? all[lastHit] : undefined;
+        if (lastHitPoint && getDistSq(lastHitPoint, item) <= scaleSq) {
             item.priority = true;
             return false;
         }
 
         for (let i = 0; i < count; i++) {
-            if (getDistSq(all[i], item) <= scaleSq) {
+            const point = all[i];
+            if (point && getDistSq(point, item) <= scaleSq) {
                 placePotential.allLastHit = i;
                 item.priority = true;
                 return false;
@@ -149,6 +151,7 @@ export default abstract class Grader {
 
         for (let i = 0; i < usedAnglesCount; i++) {
             const used = usedAngles[i];
+            if (used === undefined) continue;
 
             const tickOffset = tick - used.tick;
             if (tickOffset > 18) continue;
@@ -213,6 +216,7 @@ export default abstract class Grader {
         if (enemies.length && candidates) {
             for (let i = 0, len = candidates.length; i < len; i++) {
                 const gameObject = candidates[i];
+                if (gameObject === undefined) continue;
                 if (withinDist(item, gameObject, 15 + item.scale + gameObject.scale)) objectsInRange.push(gameObject);
             }
         } else {
@@ -230,6 +234,7 @@ export default abstract class Grader {
 
         for (let i = 0, len = enemies.length; i < len; i++) {
             const enemy = enemies[i];
+            if (enemy === undefined) continue;
             const pos = enemy.real_position;
 
             const distanceSq = getDistSq(pos, item);
@@ -245,6 +250,7 @@ export default abstract class Grader {
 
             for (let i = 0; i < inRangeLength; i++) {
                 const gameObject = objectsInRange[i];
+                if (gameObject === undefined) continue;
                 const isTeam = Client.isTeam(enemy, gameObject.ownerSID ?? -1);
                 const willBreak = item.preplace && gameObject.willBreak;
                 const isTrap = gameObject.trap && !isTeam && !willBreak;

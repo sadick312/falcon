@@ -1,4 +1,4 @@
-import items, { LIST_ID_MAP, WEAPON_ID_MAP } from "@constants/items";
+import { getWeapon, LIST_ID_MAP, WEAPON_ID_MAP } from "@constants/items";
 import Player from "@entities/Player";
 import { STORE_HAT_MAP } from "@constants/store";
 import Client from "@core/Client";
@@ -62,7 +62,7 @@ export default class AppleInstakiller extends CombatModule {
         return true;
     }
 
-    private static readonly GREAT_HAMMER_RANGE = items.weapons[WEAPON_ID_MAP.GREAT_HAMMER].range - 1;
+    private static readonly GREAT_HAMMER_RANGE = getWeapon(WEAPON_ID_MAP.GREAT_HAMMER).range - 1;
 
     process(angle: Angle, enemy: Player) {
         const player = Client.player;

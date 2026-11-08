@@ -1,4 +1,4 @@
-import items from "@constants/items";
+import { getWeapon } from "@constants/items";
 import Player from "@entities/Player";
 import Client from "@core/Client";
 import PlayerCombatManager, { WeaponFetchData } from "@core/logic/players/core/PlayerCombatManager";
@@ -83,7 +83,7 @@ export default class AutoAttacker extends CombatModule {
         const primary = PlayerCombatManager.fetch(player, 0);
         if (primary.reload !== 1) return;
 
-        const primaryRange = items.weapons[primary.id].range
+        const primaryRange = getWeapon(primary.id).range
         if (!CombatUtils.getCombatDistance(player, nearestEnemy, primaryRange)) return;
         if (nearestEnemy.trap) return;
 

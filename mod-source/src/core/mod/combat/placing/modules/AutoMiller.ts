@@ -1,4 +1,4 @@
-import items from "@constants/items";
+import { getItem } from "@constants/items";
 import Client from "@core/Client";
 import PlacementSystem from "@core/mod/combat/core/PlacementSystem";
 import { tickState } from "@core/TickState";
@@ -20,24 +20,24 @@ export default class AutoMiller {
         const playerPos = player.real_position;
 
         if (getDistSq(this.data, playerPos) > this.DISTANCE_TO_MAINTAIN) {
-            if (typeof Client.lastMoveDir == "number" && this.data.status && (player.itemCounts[3] < 299 || !player.itemCounts[3])) {
+            if (typeof Client.lastMoveDir == "number" && this.data.status && (player.itemCounts[3] ?? 0) < 299) {
                 const direction = Client.lastMoveDir + Math.PI;
-                const id = player.items[3];
-                const item = items.list[id];
+                const id = player.items[3] ?? NaN;
+                const item = getItem(id);
                 let count = player.itemCounts[item.group.id] ?? 0;
 
                 // Windmills share the 4-per-tick cap with the other placements; they used to go out on top of it.
-                for (let i = 0; i < AutoMiller.OFFSETS.length; i++) {
+                for (const offset of AutoMiller.OFFSETS) {
                     if (PlacementSystem.totalPlacements >= 4) break;
                     // Stops at the building limit: the server's count arrives later, so pass our running count.
-                    if (PlacementSystem.place(id, direction + AutoMiller.OFFSETS[i], count) !== "placed") break;
+                    if (PlacementSystem.place(id, direction + offset, count) !== "placed") break;
 
                     count++;
                     PlacementSystem.totalPlacements++;
                 }
 
                 tickState.activityList.push("autoMills");
-            } else if (!(player.itemCounts[3] < 299 || !player.itemCounts[3])) {
+            } else if (!((player.itemCounts[3] ?? 0) < 299)) {
                 this.data.status = false;
             }
 

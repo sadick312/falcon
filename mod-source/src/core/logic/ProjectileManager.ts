@@ -1,5 +1,5 @@
 import EntityHandler from "@constants/EntityHandler";
-import items, { WEAPON_ID_MAP, WEAPON_VARIANT_MAP } from "@constants/items";
+import { getWeapon, WEAPON_ID_MAP, WEAPON_VARIANT_MAP } from "@constants/items";
 import Player from "@entities/Player";
 import Projectile from "@entities/Projectile";
 import SimulationProjectile from "@entities/SimulationProjectile";
@@ -25,7 +25,8 @@ export default class ProjectileManager {
         const projectiles = this.simulationProjectiles.all;
 
         for (let i = 0, len = projectiles.length; i < len; i++) {
-            if (projectiles[i].active) projectiles[i].update();
+            const projectile = projectiles[i];
+            if (projectile?.active) projectile.update();
         }
     }
 
@@ -84,7 +85,7 @@ export default class ProjectileManager {
         let isTurret = false;
 
         for (const player of visiblePlayers) {
-            const secondary = items.weapons[player.weaponData.secondary];
+            const secondary = getWeapon(player.weaponData.secondary);
             const realPosition = player.real_position;
             const nextPosition = player.next_position;
 
@@ -148,6 +149,7 @@ export default class ProjectileManager {
 
             for (let i = 0, len = allTurrets.length; i < len; i++) {
                 const gameObject = allTurrets[i];
+                if (gameObject === undefined) continue;
                 if (getDistSq(turretPosition, gameObject) > 5) continue;
 
                 // We saw this turret fire: restart its shot counter (TurretManager), which otherwise only counts from

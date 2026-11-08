@@ -1,5 +1,5 @@
 import CombatUtils from "@combat-utils/CombatUtils";
-import items, { LIST_ID_MAP, WEAPON_ID_MAP } from "@constants/items";
+import { getWeapon, LIST_ID_MAP, WEAPON_ID_MAP } from "@constants/items";
 import { STORE_HAT_MAP } from "@constants/store";
 import Client from "@core/Client";
 import ObjectManager from "@core/logic/ObjectManager";
@@ -50,11 +50,11 @@ export default class AutoGrinder {
         const secondaryLimit = parseInt(Menu.getValue("grindSecondaryLimit"));
         const hasPrimaryReached = player.weaponData.primaryVariant >= primaryLimit;
 
-        const primaryId = player.weapons[0];
-        const secondaryId = player.weapons[1];
+        const primaryId = player.weapons[0] ?? NaN;
+        const secondaryId = player.weapons[1] ?? NaN;
 
         const haveSecondary = typeof secondaryId === "number";
-        const isProjectile = haveSecondary && items.weapons[secondaryId].projectile !== undefined;
+        const isProjectile = haveSecondary && getWeapon(secondaryId).projectile !== undefined;
         const hasSecondaryReached = !haveSecondary || isProjectile || player.weaponData.secondaryVariant >= secondaryLimit;
 
         if (hasPrimaryReached && hasSecondaryReached) {
@@ -84,11 +84,12 @@ export default class AutoGrinder {
         if (shouldUseSecondaryAssist) targetId = secondaryId;
         const closeObjects = ObjectManager.pool.closeObjects;
         const secondaryHitDamage = BreakerUtils.getObjectDamage(player, 1, !player.skins[STORE_HAT_MAP.TANK_GEAR]);
-        const wpnRange = items.weapons[primaryId].range - 1;
+        const wpnRange = getWeapon(primaryId).range - 1;
         let hasTurrets = false;
 
         for (let i = 0, len = closeObjects.length; i < len; i++) {
             const gameObject = closeObjects[i];
+            if (gameObject === undefined) continue;
             if (tpId !== LIST_ID_MAP.TURRET) break;
             if (!gameObject || gameObject.id !== LIST_ID_MAP.TURRET) continue;
 

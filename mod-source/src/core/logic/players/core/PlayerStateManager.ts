@@ -37,6 +37,7 @@ export default class PlayerStateManager {
 
             for (let i = 0, len = allTraps.length; i < len; i++) {
                 const gameObject = allTraps[i];
+                if (gameObject === undefined) continue;
 
                 if (!Client.isTeam(player, gameObject.ownerSID ?? -1)) {
                     if (!player.trap && withinDist(player.real_position, gameObject, player.sid === Client.mySID ? 50.5 : 50)) {
@@ -65,6 +66,7 @@ export default class PlayerStateManager {
 
                 for (let i = 0, len = nearby.length; i < len; i++) {
                     const enemy = nearby[i];
+                    if (enemy === undefined) continue;
                     enemy.profilingData.randomHitAttacks = 0;
                 }
             }

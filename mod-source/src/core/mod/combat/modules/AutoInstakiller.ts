@@ -1,4 +1,4 @@
-import items, { WEAPON_ID_MAP } from "@constants/items";
+import { getWeapon, WEAPON_ID_MAP } from "@constants/items";
 import Player from "@entities/Player";
 import { STORE_HAT_MAP } from "@constants/store";
 import Client from "@core/Client";
@@ -113,9 +113,11 @@ export default class AutoInstakiller extends CombatModule {
 
         for (let i = 0, len = actions.length; i < len; i++) {
             const steps = actions[i];
+            if (steps === undefined) continue;
 
             for (let j = 0, sLen = steps.length; j < sLen; j++) {
                 const step = steps[j];
+                if (step === undefined) continue;
 
                 // ignore the first dmg action since there will always be at least one dmg per actiongroup
                 if (step.type === "damage" && j === 0) continue;
@@ -218,6 +220,7 @@ export default class AutoInstakiller extends CombatModule {
 
         for (let i = 0, len = closeObjects.length; i < len; i++) {
             const gameObject = closeObjects[i];
+            if (gameObject === undefined) continue;
 
             const tmpScale = gameObject.getScale(.6);
             const isSpike = gameObject.dmg && !Client.isTeam(nearestEnemy, gameObject.ownerSID ?? -1);
@@ -262,11 +265,11 @@ export default class AutoInstakiller extends CombatModule {
 
         const hasSpikeGear = nearestEnemy.skinIndex === STORE_HAT_MAP.SPIKE_GEAR;
         const hasGreatHammer = secondary.id === WEAPON_ID_MAP.GREAT_HAMMER;
-        const weaponRange = hasGreatHammer ? items.weapons[secondary.id].range : items.weapons[primary.id].range;
+        const weaponRange = hasGreatHammer ? getWeapon(secondary.id).range : getWeapon(primary.id).range;
         if (!CombatUtils.getCombatDistance(player, nearestEnemy, weaponRange - 1)) return;
 
         const shouldReverseInsta = hasGreatHammer || hasSpikeGear;
-        const hasProjectile = !!items.weapons[secondary.id].projectile;
+        const hasProjectile = !!getWeapon(secondary.id).projectile;
         if (!hasGreatHammer && !hasProjectile) return;
 
         // Whether our hits land before the enemy moves this tick; unknown on fake ticks, so wait for a real one.

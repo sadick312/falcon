@@ -1,4 +1,5 @@
-import items, { WEAPON_ID_MAP } from "@constants/items";
+import { at } from "@utils/array/at";
+import { getItem, WEAPON_ID_MAP } from "@constants/items";
 import Player from "@entities/Player";
 import Client from "@core/Client";
 import PotentialObjectManager from "@core/logic/PotentialObjectManager";
@@ -21,7 +22,7 @@ export default class PlayerPlacementManager {
 
         if (count === 0) return;
 
-        const spikeItem = items.list[9];
+        const spikeItem = getItem(9);
         const spikeScale = spikeItem.scale;
         const totalScale = spikeScale + PLAYER_SCALE;
         const placeScale = totalScale + (spikeItem.placeOffset ?? 0);
@@ -33,15 +34,16 @@ export default class PlayerPlacementManager {
 
         for (let i = 0; i < count; i++) {
             const item = buffer[i];
+            if (item === undefined) continue;
 
             if (arrType === "onMe") {
                 if (withinDist(myPos, item, PLAYER_SCALE + item.scale))
-                    arr[placePotential[bufType]++].redefine(item.x, item.y, item.scale, item.angle, item.id);
+                    at(arr, placePotential[bufType]++).redefine(item.x, item.y, item.scale, item.angle, item.id);
 
                 continue;
             }
 
-            arr[placePotential[bufType]++].redefine(item.x, item.y, item.scale, item.angle, item.id);
+            at(arr, placePotential[bufType]++).redefine(item.x, item.y, item.scale, item.angle, item.id);
             if (item.x < placePotential.allMinX) placePotential.allMinX = item.x;
             if (item.x > placePotential.allMaxX) placePotential.allMaxX = item.x;
             if (item.y < placePotential.allMinY) placePotential.allMinY = item.y;

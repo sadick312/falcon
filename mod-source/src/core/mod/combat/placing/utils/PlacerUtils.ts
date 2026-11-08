@@ -9,10 +9,10 @@ export default class PlacerUtils {
     private static sevenSlotIds = new Set([17, 18, 19, 21, 22]);
 
     static placeSevenSlot(player: Player) {
-        const tpId = player.items[5];
+        const tpId = player.items[5] ?? NaN;
 
         if (!this.sevenSlotIds.has(tpId)) {
-            return player.items[6];
+            return player.items[6] ?? NaN;
         }
 
         return tpId;
@@ -23,6 +23,7 @@ export default class PlacerUtils {
 
         for (let i = 0, len = bestAngles.length; i < len; i++) {
             const item = bestAngles[i];
+            if (item === undefined) continue;
             const isOverlapping = withinDist(item, currentAngle, item.scale + currentAngle.scale);
 
             const isImportant = item.kill.size > 0 || item.pitSpike.size > 0 || item.spikePush.size > 0;
@@ -39,10 +40,12 @@ export default class PlacerUtils {
     static checkForPreplacements(preplacements: PreplacementQueue[], currentAngle: Angle, currentTick: number) {
         for (let i = 0, len = preplacements.length; i < len; i++) {
             const preplacement = preplacements[i];
+            if (preplacement === undefined) continue;
             if (currentTick - preplacement.tick > 1) continue;
 
             for (let j = 0; j < preplacement.count; j++) {
                 const item = preplacement.placements[j];
+                if (item === undefined) continue;
                 const scale = item.scale;
 
                 const isOverlapping = withinDist(item, currentAngle, scale + currentAngle.scale);
@@ -58,6 +61,7 @@ export default class PlacerUtils {
 
         for (let i = 0, len = bestAngles.length; i < len; i++) {
             const item = bestAngles[i];
+            if (item === undefined) continue;
 
             const isImportant = item.kill.size > 0 || item.pitSpike.size > 0 || item.spikePush.size > 0;
             const isOverlapping = withinDist(item, currentAngle, item.scale + currentAngle.scale);
@@ -76,7 +80,7 @@ export default class PlacerUtils {
     static checkPreplacementOverlap(bestAngles: Angle[], currentAngle: Angle) {
         for (let i = 0, len = bestAngles.length; i < len; i++) {
             const item = bestAngles[i];
-            if (!item.preplace && !item.predict) continue;
+            if (!item || (!item.preplace && !item.predict)) continue;
 
             const isOverlapping = withinDist(item, currentAngle, item.scale + currentAngle.scale);
             if (isOverlapping) return true;
@@ -88,6 +92,7 @@ export default class PlacerUtils {
     static filterOverlapWithReplacements(replacements: Replacement[], currentAngle: Angle, currentTick: number) {
         for (let i = 0, len = replacements.length; i < len; i++) {
             const replacement = replacements[i];
+            if (replacement === undefined) continue;
             if (currentTick - replacement.tick > 2) continue;
 
             const isOverlapping = withinDist(replacement, currentAngle, replacement.scale + currentAngle.scale);
