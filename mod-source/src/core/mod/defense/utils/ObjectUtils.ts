@@ -69,6 +69,15 @@ export default class ObjectUtils {
                 const bEnd = blocked[1];
 
                 ObjectUtils.spikeArcBufferLength = IntervalHelper.subtractInterval(currentCount, bStart, bEnd, ObjectUtils.swapBuffer);
+
+                // subtractInterval writes into IntervalHelper.intervalBuffer: copy the open arcs back, so the next
+                // building subtracts from what is left and callers read the result here.
+                for (let k = 0; k < ObjectUtils.spikeArcBufferLength; k++) {
+                    const from = at(IntervalHelper.intervalBuffer, k);
+                    const to = at(ObjectUtils.spikeArcBuffer, k);
+                    to[0] = from[0];
+                    to[1] = from[1];
+                }
             }
         }
 

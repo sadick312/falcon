@@ -116,10 +116,9 @@ describe("HealerUtils.getFoodValue", () => {
 });
 
 describe("ObjectUtils.getSpikeBounceArc", () => {
-    // KNOWN BUG (reported, not fixed yet): getSpikeBounceArc subtracts the blocked angles into
-    // IntervalHelper.intervalBuffer but never copies the result back into spikeArcBuffer, which AutoBreaker reads.
-    // So the full, unblocked arc is returned. Remove `.fails` when it is fixed.
-    it.fails("leaves out the angles a building in the way blocks", async () => {
+    // Used to fail: the blocked angles were subtracted into IntervalHelper.intervalBuffer but never copied back
+    // into spikeArcBuffer, which AutoBreaker reads, so the full arc came back.
+    it("leaves out the angles a building in the way blocks", async () => {
         const ObjectUtils = (await import("@core/mod/defense/utils/ObjectUtils")).default;
         const ObjectManager = (await import("@core/logic/ObjectManager")).default;
         const spikes = items.list[LIST_ID_MAP.SPINNING_SPIKES];
