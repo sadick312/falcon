@@ -62,8 +62,11 @@ export default class PlayerPlacementManager {
 
         this.computeFor(player, "all", "allBufferIndex");
 
+        // Same player and nothing changed since the call above, so this one can reuse its pass over the objects.
         this.finderOptions.preplace = false;
+        this.finderOptions.reusePreplacePass = true;
         this.computeFor(player, "onMe", "onMeBufferIndex");
+        this.finderOptions.reusePreplacePass = false;
         this.finderOptions.preplace = true;
     }
 }

@@ -100,4 +100,52 @@ describe("Angle Finder", () => {
     it("offers nothing in the middle of the river", async () => {
         expect((await find([], MAP_CENTER)).spots).toEqual([]);
     });
+
+    /** The spots of one call, as plain numbers (angleBuffer is reused by the next call). */
+    async function spotsOf(options: object) {
+        const { default: AngleFinder } = await import("@placing/AngleFinder");
+        const count = AngleFinder.compute(game!.Client.player, options);
+        return AngleFinder.angleBuffer.slice(0, count).map(s => [s.x, s.y, s.angle, s.id, s.preplace]);
+    }
+
+    /** Builds the scene, marks every third building as about to break, and returns the full pass's spots. */
+    async function sceneWithBreakingBuildings(buildings: Building[]) {
+        await find(buildings);
+        const { default: ObjectManager } = await import("@core/logic/ObjectManager");
+        for (const obj of ObjectManager.allObjects) if (obj.sid >= 900 && obj.sid % 3 === 0) obj.willBreak = true;
+        return spotsOf({ spike: true });
+    }
+
+    it("reusing the preplace call's object pass gives exactly the spots of a full pass", async () => {
+        // PlayerPlacementManager calls with preplace, then without; the second call reuses the first one's pass.
+        const ring = Array.from({ length: 6 }, (_, i) => ({ angle: i * 2 * Math.PI / 6 + 0.1, distance: 160 + (i % 3) * 30 }));
+        const full = await sceneWithBreakingBuildings(ring);
+        expect(full.length).toBeGreaterThan(0);
+
+        await spotsOf({ spike: true, preplace: true });
+        expect(await spotsOf({ spike: true, reusePreplacePass: true })).toEqual(full);
+    });
+
+    it("does the full pass when another call came in between, or the options differ", async () => {
+        const ring = Array.from({ length: 5 }, (_, i) => ({ angle: i * 2 * Math.PI / 5, distance: 170 }));
+        const full = await sceneWithBreakingBuildings(ring);
+        expect(full.length).toBeGreaterThan(0);
+
+        await spotsOf({ spike: true, preplace: true });
+        await spotsOf({ grade: false });
+        expect(await spotsOf({ spike: true, reusePreplacePass: true })).toEqual(full);
+
+        await spotsOf({ trap: true, preplace: true });
+        expect(await spotsOf({ spike: true, reusePreplacePass: true })).toEqual(full);
+    });
+
+    it("gives the full pass's spots in a base crowded enough to hit the interval limit", async () => {
+        // The full pass stops at the limit, and where it stops depends on the order; the reuse must not differ.
+        const crowded = Array.from({ length: 70 }, (_, i) => ({ angle: i * 2 * Math.PI / 70, distance: 130 + (i % 4) * 30 }));
+        const full = await sceneWithBreakingBuildings(crowded);
+
+        await spotsOf({ spike: true, preplace: true });
+        expect(await spotsOf({ spike: true, reusePreplacePass: true })).toEqual(full);
+    });
 });
+

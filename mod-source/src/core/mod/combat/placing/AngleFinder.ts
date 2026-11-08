@@ -75,6 +75,31 @@ export interface FinderOptions {
     spike?: boolean;
     budgetMlt?: number;
     preplace?: boolean;
+    /**
+     * Only for a call right after a `preplace` call for the same player, with nothing changed in between: reuses that
+     * call's pass over the nearby objects instead of repeating it (see PlayerPlacementManager.update). Falls back to
+     * the full pass when the two calls don't match.
+     */
+    reusePreplacePass?: boolean;
+}
+
+/**
+ * What a `preplace` call's object pass found, for the next call (without preplace) to reuse. Objects that are not
+ * about to break give that call exactly the same raw intervals; the ones about to break are kept to redo.
+ */
+interface ObjectPassCache {
+    valid: boolean;
+    player: Player | null;
+    x: number;
+    y: number;
+    spikeItem: ListItem | null;
+    trap: boolean;
+    spike: boolean;
+    spikeRaw: Float32Array;
+    spikeRawIndex: number;
+    trapRaw: Float32Array;
+    trapRawIndex: number;
+    willBreak: GameObject[];
 }
 
 function insertionSortIntervals(arr: Float32Array, n: number) {
@@ -153,6 +178,59 @@ export default class AngleFinder {
             spikePreplaceSamplesIndex: 0
         }
     };
+
+    private static objectPass: ObjectPassCache = {
+        valid: false,
+        player: null,
+        x: 0,
+        y: 0,
+        spikeItem: null,
+        trap: false,
+        spike: false,
+        spikeRaw: new Float32Array(AngleFinder.MAX_INTERVALS * 2),
+        spikeRawIndex: 0,
+        trapRaw: new Float32Array(AngleFinder.MAX_INTERVALS * 2),
+        trapRawIndex: 0,
+        willBreak: []
+    };
+
+    /**
+     * Does the object pass of a call without `preplace` from the last `preplace` call's results: its raw intervals
+     * plus the objects about to break, now measured from where the player is. The intervals come in a different
+     * order than the full pass makes them, but they are sorted and merged next, which gives the same result for any
+     * order. Returns false (and the caller does the full pass) when the cache doesn't fit this call or the full pass
+     * would have hit the interval limit, whose cut-off does depend on the order.
+     */
+    private static reuseObjectPass(
+        player: Player, playerPos: Point, spikeItem: ListItem, trapItem: ListItem,
+        ctx: FinderComputeContext, isOurPlayer: boolean, options: Readonly<FinderOptions>
+    ) {
+        const cache = this.objectPass;
+        if (!cache.valid || cache.player !== player || cache.x !== playerPos.x || cache.y !== playerPos.y) return false;
+        if (cache.spikeItem !== spikeItem || cache.trap !== !!options.trap || cache.spike !== !!options.spike) return false;
+
+        ctx.spike.raw.set(cache.spikeRaw.subarray(0, cache.spikeRawIndex));
+        ctx.spike.rawIndex = cache.spikeRawIndex;
+        ctx.trap.raw.set(cache.trapRaw.subarray(0, cache.trapRawIndex));
+        ctx.trap.rawIndex = cache.trapRawIndex;
+
+        const limit = AngleFinder.MAX_INTERVALS * 2 - AngleFinder.INTERVAL_HEADROOM;
+        const willBreak = cache.willBreak;
+        for (let i = 0, len = willBreak.length; i < len; i++) {
+            if (ctx.spike.rawIndex > limit || ctx.trap.rawIndex > limit) break;
+            this.computeAllIntervals(playerPos, willBreak[i]!, spikeItem, trapItem, ctx, isOurPlayer, options);
+        }
+
+        // The full pass checks the limit before each object, against a count that only grows, so it never stops
+        // early exactly when the final count is within the limit.
+        if (ctx.spike.rawIndex > limit || ctx.trap.rawIndex > limit) {
+            ctx.spike.rawIndex = 0;
+            ctx.trap.rawIndex = 0;
+            return false;
+        }
+
+        return true;
+    }
 
     private static resetCtx(ctx: FinderComputeContext) {
         ctx.trap.rawIndex = 0;
@@ -628,23 +706,51 @@ export default class AngleFinder {
         const trapItem = items.list[15];
         if (options.replace && options.preplace) return 0;
 
-        for (let i = 0, len = closeObjects.length; i < len; i++) {
-            const gameObject = closeObjects[i];
-            if (!gameObject || !gameObject.active || gameObject.isGhost) continue;
-            if (getDistSq(playerPos, gameObject) > reachSq) continue;
+        const isOurPlayer = player.sid === Client.mySID;
+        const cache = this.objectPass;
+        const canReuse = options.reusePreplacePass && !options.preplace && !options.replace;
+        const saveForReuse = !!options.preplace;
+        const reused = !!canReuse && this.reuseObjectPass(player, playerPos, spikeItem, trapItem, ctx, isOurPlayer, options);
+        // Good for the next call only: any other call in between may see objects that changed since.
+        cache.valid = false;
 
-            // Stop while there is still room: a Float32Array silently drops writes past its end.
-            const limit = AngleFinder.MAX_INTERVALS * 2 - AngleFinder.INTERVAL_HEADROOM;
-            if (ctx.spike.rawIndex > limit || ctx.trap.rawIndex > limit || ctx.spike.openIndex > limit || ctx.trap.openIndex > limit) {
-                console.log(`AngleFinder: more than ${AngleFinder.MAX_INTERVALS} blocked intervals; ignoring the remaining objects`);
-                break;
+        if (!reused) {
+            if (saveForReuse) cache.willBreak.length = 0;
+            let stoppedEarly = false;
+
+            for (let i = 0, len = closeObjects.length; i < len; i++) {
+                const gameObject = closeObjects[i];
+                if (!gameObject || !gameObject.active || gameObject.isGhost) continue;
+                if (getDistSq(playerPos, gameObject) > reachSq) continue;
+
+                // Stop while there is still room: a Float32Array silently drops writes past its end.
+                const limit = AngleFinder.MAX_INTERVALS * 2 - AngleFinder.INTERVAL_HEADROOM;
+                if (ctx.spike.rawIndex > limit || ctx.trap.rawIndex > limit || ctx.spike.openIndex > limit || ctx.trap.openIndex > limit) {
+                    console.log(`AngleFinder: more than ${AngleFinder.MAX_INTERVALS} blocked intervals; ignoring the remaining objects`);
+                    stoppedEarly = true;
+                    break;
+                }
+
+                const requireNextPosition = options.replace || (options.preplace && gameObject.willBreak);
+                if (saveForReuse && gameObject.willBreak) cache.willBreak.push(gameObject);
+                this.computeAllIntervals(requireNextPosition ? playerNextPos : playerPos, gameObject, spikeItem, trapItem, ctx, isOurPlayer, options);
             }
 
-            const requireNextPosition = options.replace || (options.preplace && gameObject.willBreak);
-            this.computeAllIntervals(requireNextPosition ? playerNextPos : playerPos, gameObject, spikeItem, trapItem, ctx, player.sid === Client.mySID, options);
+            if (saveForReuse && !stoppedEarly) {
+                cache.valid = true;
+                cache.player = player;
+                cache.x = playerPos.x;
+                cache.y = playerPos.y;
+                cache.spikeItem = spikeItem;
+                cache.trap = !!options.trap;
+                cache.spike = !!options.spike;
+                cache.spikeRaw.set(ctx.spike.raw.subarray(0, ctx.spike.rawIndex));
+                cache.spikeRawIndex = ctx.spike.rawIndex;
+                cache.trapRaw.set(ctx.trap.raw.subarray(0, ctx.trap.rawIndex));
+                cache.trapRawIndex = ctx.trap.rawIndex;
+            }
         }
 
-        const isOurPlayer = player.sid === Client.mySID;
         if (!options.trap) ctx.spike.rawIndex = this.computeRiverInterval(playerPos, spikeItem, ctx.spike.raw, ctx.spike.rawIndex, isOurPlayer);
         if (!options.spike) ctx.trap.rawIndex = this.computeRiverInterval(playerPos, trapItem, ctx.trap.raw, ctx.trap.rawIndex, isOurPlayer);
 
