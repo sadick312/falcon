@@ -2,8 +2,7 @@ import items, { WEAPON_ID_MAP, WEAPON_VARIANT_MAP } from "@constants/items";
 import { hatMap } from "@constants/store";
 import Player from "@entities/Player";
 import Client from "@core/Client";
-import ModManager from "@core/ModManager";
-import { tickState } from "@core/TickState";
+import { nextTick, tickState } from "@core/TickState";
 import ScriptConfig from "@utils/config/ScriptConfig";
 
 export interface WeaponFetchData {
@@ -124,7 +123,7 @@ export default class PlayerCombatManager {
         player.reloads[weaponId] = 0;
         player.reloadTimes[weaponId] = items.weapons[weaponId].speed;
 
-        ModManager.nextTick(() => {
+        nextTick(() => {
             const atkSpd = hatMap.get(player.skinIndex)?.atkSpd ?? 1;
             player.reloadTimes[weaponId] = items.weapons[weaponId].speed * atkSpd;
         });

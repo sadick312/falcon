@@ -35,7 +35,7 @@ import { Input } from "@ui/Hook";
 import getAngleDist from "@utils/angle/getAngleDist";
 import getDir from "@utils/angle/getDir";
 import ScriptConfig from "@utils/config/ScriptConfig";
-import { createDefaultBrainState, ModBrainState, tickState } from "@core/TickState";
+import { createDefaultBrainState, ModBrainState, nextTick, tickState } from "@core/TickState";
 import getElem from "@utils/dom/getElem";
 import getDist from "@utils/geometry/getDist";
 
@@ -56,14 +56,13 @@ export default class ModManager {
     static set brainState(value: ModBrainState) { tickState.brainState = value; }
 
     static willBreakObjects: GameObject[] = [];
-    private static tickQueue: TickTask[] = [];
 
     /**
      * Clears what belongs to one connection: queued actions, enemy lists, buildings about to break. `tick` keeps
      * counting on purpose; modules remember the tick they last did something and compare it with the current one.
      */
     static resetSession() {
-        this.tickQueue.length = 0;
+        tickState.tickQueue.length = 0;
         this.willBreakObjects.length = 0;
         this.justAttacked.length = 0;
         this.activityList.length = 0;
@@ -220,13 +219,13 @@ export default class ModManager {
     }
 
     static nextTick(action: TickTask) {
-        this.tickQueue.push(action);
+        nextTick(action);
     }
 
     private static resolveQueuedActions() {
-        const queue = this.tickQueue;
+        const queue = tickState.tickQueue;
         for (let i = 0, len = queue.length; i < len; i++) queue[i]();
-        this.tickQueue.length = 0;
+        queue.length = 0;
     }
 
     private static updatePlacementAngles() {

@@ -91,5 +91,12 @@ export const tickState = {
         angle: 0,
         rangedInstaThreats: 0
     } as IEnemyData,
-    brainState: createDefaultBrainState()
+    brainState: createDefaultBrainState(),
+    /** Actions to run at the start of the next tick, in order (ModManager runs and clears them). */
+    tickQueue: [] as (() => void)[]
 };
+
+/** Runs `action` at the start of the next tick, before the modules. */
+export function nextTick(action: () => void) {
+    tickState.tickQueue.push(action);
+}
