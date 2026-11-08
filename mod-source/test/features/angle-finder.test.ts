@@ -147,5 +147,34 @@ describe("Angle Finder", () => {
         await spotsOf({ spike: true, preplace: true });
         expect(await spotsOf({ spike: true, reusePreplacePass: true })).toEqual(full);
     });
+
+    it("at the map corner, offers only spots the game's placement check allows", async () => {
+        // 1.8.2's checkItemLocation (ObjectManager.checkItem) refuses overlaps and the river band only; it has no
+        // map-edge rule, so spots past the border are allowed too. With buildings along both edges, every offered
+        // spot must still pass it.
+        const { LIST_ID_MAP, default: items } = await import("@constants/items");
+        game = await startGame();
+        game.spawn({ sid: ME, x: 40, y: 40, weaponIndex: 5 });
+        game.spawn({ sid: 2, x: 4000, y: 4000 });
+        game.setLoadout([5], [0, 3, 6, 10, 15]);
+        game.addObjects([
+            { sid: 900, x: 150, y: 30, itemId: LIST_ID_MAP.SPIKES, owner: 2 },
+            { sid: 901, x: 30, y: 150, itemId: LIST_ID_MAP.SPIKES, owner: 2 }
+        ]);
+        game.update();
+        game.update();
+
+        const { default: AngleFinder } = await import("@placing/AngleFinder");
+        const { default: ObjectManager } = await import("@core/logic/ObjectManager");
+        const count = AngleFinder.compute(game.Client.player, { grade: false });
+        const spots = AngleFinder.angleBuffer.slice(0, count);
+
+        expect(spots.length).toBeGreaterThan(0);
+        expect(spots.every(s => Number.isFinite(s.x) && Number.isFinite(s.y))).toBe(true);
+        expect(spots.filter(s => !ObjectManager.checkItem(s.x, s.y, items.list[s.id]!.scale, s.id))).toEqual([]);
+        // Both buildings block their side: nothing straight right along the top edge or straight down the left one.
+        expect(spots.some(s => Math.abs(s.angle) < 0.2 || Math.abs(s.angle - Math.PI * 2) < 0.2)).toBe(false);
+        expect(spots.some(s => Math.abs(s.angle - Math.PI / 2) < 0.2)).toBe(false);
+    });
 });
 
