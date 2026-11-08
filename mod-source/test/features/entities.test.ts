@@ -28,6 +28,44 @@ describe("Entities", () => {
         expect(list.all).toEqual([]);
     });
 
+    it("keep positions right when the last entry is removed, in both list types", async () => {
+        game = await startGame();
+        const { default: EntityHandler } = await import("@constants/EntityHandler");
+        type E = { sid: number; listHandlerIndex: number; turretHandlerIndex: number };
+        for (const type of [0, 1] as const) {
+            const list = new EntityHandler<E>(type);
+            const index = (e: E) => (type === 0 ? e.listHandlerIndex : e.turretHandlerIndex);
+            const items = [1, 2, 3, 4].map(sid => ({ sid, listHandlerIndex: -1, turretHandlerIndex: -1 }));
+            for (const e of items) list.add(e);
+
+            list.remove(4); // the last one
+            expect(list.all.map(e => e.sid)).toEqual([1, 2, 3]);
+            list.remove(1); // the first: the last one moves into its place
+            expect(list.all.map(e => e.sid)).toEqual([3, 2]);
+            for (const [i, e] of list.all.entries()) expect(index(e)).toBe(i);
+            list.remove(99); // not there
+            expect(list.all.map(e => e.sid)).toEqual([3, 2]);
+        }
+    });
+
+    it("keep the player list's positions right when players leave", async () => {
+        game = await startGame();
+        game.spawn({ sid: ME, x: 1000, y: 1000 });
+        for (const sid of [2, 3, 4]) game.spawn({ sid, x: 2000 + sid * 100, y: 1000 });
+        const { default: PlayerManager } = await import("@core/logic/players/PlayerManager");
+        const handler = PlayerManager.players.handler;
+        const sids = () => handler.all.map(p => p.sid);
+
+        const last = handler.all[handler.all.length - 1]!;
+        handler.remove(last.sid);
+        expect(sids()).not.toContain(last.sid);
+        const first = handler.all[0]!;
+        handler.remove(first.sid);
+        expect(sids()).not.toContain(first.sid);
+        for (const [i, p] of handler.all.entries()) expect(p.listHandlerIndex).toBe(i);
+        expect(handler.all).toHaveLength(2);
+    });
+
     /** A projectile from (fromX, 1000) toward us at (1000, 1000); returns the damage we expect after 3 ticks. */
     async function incoming(s: { fromX: number; speed: number; indx: number; turretAt?: number; arrowFromEnemy?: boolean }) {
         const { LIST_ID_MAP } = await import("@constants/items");

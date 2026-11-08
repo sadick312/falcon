@@ -28,7 +28,11 @@ export default class PingTracker {
         sorted.set(this.pingHistory.subarray(0, this.count));
         sorted.sort();
 
+        // The median. count > 0 here, so `upper` always exists, and `lower` too when count is even.
         const mid = this.count >> 1;
-        return this.count % 2 === 1 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+        const upper = sorted[mid];
+        const lower = sorted[mid - 1];
+        if (upper === undefined) return this.instantaneousPing;
+        return this.count % 2 === 1 || lower === undefined ? upper : (lower + upper) / 2;
     }
 }

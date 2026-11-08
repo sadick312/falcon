@@ -127,7 +127,7 @@ export default class PacketTracker {
 
             for (let j = 0; j < this.count; j++) {
                 const index = (this.head - 1 - j + totalLength) % totalLength;
-                const time = this.history[index];
+                const time = this.history[index] ?? 0;
 
                 if (futureTime - time > 1e3) break;
                 survivingHistory++;
@@ -150,7 +150,7 @@ export default class PacketTracker {
         const now = performance.now();
         // Full buffer whose oldest entry is still inside the 1 s window: more than 500/s, stop recording. This also
         // fired on the empty slots (time 0), so nothing was counted in the first second after the page loaded.
-        if (this.count === this.history.length && now - this.history[this.head] <= 1e3) return;
+        if (this.count === this.history.length && now - (this.history[this.head] ?? 0) <= 1e3) return;
 
         this.history[this.head] = now
         this.head = (this.head + 1) % this.history.length;
@@ -166,7 +166,7 @@ export default class PacketTracker {
 
         for (let i = 0; i < this.count; i++) {
             const index = (this.head - 1 - i + totalLength) % totalLength;
-            const time = this.history[index];
+            const time = this.history[index] ?? 0;
 
             if (now - time > 1e3) break;
             packets++;

@@ -18,6 +18,11 @@ const OPTED_IN = [
     "src/core/utils/ChatCommands.ts",
     "src/core/utils/GameVersionCheck.ts",
     "src/core/utils/ProtocolLoader.ts",
+    "src/core/utils/PacketTracker.ts",
+    "src/core/mod/utils/PingTracker.ts",
+    "src/core/socket/events/core/HealthUpdateEvent.ts",
+    "src/core/logic/players/PlayerEntityHandler.ts",
+    "src/utils/constants/EntityHandler.ts",
     "src/services/",
     "src/utils/constants/items.ts",
     "src/utils/constants/store.ts"

@@ -53,7 +53,9 @@ export default class EntityHandler<T extends Entity> {
         this.entitiesMap.delete(sid);
 
         const index = this.type === 0 ? entity.listHandlerIndex : entity.turretHandlerIndex;
-        const lastEntity = this.entitiesList[this.entitiesList.length - 1];
+        // Move the last entity into the removed one's place (a no-op when it was the last one).
+        const lastEntity = this.entitiesList.pop();
+        if (!lastEntity || lastEntity === entity) return;
         this.entitiesList[index] = lastEntity;
 
         if (this.type === 0) {
@@ -61,8 +63,6 @@ export default class EntityHandler<T extends Entity> {
         } else {
             lastEntity.turretHandlerIndex = index;
         }
-
-        this.entitiesList.pop();
     }
 
     removeAll() {

@@ -30,11 +30,12 @@ export default class PlayerEntityHandler {
         this.playersIdMap.delete(entity.id);
 
         const index = entity.listHandlerIndex;
-        const lastEntity = this.playersList[this.playersList.length - 1];
+        // Move the last player into the removed one's place (a no-op when it was the last one).
+        const lastEntity = this.playersList.pop();
+        if (!lastEntity || lastEntity === entity) return;
 
         this.playersList[index] = lastEntity;
         lastEntity.listHandlerIndex = index;
-        this.playersList.pop();
     }
 
     get all() { return this.playersList };
