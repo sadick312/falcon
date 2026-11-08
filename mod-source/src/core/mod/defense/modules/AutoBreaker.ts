@@ -17,7 +17,7 @@ import { tickState } from "@core/TickState";
 import Menu from "@menu/Menu";
 import { Point } from "@mod-types/index";
 import AngleFinder, { FinderOptions } from "@placing/AngleFinder";
-import { Input } from "@ui/Hook";
+import { Input } from "@ui/Input";
 import getAngleDist from "@utils/angle/getAngleDist";
 import getDir from "@utils/angle/getDir";
 import ScriptConfig from "@utils/config/ScriptConfig";

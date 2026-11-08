@@ -87,7 +87,7 @@ describe("Placement System: placing one item", () => {
 describe("Placement System: hotkeys", () => {
     it("V places a spike, and only counts toward the 4-per-tick cap if it really placed", async () => {
         const PlacementSystem = await setUp();
-        const { Input } = await import("@ui/Hook");
+        const { Input } = await import("@ui/Input");
         vi.spyOn(Input, "getAttackDir").mockReturnValue(Math.PI);
         const macro = (PlacementSystem as unknown as { macro(): void }).macro.bind(PlacementSystem);
 
@@ -111,7 +111,7 @@ describe("Placement System: hotkeys", () => {
     it("F doesn't count toward the cap when the trap limit is full (B4)", async () => {
         const PlacementSystem = await setUp();
         const { default: items } = await import("@constants/items");
-        const { Input } = await import("@ui/Hook");
+        const { Input } = await import("@ui/Input");
         vi.spyOn(Input, "getAttackDir").mockReturnValue(Math.PI);
         const macro = (PlacementSystem as unknown as { macro(): void }).macro.bind(PlacementSystem);
         game!.Client.player.itemCounts[items.list[15].group.id] = 99;

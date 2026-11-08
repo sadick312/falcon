@@ -64,7 +64,7 @@ describe("Combat Controller: Space (manual bull hits)", () => {
         game.update();
 
         // Imported after startGame, which reloads every module.
-        const { Input } = await import("@ui/Hook");
+        const { Input } = await import("@ui/Input");
         Input.keys["Space"] = true;
         try {
             game.update();

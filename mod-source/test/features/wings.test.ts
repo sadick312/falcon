@@ -6,7 +6,7 @@ import { type Game, ME, startGame } from "../helpers/game";
 
 let game: Game | undefined;
 afterEach(async () => {
-    const { Input } = await import("@ui/Hook");
+    const { Input } = await import("@ui/Input");
     Input.keys["Space"] = false;
     game?.done();
 });
@@ -45,7 +45,7 @@ async function play(s: Scenario = {}) {
         const { default: PlayerManager } = await import("@core/logic/players/PlayerManager");
         PlayerManager.get(2)!.reloads[POLEARM] = 0;
     }
-    const { Input } = await import("@ui/Hook");
+    const { Input } = await import("@ui/Input");
     vi.spyOn(Input, "getAttackDir").mockReturnValue(s.aim ?? 0);
     Input.keys["Space"] = !!s.swing;
 

@@ -35,7 +35,7 @@ import { frameStats } from "@rendering/FrameStats";
 import PacketMap, { HandledServerPacket, PacketHandlers } from "@root/utils/socket/PacketMap";
 import PacketRecorder from "@services/packet-recorder/PacketRecorder";
 import { showServerRestarting } from "@ui/ConnectionError";
-import { enterGameBtn } from "@ui/Hook";
+import { enterGameBtn } from "@ui/enterGameBtn";
 import { gameUI, loadingCirclePage, respawnPage } from "@ui/Loader";
 import ScriptConfig from "@utils/config/ScriptConfig";
 import getElem from "@utils/dom/getElem";

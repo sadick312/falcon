@@ -218,7 +218,7 @@ describe("death", () => {
     it("shows the respawn card after 2 s and respawns by itself with Auto Respawn", async () => {
         const { h, Client } = await spawned({ enable: ["autoRespawn"] });
         Client.mode = "normal";
-        const { enterGameBtn } = await import("@ui/Hook");
+        const { enterGameBtn } = await import("@ui/enterGameBtn");
         const click = vi.spyOn(enterGameBtn, "click").mockImplementation(() => { });
         document.documentElement.setAttribute("uhohboring", "");
 

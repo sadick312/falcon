@@ -3,7 +3,7 @@ import PlayerManager from "@core/logic/players/PlayerManager";
 import Menu from "@menu/Menu";
 import CameraManager from "@rendering/core/CameraManager";
 import { mainContext } from "@rendering/RenderContext";
-import { Input } from "@ui/Hook";
+import { Input } from "@ui/Input";
 
 export default function renderPlayers(delta: number, layer: number) {
     const players = PlayerManager.players.visible.all;

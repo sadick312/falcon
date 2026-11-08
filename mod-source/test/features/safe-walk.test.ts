@@ -24,7 +24,7 @@ async function walk(s: Scenario = {}) {
     game.addObjects([{ sid: 700, x: 1090, y: 1000, itemId: LIST_ID_MAP.SPIKES, owner: s.spikeOwner ?? 2 }]);
     game.update();
 
-    const { Input } = await import("@ui/Hook");
+    const { Input } = await import("@ui/Input");
     Input.keys["ShiftLeft"] = !!s.shift;
     game.Client.lastMoveDir = 0;
     const before = game.sent.length;

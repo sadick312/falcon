@@ -6,7 +6,7 @@ import { tickState } from "@core/TickState";
 import Menu from "@menu/Menu";
 import Vec2 from "@mod-types/geometry/Vec2";
 import { Point } from "@mod-types/index";
-import { Input } from "@ui/Hook";
+import { Input } from "@ui/Input";
 import getDir from "@utils/angle/getDir";
 import getDist from "@utils/geometry/getDist";
 import getDistSq from "@utils/geometry/getDistSq";

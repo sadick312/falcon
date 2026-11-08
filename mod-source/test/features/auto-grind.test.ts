@@ -41,7 +41,7 @@ async function grind(s: Scenario = {}) {
     game.update([{ sid: ME, weaponIndex: POLEARM, weaponVariant: s.primaryVariant ?? 0 }]);
 
     game.Menu.itemMap.autoGrind.status = s.enable !== false;
-    const { Input } = await import("@ui/Hook");
+    const { Input } = await import("@ui/Input");
     vi.spyOn(Input, "getAttackDir").mockReturnValue(0);
     if (s.budget !== undefined) {
         const { default: PacketTracker } = await import("@core/utils/PacketTracker");

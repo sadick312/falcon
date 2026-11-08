@@ -17,7 +17,7 @@ import TaskScheduler from "@services/event-timer/TaskScheduler";
 import { profileEnd, profileStart } from "@services/profiler/Profiler";
 import PacketRecorder from "@services/packet-recorder/PacketRecorder";
 import { showConnectionError } from "@ui/ConnectionError";
-import { enterGameBtn } from "@ui/Hook";
+import { enterGameBtn } from "@ui/enterGameBtn";
 import { gameUI, respawnPage } from "@ui/Loader";
 import getElem from "@utils/dom/getElem";
 

@@ -26,7 +26,7 @@ async function play(s: Scenario = {}) {
     if (s.trapped !== false) objects.push({ sid: 600, x: 1100, y: 1000, itemId: LIST_ID_MAP.PIT_TRAP, owner: ME });
     game.addObjects(objects);
 
-    const { Input } = await import("@ui/Hook");
+    const { Input } = await import("@ui/Input");
     const { default: AutoPusher } = await import("@core/mod/combat/core/AutoPusher");
     const { default: Pathfinder } = await import("@services/pathfinding/Pathfinder");
     const find = vi.spyOn(Pathfinder, "find").mockImplementation(() => new Promise(() => { }));

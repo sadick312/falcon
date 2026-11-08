@@ -10,7 +10,7 @@ import { tickState } from "@core/TickState";
 import Menu from "@menu/Menu";
 import AutoGrinder from "@placing/modules/AutoGrinder";
 import PacketMap from "@root/utils/socket/PacketMap";
-import { Input } from "@ui/Hook";
+import { Input } from "@ui/Input";
 
 type CombatControllerMode = "autobreak" | "tankspam" | "autobreakspike" | "bullspam" | "autogrind" | "object breaking" | "pit object breaking" | "none";
 

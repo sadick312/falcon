@@ -16,7 +16,7 @@ import AutoReplacer, { Replacement } from "@placing/modules/AutoReplacer";
 import { PlacementType, PlacementTypes } from "@placing/utils/Placer";
 import PlacerUtils from "@placing/utils/PlacerUtils";
 import PacketMap from "@root/utils/socket/PacketMap";
-import { Input } from "@ui/Hook";
+import { Input } from "@ui/Input";
 import getDistSq from "@utils/geometry/getDistSq";
 import { PLAYER_SCALE } from "@constants/world";
 

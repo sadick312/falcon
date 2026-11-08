@@ -14,6 +14,8 @@ import RenderingConfig from "@rendering/RenderingConfig";
 import PacketMap from "@root/utils/socket/PacketMap";
 import Loader, { loadingCirclePage } from "@ui/Loader";
 import getElem from "@utils/dom/getElem";
+import { enterGameBtn } from "@ui/enterGameBtn";
+import { Input } from "@ui/Input";
 
 const moveKeys: Record<number, [number, number]> = {
     87: [0, -1],
@@ -49,26 +51,6 @@ function getMoveDir(): number | null {
 const gameCanvas = getElem<"canvas">("game-canvas");
 const chatInput = getElem<"input">("chat-input");
 
-export class Input {
-    static keys: Record<string | number, boolean> = {};
-
-    private static mouseX: number = 0;
-    private static mouseY: number = 0;
-
-    static init() {
-        gameCanvas.addEventListener("mousemove", (event) => {
-            Input.mouseX = event.clientX;
-            Input.mouseY = event.clientY;
-        });
-    }
-
-    static getAttackDir() {
-        const mouseDir = Math.atan2(this.mouseY - (window.innerHeight / 2), this.mouseX - (window.innerWidth / 2));
-        return mouseDir;
-    }
-}
-
-Input.init();
 
 function sendMoveDir() {
     const moveDir = getMoveDir();
@@ -289,7 +271,6 @@ document.addEventListener("keyup", (event) => {
 });
 
 const nameInput = getElem<"input">("username-input");
-export const enterGameBtn = getElem<"button">("enter-game-btn");
 const allianceBtn = getElem<"button">("alliance-btn");
 
 export default function Hook() {

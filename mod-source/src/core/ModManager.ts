@@ -31,7 +31,7 @@ import AutoGrinder from "@placing/modules/AutoGrinder";
 import PacketMap from "@root/utils/socket/PacketMap";
 import { profileEnd, profileLap, profileStart } from "@services/profiler/Profiler";
 import MovementPhysicsSimulator from "@simulation/MovementPhysicsSimulator";
-import { Input } from "@ui/Hook";
+import { Input } from "@ui/Input";
 import getAngleDist from "@utils/angle/getAngleDist";
 import getDir from "@utils/angle/getDir";
 import ScriptConfig from "@utils/config/ScriptConfig";

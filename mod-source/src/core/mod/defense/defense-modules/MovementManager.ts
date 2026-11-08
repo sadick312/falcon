@@ -9,7 +9,7 @@ import MovementUtils from "@core/mod/defense/utils/MovementUtils";
 import { tickState } from "@core/TickState";
 import Menu from "@menu/Menu";
 import PacketMap from "@root/utils/socket/PacketMap";
-import { Input } from "@ui/Hook";
+import { Input } from "@ui/Input";
 import ScriptConfig from "@utils/config/ScriptConfig";
 import lineInCircle from "@utils/geometry/lineInCircle";
 import { isCactusObject, isInWater, PLAYER_SCALE, SNOW_SPEED, WATER_CURRENT } from "@constants/world";

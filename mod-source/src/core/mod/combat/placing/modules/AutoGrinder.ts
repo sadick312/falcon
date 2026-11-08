@@ -10,7 +10,7 @@ import BreakerUtils from "@core/mod/defense/utils/BreakerUtils";
 import { tickState } from "@core/TickState";
 import Menu from "@menu/Menu";
 import PlacerUtils from "@placing/utils/PlacerUtils";
-import { Input } from "@ui/Hook";
+import { Input } from "@ui/Input";
 import getAngleDist from "@utils/angle/getAngleDist";
 import getDir from "@utils/angle/getDir";
 import ScriptConfig from "@utils/config/ScriptConfig";
