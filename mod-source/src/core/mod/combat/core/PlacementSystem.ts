@@ -142,6 +142,10 @@ export default class PlacementSystem {
         Client.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.SELECT_TO_BUILD, id, false);
         Client.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.SEND_HIT, 1, angle);
         if (item.group.id === FOOD_GROUP_ID) Client.lastAteTick = tickState.tick;
+        // Keep this after every placement, also when placing several in a row (Auto Mill, Auto Heal). After a successful
+        // placement 1.8.2 puts the building away itself, but a refused one (blocked spot) leaves it selected, and the
+        // server toggles a building off when it's selected again (tested live on moomodding.io, 9 Nov 2026). Without
+        // this, the next "select + hit" after a blocked spot would swing the weapon instead of placing.
         CombatController.selectWeapon();
         return "placed";
     }
