@@ -29,6 +29,7 @@ it("per-packet hot paths", async () => {
     const { default: PacketManager, xorPacket } = await import("@core/utils/PacketManager");
     const { default: LegacyPacketAdapter } = await import("@core/socket/LegacyPacketAdapter");
     const { Decoder, encode } = await import("@msgpack/msgpack");
+    const { default: PacketBatcher } = await import("@core/utils/PacketBatcher");
 
     const SALT = "00112233445566778899aabbccddeeff";
     const legacy = new PacketManager();
@@ -44,6 +45,19 @@ it("per-packet hot paths", async () => {
     const bytes = new Uint8Array(64);
     let dir = 0;
 
+    // PacketBatcher's own cost for one tick's batch: 20 packets queued, then ordered and handed on (to a socket that
+    // does nothing, so only the batcher is timed). The batcher is driven directly: isPolling stays on so no
+    // MessageChannel round trip is started, and flush() is private.
+    type BatcherInternals = { isPolling: boolean; flush(): void; init(socket: unknown): void };
+    const batcher = PacketBatcher as unknown as BatcherInternals;
+    batcher.init({ processPacket() { }, readyState: 3 });
+    batcher.isPolling = true;
+    const tickBatch = () => {
+        for (let i = 0; i < 19; i++) PacketBatcher.add("O", [i, 100]);
+        PacketBatcher.add("a", [players, [], []]);
+        batcher.flush();
+    };
+
     const rows = [
         time("CustomEncoder.encode: move (fast path)", 200_000, () => { CustomEncoder.encode("9", "9", [1.5]); }),
         time("CustomEncoder.encode: hit + sequence (fast path)", 200_000, () => { CustomEncoder.encode("F", 4, [1, 0.5], 7); }),
@@ -52,7 +66,8 @@ it("per-packet hot paths", async () => {
         time("xorPacket: v1.9.0 mask, 64 bytes", 200_000, () => { xorPacket(bytes, 99); }),
         time("PacketManager.manage: move de-dup", 200_000, () => { manager.manage("9", [dir++ & 1]); }),
         time("msgpack decode: 10-player update", 50_000, () => { decoder.decode(playerUpdate); }),
-        time("LegacyPacketAdapter.adapt: 10-player update", 50_000, () => { adapter.adapt("a", [players]); })
+        time("LegacyPacketAdapter.adapt: 10-player update", 50_000, () => { adapter.adapt("a", [players]); }),
+        time("PacketBatcher: queue + order + hand on a 20-packet tick", 50_000, tickBatch)
     ];
 
     fs.mkdirSync(path.join(benchDir, "results"), { recursive: true });
