@@ -114,3 +114,37 @@ describe("HealerUtils.getFoodValue", () => {
         expect(HealerUtils.getFoodValue(LIST_ID_MAP.CHEESE)).toBe(30);
     });
 });
+
+describe("ObjectUtils.getSpikeBounceArc", () => {
+    // KNOWN BUG (reported, not fixed yet): getSpikeBounceArc subtracts the blocked angles into
+    // IntervalHelper.intervalBuffer but never copies the result back into spikeArcBuffer, which AutoBreaker reads.
+    // So the full, unblocked arc is returned. Remove `.fails` when it is fixed.
+    it.fails("leaves out the angles a building in the way blocks", async () => {
+        const ObjectUtils = (await import("@core/mod/defense/utils/ObjectUtils")).default;
+        const ObjectManager = (await import("@core/logic/ObjectManager")).default;
+        const spikes = items.list[LIST_ID_MAP.SPINNING_SPIKES];
+
+        // The builder places around itself towards the victim straight below it, so the open arc is centred on
+        // angle PI/2. A wall further below blocks the middle of that arc.
+        const builder = { real_position: { x: PLAYER.x, y: PLAYER.y } };
+        const victim = { real_position: { x: PLAYER.x, y: PLAYER.y + 60 } };
+        const obj = wall(PLAYER.x, PLAYER.y + 150);
+        expect(IntervalHelper.computeInterval(PLAYER, obj, spikes)).toBe(1);
+        const [blockStart, blockEnd] = IntervalHelper.computeBuffer[0];
+
+        const close = ObjectManager.pool.closeObjects;
+        close.push(obj);
+        try {
+            const count = ObjectUtils.getSpikeBounceArc(builder as never, victim as never, spikes);
+            const arcs = ObjectUtils.spikeArcBuffer.slice(0, count).map(([start, end]) => [start, end]);
+
+            // Two open pieces, one each side of the wall, and none of them reaches into the blocked angles.
+            expect(arcs).toHaveLength(2);
+            for (const [start, end] of arcs) {
+                expect(end <= blockStart + 1e-9 || start >= blockEnd - 1e-9).toBe(true);
+            }
+        } finally {
+            close.splice(close.indexOf(obj), 1);
+        }
+    });
+});
