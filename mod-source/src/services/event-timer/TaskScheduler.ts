@@ -25,7 +25,7 @@ export default class TaskScheduler {
         for (let i = 0, len = timers.length; i < len; i++) {
             const timer = timers[i];
 
-            if (!timer.active) {
+            if (timer && !timer.active) {
                 timer.dt = speed;
                 timer.callback = cb;
                 timer.active = true;
@@ -58,7 +58,7 @@ export default class TaskScheduler {
 
         for (let i = 0, len = timers.length; i < len; i++) {
             const timer = timers[i];
-            if (!timer.active) continue;
+            if (!timer || !timer.active) continue;
 
             timer.dt -= dt;
             if (timer.dt <= threshold) {

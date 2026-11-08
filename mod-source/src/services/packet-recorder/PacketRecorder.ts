@@ -51,9 +51,10 @@ export default class PacketRecorder {
 
         const slotsToClear = Math.min(elapsed, this.timeSlots.length);
         for (let i = 1; i <= slotsToClear; i++) {
-            const index = (this.slotIndex + i) % this.timeSlots.length;
-            this.updatePermanentData(this.timeSlots[index]);
-            this.timeSlots[index].length = 0;
+            const slot = this.timeSlots[(this.slotIndex + i) % this.timeSlots.length];
+            if (!slot) continue;
+            this.updatePermanentData(slot);
+            slot.length = 0;
         }
 
         this.slotIndex = (this.slotIndex + elapsed) % this.timeSlots.length;
@@ -61,8 +62,7 @@ export default class PacketRecorder {
     }
 
     private static updatePermanentData(packetData: PacketLog[]) {
-        for (let i = 0; i < packetData.length; i++) {
-            const log = packetData[i];
+        for (const log of packetData) {
             const packet = log.packetData!;
 
             if (packet.type === PacketMap.SERVER_TO_CLIENT.UPDATE_PLAYERS) {
@@ -72,6 +72,7 @@ export default class PacketRecorder {
 
                 for (let j = 0; j + 3 < positions.length; j += 4) {
                     const playerId = this.sidToIdMap[positions[j] as number];
+                    if (playerId === undefined) continue;
                     const logData = this.permanentData.get(playerId);
                     if (!logData || logData.packetData.type !== PacketMap.SERVER_TO_CLIENT.ADD_PLAYER) continue;
 
@@ -123,7 +124,7 @@ export default class PacketRecorder {
 
                 this.permanentData.delete(playerId);
                 delete this.idToSidMap[playerId];
-                delete this.sidToIdMap[playerSid];
+                if (playerSid !== undefined) delete this.sidToIdMap[playerSid];
             } else if (packet.type === PacketMap.SERVER_TO_CLIENT.LOAD_GAME_OBJECT) {
                 const gameObjectsMap = this.permanentData.get(PacketMap.SERVER_TO_CLIENT.LOAD_GAME_OBJECT);
 
@@ -137,7 +138,7 @@ export default class PacketRecorder {
                         // once a packet holds more than about a hundred thousand of them.
                         const saved = packetData.data[0];
                         const added = packet.data[0];
-                        for (let j = 0; j < added.length; j++) saved.push(added[j]);
+                        for (const value of added) saved.push(value);
                     }
                 }
             }
@@ -156,8 +157,10 @@ export default class PacketRecorder {
         if (!this.shouldRecord(packetId)) return;
         this.advanceSlots(log.timestamp);
 
+        const slot = this.timeSlots[this.slotIndex];
+
         if (!this.PERMANENT_PACKETS.has(packetId)) {
-            this.timeSlots[this.slotIndex].push(log);
+            slot?.push(log);
             return;
         }
 
@@ -176,7 +179,7 @@ export default class PacketRecorder {
             }
 
             if (this.permanentData.has(playerId)) {
-                this.timeSlots[this.slotIndex].push(log);
+                slot?.push(log);
                 return;
             }
 
@@ -200,14 +203,14 @@ export default class PacketRecorder {
             ...this.timeSlots.slice(0, this.slotIndex + 1)
         ].flat();
 
-        if (historicalPackets.length === 0) return null;
+        const first = historicalPackets[0];
+        if (!first) return null;
 
-        const baseTimestamp = historicalPackets[0].timestamp;
+        const baseTimestamp = first.timestamp;
         const permanentPackets = Array.from(this.permanentData.values());
 
-        for (let i = 0; i < permanentPackets.length; i++) {
-            if (permanentPackets[i].timestamp < baseTimestamp)
-                permanentPackets[i].timestamp = baseTimestamp;
+        for (const packet of permanentPackets) {
+            if (packet.timestamp < baseTimestamp) packet.timestamp = baseTimestamp;
         }
 
         const allPackets = [...permanentPackets, ...historicalPackets].sort((a, b) => a.timestamp - b.timestamp);
@@ -215,8 +218,7 @@ export default class PacketRecorder {
         const chunks: Uint8Array[] = [];
         let totalLength = 0;
 
-        for (let i = 0, len = allPackets.length; i < len; i++) {
-            const packet = allPackets[i];
+        for (const packet of allPackets) {
 
             const timestampBuf = new Uint8Array(8);
             new DataView(timestampBuf.buffer).setFloat64(0, packet.timestamp, true);

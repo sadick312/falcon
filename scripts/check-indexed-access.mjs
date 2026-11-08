@@ -18,7 +18,7 @@ const OPTED_IN = [
     "src/core/utils/ChatCommands.ts",
     "src/core/utils/GameVersionCheck.ts",
     "src/core/utils/ProtocolLoader.ts",
-    "src/services/profiler/",
+    "src/services/",
     "src/utils/constants/items.ts",
     "src/utils/constants/store.ts"
 ];

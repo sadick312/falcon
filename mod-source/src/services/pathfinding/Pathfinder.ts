@@ -7,12 +7,17 @@ import { Point } from "@mod-types/index";
 import withinDist from "@utils/geometry/withinDist";
 import PathfindWorker from "./Pathfinder.worker.js";
 
+/** [minX, minY, xCells, yCells] of a request's grid. */
+type GridBounds = [number, number, number, number];
+/** [startX, startY, endX, endY] in cells. */
+type CellBounds = [number, number, number, number];
+
 export default class Pathfinder {
     private static readonly CELL_SIZE = 15;
     private static readonly DOUBLE_CELL_SIZE = this.CELL_SIZE * 2;
 
     private static readonly PADDING = 10;
-    private static GRID_BOUNDS_BUFFER = [0, 0, 0, 0];
+    private static GRID_BOUNDS_BUFFER: GridBounds = [0, 0, 0, 0];
 
     private static worker: Worker;
 
@@ -35,9 +40,9 @@ export default class Pathfinder {
         return this.GRID_BOUNDS_BUFFER;
     }
 
-    private static MAP_POINTS_BUFFER: Point[] = [{ x: 0, y: 0 }, { x: 0, y: 0 }];
+    private static MAP_POINTS_BUFFER: [Point, Point] = [{ x: 0, y: 0 }, { x: 0, y: 0 }];
 
-    private static mapPoints(start: Point, goal: Point, gridBounds: number[]) {
+    private static mapPoints(start: Point, goal: Point, gridBounds: GridBounds) {
         const minX = gridBounds[0], minY = gridBounds[1];
         const doubleSize = this.CELL_SIZE * 2;
 
@@ -52,9 +57,9 @@ export default class Pathfinder {
         return this.MAP_POINTS_BUFFER;
     }
 
-    private static OBJECT_BOUNDS_BUFFER = [0, 0, 0, 0];
+    private static OBJECT_BOUNDS_BUFFER: CellBounds = [0, 0, 0, 0];
 
-    private static getObjectBounds(obj: GameObject | Player, gridBounds: number[]) {
+    private static getObjectBounds(obj: GameObject | Player, gridBounds: GridBounds) {
         const doubleSize = this.DOUBLE_CELL_SIZE;
         const minX = gridBounds[0], minY = gridBounds[1], xCells = gridBounds[2], yCells = gridBounds[3];
         const isGameObject = obj instanceof GameObject;
