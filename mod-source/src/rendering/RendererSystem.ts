@@ -26,7 +26,7 @@ import renderMinimap from "@rendering/utils/mod/renderMinimap";
 import renderOneTickLine from "@rendering/utils/mod/renderOneTickLine";
 import renderPathfindPath from "@rendering/utils/mod/renderPathfindPath";
 import renderPlacements from "@rendering/utils/mod/renderPlacements";
-import { profileEnd, profileStart } from "@services/profiler/Profiler";
+import { profileEnd, profileLap, profileStart } from "@services/profiler/Profiler";
 
 CanvasRenderingContext2D.prototype.roundRect = function (x: number, y: number, width: number, height: number, radius: number): CanvasRenderingContext2D {
     radius = Math.max(0, Math.min(radius, width / 2, height / 2));
@@ -91,6 +91,8 @@ export default class RendererSystem {
 
         this.lastUpdate = now;
         const frameStart = __DEV__ ? profileStart() : 0;
+        // Development builds only: time each drawing step (the profiler overlay shows "draw.*").
+        let lap = frameStart;
 
         try {
             if (Client.mode === "replay")
@@ -102,6 +104,7 @@ export default class RendererSystem {
             const buf = CameraManager.getOffset();
             const xOffset = buf[0];
             const yOffset = buf[1];
+            if (__DEV__) lap = profileLap("draw.update", lap);
 
             renderBackground(mainContext);
             this.updateWaterBodies(delta);
@@ -114,6 +117,7 @@ export default class RendererSystem {
             renderWaterBodies(yOffset, mainContext, (this.waterMult - 1) * 250);
 
             renderGrid(xOffset, yOffset);
+            if (__DEV__) lap = profileLap("draw.background", lap);
 
             mainContext.globalAlpha = 1;
             mainContext.strokeStyle = RendererUtils.outlineColor;
@@ -134,6 +138,7 @@ export default class RendererSystem {
 
             renderGameObjects(delta, 2);
             renderGameObjects(delta, 3);
+            if (__DEV__) lap = profileLap("draw.world", lap);
 
             renderBuildingHealth();
             renderPlacements(delta);
@@ -142,6 +147,7 @@ export default class RendererSystem {
             mainContext.globalAlpha = 1;
             mainContext.fillStyle = `rgba(0, 0, 70, ${Menu.getValue("nightMode") ? .55 : .35})`;
             mainContext.fillRect(0, 0, RenderingConfig.maxScreenWidth, RenderingConfig.maxScreenHeight);
+            if (__DEV__) lap = profileLap("draw.health+placements+border+tint", lap);
 
             renderAutoPlayMovementLine();
             renderAutoPushVisuals();
@@ -151,6 +157,7 @@ export default class RendererSystem {
             renderPlayerChats(delta);
             renderText(delta);
             renderOneTickLine(xOffset, yOffset);
+            if (__DEV__) lap = profileLap("draw.overlays+names+text", lap);
 
             if (Client.mode === "replay" && Client.player) {
                 mainContext.save();
@@ -161,6 +168,7 @@ export default class RendererSystem {
             }
 
             renderMinimap();
+            if (__DEV__) profileLap("draw.minimap", lap);
         } finally {
             if (__DEV__) profileEnd("frame", frameStart);
 
