@@ -13,33 +13,38 @@ import SpikeTicker from "@combat-modules/SpikeTicker";
 import TurretAPAssister from "@combat-modules/TurretAPAssister";
 import TurretGearKnockbacker from "@combat-modules/TurretGearKnockbacker";
 import VelocityAttacker from "@combat-modules/VelocityAttacker";
-import AttackManager from "@core/mod/combat/core/AttackManager";
+import { registerAttackModules } from "@core/mod/combat/core/attackModuleRegistry";
 import DefensiveKnockbacker from "@core/mod/defense/modules/DefensiveKnockbacker";
 
-// Creates the attack modules and hands them to AttackManager. The modules import AttackManager (to queue attacks), so
-// AttackManager can't import them back; ModManager loads this file instead. Same instances, same order as before.
-AttackManager.spikeTicker = new SpikeTicker();
-AttackManager.appleInstakiller = new AppleInstakiller();
-AttackManager.shameGrinder = new ShameGrinder();
-AttackManager.antiBuller = new AntiBuller();
-AttackManager.oneTicker = new OneTicker();
+// Registers how to create the attack modules; attackModuleRegistry creates them the first time AttackManager asks.
+// The modules import AttackManager (to queue attacks), so AttackManager can't import them back; ModManager loads this
+// file instead. Same instances, same order as before.
+registerAttackModules(() => {
+    const spikeTicker = new SpikeTicker();
+    const appleInstakiller = new AppleInstakiller();
+    const shameGrinder = new ShameGrinder();
+    const antiBuller = new AntiBuller();
+    const oneTicker = new OneTicker();
 
-AttackManager.modules = [
-    AttackManager.antiBuller,
-    new AutoInstakiller(),
-    new MusketInstakiller(),
-    new AutoAttacker(),
-    new ProjectileSyncer(),
-    new AutoPusherStriker(),
-    new TurretAPAssister(),
-    new VelocityAttacker(),
-    new DefensiveKnockbacker(),
-    new AutoMeleeSyncer(),
-    new TurretGearKnockbacker(),
-    new BarbarianKnockbacker(),
-    // Before Apple Insta: while it grinds the enemy's shame, Apple Insta waits (holdsAppleInsta).
-    AttackManager.shameGrinder,
-    AttackManager.appleInstakiller,
-    AttackManager.spikeTicker,
-    AttackManager.oneTicker
-];
+    const modules = [
+        antiBuller,
+        new AutoInstakiller(),
+        new MusketInstakiller(),
+        new AutoAttacker(),
+        new ProjectileSyncer(),
+        new AutoPusherStriker(),
+        new TurretAPAssister(),
+        new VelocityAttacker(),
+        new DefensiveKnockbacker(),
+        new AutoMeleeSyncer(),
+        new TurretGearKnockbacker(),
+        new BarbarianKnockbacker(),
+        // Before Apple Insta: while it grinds the enemy's shame, Apple Insta waits (holdsAppleInsta).
+        shameGrinder,
+        appleInstakiller,
+        spikeTicker,
+        oneTicker
+    ];
+
+    return { spikeTicker, appleInstakiller, shameGrinder, antiBuller, oneTicker, modules };
+});

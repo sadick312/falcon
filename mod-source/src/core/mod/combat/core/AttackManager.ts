@@ -10,6 +10,7 @@ import AttackQueuePool, { AttackAction, AttackQueue } from "@core/mod/combat/cor
 import AutoPusher from "@core/mod/combat/core/AutoPusher";
 import PlacementSystem from "@core/mod/combat/core/PlacementSystem";
 import ModModule from "@core/mod/utils/ModModule";
+import { getAttackModules } from "@core/mod/combat/core/attackModuleRegistry";
 import ModManager from "@core/ModManager";
 import { SimulationResult } from "@simulation/MovementPhysicsSimulator";
 import withinDist from "@utils/geometry/withinDist";
@@ -22,16 +23,17 @@ export default class AttackManager {
 
     private static attackQueue: Readonly<AttackQueue>[] = [];
 
-    // Created and filled in by attackModules.ts, which ModManager loads. Creating them here made every attack module
-    // and AttackManager import each other.
-    static spikeTicker: SpikeTicker;
-    static appleInstakiller: AppleInstakiller;
-    static shameGrinder: ShameGrinder;
-    static antiBuller: AntiBuller;
-    static oneTicker: OneTicker;
+    // Created by attackModules.ts (through attackModuleRegistry), which ModManager loads. Creating them here made every
+    // attack module and AttackManager import each other.
+    static get spikeTicker(): SpikeTicker { return getAttackModules().spikeTicker; }
+    static get appleInstakiller(): AppleInstakiller { return getAttackModules().appleInstakiller; }
+    static get shameGrinder(): ShameGrinder { return getAttackModules().shameGrinder; }
+    static get antiBuller(): AntiBuller { return getAttackModules().antiBuller; }
+    static get oneTicker(): OneTicker { return getAttackModules().oneTicker; }
 
-    /** Every attack module, in the order they run (and win ties). Set by attackModules.ts. */
-    static modules: ModModule[] = [];
+    /** Every attack module, in the order they run (and win ties). Tests may swap the list. */
+    static get modules(): ModModule[] { return getAttackModules().modules; }
+    static set modules(list: ModModule[]) { getAttackModules().modules = list; }
 
     /** Called when we spawn, so no module acts on something it remembered from the previous life. */
     static resetModules() {
