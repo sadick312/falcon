@@ -1,4 +1,5 @@
 import Ai, { ais } from "@entities/Ai";
+import { at } from "@utils/array/at";
 import aiTypes from "@constants/aiTypes";
 import Client from "@core/Client";
 import TextManager from "@core/logic/TextManager";
@@ -14,36 +15,45 @@ export default class LoadAiEvent extends MessageHandler<LoadAiPacket> {
     run(data: number[], hidden: number[]) {
         const stackedText = Menu.getValue("stackedText");
 
-        for (let i = 0; i < hidden.length; i++) {
-            const ai = ais.get(hidden[i]);
+        for (const sid of hidden) {
+            const ai = ais.get(sid);
             if (!ai) continue;
             ai.visible = false;
         }
 
-        for (let i = 0; i < data.length; i += 8) {
-            // An unknown animal type used to throw here, losing the rest of the packet.
-            if (!aiTypes[data[i + 1]]) continue;
+        // Whole records only: [sid, type, x, y, dir * 100, health, nameIndex, 0].
+        for (let i = 0; i + 8 <= data.length; i += 8) {
+            const sid = at(data, i);
+            const typeId = at(data, i + 1);
+            const x = at(data, i + 2);
+            const y = at(data, i + 3);
+            const dir = at(data, i + 4) / 100;
+            const health = at(data, i + 5);
 
-            let ai = ais.get(data[i]);
+            // An unknown animal type used to throw here, losing the rest of the packet.
+            const type = aiTypes[typeId];
+            if (!type) continue;
+
+            let ai = ais.get(sid);
 
             // The server reuses an animal's sid for the next animal it spawns, possibly of another type; keeping the
             // old object would keep the old type's size, damage and name.
-            if (ai && ai.index !== data[i + 1]) ai = undefined;
+            if (ai && ai.index !== typeId) ai = undefined;
 
             if (ai) {
                 ai.forcePos = Client.mode === "replay" && PacketReplayer.slowTime !== 0 ? true : !ai.visible;
                 ai.last_render_position.x = ai.render_position.x;
                 ai.last_render_position.y = ai.render_position.y;
 
-                ai.still = ai.real_position.x == data[i + 2] && ai.real_position.y == data[i + 3];
+                ai.still = ai.real_position.x == x && ai.real_position.y == y;
 
-                ai.real_position.x = data[i + 2];
-                ai.real_position.y = data[i + 3];
+                ai.real_position.x = x;
+                ai.real_position.y = y;
                 ai.d1 = ai.d2;
-                ai.d2 = data[i + 4] / 100;
+                ai.d2 = dir;
 
                 ai.lastHealth = ai.health;
-                ai.health = data[i + 5];
+                ai.health = health;
                 ai.deltaTime = 0;
 
                 if (stackedText && ai.forcePos) {
@@ -60,18 +70,18 @@ export default class LoadAiEvent extends MessageHandler<LoadAiPacket> {
                 }
             } else {
                 // The packet's direction is × 100 (the update branch above divides too); this one used to be passed as is.
-                ai = new Ai(data[i + 2], data[i + 3], data[i + 4] / 100, data[i + 1]);
+                ai = new Ai(x, y, dir, typeId);
                 // Only the drawn position was set, so until its next update every check saw the animal at (0, 0).
-                ai.real_position.x = data[i + 2];
-                ai.real_position.y = data[i + 3];
-                ai.lastHealth = data[i + 5];
-                ai.health = data[i + 5];
+                ai.real_position.x = x;
+                ai.real_position.y = y;
+                ai.lastHealth = health;
+                ai.health = health;
 
-                if (!aiTypes[data[i + 1]].name)
-                    ai.name = RendererUtils.cowNames[data[i + 6]];
+                if (!type.name)
+                    ai.name = RendererUtils.cowNames[at(data, i + 6)];
 
                 ai.forcePos = true;
-                ai.sid = data[i];
+                ai.sid = sid;
 
                 ais.replace(ai);
             }

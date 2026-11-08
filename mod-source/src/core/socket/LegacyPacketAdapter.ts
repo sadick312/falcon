@@ -1,4 +1,5 @@
 import { GAME_V182 } from "@constants/gameVersion";
+import { at } from "@utils/array/at";
 import PacketMap, { WireValue } from "@root/utils/socket/PacketMap";
 
 const LEGACY_PLAYER_STRIDE = GAME_V182.playerStride;
@@ -42,9 +43,9 @@ export default class LegacyPacketAdapter {
         const current = new Set<number>();
 
         for (let i = 0; i + LEGACY_PLAYER_STRIDE <= flat.length; i += LEGACY_PLAYER_STRIDE) {
-            const sid = flat[i];
+            const sid = at(flat, i);
             current.add(sid);
-            positions.push(sid, flat[i + 1], flat[i + 2], flat[i + 3] * 100);
+            positions.push(sid, at(flat, i + 1), at(flat, i + 2), at(flat, i + 3) * 100);
 
             // v1.9.0 only sends attributes that changed, and the handler relies on that
             // (e.g. lastSkinIndex keeps the previous hat), so only emit changed entries.
@@ -73,8 +74,9 @@ export default class LegacyPacketAdapter {
         const current = new Set<number>();
 
         for (let i = 0; i + LEGACY_AI_STRIDE <= flat.length; i += LEGACY_AI_STRIDE) {
-            current.add(flat[i]);
-            data.push(flat[i], flat[i + 1], flat[i + 2], flat[i + 3], flat[i + 4] * 100, flat[i + 5], flat[i + 6], 0);
+            const sid = at(flat, i);
+            current.add(sid);
+            data.push(sid, at(flat, i + 1), at(flat, i + 2), at(flat, i + 3), at(flat, i + 4) * 100, at(flat, i + 5), at(flat, i + 6), 0);
         }
 
         const hidden = this.leftView(this.visibleAis, current);

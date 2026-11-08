@@ -1,4 +1,5 @@
 
+import { at } from "@utils/array/at";
 import { LIST_ID_MAP, WEAPON_ID_MAP, WEAPON_VARIANT_MAP } from "@constants/items";
 import { handleAllianceUpdates } from "@core/logic/alliances";
 import { STORE_HAT_MAP } from "@constants/store";
@@ -43,11 +44,15 @@ export default class PlayerUpdateEvent extends MessageHandler<UpdatePlayerPacket
 
         let placement = 0;
 
-        for (let i = 0; i < positions.length; i += 4) {
-            const player = PlayerManager.get(positions[i]);
+        // Whole records only: [sid, x, y, dir * 100].
+        for (let i = 0; i + 4 <= positions.length; i += 4) {
+            const sid = at(positions, i);
+            const x = at(positions, i + 1);
+            const y = at(positions, i + 2);
+            const player = PlayerManager.get(sid);
             if (!player) continue;
 
-            PlayerStateManager.trackPlacement(positions[i], placement);
+            PlayerStateManager.trackPlacement(sid, placement);
             placement++;
 
             const lastX = player.last_position.x = player.real_position.x;
@@ -56,9 +61,9 @@ export default class PlayerUpdateEvent extends MessageHandler<UpdatePlayerPacket
             player.last_render_position.x = player.render_position.x;
             player.last_render_position.y = player.render_position.y;
 
-            player.still = player.real_position.x == positions[i + 1] && player.real_position.y == positions[i + 2];
-            player.real_position.x = positions[i + 1];
-            player.real_position.y = positions[i + 2];
+            player.still = player.real_position.x == x && player.real_position.y == y;
+            player.real_position.x = x;
+            player.real_position.y = y;
 
             if (player.sid === Client.mySID && (PacketReplayer.slowTime !== 0 || PacketReplayer.quickTime)) {
                 player.render_position.x = player.real_position.x;
@@ -73,7 +78,7 @@ export default class PlayerUpdateEvent extends MessageHandler<UpdatePlayerPacket
             player.next_position.y = realY * 2 - lastY;
 
             player.d1 = player.d2;
-            player.d2 = positions[i + 3] / 100;
+            player.d2 = at(positions, i + 3) / 100;
             player.deltaTime = 0;
 
             PlayerManager.players.visible.add(player);
@@ -139,8 +144,8 @@ export default class PlayerUpdateEvent extends MessageHandler<UpdatePlayerPacket
         const allVisible = PlayerManager.players.visible.all;
         const myPos = Client.player?.real_position;
 
-        for (let i = 0; i < hidden.length; i++) {
-            const player = PlayerManager.get(hidden[i]);
+        for (const sid of hidden) {
+            const player = PlayerManager.get(sid);
             if (!player) continue;
 
             PlayerManager.players.visible.remove(player.sid);
@@ -233,6 +238,7 @@ export default class PlayerUpdateEvent extends MessageHandler<UpdatePlayerPacket
 
         for (let i = 0, len = players.length; i < len; i++) {
             const player = players[i];
+            if (!player) continue;
 
             if (!this.tmpSidSet.has(player.sid)) {
                 player.resetReloads();

@@ -1,4 +1,5 @@
 import Player, { ChatMessage } from "@entities/Player";
+import { at } from "@utils/array/at";
 import { logPacket } from "@core/socket/packetLog";
 import { handleAllianceUpdates } from "@core/logic/alliances";
 import Client, { deathText, pingDisplay } from "@core/Client";
@@ -89,7 +90,7 @@ export default class SocketListener {
 
         const now = new Date();
         const date = now.toISOString().split('T')[0];
-        const time = now.toTimeString().split(' ')[0].replace(/:/g, '-');
+        const time = (now.toTimeString().split(' ')[0] ?? '').replace(/:/g, '-');
 
         const fileName = `${manual ? "m" : "d"}_log_${date}_${time}.fpl`;
         const buffer = PacketRecorder.compileBinaryLog();
@@ -247,8 +248,7 @@ export default class SocketListener {
                 const teams = data.teams;
                 Client.alliances = teams;
     
-                for (let i = 0, len = teams.length; i < len; i++) {
-                    const team = teams[i];
+                for (const team of teams) {
                     Client.allianceMap.set(team.sid, new Set([team.owner]));
                 }
     
@@ -356,8 +356,9 @@ export default class SocketListener {
             },
 
             [PacketMap.SERVER_TO_CLIENT.LOAD_GAME_OBJECT]: (data) => {
-                for (let i = 0; i < data.length; i += 8) {
-                    ObjectManager.add(data[i], data[i + 1], data[i + 2], data[i + 3], data[i + 4], data[i + 5], data[i + 6], true, data[i + 7]);
+                // Whole records only (8 numbers each).
+                for (let i = 0; i + 8 <= data.length; i += 8) {
+                    ObjectManager.add(at(data, i), at(data, i + 1), at(data, i + 2), at(data, i + 3), at(data, i + 4), at(data, i + 5), at(data, i + 6), true, data[i + 7]);
                 }
             },
 

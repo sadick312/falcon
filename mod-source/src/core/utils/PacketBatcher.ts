@@ -1,4 +1,5 @@
 import Client from "@core/Client";
+import { at } from "@utils/array/at";
 import PlayerUpdateEvent from "@core/socket/events/core/PlayerUpdateEvent";
 import Socket from "@core/socket/Socket";
 import { IncomingServerPackets } from "@root/utils/socket/PacketLogging";
@@ -82,16 +83,16 @@ export default class PacketBatcher {
 
         let lastUpdate = -1;
         for (let i = buffer.length - 1; i >= 0; i--) {
-            if (buffer[i].type === PacketMap.SERVER_TO_CLIENT.UPDATE_PLAYERS) {
+            if (buffer[i]?.type === PacketMap.SERVER_TO_CLIENT.UPDATE_PLAYERS) {
                 lastUpdate = i;
                 break;
             }
         }
 
         for (let i = 0; i < buffer.length; i++) {
-            if (i !== lastUpdate) ordered.push(buffer[i]);
+            if (i !== lastUpdate) ordered.push(at(buffer, i));
         }
-        if (lastUpdate !== -1) ordered.push(buffer[lastUpdate]);
+        if (lastUpdate !== -1) ordered.push(at(buffer, lastUpdate));
 
         return ordered;
     }
@@ -106,6 +107,7 @@ export default class PacketBatcher {
 
         for (let i = 0, len = batch.length; i < len; i++) {
             const packet = batch[i];
+            if (!packet) continue;
 
             try {
                 if (packet.type === PacketMap.SERVER_TO_CLIENT.UPDATE_PLAYERS) {

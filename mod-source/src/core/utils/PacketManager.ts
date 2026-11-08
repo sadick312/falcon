@@ -1,4 +1,5 @@
 import items, { FOOD_GROUP_ID } from "@constants/items";
+import { at } from "@utils/array/at";
 import Client from "@core/Client";
 import { tickState } from "@core/TickState";
 import ChatCommands from "@core/utils/ChatCommands";
@@ -50,9 +51,9 @@ function createCipherMap(charArray: string[], seed: number) {
 
     for (let i = length - 1; i > 0; i--) {
         const randomIndex = Math.floor(nextRandom() * (i + 1));
-        const temp = indices[i];
+        const temp = at(indices, i);
 
-        indices[i] = indices[randomIndex];
+        indices[i] = at(indices, randomIndex);
         indices[randomIndex] = temp;
     }
 
@@ -60,8 +61,8 @@ function createCipherMap(charArray: string[], seed: number) {
     const decryptMap: Record<number, string> = {};
 
     for (let i = 0; i < length; i++) {
-        const char = charArray[i];
-        const shuffledIndex = indices[i];
+        const char = at(charArray, i);
+        const shuffledIndex = at(indices, i);
 
         encryptMap[char] = shuffledIndex;
         decryptMap[shuffledIndex] = char;
@@ -110,10 +111,11 @@ export function xorPacket(data: Uint8Array, seed: number) {
         state ^= state >>> 17;
         state ^= state << 5;
 
-        data[offset] ^= state & 0xff;
-        if (offset + 1 < data.length) data[offset + 1] ^= (state >>> 8) & 0xff;
-        if (offset + 2 < data.length) data[offset + 2] ^= (state >>> 16) & 0xff;
-        if (offset + 3 < data.length) data[offset + 3] ^= state >>> 24;
+        // Every offset read here is below data.length, so `?? 0` never applies.
+        data[offset] = (data[offset] ?? 0) ^ (state & 0xff);
+        if (offset + 1 < data.length) data[offset + 1] = (data[offset + 1] ?? 0) ^ ((state >>> 8) & 0xff);
+        if (offset + 2 < data.length) data[offset + 2] = (data[offset + 2] ?? 0) ^ ((state >>> 16) & 0xff);
+        if (offset + 3 < data.length) data[offset + 3] = (data[offset + 3] ?? 0) ^ (state >>> 24);
     }
 }
 
@@ -185,7 +187,7 @@ export default class PacketManager {
         const hash = hmac(sha256, this.salt!, data);
 
         for (let i = 0; i < PacketManager.PACKET_PADDING; i++) {
-            this.SIGNATURE_BUFFER[i] = hash[i];
+            this.SIGNATURE_BUFFER[i] = hash[i] ?? 0;
         }
 
         this.packetSignBuffer[0] = this.SIGNATURE_BUFFER;
@@ -205,8 +207,7 @@ export default class PacketManager {
     }
 
     private filterChat(chatInput: string) {
-        for (let i = 0; i < profanityFilters.length; i++) {
-            const filter = profanityFilters[i];
+        for (const filter of profanityFilters) {
             if (chatInput.indexOf(filter.word) > -1) chatInput = chatInput.replace(filter.regex, filter.replacement);
         }
 

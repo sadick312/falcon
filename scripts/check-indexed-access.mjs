@@ -18,9 +18,7 @@ const OPTED_IN = [
     "src/core/utils/ChatCommands.ts",
     "src/core/utils/GameVersionCheck.ts",
     "src/core/utils/ProtocolLoader.ts",
-    "src/core/utils/PacketTracker.ts",
     "src/core/mod/utils/PingTracker.ts",
-    "src/core/socket/events/core/HealthUpdateEvent.ts",
     "src/core/logic/players/PlayerEntityHandler.ts",
     "src/utils/constants/EntityHandler.ts",
     "src/services/",
@@ -31,7 +29,9 @@ const OPTED_IN = [
     "src/utils/utils/",
     "src/constants/",
     "src/core/mod/defense/utils/ObjectUtils.ts",
-    "src/rendering/core/SpriteCache.ts"
+    "src/rendering/",
+    "src/core/socket/",
+    "src/core/utils/"
 ];
 
 const root = resolve(import.meta.dirname, "..");

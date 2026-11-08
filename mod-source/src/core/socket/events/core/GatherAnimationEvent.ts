@@ -1,4 +1,4 @@
-import items from "@constants/items";
+import { getWeapon } from "@constants/items";
 import { logPacket } from "@core/socket/packetLog";
 import { STORE_HAT_MAP } from "@constants/store";
 import Client from "@core/Client";
@@ -23,7 +23,7 @@ export default class GatherAnimationEvent extends MessageHandler<GatherAnimation
             PlayerCombatManager.update(player, index, undefined, true);
             PlayerCombatManager.startReload(player, index);
 
-            const wpn = items.weapons[index];
+            const wpn = getWeapon(index);
             player.animTime = player.animSpeed = wpn.speed;
             player.targetAngle = (didHit ? -ScriptConfig.HIT_ANGLE : -Math.PI);
             player.tmpRatio = 0;
@@ -43,7 +43,7 @@ export default class GatherAnimationEvent extends MessageHandler<GatherAnimation
 
                 for (let i = 0, len = onRenderObjects.length; i < len; i++) {
                     const obj = onRenderObjects[i];
-                    if (!obj.active) continue;
+                    if (!obj || !obj.active) continue;
                     if (!Client.isTeam(player, obj.ownerSID)) continue;
 
                     const tmpDir = getDir(obj, player.real_position);
@@ -59,9 +59,7 @@ export default class GatherAnimationEvent extends MessageHandler<GatherAnimation
                 ModManager.nextTick(() => {
                     const totalDamage = BreakerUtils.getObjectDamage(player, index < 9 ? 0 : 1, player.skinIndex !== STORE_HAT_MAP.TANK_GEAR);
 
-                    for (let i = 0, len = tmpB.length; i < len; i++) {
-                        const obj = tmpB[i];
-
+                    for (const obj of tmpB) {
                         obj.health -= totalDamage;
                         if (obj.health <= 0) obj.health = obj.maxHealth - totalDamage;
 
