@@ -210,6 +210,13 @@ export default class HatSystem {
             return STORE_HAT_MAP.SOLDIER_HELMET;
         }
 
+        // Soldier Helmet + Angel Wings: while hurt, take less damage while Angel Wings regenerates (fetchBestAccessory),
+        // instead of Winter Cap, Booster Hat or waiting. Everything above (forced, attack, EMP, spike gear, flipper) wins.
+        if (this.useSoldierAngelWings(player)) {
+            activityList.push("soldierAngelWings");
+            return STORE_HAT_MAP.SOLDIER_HELMET;
+        }
+
         if (player.real_position.y <= ScriptConfig.SNOW_BIOME_TOP) {
             return STORE_HAT_MAP.WINTER_CAP;
         }
@@ -223,6 +230,12 @@ export default class HatSystem {
             return STORE_HAT_MAP.IGNORE;
 
         return STORE_HAT_MAP.SOLDIER_HELMET;
+    }
+
+    /** The "Soldier + Angel Wings" setting is on, we're hurt, and we own both. */
+    private static useSoldierAngelWings(player: Player) {
+        return !!Menu.getValue("soldierAngelWings") && player.health < player.maxHealth &&
+            !!player.skins[STORE_HAT_MAP.SOLDIER_HELMET] && !!player.tails[STORE_ACCESSORY_MAP.ANGEL_WINGS];
     }
 
     private static readonly CLOSE_DISTANCE_SQ = 350 * 350;
@@ -265,6 +278,10 @@ export default class HatSystem {
             tickState.activityList.push("bloodWings");
             return STORE_ACCESSORY_MAP.BLOOD_WINGS;
         }
+
+        // Soldier Helmet + Angel Wings: regenerate while hurt, near an enemy or not (instead of Shadow / Corrupt X Wings or
+        // Monkey Tail). An attack's own accessory, push-strike wings and Blood Wings above still come first.
+        if (this.useSoldierAngelWings(player)) return STORE_ACCESSORY_MAP.ANGEL_WINGS;
 
         if (nearestEnemy && CombatUtils.isAttackPrimary(player.weapons[0])) {
             const distSq = getDistSq(player.real_position, nearestEnemy.real_position);

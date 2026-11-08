@@ -76,6 +76,7 @@ The **Favorites** tab lists the settings you starred; **Credits** has no setting
   - **Hat Switching** (`defensiveHatSwitching`, toggle, default: on) — Allows the action of hat switching to mitigate potential damages.
   - **Blood Wings Optimizations** (`bloodWingsOptimizations`, toggle, default: off) — While hurt, wears Blood Wings for melee hits on enemies (heals 20% of the damage, without shame). At 4+ shame, Auto Heal lets such a hit heal instead of eating.
   - **Angel Wings Regen** (`angelWingsRegen`, toggle, default: off) — While hurt and no enemy is close, wears Angel Wings (3 health a second, without shame) instead of Monkey Tail.
+  - **Soldier + Angel Wings** (`soldierAngelWings`, toggle, default: off) — While hurt, near an enemy or not, wears Soldier Helmet (less damage) with Angel Wings (3 health a second, without shame). Safety hats (forced soldier/EMP, attacks, spike gear, flipper in water) and Blood Wings hits still come first.
 - **Safe Walk** (`safeWalk`, toggle, default: on) — Prevents walking into dangerous or annoying buildings.
   - **Ignore My Teleports** (`safeWalkIgnoreMyTps`, toggle, default: on) — Safe walk doesn't stop you from walking into your own teleports.
   - **Ignore Allied Boost Pads** (`safeWalkIgnoreAllyBoostPads`, toggle, default: on) — Safe walk doesn't stop you from walking into boost pads placed by allies.
