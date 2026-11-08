@@ -13,7 +13,7 @@ import ScriptConfig from "@utils/config/ScriptConfig";
 import getDistSq from "@utils/geometry/getDistSq";
 import getMag from "@utils/geometry/getMag";
 import getMagSq from "@utils/geometry/getMagSq";
-import { isCactusObject, isInWater, SNOW_SPEED, WATER_CURRENT } from "@constants/world";
+import { isCactusObject, isInWater, PLAYER_DECELERATION, SNOW_SPEED, WATER_CURRENT } from "@constants/world";
 
 interface BaseSimAction {
     dontUse?: boolean;
@@ -92,7 +92,7 @@ export class SimulationOptions {
 }
 
 export default class MovementPhysicsSimulator {
-    static readonly PLAYER_DECELERATION = Math.pow(0.993, ScriptConfig.SERVER_UPDATE_SPEED);
+    static readonly PLAYER_DECELERATION = PLAYER_DECELERATION;
     private static internalTmpObjects: Readonly<GameObjectSimulationState>[] = [];
 
     private static collisionMap: number[] = [];

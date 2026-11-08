@@ -9,7 +9,7 @@ import AngleFinder from "@placing/AngleFinder";
 import SpriteCache from "@rendering/core/SpriteCache";
 import RendererUtils from "@rendering/RendererUtils";
 import { renderProjectile } from "@rendering/utils/core/renderProjectiles";
-import MovementPhysicsSimulator from "@simulation/MovementPhysicsSimulator";
+import { PLAYER_DECELERATION } from "@constants/world";
 import { PlayerSimulationState } from "@simulation/SimulationStates";
 import ScriptConfig from "@utils/config/ScriptConfig";
 import lerp from "@utils/math/lerp";
@@ -515,12 +515,12 @@ export default class Player implements Entity {
         let velY = (this.next_position.y - this.real_position.y) / ScriptConfig.SERVER_UPDATE_SPEED;
 
         if (velX) {
-            velX *= MovementPhysicsSimulator.PLAYER_DECELERATION;
+            velX *= PLAYER_DECELERATION;
             if (Math.abs(velX) <= 0.01) velX = 0;
         }
 
         if (velY) {
-            velY *= MovementPhysicsSimulator.PLAYER_DECELERATION;
+            velY *= PLAYER_DECELERATION;
             if (Math.abs(velY) <= 0.01) velY = 0;
         }
 
