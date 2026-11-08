@@ -70,9 +70,11 @@ export interface ReplayOptions {
     traceState?: boolean;
     /** How to load the mod (see the top of this file). Default "modules". */
     mode?: "modules" | "bundle";
+    /** Called after every server tick ("a" packet), with the loaded mod (used by the soak test to sample memory). */
+    onTick?: (tick: number, mod: ModApi) => void;
 }
 
-interface ModApi {
+export interface ModApi {
     profiler: typeof import("@services/profiler/Profiler");
     Menu: typeof import("@menu/Menu").default;
     Client: typeof import("@core/Client").default;
@@ -158,7 +160,7 @@ function snapshotState(mod: ModApi, tick: number) {
     return parts.join("|") + "\n";
 }
 
-function summarizeState(mod: ModApi): StateSummary {
+export function summarizeState(mod: ModApi): StateSummary {
     const { Client, PlayerManager, ObjectManager, ProjectileManager, ais } = mod;
     const me = Client.player;
     return {
@@ -222,9 +224,12 @@ export async function replay(packets: Packet[], options: ReplayOptions = {}): Pr
         }
 
         const socket = Client.socket as unknown as { handlers: Record<string, (...args: unknown[]) => void>; sendMsg: (...args: unknown[]) => void };
-        const sent: unknown[] = [];
+        // Hashed as they are sent (the same bytes as JSON.stringify of the whole list) instead of kept, so a long
+        // replay (the soak test) doesn't hold every packet in memory.
+        const sentHash = createHash("sha256");
+        let sentPackets = 0;
         let tick = 0;
-        socket.sendMsg = (type, ...args) => { sent.push([tick, type, args]); };
+        socket.sendMsg = (type, ...args) => { sentHash.update((sentPackets++ ? "," : "[") + JSON.stringify([tick, type, args])); };
 
         let now = 0;
         for (const packet of packets) {
@@ -246,16 +251,17 @@ export async function replay(packets: Packet[], options: ReplayOptions = {}): Pr
             if (packet.type === "a") {
                 tick++;
                 if (stateHash) stateHash.update(snapshotState(mod, tick));
+                options.onTick?.(tick, mod);
             }
         }
 
         return {
             profile: options.profile ? profiler.profileSummary() : {},
             ticks: tick,
-            fingerprint: createHash("sha256").update(JSON.stringify(sent)).digest("hex").slice(0, 16),
+            fingerprint: sentHash.update(sentPackets ? "]" : "[]").digest("hex").slice(0, 16),
             angleFingerprint: angleHash?.digest("hex").slice(0, 16),
             angleComputes,
-            sentPackets: sent.length,
+            sentPackets,
             stateFingerprint: stateHash?.digest("hex").slice(0, 16),
             finalState: stateHash ? summarizeState(mod) : undefined,
             errors

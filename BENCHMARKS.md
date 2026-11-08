@@ -83,6 +83,26 @@ loads the mod again) or from the PC being busy, so cutting allocations would not
 9%, `Grader.prepare` 8%, `isInLineOfSight` 7%, `computeInterval` 6%, and a long tail. None of these has an
 obvious large saving left; each has already been tuned (candidate lists, cached aims, cheap tests first).
 
+## Soak test (memory over 10 minutes)
+
+```bash
+BENCH_SOAK=1 npm run bench -- soak
+```
+
+Plays about 10 minutes of game in one session and measures memory after a forced garbage collection every game
+minute. **steady** loops the synthetic fight (3 players, 49 buildings); **churn** plays the busy real recording 5
+times in a row (players and buildings come and go).
+
+| Run | Ticks | Heap at minute 2 | Heap at minute 9 | Growth |
+|---|---:|---:|---:|---:|
+| steady | 5361 | 82.28 MB | 82.59 MB | +0.3 MB |
+| churn | 5401 | 101.50 MB | 101.71 MB | +0.2 MB |
+
+Flat: no leak. Player and building counts stay the same throughout. (A first run showed about 1 MB per minute,
+which turned out to be the test harness: Vitest's spies remember every call, and the replay kept every sent packet.
+The soak test now clears the spies, and the replay hashes sent packets as they go; the packet fingerprints are
+unchanged.)
+
 ## Not measured here: drawing
 
 The renderer (canvas drawing every frame) can't be timed in Node; it needs a real browser. To measure it, open the
