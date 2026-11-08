@@ -12,7 +12,7 @@ import HatSystem from "@core/mod/defense/defense-modules/HatSystem";
 import DefenseSystem from "@core/mod/defense/DefenseSystem";
 import AutoBreaker from "@core/mod/defense/modules/AutoBreaker";
 import BreakerUtils from "@core/mod/defense/utils/BreakerUtils";
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import Menu from "@menu/Menu";
 import Angle from "@placing/Angle";
 
@@ -39,7 +39,7 @@ export default class AppleInstakiller extends CombatModule {
     }
 
     protected canExecute() {
-        const enemy = ModManager.enemyData.nearest;
+        const enemy = tickState.enemyData.nearest;
 
         if (!enemy) return false;
         if (AttackManager.isAttacking()) return false;
@@ -73,7 +73,7 @@ export default class AppleInstakiller extends CombatModule {
 
         const primary = PlayerCombatManager.fetch(player, 0);
         const secondary = PlayerCombatManager.fetch(player, 1);
-        const nearestEnemy = ModManager.enemyData.nearest!;
+        const nearestEnemy = tickState.enemyData.nearest!;
 
         const enemyTrap = nearestEnemy.trap;
         if (!enemyTrap) return;
@@ -92,7 +92,7 @@ export default class AppleInstakiller extends CombatModule {
 
     protected execute() {
         const player = Client.player;
-        const nearestEnemy = ModManager.enemyData.nearest!;
+        const nearestEnemy = tickState.enemyData.nearest!;
 
         const primary = PlayerCombatManager.fetch(player, 0);
         const secondary = PlayerCombatManager.fetch(player, 1);

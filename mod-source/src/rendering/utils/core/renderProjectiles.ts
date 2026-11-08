@@ -1,7 +1,7 @@
 import items, { IProjectile } from "@constants/items";
 import Projectile from "@entities/Projectile";
 import ProjectileManager from "@core/logic/ProjectileManager";
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import CameraManager from "@rendering/core/CameraManager";
 import { mainContext } from "@rendering/RenderContext";
 import RendererUtils, { isOnScreen } from "@rendering/RendererUtils";
@@ -67,7 +67,7 @@ export default function renderProjectiles(delta: number, layer: number) {
         }
     }
 
-    if (layer === 1 && ModManager.tick % 90 === 0) {
+    if (layer === 1 && tickState.tick % 90 === 0) {
         let totalInactive = 0;
 
         for (let i = 0, len = projectiles.length; i < len; i++) {

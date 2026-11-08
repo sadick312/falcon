@@ -3,7 +3,7 @@ import Player from "@entities/Player";
 import Client from "@core/Client";
 import PlayerManager from "@core/logic/players/PlayerManager";
 import AttackManager from "@core/mod/combat/core/AttackManager";
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import PacketTracker from "@core/utils/PacketTracker";
 import Menu from "@menu/Menu";
 import CameraManager from "@rendering/core/CameraManager";
@@ -77,7 +77,7 @@ export default function renderNames() {
                 }
             }
 
-            if (entity.isPlayer && ModManager.enemyData.nearest?.sid === entity.sid) {
+            if (entity.isPlayer && tickState.enemyData.nearest?.sid === entity.sid) {
                 if (AttackManager.oneTicker.tapMode && SpriteCache.iconSprites["oneTickCrosshair"].isLoaded) {
                     mainContext.drawImage(
                         SpriteCache.iconSprites["oneTickCrosshair"],

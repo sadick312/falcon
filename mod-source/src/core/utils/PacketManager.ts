@@ -1,6 +1,6 @@
 import items, { FOOD_GROUP_ID } from "@constants/items";
 import Client from "@core/Client";
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import ChatCommands from "@core/utils/ChatCommands";
 import { MooMooProtocol } from "@core/utils/CaptchaManager";
 import { hmac } from "@noble/hashes/hmac.js";
@@ -245,7 +245,7 @@ export default class PacketManager {
         } else if (type === PacketMap.CLIENT_TO_SERVER.SEND_HIT) {
             // A hit carries its own direction, so the next identical aim packet is redundant.
             if (typeof data[1] === "number") this.aimDirection = data[1];
-            if (data[0] === 1 && this.foodSelected) Client.lastAteTick = ModManager.tick;
+            if (data[0] === 1 && this.foodSelected) Client.lastAteTick = tickState.tick;
         } else if (type === PacketMap.CLIENT_TO_SERVER.SEND_UPGRADE) {
             const id = data[0];
             if (Client.upgradesObtained.has(id)) return false;

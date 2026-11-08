@@ -8,7 +8,7 @@ import AttackManager from "@core/mod/combat/core/AttackManager";
 import AttackQueuePool, { AttackQueue } from "@core/mod/combat/core/AttackQueuePool";
 import HatSystem from "@core/mod/defense/defense-modules/HatSystem";
 import DefenseSystem from "@core/mod/defense/DefenseSystem";
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import Menu from "@menu/Menu";
 import MovementPhysicsSimulator, { KnockbackSimAction } from "@simulation/MovementPhysicsSimulator";
 
@@ -48,7 +48,7 @@ export default class BarbarianKnockbacker extends CombatModule {
     protected canExecute() {
         if (AttackManager.isAttacking()) return false;
         if (!HatSystem.allowHatSwitch()) return false;
-        if (!ModManager.enemyData.nearest) return false;
+        if (!tickState.enemyData.nearest) return false;
         if (!Menu.getValue("barbKnockback")) return false;
         if (DefenseSystem.canPlaceOnMe) return false;
         if (!Client.player.skins[STORE_HAT_MAP.BARBARIAN_ARMOR]) return false;
@@ -57,7 +57,7 @@ export default class BarbarianKnockbacker extends CombatModule {
 
     protected execute() {
         const player = Client.player;
-        const nearestEnemy = ModManager.enemyData.nearest!;
+        const nearestEnemy = tickState.enemyData.nearest!;
 
         const wpnData = items.weapons[nearestEnemy.weaponIndex];
         if (wpnData.projectile !== undefined) return;

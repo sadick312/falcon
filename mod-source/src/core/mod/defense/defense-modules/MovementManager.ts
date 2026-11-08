@@ -6,7 +6,7 @@ import ObjectManager from "@core/logic/ObjectManager";
 import AttackManager from "@core/mod/combat/core/AttackManager";
 import AutoPusher from "@core/mod/combat/core/AutoPusher";
 import MovementUtils from "@core/mod/defense/utils/MovementUtils";
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import Menu from "@menu/Menu";
 import PacketMap from "@root/utils/socket/PacketMap";
 import { Input } from "@ui/Hook";
@@ -96,7 +96,7 @@ export default class MovementManager {
 
         if (action && action.reason === "oneTick") {
             const mode = action.tickMode!;
-            const ang = ModManager.enemyData.angle;
+            const ang = tickState.enemyData.angle;
             return mode === "away" ? ang + Math.PI : mode === "stop" ? null : ang;
         }
 
@@ -187,7 +187,7 @@ export default class MovementManager {
             if (!Menu.getValue("safeWalk")) return;
             if (Input.keys["ShiftLeft"]) return;
 
-            const activityList = ModManager.activityList;
+            const activityList = tickState.activityList;
             const isBlocked = this.checkAngleCollision(moveDir);
             if (!isBlocked) return;
 

@@ -7,7 +7,7 @@ import AttackManager from "@core/mod/combat/core/AttackManager";
 import AttackQueuePool, { AttackQueue } from "@core/mod/combat/core/AttackQueuePool";
 import CombatModule from "@core/mod/combat/utils/CombatModule";
 import DefenseSystem from "@core/mod/defense/DefenseSystem";
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import Menu from "@menu/Menu";
 import withinDist from "@utils/geometry/withinDist";
 import { BULL_DAMAGE_MULT } from "@constants/world";
@@ -40,7 +40,7 @@ export default class AntiBuller extends CombatModule {
     }
 
     private hasPredictedBullHit() {
-        const nearestEnemy = ModManager.enemyData.nearest!;
+        const nearestEnemy = tickState.enemyData.nearest!;
 
         if (!nearestEnemy.damages.length) return false;
 
@@ -75,8 +75,8 @@ export default class AntiBuller extends CombatModule {
         }
 
         const ourPrimary = PlayerCombatManager.fetch(player, 0);
-        const nearby = ModManager.enemyData.nearby;
-        const nearestEnemy = ModManager.enemyData.nearest;
+        const nearby = tickState.enemyData.nearby;
+        const nearestEnemy = tickState.enemyData.nearest;
 
         if (!CombatUtils.isAttackPrimary(player.weapons[0])) return;
         if (!nearestEnemy) {

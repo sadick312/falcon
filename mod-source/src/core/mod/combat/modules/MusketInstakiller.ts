@@ -8,7 +8,7 @@ import CombatModule from "@core/mod/combat/utils/CombatModule";
 import CombatUtils from "@core/mod/combat/utils/CombatUtils";
 import HatSystem from "@core/mod/defense/defense-modules/HatSystem";
 import DefenseUtils from "@core/mod/defense/utils/DefenseUtils";
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import Menu from "@menu/Menu";
 import { BULL_DAMAGE_MULT } from "@constants/world";
 
@@ -48,7 +48,7 @@ export default class MusketInstakiller extends CombatModule {
         if (!Menu.getValue("musketInsta")) return false;
         if (AttackManager.isAttacking()) return false;
         if (!HatSystem.allowHatSwitch()) return false;
-        return !!ModManager.enemyData.nearest;
+        return !!tickState.enemyData.nearest;
     }
 
     /** The damage the combo deals to `enemy`: the bull polearm hit plus the musket shot and turret bullet. */
@@ -60,7 +60,7 @@ export default class MusketInstakiller extends CombatModule {
 
     protected execute() {
         const player = Client.player;
-        const enemy = ModManager.enemyData.nearest!;
+        const enemy = tickState.enemyData.nearest!;
 
         if (player.weapons[0] !== WEAPON_ID_MAP.POLEARM || player.weapons[1] !== WEAPON_ID_MAP.MUSKET) return;
         if (!player.skins[STORE_HAT_MAP.BULL_HELMET] || !player.skins[STORE_HAT_MAP.TURRET_GEAR]) return;

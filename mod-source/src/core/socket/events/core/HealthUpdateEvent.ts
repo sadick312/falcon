@@ -5,7 +5,7 @@ import Client from "@core/Client";
 import PlayerManager from "@core/logic/players/PlayerManager";
 import HatSystem from "@core/mod/defense/defense-modules/HatSystem";
 import PingTracker from "@core/mod/utils/PingTracker";
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import MessageHandler from "@core/socket/events/utils/MessageHandler";
 import { ChatLog } from "@menu/Menu";
 import PacketMap from "@root/utils/socket/PacketMap";
@@ -21,12 +21,12 @@ export default class HealthUpdateEvent extends MessageHandler<HealthUpdatePacket
      */
     private static ateRecently() {
         const ticksOfPing = Math.ceil(PingTracker.getStablePing() / ScriptConfig.SERVER_UPDATE_SPEED);
-        return ModManager.tick - Client.lastAteTick <= 2 + ticksOfPing;
+        return tickState.tick - Client.lastAteTick <= 2 + ticksOfPing;
     }
 
     private onHeal(player: Player, delta: number) {
         if (player.hitTime && (player.sid !== Client.mySID || HealthUpdateEvent.ateRecently())) {
-            const timeSinceHit = ModManager.tick - player.hitTime;
+            const timeSinceHit = tickState.tick - player.hitTime;
             player.hitTime = 0;
 
             if (timeSinceHit <= 1) {
@@ -41,7 +41,7 @@ export default class HealthUpdateEvent extends MessageHandler<HealthUpdatePacket
     }
 
     private onDamage(player: Player, sid: number, delta: number) {
-        const tick = ModManager.tick;
+        const tick = tickState.tick;
 
         if (player.skinIndex === STORE_HAT_MAP.BULL_HELMET) {
             if (player.tailIndex === 13) {

@@ -1,4 +1,4 @@
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import AngleFinder, { FinderOptions } from "@placing/AngleFinder";
 import SpikeGrader from "@placing/grader-modules/SpikeGrader";
 import TrapGrader from "@placing/grader-modules/TrapGrader";
@@ -9,7 +9,7 @@ export default class AngleGrader {
 
     static grade(index: number, options: Readonly<FinderOptions>) {
         const angleData = AngleFinder.angleBuffer[index];
-        const nearby = ModManager.enemyData.nearby;
+        const nearby = tickState.enemyData.nearby;
         const grader = angleData.isSpike ? this.spikeGrader : this.trapGrader;
 
         grader.prepare(angleData, nearby, !!options.preplace, options.obj);

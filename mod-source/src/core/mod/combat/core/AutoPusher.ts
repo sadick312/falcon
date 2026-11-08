@@ -2,7 +2,7 @@ import GameObject from "@constants/GameObject";
 import Player from "@entities/Player";
 import Client from "@core/Client";
 import ObjectManager from "@core/logic/ObjectManager";
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import Menu from "@menu/Menu";
 import Vec2 from "@mod-types/geometry/Vec2";
 import { Point } from "@mod-types/index";
@@ -51,7 +51,7 @@ export default class AutoPusher {
     }
 
     private static shouldExecute() {
-        const nearestEnemy = ModManager.enemyData.nearest;
+        const nearestEnemy = tickState.enemyData.nearest;
 
         if (!Menu.getValue("autoPush")) return null;
         if (!nearestEnemy || !nearestEnemy.trap) return null;
@@ -149,9 +149,9 @@ export default class AutoPusher {
     private static stopTicks = 0;
 
     private static shouldStop(playerPos: Point, enemyPos: Point, closestSpike: GameObject) {
-        const nearestEnemy = ModManager.enemyData.nearest!;
+        const nearestEnemy = tickState.enemyData.nearest!;
         const enemyNext = nearestEnemy.real_position;
-        const activityList = ModManager.activityList;
+        const activityList = tickState.activityList;
 
         const realScale = PLAYER_SCALE + closestSpike.getScale();
         const totalScale = 35.7 + closestSpike.getScale();
@@ -207,7 +207,7 @@ export default class AutoPusher {
     private static pathPending = false;
 
     private static async pathfind(start: Point, goal: Point): Promise<void> {
-        const activityList = ModManager.activityList;
+        const activityList = tickState.activityList;
 
         if (!this.currentPath.length) {
             this.findingPath = true;
@@ -274,7 +274,7 @@ export default class AutoPusher {
         this.resetState();
 
         const ctx = this.shouldExecute();
-        const activityList = ModManager.activityList;
+        const activityList = tickState.activityList;
         if (!ctx) return;
 
         const { playerPos, enemyPos, enemyTrap, nearestEnemy } = ctx;

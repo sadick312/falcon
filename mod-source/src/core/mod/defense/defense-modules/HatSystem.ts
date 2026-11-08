@@ -10,7 +10,7 @@ import DefenseSystem from "@core/mod/defense/DefenseSystem";
 import AutoBreaker from "@core/mod/defense/modules/AutoBreaker";
 import BreakerUtils from "@core/mod/defense/utils/BreakerUtils";
 import WingsUtils from "@core/mod/defense/utils/WingsUtils";
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import Menu from "@menu/Menu";
 import PacketMap from "@root/utils/socket/PacketMap";
 import ScriptConfig from "@utils/config/ScriptConfig";
@@ -33,10 +33,10 @@ export default class HatSystem {
 
     static canTick(execute = true) {
         const player = Client.player;
-        const tickOffset = (ModManager.tick - player.bullTick) % 9;
+        const tickOffset = (tickState.tick - player.bullTick) % 9;
 
         if (tickOffset === 0 && execute) {
-            Client.player.bullTick = ModManager.tick + 1;
+            Client.player.bullTick = tickState.tick + 1;
         }
 
         if (DefenseSystem.state.totalDamage + 5 >= 100)
@@ -108,13 +108,13 @@ export default class HatSystem {
         const state = DefenseSystem.state;
 
         if (player.trap || DefenseSystem.canPlaceOnMe || state.spikeThreats > 0) return true;
-        if (player.turretThreats > 0 || ModManager.enemyData.rangedInstaThreats > 0) return true;
+        if (player.turretThreats > 0 || tickState.enemyData.rangedInstaThreats > 0) return true;
 
         for (let i = 0, len = state.sources.length; i < len; i++) {
             if (state.sources[i] !== "primaryDamage") return true;
         }
 
-        if (ModManager.enemyData.nearby.length > 1) return true;
+        if (tickState.enemyData.nearby.length > 1) return true;
         const speed = ScriptConfig.SERVER_UPDATE_SPEED / this.POLEARM_SPEED;
         const reload = enemy.getReload(0);
         return reload + speed >= 1;
@@ -136,9 +136,9 @@ export default class HatSystem {
     private static fetchBestHat(): STORE_HAT_ID {
         const player = Client.player;
         const currentKillAction = AttackManager.currentAttackAction;
-        const activityList = ModManager.activityList;
-        const nearestEnemy = ModManager.enemyData.nearest;
-        const rangedInstaThreats = ModManager.enemyData.rangedInstaThreats;
+        const activityList = tickState.activityList;
+        const nearestEnemy = tickState.enemyData.nearest;
+        const rangedInstaThreats = tickState.enemyData.rangedInstaThreats;
         const canUseSpikeGear = AttackManager.antiBuller.consider && !DefenseSystem.canPlaceOnMe && DefenseSystem.state.spikeThreats === 0 && player.tailIndex === STORE_ACCESSORY_MAP.CORRUPT_X_WINGS;
 
         if (typeof Client.lastMoveDir === "number")
@@ -231,7 +231,7 @@ export default class HatSystem {
     private static fetchBestAccessory(): STORE_ACCESSORY_ID {
         const currentKillAction = AttackManager.currentAttackAction;
         const player = Client.player;
-        const nearestEnemy = ModManager.enemyData.nearest;
+        const nearestEnemy = tickState.enemyData.nearest;
         const primaryId = player.weapons[0];
 
         if (currentKillAction) {
@@ -252,7 +252,7 @@ export default class HatSystem {
             const isNotDaggers = primaryId !== WEAPON_ID_MAP.DAGGERS;
 
             if ((isNotDaggers || daggerBullSpam) && isWithinRange) {
-                ModManager.activityList.push("forceStrikeWings");
+                tickState.activityList.push("forceStrikeWings");
                 return STORE_ACCESSORY_MAP.SHADOW_WINGS;
             }
         }
@@ -262,7 +262,7 @@ export default class HatSystem {
         // Blood Wings Optimizations: a melee hit on an enemy heals 20% of its damage with Blood Wings on, and that
         // healing doesn't add shame (it isn't eating).
         if (Menu.getValue("bloodWingsOptimizations") && isHurt && player.tails[STORE_ACCESSORY_MAP.BLOOD_WINGS] && WingsUtils.willHitPlayer()) {
-            ModManager.activityList.push("bloodWings");
+            tickState.activityList.push("bloodWings");
             return STORE_ACCESSORY_MAP.BLOOD_WINGS;
         }
 
@@ -306,8 +306,8 @@ export default class HatSystem {
         if ((id === 0 || pool[id]) && curr !== id) {
             this.sentHatPacket = true;
             Client.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.STORE, false, id, isAccessory);
-            if (isAccessory) ModManager.brainState.accUsed = id;
-            else ModManager.brainState.hatUsed = id;
+            if (isAccessory) tickState.brainState.accUsed = id;
+            else tickState.brainState.hatUsed = id;
             return;
         }
 
@@ -321,8 +321,8 @@ export default class HatSystem {
         this.sentHatPacket = true;
         Client.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.STORE, false, 0, isAccessory);
 
-        if (isAccessory) ModManager.brainState.accUsed = 0;
-        else ModManager.brainState.hatUsed = 0;
+        if (isAccessory) tickState.brainState.accUsed = 0;
+        else tickState.brainState.hatUsed = 0;
     }
 
     static storeBuy(id: number, isAccessory: boolean) {

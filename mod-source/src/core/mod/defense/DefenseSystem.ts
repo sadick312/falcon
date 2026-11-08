@@ -15,6 +15,7 @@ import DefenseUtils from "@core/mod/defense/utils/DefenseUtils";
 import HealerUtils from "@core/mod/defense/utils/HealerUtils";
 import GameEventTracker from "@core/mod/utils/GameEventTracker";
 import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import PacketTracker from "@core/utils/PacketTracker";
 import Menu from "@menu/Menu";
 import { Point } from "@mod-types/index";
@@ -149,7 +150,7 @@ export default class DefenseSystem {
                 data.currentMax = Math.max(data.currentMax - 1, 1);
                 // How many of the next threats to leave out: 1 on even ticks, 2 on odd ones. Was a coin flip (Math.random),
                 // so the same fight could be defended differently; the tick keeps it hard to predict but repeatable.
-                data.resolveOccurances = ModManager.tick % 2 === 0 ? 1 : 2;
+                data.resolveOccurances = tickState.tick % 2 === 0 ? 1 : 2;
             } else {
                 data.resolveOccurances = 1;
             }
@@ -164,7 +165,7 @@ export default class DefenseSystem {
     private static handleSpikePlacement(hasEnemyUseHammer: boolean, highestPrimaryDamage: number, highestSpikeDamage: number, isPlacingOnMe: boolean) {
         const player = Client.player;
         const state = this.state;
-        const activityList = ModManager.activityList;
+        const activityList = tickState.activityList;
         const isLethalSpikeCombo = highestPrimaryDamage + highestSpikeDamage >= 100;
         const justGotOutOfTrap = player.wasTrapped && !player.trap;
         const justCanPlaceOnMe = (player.wasTrapped || !this.previousOnMeState) && isPlacingOnMe && !player.trap;
@@ -300,7 +301,7 @@ export default class DefenseSystem {
         const wasReloaded = enemy.getLastReload(0) !== 1 && primary.reload === 1;
         const confirmationHits = enemy.profilingData.preHitAttacks < 2 && enemy.profilingData.randomHitAttacks === 0 && wasReloaded && primary.dmg + highestSpikeDamage >= 100;
 
-        ModManager.brainState.randomHitStates.push({ sid: enemy.sid, hits: enemy.profilingData.randomHitAttacks });
+        tickState.brainState.randomHitStates.push({ sid: enemy.sid, hits: enemy.profilingData.randomHitAttacks });
 
         if (
             hasDamage && player.trap && correctHitState && AutoBreaker.allSpikesBuffer.length &&
@@ -312,7 +313,7 @@ export default class DefenseSystem {
         }
 
         const longestTickSinceHit = Math.max(enemy.weaponData.lastPrimaryTickHit, enemy.weaponData.lastSecondaryTickHit, enemy.weaponData.lastTurretTickHit);
-        const hasNotEvenAttacked = ModManager.enemyData.nearest!.sid !== enemy.sid && multipleNearbyEnemies && !primary.recentlyHit && !secondary.recentlyHit && !turret.recentlyHit;
+        const hasNotEvenAttacked = tickState.enemyData.nearest!.sid !== enemy.sid && multipleNearbyEnemies && !primary.recentlyHit && !secondary.recentlyHit && !turret.recentlyHit;
         const hasRuby = primary.variant === 3 || (secondary.id === WEAPON_ID_MAP.GREAT_HAMMER && secondary.variant === 3);
 
         if (hasDamage) {
@@ -369,7 +370,7 @@ export default class DefenseSystem {
         const myPos = player.real_position;
         const nextPos = player.next_position;
 
-        const nearby = ModManager.enemyData.nearby;
+        const nearby = tickState.enemyData.nearby;
         const state = this.state;
         const sources = this.state.sources;
 
@@ -643,8 +644,8 @@ export default class DefenseSystem {
                     }
                 }
 
-                ModManager.brainState.preHitStates.push({ sid: enemy.sid, hits: enemy.profilingData.preHitAttacks });
-                ModManager.brainState.latePreHitStates.push({ sid: enemy.sid, hits: enemy.profilingData.latePreHitAttacks });
+                tickState.brainState.preHitStates.push({ sid: enemy.sid, hits: enemy.profilingData.preHitAttacks });
+                tickState.brainState.latePreHitStates.push({ sid: enemy.sid, hits: enemy.profilingData.latePreHitAttacks });
                 if (enemy.getReload(0) !== 1 && enemy.getReload(1) !== 1 && enemy.getReload(2) !== 1) continue;
                 GameEventTracker.track(enemy.sid, PacketMap.SERVER_TO_CLIENT.GATHER_ANIMATION);
                 GameEventTracker.track(enemy.sid, PacketMap.SERVER_TO_CLIENT.ADD_PROJECTILE);
@@ -681,10 +682,10 @@ export default class DefenseSystem {
             this.normalSpikeSoldiers = 0;
         }
 
-        ModManager.brainState.preHitChances = this.preHitChances;
-        ModManager.brainState.trapHitState = this.trapHitState;
-        ModManager.brainState.canPlaceOnMe = isPlacingOnMe;
-        ModManager.brainState.spikeTickPot = { ...this.spikeTickPatternRec };
+        tickState.brainState.preHitChances = this.preHitChances;
+        tickState.brainState.trapHitState = this.trapHitState;
+        tickState.brainState.canPlaceOnMe = isPlacingOnMe;
+        tickState.brainState.spikeTickPot = { ...this.spikeTickPatternRec };
         this.previousOnMeState = isPlacingOnMe;
         this.oldConsiderAutoBreakHit = considerAutoBreakHit;
         return highestPrimaryDamage;
@@ -722,7 +723,7 @@ export default class DefenseSystem {
 
     private static processReflectionDamage() {
         const player = Client.player;
-        const nearby = ModManager.enemyData.nearby;
+        const nearby = tickState.enemyData.nearby;
         const aimDir = ModManager.getAttackDir(true);
         if (typeof aimDir !== "number") return;
 
@@ -775,7 +776,7 @@ export default class DefenseSystem {
 
         if (HatSystem.canTick(false) || Client.player.skinIndex === STORE_HAT_MAP.BULL_HELMET) {
             this.state.totalDamage += 5;
-            ModManager.brainState.sources.push(`bTick`);
+            tickState.brainState.sources.push(`bTick`);
         }
     }
 
@@ -793,8 +794,8 @@ export default class DefenseSystem {
         }
 
         this.processReflectionDamage();
-        ModManager.brainState.sources.push(...this.state.sources);
-        ModManager.brainState.totalDamage = this.state.totalDamage;
+        tickState.brainState.sources.push(...this.state.sources);
+        tickState.brainState.totalDamage = this.state.totalDamage;
         AutoHealer.main(this.state);
 
         // Healing is done for this tick and food packets are sent right away, so the ones used are

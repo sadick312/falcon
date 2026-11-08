@@ -2,7 +2,7 @@ import Player from "@entities/Player";
 import Client from "@core/Client";
 import ObjectManager from "@core/logic/ObjectManager";
 import DefenseSystem from "@core/mod/defense/DefenseSystem";
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import withinDist from "@utils/geometry/withinDist";
 
 export default class PlayerStateManager {
@@ -26,7 +26,7 @@ export default class PlayerStateManager {
 
     static updateState() {
         const allTraps = ObjectManager.pool.allTraps;
-        const enemies = ModManager.enemyData.all;
+        const enemies = tickState.enemyData.all;
         const check = (player: Player) => {
             const lastTrapSID = player.trap?.sid;
 
@@ -44,8 +44,8 @@ export default class PlayerStateManager {
                         gameObject.hideFromEnemy = false;
 
                         if (player.sid === Client.mySID) {
-                            ModManager.brainState.trapData.x = gameObject.x;
-                            ModManager.brainState.trapData.y = gameObject.y;
+                            tickState.brainState.trapData.x = gameObject.x;
+                            tickState.brainState.trapData.y = gameObject.y;
                         }
                     }
 
@@ -59,7 +59,7 @@ export default class PlayerStateManager {
             }
 
             if (player.sid === Client.mySID && (!player.trap || lastTrapSID !== player.trap.sid)) {
-                const nearby = ModManager.enemyData.nearby;
+                const nearby = tickState.enemyData.nearby;
                 DefenseSystem.trapHitState = 0;
                 DefenseSystem.preHitChances = 0;
 

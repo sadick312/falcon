@@ -11,7 +11,7 @@ import AttackQueuePool, { AttackQueue } from "@core/mod/combat/core/AttackQueueP
 import HatSystem from "@core/mod/defense/defense-modules/HatSystem";
 import DefenseSystem from "@core/mod/defense/DefenseSystem";
 import AutoBreaker from "@core/mod/defense/modules/AutoBreaker";
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import Menu from "@menu/Menu";
 import withinDist from "@utils/geometry/withinDist";
 import { BULL_DAMAGE_MULT } from "@constants/world";
@@ -30,7 +30,7 @@ export default class VelocityAttacker extends CombatModule {
     protected canExecute() {
         if (AttackManager.isAttacking()) return false;
         if (!HatSystem.allowHatSwitch()) return false;
-        if (!ModManager.enemyData.nearest) return false;
+        if (!tickState.enemyData.nearest) return false;
         if (!Menu.getValue("velocityHits")) return false;
         if (Client.player.tailIndex === STORE_ACCESSORY_MAP.MONKEY_TAIL) return false;
         if (DefenseSystem.canPlaceOnMe) return false;
@@ -40,7 +40,7 @@ export default class VelocityAttacker extends CombatModule {
 
     protected execute() {
         const player = Client.player;
-        const enemy = ModManager.enemyData.nearest!;
+        const enemy = tickState.enemyData.nearest!;
         const allSpikes = ObjectManager.pool.allSpikes;
         const primary = PlayerCombatManager.fetch(player, 0);
 

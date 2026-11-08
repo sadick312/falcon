@@ -1,7 +1,7 @@
 import items from "@constants/items";
 import Client from "@core/Client";
 import PlacementSystem from "@core/mod/combat/core/PlacementSystem";
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import getDistSq from "@utils/geometry/getDistSq";
 
 export default class AutoMiller {
@@ -36,7 +36,7 @@ export default class AutoMiller {
                     PlacementSystem.totalPlacements++;
                 }
 
-                ModManager.activityList.push("autoMills");
+                tickState.activityList.push("autoMills");
             } else if (!(player.itemCounts[3] < 299 || !player.itemCounts[3])) {
                 this.data.status = false;
             }

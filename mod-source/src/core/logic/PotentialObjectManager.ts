@@ -1,6 +1,6 @@
 import items, { LIST_ID_MAP } from "@constants/items";
 import Client from "@core/Client";
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import withinDist from "@utils/geometry/withinDist";
 
 export class PotentialObject {
@@ -104,7 +104,7 @@ export default class PotentialObjectManager {
 
             if (obj && obj.active && withinDist(obj, pos, 100)) {
                 this.lastMatchIndex = i;
-                obj.lastPredicted = ModManager.tick;
+                obj.lastPredicted = tickState.tick;
                 return;
             }
         }
@@ -113,12 +113,12 @@ export default class PotentialObjectManager {
             const obj = allObjects[i];
 
             if (obj && !obj.active) {
-                obj.redefine(x, y, ownerSID, ModManager.tick);
+                obj.redefine(x, y, ownerSID, tickState.tick);
                 return;
             }
         }
 
-        allObjects.push(new PotentialObject(x, y, ownerSID, ModManager.tick));
+        allObjects.push(new PotentialObject(x, y, ownerSID, tickState.tick));
     }
 
     /** Ghosts no enemy could place for this many ticks (1 s) are dropped; they used to stay while within 800 of us. */
@@ -128,7 +128,7 @@ export default class PotentialObjectManager {
         const allObjects = this.allObjects;
         const closeObjects = this.closeObjects;
         const onRenderObjects = this.onRenderObjects;
-        const tick = ModManager.tick;
+        const tick = tickState.tick;
 
         onRenderObjects.length = 0;
         closeObjects.length = 0;

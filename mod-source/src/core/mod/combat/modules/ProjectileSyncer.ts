@@ -7,7 +7,7 @@ import AttackQueuePool, { AttackQueue } from "@core/mod/combat/core/AttackQueueP
 import CombatModule from "@core/mod/combat/utils/CombatModule";
 import CombatUtils from "@core/mod/combat/utils/CombatUtils";
 import HatSystem from "@core/mod/defense/defense-modules/HatSystem";
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import Menu from "@menu/Menu";
 import { BULL_DAMAGE_MULT } from "@constants/world";
 
@@ -25,7 +25,7 @@ export default class ProjectileSyncer extends CombatModule {
     protected canExecute() {
         if (AttackManager.isAttacking()) return false;
         if (!HatSystem.allowHatSwitch()) return false;
-        if (!ModManager.enemyData.nearest) return false;
+        if (!tickState.enemyData.nearest) return false;
         if (Client.player.tailIndex === STORE_ACCESSORY_MAP.MONKEY_TAIL) return false;
         if (!Menu.getValue("projectileSync")) return false;
         return true;
@@ -33,7 +33,7 @@ export default class ProjectileSyncer extends CombatModule {
 
     protected execute() {
         const myPlayer = Client.player;
-        const nearestEnemy = ModManager.enemyData.nearest!;
+        const nearestEnemy = tickState.enemyData.nearest!;
 
         const primary = PlayerCombatManager.fetch(myPlayer, 0);
         const weaponRange = items.weapons[primary.id].range;

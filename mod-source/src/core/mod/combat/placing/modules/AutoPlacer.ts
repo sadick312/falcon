@@ -3,6 +3,7 @@ import PlacementSystem from "@core/mod/combat/core/PlacementSystem";
 import { FinderOptions } from "@core/mod/combat/placing/AngleFinder";
 import PingTracker from "@core/mod/utils/PingTracker";
 import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import PlayerUpdateEvent from "@core/socket/events/core/PlayerUpdateEvent";
 import PacketTracker from "@core/utils/PacketTracker";
 import Menu from "@menu/Menu";
@@ -74,7 +75,7 @@ export default class AutoPlacer extends Placer {
         const preplacement = this.preplacements[i];
         const arr = preplacement.placements[preplacement.count++];
         arr.copyFrom(item);
-        preplacement.tick = ModManager.tick;
+        preplacement.tick = tickState.tick;
     }
 
     private executePreplaceBatch(arr: Preplacement[], count: number, originalWaitMs: number) {
@@ -117,7 +118,7 @@ export default class AutoPlacer extends Placer {
         this.cachedBestAnglesCount = bestAngles.length;
         preplacement.count = 0;
 
-        const shouldTick = ModManager.tick % 2 === 0 || !Menu.getValue("twoTickPlacements");
+        const shouldTick = tickState.tick % 2 === 0 || !Menu.getValue("twoTickPlacements");
         let offset = 0;
         let requirePadding = 0;
 
@@ -153,7 +154,7 @@ export default class AutoPlacer extends Placer {
 
         this.preplacements[currentIndex].count = 0;
         this.preplacementsBufferHead = (this.preplacementsBufferHead + 1) % this.preplacements.length;
-        const shouldTick = ModManager.tick % 2 === 0 || !Menu.getValue("twoTickPlacements");
+        const shouldTick = tickState.tick % 2 === 0 || !Menu.getValue("twoTickPlacements");
 
         for (let i = 0; i < bestAnglesCount; i++) {
             const item = bestAngles[i];
@@ -187,7 +188,7 @@ export default class AutoPlacer extends Placer {
         }
 
         const took = (performance.now() - now) + this.preComputeDuration;
-        ModManager.activityList.push("autoPlace");
+        tickState.activityList.push("autoPlace");
         this.preComputeDuration = 0;
         this.update(took.toFixed(2));
     }

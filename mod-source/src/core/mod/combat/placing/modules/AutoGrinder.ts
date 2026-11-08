@@ -7,7 +7,7 @@ import CombatController from "@core/mod/combat/core/CombatController";
 import PlacementSystem from "@core/mod/combat/core/PlacementSystem";
 import PacketTracker from "@core/utils/PacketTracker";
 import BreakerUtils from "@core/mod/defense/utils/BreakerUtils";
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import Menu from "@menu/Menu";
 import PlacerUtils from "@placing/utils/PlacerUtils";
 import { Input } from "@ui/Hook";
@@ -30,8 +30,8 @@ export default class AutoGrinder {
      * (each to skip its own work while grinding); before, both calls placed and swung, so every placement went out twice.
      */
     static main(): boolean {
-        if (ModManager.tick === this.lastTick) return this.lastResult;
-        this.lastTick = ModManager.tick;
+        if (tickState.tick === this.lastTick) return this.lastResult;
+        this.lastTick = tickState.tick;
         this.lastResult = this.grind();
         return this.lastResult;
     }

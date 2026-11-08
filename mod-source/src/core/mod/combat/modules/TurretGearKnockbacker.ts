@@ -8,7 +8,7 @@ import AttackQueuePool, { AttackQueue } from "@core/mod/combat/core/AttackQueueP
 import HatSystem from "@core/mod/defense/defense-modules/HatSystem";
 import DefenseSystem from "@core/mod/defense/DefenseSystem";
 import AutoBreaker from "@core/mod/defense/modules/AutoBreaker";
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import Menu from "@menu/Menu";
 import MovementPhysicsSimulator, { DamageSimAction, KnockbackSimAction } from "@simulation/MovementPhysicsSimulator";
 import withinDist from "@utils/geometry/withinDist";
@@ -52,7 +52,7 @@ export default class TurretGearKnockbacker extends CombatModule {
     protected canExecute() {
         if (AttackManager.isAttacking()) return false;
         if (!HatSystem.allowHatSwitch()) return false;
-        if (!ModManager.enemyData.nearest) return false;
+        if (!tickState.enemyData.nearest) return false;
         if (!Menu.getValue("turretGearKB")) return false;
         if (AutoBreaker.allSpikesBuffer.length) return false;
         if (DefenseSystem.canPlaceOnMe) return false;
@@ -62,7 +62,7 @@ export default class TurretGearKnockbacker extends CombatModule {
 
     protected execute() {
         const player = Client.player;
-        const nearestEnemy = ModManager.enemyData.nearest!;
+        const nearestEnemy = tickState.enemyData.nearest!;
         const turret = PlayerCombatManager.fetch(player, 2);
 
         if (nearestEnemy.skinIndex === STORE_HAT_MAP.EMP_HELMET) return;

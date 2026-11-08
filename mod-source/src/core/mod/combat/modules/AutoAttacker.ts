@@ -8,7 +8,7 @@ import AttackQueuePool, { AttackQueue } from "@core/mod/combat/core/AttackQueueP
 import CombatModule from "@core/mod/combat/utils/CombatModule";
 import CombatUtils from "@core/mod/combat/utils/CombatUtils";
 import HatSystem from "@core/mod/defense/defense-modules/HatSystem";
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import Menu from "@menu/Menu";
 import MovementPhysicsSimulator, { DamageSimAction, KnockbackSimAction } from "@simulation/MovementPhysicsSimulator";
 import { BULL_DAMAGE_MULT } from "@constants/world";
@@ -31,7 +31,7 @@ export default class AutoAttacker extends CombatModule {
     canExecute() {
         if (AttackManager.isAttacking()) return false;
         if (!HatSystem.allowHatSwitch()) return false;
-        if (!ModManager.enemyData.nearest) return false;
+        if (!tickState.enemyData.nearest) return false;
         if (!Menu.getValue("attackFactoringKB:hits")) return false;
         return true;
     }
@@ -78,7 +78,7 @@ export default class AutoAttacker extends CombatModule {
     }
 
     execute() {
-        const nearestEnemy = ModManager.enemyData.nearest!;
+        const nearestEnemy = tickState.enemyData.nearest!;
         const player = Client.player;
         const primary = PlayerCombatManager.fetch(player, 0);
         if (primary.reload !== 1) return;

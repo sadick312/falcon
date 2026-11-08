@@ -15,11 +15,10 @@ import "@core/mod/combat/core/attackModules";
 import AutoPusher from "@core/mod/combat/core/AutoPusher";
 import CombatController from "@core/mod/combat/core/CombatController";
 import PlacementSystem from "@core/mod/combat/core/PlacementSystem";
-import { AutoHealerInternal } from "@core/mod/defense/defense-modules/AutoHealer";
 import HatSystem from "@core/mod/defense/defense-modules/HatSystem";
 import MovementManager from "@core/mod/defense/defense-modules/MovementManager";
-import DefenseSystem, { ISpikeTickPatternRec } from "@core/mod/defense/DefenseSystem";
-import AutoBreaker, { AutoBreakerInternal } from "@core/mod/defense/modules/AutoBreaker";
+import DefenseSystem from "@core/mod/defense/DefenseSystem";
+import AutoBreaker from "@core/mod/defense/modules/AutoBreaker";
 import ObjectBreaker from "@core/mod/defense/modules/ObjectBreaker";
 import TurretManager from "@core/mod/defense/modules/TurretManager";
 import BreakerUtils from "@core/mod/defense/utils/BreakerUtils";
@@ -28,7 +27,6 @@ import PingTracker from "@core/mod/utils/PingTracker";
 import PacketBatcher from "@core/utils/PacketBatcher";
 import PacketTracker from "@core/utils/PacketTracker";
 import Menu from "@menu/Menu";
-import { Point } from "@mod-types/index";
 import AutoGrinder from "@placing/modules/AutoGrinder";
 import PacketMap from "@root/utils/socket/PacketMap";
 import { profileEnd, profileLap, profileStart } from "@services/profiler/Profiler";
@@ -37,65 +35,27 @@ import { Input } from "@ui/Hook";
 import getAngleDist from "@utils/angle/getAngleDist";
 import getDir from "@utils/angle/getDir";
 import ScriptConfig from "@utils/config/ScriptConfig";
+import { createDefaultBrainState, ModBrainState, tickState } from "@core/TickState";
 import getElem from "@utils/dom/getElem";
 import getDist from "@utils/geometry/getDist";
 
 type TickTask = () => void;
 
-export interface ModBrainState {
-    tick: number;
-    damages: number[];
-    sources: string[];
-    preHitChances: number;
-    healingResponse: string;
-    activityList: string[];
-    canPlaceOnMe: boolean;
-    pingTime: number;
-    shameCount: number;
-    packets: number;
-    healingUsed: number;
-    hatUsed: number;
-    accUsed: number;
-    modBrainRuntime: number;
-    effectiveBatchWindow: number;
-    realBatchWindow: number;
-    breakerInternal: AutoBreakerInternal;
-    healingInternal: AutoHealerInternal;
-    totalDamage: number;
-    isTrapped: boolean;
-    wasTrapped: boolean;
-    preHitStates: { sid: number, hits: number }[];
-    randomHitStates: { sid: number, hits: number }[];
-    latePreHitStates: { sid: number, hits: number }[];
-    spikeTickPot: ISpikeTickPatternRec;
-    modVersion: string;
-    trapData: Point;
-    trapHitState: number;
-}
-
-interface IEnemyData {
-    nearest: Player | null;
-    nearby: Player[];
-    all: Player[];
-    angle: number;
-    rangedInstaThreats: number;
-}
+// Kept exported from here too, for the files that import it from ModManager.
+export type { ModBrainState };
 
 const activityListDisplay = getElem("activity-list-display");
 
 export default class ModManager {
-    static tick = 0;
-    static activityList: string[] = [];
-    static willBreakObjects: GameObject[] = [];
-    static enemyData: IEnemyData = {
-        nearby: [],
-        nearest: null,
-        all: [],
-        angle: 0,
-        rangedInstaThreats: 0
-    };
+    // These four live in TickState (see there); the accessors keep `ModManager.tick` etc. working.
+    static get tick() { return tickState.tick; }
+    static set tick(value: number) { tickState.tick = value; }
+    static get activityList() { return tickState.activityList; }
+    static get enemyData() { return tickState.enemyData; }
+    static get brainState() { return tickState.brainState; }
+    static set brainState(value: ModBrainState) { tickState.brainState = value; }
 
-    static brainState: ModBrainState = this.createDefaultState();
+    static willBreakObjects: GameObject[] = [];
     private static tickQueue: TickTask[] = [];
 
     /**
@@ -115,38 +75,7 @@ export default class ModManager {
         enemies.angle = 0;
         enemies.rangedInstaThreats = 0;
 
-        this.brainState = this.createDefaultState();
-    }
-
-    private static createDefaultState(): ModBrainState {
-        return {
-            tick: -1,
-            modBrainRuntime: -1,
-            preHitChances: -1,
-            damages: [], sources: [], activityList: [],
-            healingResponse: "no response",
-            canPlaceOnMe: false,
-            pingTime: 6967,
-            hatUsed: -1,
-            preHitStates: [],
-            randomHitStates: [],
-            latePreHitStates: [],
-            accUsed: -1,
-            shameCount: 67,
-            totalDamage: 0,
-            packets: 10000,
-            isTrapped: false,
-            wasTrapped: false,
-            modVersion: "v1.0.0-pub",
-            healingUsed: 9999,
-            effectiveBatchWindow: -.5,
-            realBatchWindow: -.5,
-            breakerInternal: { replaceSpike: false, replaceTrap: false, trapBreakFaster: false, isConsidering: false },
-            trapHitState: -1,
-            healingInternal: { healthAfterDamage: -676767, willDieIfDoNothing: true, alreadyForcedHat: false, empDamage: 6967, healthAfterSoldier: Infinity, currentHealth: 0, expectedDamage: 0 },
-            spikeTickPot: { amount: 1000, resetTicks: -1, resolveOccurances: 1000, hasOccuredBefore: false, currentMax: 1000, reset: false, max: 1000, lastOccured: 67 },
-            trapData: { x: -1, y: -1 }
-        };
+        this.brainState = createDefaultBrainState();
     }
 
     static getAttackDir(autoaimmer: true): number | undefined;
@@ -277,7 +206,7 @@ export default class ModManager {
 
     private static preTick() {
         const player = Client.player;
-        this.brainState = this.createDefaultState();
+        this.brainState = createDefaultBrainState();
         this.brainState.damages.push(...player.damages);
         this.brainState.pingTime = PingTracker.getCurrentPing();
         this.brainState.shameCount = player.shameCount;

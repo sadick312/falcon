@@ -12,7 +12,7 @@ import CombatUtils from "@core/mod/combat/utils/CombatUtils";
 import HatSystem from "@core/mod/defense/defense-modules/HatSystem";
 import AutoBreaker from "@core/mod/defense/modules/AutoBreaker";
 import MovementPhysicsSimulator, { DamageSimAction, KnockbackSimAction, SimulationOptions, SimulationResult } from "@core/mod/simulation/MovementPhysicsSimulator";
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import Menu from "@menu/Menu";
 import lineInRect from "@utils/geometry/lineInRect";
 import withinDist from "@utils/geometry/withinDist";
@@ -52,7 +52,7 @@ export default class AutoInstakiller extends CombatModule {
     protected canExecute() {
         if (AttackManager.isAttacking()) return false;
         if (!HatSystem.allowHatSwitch()) return false;
-        if (!ModManager.enemyData.nearest) return false;
+        if (!tickState.enemyData.nearest) return false;
         if (AttackManager.autoInstaToggle) return true;
         if (AttackManager.placeIntent.retrap) return false;
         if (!Menu.getValue("attackFactoringKB:insta")) return false;
@@ -250,7 +250,7 @@ export default class AutoInstakiller extends CombatModule {
     protected execute() {
         const player = Client.player;
 
-        const nearestEnemy = ModManager.enemyData.nearest!;
+        const nearestEnemy = tickState.enemyData.nearest!;
         const primary = PlayerCombatManager.fetch(player, 0);
         const secondary = PlayerCombatManager.fetch(player, 1);
         const turretReload = player.getReload(2);

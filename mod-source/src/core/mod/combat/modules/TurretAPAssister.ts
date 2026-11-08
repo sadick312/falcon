@@ -8,7 +8,7 @@ import AttackManager from "@core/mod/combat/core/AttackManager";
 import AttackQueuePool, { AttackQueue } from "@core/mod/combat/core/AttackQueuePool";
 import AutoPusher from "@core/mod/combat/core/AutoPusher";
 import HatSystem from "@core/mod/defense/defense-modules/HatSystem";
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import Menu from "@menu/Menu";
 import getDistSq from "@utils/geometry/getDistSq";
 import withinDist from "@utils/geometry/withinDist";
@@ -34,7 +34,7 @@ export default class TurretAPAssister extends CombatModule {
     }
 
     protected canExecute() {
-        if (!ModManager.enemyData.nearest) return false;
+        if (!tickState.enemyData.nearest) return false;
         if (!Menu.getValue("turretBulletAssistOnAP")) return false;
         if (!HatSystem.allowHatSwitch()) return false;
         if (AttackManager.isAttacking()) return false;
@@ -44,7 +44,7 @@ export default class TurretAPAssister extends CombatModule {
 
     protected execute() {
         const player = Client.player;
-        const enemy = ModManager.enemyData.nearest!;
+        const enemy = tickState.enemyData.nearest!;
         const turret = PlayerCombatManager.fetch(player, 2);
         let spikeHit = false;
 

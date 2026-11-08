@@ -5,7 +5,7 @@ import { STORE_HAT_MAP } from "@constants/store";
 import Client from "@core/Client";
 import ObjectManager from "@core/logic/ObjectManager";
 import PlayerManager from "@core/logic/players/PlayerManager";
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import ScriptConfig from "@utils/config/ScriptConfig";
 import getDistSq from "@utils/geometry/getDistSq";
 
@@ -65,7 +65,7 @@ export default class TurretManager {
 
     static updateReloads() {
         const allTurrets = ObjectManager.allTurrets.all;
-        const nearby = ModManager.enemyData.nearby;
+        const nearby = tickState.enemyData.nearby;
         const player = Client.player;
 
         for (let i = 0, len = allTurrets.length; i < len; i++) {

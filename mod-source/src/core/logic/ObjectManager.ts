@@ -8,7 +8,7 @@ import PotentialObjectManager from "@core/logic/PotentialObjectManager";
 import AutoPusher from "@core/mod/combat/core/AutoPusher";
 import PlacementSystem from "@core/mod/combat/core/PlacementSystem";
 import DefenseSystem from "@core/mod/defense/DefenseSystem";
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import Menu from "@menu/Menu";
 import ScriptConfig from "@utils/config/ScriptConfig";
 import withinDist from "@utils/geometry/withinDist";
@@ -174,7 +174,7 @@ export default class ObjectManager {
             }
 
             if (gameObject === playerTrap) {
-                const nearby = ModManager.enemyData.nearby;
+                const nearby = tickState.enemyData.nearby;
                 DefenseSystem.trapHitState = 0;
                 DefenseSystem.preHitChances = 0;
 
@@ -184,9 +184,9 @@ export default class ObjectManager {
                 }
             }
 
-            if (Client.player && Menu.getValue("autoPlacing") && Menu.getValue("replacer") && ModManager.enemyData.nearest) {
+            if (Client.player && Menu.getValue("autoPlacing") && Menu.getValue("replacer") && tickState.enemyData.nearest) {
                 const placementRange = parseInt(Menu.getValue("autoPlaceRange"));
-                const nearestEnemy = ModManager.enemyData.nearest;
+                const nearestEnemy = tickState.enemyData.nearest;
                 const player = Client.player;
 
                 const playerPos = player.real_position;

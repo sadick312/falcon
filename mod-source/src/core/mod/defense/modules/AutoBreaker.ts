@@ -13,7 +13,7 @@ import DefenseSystem from "@core/mod/defense/DefenseSystem";
 import ObjectBreaker from "@core/mod/defense/modules/ObjectBreaker";
 import BreakerUtils from "@core/mod/defense/utils/BreakerUtils";
 import ObjectUtils from "@core/mod/defense/utils/ObjectUtils";
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import Menu from "@menu/Menu";
 import { Point } from "@mod-types/index";
 import AngleFinder, { FinderOptions } from "@placing/AngleFinder";
@@ -83,7 +83,7 @@ export default class AutoBreaker {
     private static shouldUseTankLate = false;
 
     private static isReplaceable(playerPos: Point, obj: GameObject) {
-        const nearest = ModManager.enemyData.nearest;
+        const nearest = tickState.enemyData.nearest;
 
         if (!nearest) return false;
 
@@ -103,7 +103,7 @@ export default class AutoBreaker {
     private static katanaSpikesSpikePosBuffer = { x: 0, y: 0 };
 
     private static processKatanaSpikes(player: Player, trap: GameObject) {
-        const nearestEnemy = ModManager.enemyData.nearest;
+        const nearestEnemy = tickState.enemyData.nearest;
         if (!nearestEnemy) return;
 
         if (player.weapons[0] !== WEAPON_ID_MAP.KATANA) return;
@@ -129,7 +129,7 @@ export default class AutoBreaker {
         const katanaSpikesBuffer = this.allKatanaSpikesBuffer;
         const spikeArcsBuffer = ObjectUtils.spikeArcBuffer;
 
-        const enemyToPlayer = ModManager.enemyData.angle + Math.PI;
+        const enemyToPlayer = tickState.enemyData.angle + Math.PI;
         const enemyToPlayerCos = Math.cos(enemyToPlayer);
         const enemyToPlayerSin = Math.sin(enemyToPlayer);
         const spikePos = this.katanaSpikesSpikePosBuffer;
@@ -191,7 +191,7 @@ export default class AutoBreaker {
     }
 
     private static processSpikes(player: Player, trap: GameObject, originalBestId: number, canEnemyReplaceTrap: boolean) {
-        ModManager.brainState.breakerInternal.isConsidering = true;
+        tickState.brainState.breakerInternal.isConsidering = true;
         const targetSpike = this.allSpikesBuffer[0];
         if (!targetSpike) return;
 
@@ -204,9 +204,9 @@ export default class AutoBreaker {
         const canEnemyReplaceSpike = this.isReplaceable(playerPos, targetSpike);
         const fullGreatHammerHit = 247.5;
 
-        ModManager.brainState.breakerInternal.replaceTrap = canEnemyReplaceTrap;
-        ModManager.brainState.breakerInternal.replaceSpike = canEnemyReplaceSpike;
-        ModManager.brainState.breakerInternal.trapBreakFaster = trapBreakFaster;
+        tickState.brainState.breakerInternal.replaceTrap = canEnemyReplaceTrap;
+        tickState.brainState.breakerInternal.replaceSpike = canEnemyReplaceSpike;
+        tickState.brainState.breakerInternal.trapBreakFaster = trapBreakFaster;
 
         if (targetSpike.playerDamageDealt < fullGreatHammerHit) {
             if (trap.playerDamageDealt >= fullGreatHammerHit) return;
@@ -252,7 +252,7 @@ export default class AutoBreaker {
 
     private static shouldUseTank(peek = false) {
         const allSpikesBuffer = this.allSpikesBuffer;
-        const nearby = ModManager.enemyData.nearby;
+        const nearby = tickState.enemyData.nearby;
         const player = Client.player;
 
         let oneShotThreat = false;
@@ -279,7 +279,7 @@ export default class AutoBreaker {
             return false;
         }
 
-        if (ModManager.tick - this.lastRejectedTank < 2) return true;
+        if (tickState.tick - this.lastRejectedTank < 2) return true;
         if (!oneShotThreat) return true;
 
         for (let i = 0; i < allSpikesBuffer.length; i++) {
@@ -288,7 +288,7 @@ export default class AutoBreaker {
             const isHittingSpike = withinDist(player.real_position, spike, spike.scale + 36);
 
             if (!willHitSpike && !isHittingSpike) continue;
-            if (!peek) this.lastRejectedTank = ModManager.tick;
+            if (!peek) this.lastRejectedTank = tickState.tick;
             return false;
         }
 
@@ -356,14 +356,14 @@ export default class AutoBreaker {
             if (!HatSystem.allowHatSwitch()) {
                 CombatController.skinIndex = STORE_HAT_MAP.SOLDIER_HELMET;
                 CombatController.mustBeSoldier = true;
-                ModManager.activityList.push("tankHoldOff");
+                tickState.activityList.push("tankHoldOff");
                 return true;
             }
 
             if (!this.shouldUseTank()) {
                 CombatController.skinIndex = STORE_HAT_MAP.SOLDIER_HELMET;
                 CombatController.mustBeSoldier = true;
-                ModManager.activityList.push("antiPreHit");
+                tickState.activityList.push("antiPreHit");
                 return true;
             }
 

@@ -6,7 +6,7 @@ import PlayerCombatManager from "@core/logic/players/core/PlayerCombatManager";
 import AttackManager from "@core/mod/combat/core/AttackManager";
 import AttackQueuePool, { AttackQueue } from "@core/mod/combat/core/AttackQueuePool";
 import HatSystem from "@core/mod/defense/defense-modules/HatSystem";
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import Menu from "@menu/Menu";
 
 /**
@@ -64,12 +64,12 @@ export default class ShameGrinder extends CombatModule {
     /** Whether Apple Insta should wait this tick because the enemy is still being ground down. */
     holdsAppleInsta() {
         if (!ShameGrinder.isOn()) return false;
-        const enemy = ModManager.enemyData.nearest;
+        const enemy = tickState.enemyData.nearest;
         return !!enemy && !!enemy.trap && enemy.sid === this.targetSid && !this.finished;
     }
 
     override update() {
-        const enemy = ModManager.enemyData.nearest;
+        const enemy = tickState.enemyData.nearest;
 
         if (!enemy || !enemy.trap) {
             if (this.targetSid !== -1) this.forget(-1);
@@ -81,22 +81,22 @@ export default class ShameGrinder extends CombatModule {
 
         if (enemy.clowned) {
             this.finished = true;
-            ModManager.activityList.push("shameGrind:shamed");
+            tickState.activityList.push("shameGrind:shamed");
             return;
         }
 
         if (this.lastFakeTick < 0) return;
         if (enemy.health < this.healthAtFake) this.landed = true;
-        if (ModManager.tick - this.lastFakeTick < ShameGrinder.JUDGE_AFTER_TICKS) return;
+        if (tickState.tick - this.lastFakeTick < ShameGrinder.JUDGE_AFTER_TICKS) return;
 
         // Judge the last fake once. A fake that didn't land tells us nothing.
         const rose = enemy.shameCount > this.shameAtFake;
         if (this.landed && !rose) {
             this.finished = true;
-            ModManager.activityList.push("shameGrind:stoppedHealing");
+            tickState.activityList.push("shameGrind:stoppedHealing");
         } else if (this.fakes >= ShameGrinder.MAX_FAKES) {
             this.finished = true;
-            ModManager.activityList.push("shameGrind:gaveUp");
+            tickState.activityList.push("shameGrind:gaveUp");
         }
 
         this.lastFakeTick = -1;
@@ -113,7 +113,7 @@ export default class ShameGrinder extends CombatModule {
 
     protected execute() {
         const player = Client.player;
-        const enemy = ModManager.enemyData.nearest!;
+        const enemy = tickState.enemyData.nearest!;
 
         // Only what the real Apple Insta needs too: the great hammer to finish with, and a ready primary in reach.
         if (player.weapons[1] !== WEAPON_ID_MAP.GREAT_HAMMER) return;
@@ -128,7 +128,7 @@ export default class ShameGrinder extends CombatModule {
         AttackManager.addAttackQueue(this.attackAction);
 
         this.fakes++;
-        this.lastFakeTick = ModManager.tick;
+        this.lastFakeTick = tickState.tick;
         this.shameAtFake = enemy.shameCount;
         this.healthAtFake = enemy.health;
         this.landed = false;

@@ -1,4 +1,4 @@
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import { IncomingServerPackets } from "@root/utils/socket/PacketLogging";
 import PacketMap, { MOOMOO_SERVER_TO_CLIENT_MAP } from "@root/utils/socket/PacketMap";
 import PacketRecorder from "@services/packet-recorder/PacketRecorder";
@@ -12,7 +12,7 @@ export function logPacket(type: keyof MOOMOO_SERVER_TO_CLIENT_MAP, typedData: un
 
     PacketRecorder.add(type, {
         timestamp: performance.now(),
-        brainState: type === PacketMap.SERVER_TO_CLIENT.UPDATE_PLAYERS ? ModManager.brainState : undefined,
+        brainState: type === PacketMap.SERVER_TO_CLIENT.UPDATE_PLAYERS ? tickState.brainState : undefined,
         packetData: {
             type: type,
             data: typedData

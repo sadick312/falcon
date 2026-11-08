@@ -11,7 +11,7 @@ import AutoPusher from "@core/mod/combat/core/AutoPusher";
 import PlacementSystem from "@core/mod/combat/core/PlacementSystem";
 import ModModule from "@core/mod/utils/ModModule";
 import { getAttackModules } from "@core/mod/combat/core/attackModuleRegistry";
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import { SimulationResult } from "@simulation/MovementPhysicsSimulator";
 import withinDist from "@utils/geometry/withinDist";
 
@@ -52,7 +52,7 @@ export default class AttackManager {
         if (!AutoPusher.autoPushing) return false;
 
         const theSpike = AutoPusher.theSpike;
-        const enemy = ModManager.enemyData.nearest;
+        const enemy = tickState.enemyData.nearest;
 
         if (!enemy) return false; // shouldn't happen but to keep TS from screaming at me
         if (!theSpike) return false;
@@ -107,7 +107,7 @@ export default class AttackManager {
     };
 
     private static probePlacements() {
-        const nearestEnemy = ModManager.enemyData.nearest;
+        const nearestEnemy = tickState.enemyData.nearest;
         this.placeIntent.retrap = false;
         this.placeIntent.appleInstaIntent = false;
 

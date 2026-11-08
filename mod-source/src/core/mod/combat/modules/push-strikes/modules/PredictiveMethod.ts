@@ -7,7 +7,7 @@ import AttackQueuePool, { AttackQueue } from "@core/mod/combat/core/AttackQueueP
 import AutoPusher from "@core/mod/combat/core/AutoPusher";
 import PushSpikeMethod, { PushStrikeContext } from "@core/mod/combat/modules/push-strikes/utils/PushStrikeMethod";
 import GameEventTracker from "@core/mod/utils/GameEventTracker";
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import PacketMap from "@root/utils/socket/PacketMap";
 import withinDist from "@utils/geometry/withinDist";
 import { BULL_DAMAGE_MULT } from "@constants/world";
@@ -51,7 +51,7 @@ export default class PredictiveMethod extends PushSpikeMethod {
             this.attackData.enemy = undefined;
         }
 
-        const nearestEnemy = ModManager.enemyData.nearest;
+        const nearestEnemy = tickState.enemyData.nearest;
         const spike = AutoPusher.theSpike;
         const player = Client.player;
 
@@ -73,7 +73,7 @@ export default class PredictiveMethod extends PushSpikeMethod {
             GameEventTracker.confirm(nearestEnemy.sid, PacketMap.SERVER_TO_CLIENT.GATHER_ANIMATION)
         ) {
             const tickSinceReloaded = nearestEnemy.weaponIndex < 9 ? nearestEnemy.weaponData.lastTickSincePrimaryReloaded : nearestEnemy.weaponData.lastTickSinceSecondaryReloaded;
-            const dt = ModManager.tick - tickSinceReloaded;
+            const dt = tickState.tick - tickSinceReloaded;
             const hits = nearestEnemy.profilingData.tankUseHits[nearestEnemy.weaponIndex];
             // One slot per tick since reload (9). Later ticks used to grow the list with NaN entries.
             if (dt >= 0 && dt < hits.length) hits[dt]++;
@@ -111,7 +111,7 @@ export default class PredictiveMethod extends PushSpikeMethod {
         if (!isFinite(highestIndex)) return;
 
         const tickSinceReloaded = nearestEnemy.weaponIndex < 9 ? nearestEnemy.weaponData.lastTickSincePrimaryReloaded : nearestEnemy.weaponData.lastTickSinceSecondaryReloaded;
-        const dt = ModManager.tick - tickSinceReloaded;
+        const dt = tickState.tick - tickSinceReloaded;
         if (dt !== highestIndex - 1) return;
 
         this.attackData.dt = highestIndex;

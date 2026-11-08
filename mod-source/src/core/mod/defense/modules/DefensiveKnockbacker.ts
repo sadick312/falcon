@@ -9,7 +9,7 @@ import AttackManager from "@core/mod/combat/core/AttackManager";
 import AttackQueuePool, { AttackQueue } from "@core/mod/combat/core/AttackQueuePool";
 import HatSystem from "@core/mod/defense/defense-modules/HatSystem";
 import DefenseModule from "@core/mod/defense/utils/DefenseModule";
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import Menu from "@menu/Menu";
 import getDistSq from "@utils/geometry/getDistSq";
 import withinDist from "@utils/geometry/withinDist";
@@ -28,7 +28,7 @@ export default class DefensiveKnockbacker extends DefenseModule {
     protected canExecute() {
         if (AttackManager.isAttacking()) return false;
         if (!HatSystem.allowHatSwitch()) return false;
-        if (!ModManager.enemyData.nearest) return false;
+        if (!tickState.enemyData.nearest) return false;
         if (!Menu.getValue("defensiveKB")) return false;
         if (!Client.player.skins[STORE_HAT_MAP.TURRET_GEAR] && Menu.getValue("defKBRequireTurret")) return false;
         return true;
@@ -36,7 +36,7 @@ export default class DefensiveKnockbacker extends DefenseModule {
 
     protected execute() {
         const player = Client.player;
-        const nearestEnemy = ModManager.enemyData.nearest!;
+        const nearestEnemy = tickState.enemyData.nearest!;
 
         const primary = PlayerCombatManager.fetch(player, 0);
         const turretReload = player.getReload(2);

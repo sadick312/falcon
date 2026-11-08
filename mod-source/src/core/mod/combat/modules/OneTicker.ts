@@ -10,7 +10,7 @@ import AttackManager from "@core/mod/combat/core/AttackManager";
 import AttackQueuePool, { AttackQueue } from "@core/mod/combat/core/AttackQueuePool";
 import HatSystem from "@core/mod/defense/defense-modules/HatSystem";
 import AutoBreaker from "@core/mod/defense/modules/AutoBreaker";
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import Menu from "@menu/Menu";
 import MovementPhysicsSimulator, { KnockbackSimAction } from "@simulation/MovementPhysicsSimulator";
 import { PlayerSimulationState } from "@simulation/SimulationStates";
@@ -74,7 +74,7 @@ export default class OneTicker extends CombatModule {
             return false;
         }
 
-        if (!ModManager.enemyData.nearest) {
+        if (!tickState.enemyData.nearest) {
             this.tapMode = false;
             return false;
         }
@@ -108,7 +108,7 @@ export default class OneTicker extends CombatModule {
     }
 
     private willStayInSoldier(enemy: Player) {
-        const bTickOffset = ModManager.tick - enemy.bullTick;
+        const bTickOffset = tickState.tick - enemy.bullTick;
         if (enemy.shameCount > 0 && bTickOffset % 9 === 8) return false;
         if (enemy.clowned) return false;
         if (!enemy.findHat(STORE_HAT_MAP.TANK_GEAR)) return true;
@@ -124,7 +124,7 @@ export default class OneTicker extends CombatModule {
 
     getMoveHat(): STORE_HAT_ID {
         const player = Client.player;
-        const nearestEnemy = ModManager.enemyData.nearest;
+        const nearestEnemy = tickState.enemyData.nearest;
 
         if (player.trap) {
             return STORE_HAT_MAP.IGNORE;
@@ -146,8 +146,8 @@ export default class OneTicker extends CombatModule {
 
     getMoveDir(peek = false) {
         const player = Client.player;
-        const nearestEnemy = ModManager.enemyData.nearest;
-        const enemyAngle = ModManager.enemyData.angle;
+        const nearestEnemy = tickState.enemyData.nearest;
+        const enemyAngle = tickState.enemyData.angle;
 
         if (player.trap) {
             return null;
@@ -179,7 +179,7 @@ export default class OneTicker extends CombatModule {
 
     static canOneTick() {
         const player = Client.player;
-        const nearestEnemy = ModManager.enemyData.nearest!;
+        const nearestEnemy = tickState.enemyData.nearest!;
 
         const primary = PlayerCombatManager.fetch(player, 0);
         const turretReloadPerTick = ScriptConfig.SERVER_UPDATE_SPEED / ScriptConfig.TURRET_GEAR_RELOAD;
@@ -192,8 +192,8 @@ export default class OneTicker extends CombatModule {
 
     protected execute() {
         const player = Client.player;
-        const nearestEnemy = ModManager.enemyData.nearest!;
-        const enemyAngle = ModManager.enemyData.angle;
+        const nearestEnemy = tickState.enemyData.nearest!;
+        const enemyAngle = tickState.enemyData.angle;
 
         const primary = PlayerCombatManager.fetch(player, 0);
         const turretReloadPerTick = ScriptConfig.SERVER_UPDATE_SPEED / ScriptConfig.TURRET_GEAR_RELOAD;
@@ -267,7 +267,7 @@ export default class OneTicker extends CombatModule {
         if (isFasterExecution === null) return;
 
         let totalDmg = 25 + primary.dmg * BULL_DAMAGE_MULT;
-        const bTickOffset = ModManager.tick - nearestEnemy.bullTick;
+        const bTickOffset = tickState.tick - nearestEnemy.bullTick;
 
         const knockbackAction = this.simActions[0][0];
         knockbackAction.pos.x = secondStep.state.x;

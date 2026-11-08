@@ -6,7 +6,7 @@ import ObjectManager from "@core/logic/ObjectManager";
 import AutoPusher from "@core/mod/combat/core/AutoPusher";
 import CombatController from "@core/mod/combat/core/CombatController";
 import BreakerUtils from "@core/mod/defense/utils/BreakerUtils";
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import Menu from "@menu/Menu";
 import getAngleDist from "@utils/angle/getAngleDist";
 import getDir from "@utils/angle/getDir";
@@ -54,7 +54,7 @@ export default class ObjectBreaker {
         this.isObjectBreaking = false;
         const player = Client.player;
         const closeObjects = ObjectManager.pool.closeObjects;
-        const nearestEnemy = ModManager.enemyData.nearest;
+        const nearestEnemy = tickState.enemyData.nearest;
         const enemyInTrap = nearestEnemy && nearestEnemy.trap;
 
         if (!enemyInTrap) return;

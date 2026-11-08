@@ -6,7 +6,7 @@ import AttackQueuePool, { AttackAction } from "@core/mod/combat/core/AttackQueue
 import HatSystem from "@core/mod/defense/defense-modules/HatSystem";
 import AutoBreaker from "@core/mod/defense/modules/AutoBreaker";
 import ObjectBreaker from "@core/mod/defense/modules/ObjectBreaker";
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import Menu from "@menu/Menu";
 import AutoGrinder from "@placing/modules/AutoGrinder";
 import PacketMap from "@root/utils/socket/PacketMap";
@@ -67,7 +67,7 @@ export default class CombatController {
 
     private static manageHitAction(currentKillAction: Readonly<AttackAction | undefined>) {
         if (!currentKillAction) return false;
-        const nearestEnemy = ModManager.enemyData.nearest;
+        const nearestEnemy = tickState.enemyData.nearest;
 
         if (!HatSystem.allowHatSwitch()) {
             AttackManager.stopAttackAction();
@@ -90,7 +90,7 @@ export default class CombatController {
         }
 
         if (currentKillAction.reason !== "don't do 1234")
-            ModManager.activityList.push(currentKillAction.reason);
+            tickState.activityList.push(currentKillAction.reason);
 
         this.selectWeapon(currentKillAction.wpnId);
         if (!currentKillAction.noAttack)
@@ -115,7 +115,7 @@ export default class CombatController {
         const weapons = player.weapons;
 
         if (player.getReload(group) !== 1) {
-            ModManager.activityList.push(`reloading${group === 1 ? "Secondary" : "Primary"}`);
+            tickState.activityList.push(`reloading${group === 1 ? "Secondary" : "Primary"}`);
             this.selectWeapon(weapons[group], true);
             return true;
         }
@@ -127,7 +127,7 @@ export default class CombatController {
         try {
             const player = Client.player;
             const weapons = player.weapons;
-            const activityList = ModManager.activityList;
+            const activityList = tickState.activityList;
 
             this.currentMode = "none";
             this.skinIndex = STORE_HAT_MAP.IGNORE;

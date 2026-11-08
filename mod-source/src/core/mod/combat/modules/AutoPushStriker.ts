@@ -10,7 +10,7 @@ import { PushStrikeContext } from "@core/mod/combat/modules/push-strikes/utils/P
 import CombatModule from "@core/mod/combat/utils/CombatModule";
 import CombatUtils from "@core/mod/combat/utils/CombatUtils";
 import HatSystem from "@core/mod/defense/defense-modules/HatSystem";
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import Menu from "@menu/Menu";
 
 type AutoPushStrikeTypes = "7shame" | "bullspam" | "predictive" | "disabled";
@@ -24,7 +24,7 @@ export default class AutoPusherStriker extends CombatModule {
 
     protected canExecute() {
         if (!AutoPusher.theSpike) return false;
-        if (!ModManager.enemyData.nearest) return false;
+        if (!tickState.enemyData.nearest) return false;
         // Like every other attack module: AttackManager starts whatever is queued, so without these a push strike
         // cut off a combo in progress (e.g. an instakill's second hit) or replaced a hat defense chose.
         if (AttackManager.isAttacking()) return false;
@@ -63,12 +63,12 @@ export default class AutoPusherStriker extends CombatModule {
         if (attackMethod === "disabled") return;
         if (primary.id === WEAPON_ID_MAP.STICK) return;
 
-        const nearestEnemy = ModManager.enemyData.nearest!;
+        const nearestEnemy = tickState.enemyData.nearest!;
         const isEnemyInRange = CombatUtils.getCombatDistance(nearestEnemy, player, items.weapons[primary.id].range);
         if (!isEnemyInRange) return;
 
         const spike = AutoPusher.theSpike!;
-        const tick = ModManager.tick;
+        const tick = tickState.tick;
         const ctx = this.ctx;
 
         ctx.primary = primary;

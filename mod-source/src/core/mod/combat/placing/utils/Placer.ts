@@ -5,7 +5,7 @@ import PlacementSystem from "@core/mod/combat/core/PlacementSystem";
 import Angle from "@core/mod/combat/placing/Angle";
 import AngleFinder, { FinderOptions } from "@core/mod/combat/placing/AngleFinder";
 import { Preplacement } from "@core/mod/combat/placing/modules/AutoPlacer";
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import { Replacement } from "@placing/modules/AutoReplacer";
 import PlacerUtils from "@placing/utils/PlacerUtils";
 import getDistSq from "@utils/geometry/getDistSq";
@@ -32,7 +32,7 @@ export default abstract class Placer {
     protected shouldSkip(item: RawPlacement) {
         const placementBlock = PlacementSystem.getTrapPlacementBlock();
         if (item.id !== LIST_ID_MAP.PIT_TRAP) return false;
-        if (ModManager.tick > placementBlock.untilTick) return false;
+        if (tickState.tick > placementBlock.untilTick) return false;
 
         const scale = items.list[item.id].scale;
         return withinDist(item, placementBlock, scale + placementBlock.scale);
@@ -66,7 +66,7 @@ export default abstract class Placer {
 
         const oldUsedAnglesCount = PlacementSystem.usedAnglesCount;
         if (speedMag >= 25) PlacementSystem.usedAnglesCount = 0;
-        const currentTick = ModManager.tick;
+        const currentTick = tickState.tick;
 
         // Pass 1 picks spots that don't overlap each other; if that gives fewer than 4, pass 2 adds overlapping backups.
         // Pass 2 used to start from inside the loop on the last candidate, so it was skipped whenever that candidate hit
@@ -110,7 +110,7 @@ export default abstract class Placer {
     protected place(item: Angle | Replacement | Preplacement, placementType: PlacementType = PlacementTypes.NORMAL) {
         if (PlacementSystem.place(item.id, item.angle) !== "placed") return false;
 
-        PlacementSystem.usedAngles[PlacementSystem.usedAnglesHead].redefine(item.angle, ModManager.tick);
+        PlacementSystem.usedAngles[PlacementSystem.usedAnglesHead].redefine(item.angle, tickState.tick);
         PlacementSystem.usedAnglesHead = (PlacementSystem.usedAnglesHead + 1) % PlacementSystem.usedAngles.length;
         PlacementSystem.usedAnglesCount = Math.min(PlacementSystem.usedAnglesCount + 1, PlacementSystem.usedAngles.length);
         if (placementType !== PlacementTypes.PREPLACE) PlacementSystem.totalPlacements++;

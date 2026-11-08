@@ -6,6 +6,7 @@ import PotentialObjectManager from "@core/logic/PotentialObjectManager";
 import PlacementSystem from "@core/mod/combat/core/PlacementSystem";
 import Angle from "@core/mod/combat/placing/Angle";
 import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import getAngleDist from "@utils/angle/getAngleDist";
 import getDir from "@utils/angle/getDir";
 import getDist from "@utils/geometry/getDist";
@@ -144,7 +145,7 @@ export default abstract class Grader {
         const usedAnglesCount = PlacementSystem.usedAnglesCount;
         if (usedAnglesCount === 0) return;
 
-        const tick = ModManager.tick;
+        const tick = tickState.tick;
 
         for (let i = 0; i < usedAnglesCount; i++) {
             const used = usedAngles[i];
@@ -167,7 +168,7 @@ export default abstract class Grader {
             const obj = closeObjects[i];
             if (!obj || !obj.active) continue;
             if (!withinDist(item, obj, item.scale + 50)) continue;
-            if (ModManager.tick - obj.tick <= 1) continue;
+            if (tickState.tick - obj.tick <= 1) continue;
 
             if (!item.preplace && allowPreplace && obj.willBreak) {
                 item.predict = true;

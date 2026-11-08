@@ -3,6 +3,7 @@ import { hatMap } from "@constants/store";
 import Player from "@entities/Player";
 import Client from "@core/Client";
 import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import ScriptConfig from "@utils/config/ScriptConfig";
 
 export interface WeaponFetchData {
@@ -18,7 +19,7 @@ export interface WeaponFetchData {
 export default class PlayerCombatManager {
     private static updatePrimary(player: Player, id: number, variant?: number, didHit: boolean = false) {
         const weaponData = player.weaponData;
-        const tick = ModManager.tick;
+        const tick = tickState.tick;
 
         weaponData.primary = id;
         weaponData.primaryConfirmed = true;
@@ -48,7 +49,7 @@ export default class PlayerCombatManager {
 
     private static updateSecondary(player: Player, id: number, variant?: number, didHit: boolean = false) {
         const weaponData = player.weaponData;
-        const tick = ModManager.tick;
+        const tick = tickState.tick;
 
         weaponData.secondary = id;
         weaponData.secondaryConfirmed = true;
@@ -75,7 +76,7 @@ export default class PlayerCombatManager {
      */
     private static updateOwn(player: Player, id: number, variant?: number, didHit: boolean = false) {
         const weaponData = player.weaponData;
-        const tick = ModManager.tick;
+        const tick = tickState.tick;
         const [primary, secondary] = player.weapons;
 
         if (primary !== undefined) {
@@ -130,7 +131,7 @@ export default class PlayerCombatManager {
     }
 
     static updateReloads(player: Player, delta: number) {
-        const tick = ModManager.tick;
+        const tick = tickState.tick;
         const weaponData = player.weaponData;
         const weaponIndex = player.weaponIndex;
         const lastHit = player.weaponIndex < 9 ? weaponData.lastPrimaryTickHit : weaponData.lastSecondaryTickHit;
@@ -177,7 +178,7 @@ export default class PlayerCombatManager {
         const data = this.weaponFetchDataBuffer[this.dataBufferHead];
         this.dataBufferHead = (this.dataBufferHead + 1) % this.weaponFetchDataBuffer.length;
 
-        const tick = ModManager.tick;
+        const tick = tickState.tick;
 
         const weaponData = player.weaponData;
         const id = group === 0 ? weaponData.primary : weaponData.secondary;

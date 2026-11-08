@@ -4,6 +4,7 @@ import AttackManager from "@core/mod/combat/core/AttackManager";
 import CombatController from "@core/mod/combat/core/CombatController";
 import CombatUtils from "@core/mod/combat/utils/CombatUtils";
 import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import getAngleDist from "@utils/angle/getAngleDist";
 import getDir from "@utils/angle/getDir";
 import ScriptConfig from "@utils/config/ScriptConfig";
@@ -26,7 +27,7 @@ export default class WingsUtils {
         if (player.reloads[weaponId] !== 1) return false;
 
         const aim = ModManager.getAttackDir();
-        const nearby = ModManager.enemyData.nearby;
+        const nearby = tickState.enemyData.nearby;
 
         for (let i = 0, len = nearby.length; i < len; i++) {
             const enemy = nearby[i];

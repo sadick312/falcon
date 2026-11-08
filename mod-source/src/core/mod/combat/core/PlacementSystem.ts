@@ -5,6 +5,7 @@ import Client, { Marker } from "@core/Client";
 import ObjectManager from "@core/logic/ObjectManager";
 import CombatController from "@core/mod/combat/core/CombatController";
 import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import PacketTracker from "@core/utils/PacketTracker";
 import Menu from "@menu/Menu";
 import Angle from "@placing/Angle";
@@ -47,7 +48,7 @@ export default class PlacementSystem {
         const angle = Input.getAttackDir();
         const keys = Input.keys;
 
-        const activityList = ModManager.activityList;
+        const activityList = tickState.activityList;
 
         if (keys["KeyK"] && player.items.includes(20)) {
             const totalAllowedActions = PacketTracker.request("PLACE", 4);
@@ -90,7 +91,7 @@ export default class PlacementSystem {
         this.placementBlock.x = gameObject.x;
         this.placementBlock.y = gameObject.y;
         this.placementBlock.scale = gameObject.scale;
-        this.placementBlock.untilTick = Math.max(this.placementBlock.untilTick, ModManager.tick + ticks);
+        this.placementBlock.untilTick = Math.max(this.placementBlock.untilTick, tickState.tick + ticks);
     }
 
     private static bufferAngle = new Angle(0, 0, 0, 0, 0);
@@ -139,7 +140,7 @@ export default class PlacementSystem {
 
         Client.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.SELECT_TO_BUILD, id, false);
         Client.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.SEND_HIT, 1, angle);
-        if (item.group.id === FOOD_GROUP_ID) Client.lastAteTick = ModManager.tick;
+        if (item.group.id === FOOD_GROUP_ID) Client.lastAteTick = tickState.tick;
         CombatController.selectWeapon();
         return "placed";
     }
@@ -196,7 +197,7 @@ export default class PlacementSystem {
     static totalPlacements = 0;
 
     static main() {
-        const nearestEnemy = ModManager.enemyData.nearest;
+        const nearestEnemy = tickState.enemyData.nearest;
         const player = Client.player;
 
         if (player.health < 0) return;

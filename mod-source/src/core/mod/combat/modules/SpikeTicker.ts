@@ -8,7 +8,7 @@ import CombatModule from "@core/mod/combat/utils/CombatModule";
 import CombatUtils from "@core/mod/combat/utils/CombatUtils";
 import HatSystem from "@core/mod/defense/defense-modules/HatSystem";
 import DefenseSystem from "@core/mod/defense/DefenseSystem";
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import Menu from "@menu/Menu";
 
 export default class SpikeTicker extends CombatModule {
@@ -37,7 +37,7 @@ export default class SpikeTicker extends CombatModule {
         if (!consider) return false;
         if (AttackManager.isAttacking()) return false;
         if (!HatSystem.allowHatSwitch()) return false;
-        if (!ModManager.enemyData.nearest) return false;
+        if (!tickState.enemyData.nearest) return false;
         if (Client.player.tailIndex === STORE_ACCESSORY_MAP.MONKEY_TAIL) return false;
         if (!Menu.getValue("autoPlacing")) return false;
         if (!Menu.getValue("replacer")) return false;

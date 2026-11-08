@@ -9,7 +9,7 @@ import PlayerCombatManager from "@core/logic/players/core/PlayerCombatManager";
 import PlayerManager from "@core/logic/players/PlayerManager";
 import DefenseSystem from "@core/mod/defense/DefenseSystem";
 import GameEventTracker from "@core/mod/utils/GameEventTracker";
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import PacketMap from "@root/utils/socket/PacketMap";
 import ScriptConfig from "@utils/config/ScriptConfig";
 import getDistSq from "@utils/geometry/getDistSq";
@@ -69,7 +69,7 @@ export default class ProjectileManager {
     }
 
     static add(x: number, y: number, dir: number, range: number, speed: number, indx: number, layer: number, sid: number) {
-        const tick = ModManager.tick;
+        const tick = tickState.tick;
         const visiblePlayers = PlayerManager.players.visible.all;
         const bulletPosition = this.bulletPositionBuffer;
         const turretPosition = this.turretPositionBuffer;
@@ -127,7 +127,7 @@ export default class ProjectileManager {
                     const isDiaPolearm = source.weaponData.primary === WEAPON_ID_MAP.POLEARM && source.weaponData.primaryVariant >= WEAPON_VARIANT_MAP.DIAMOND;
                     const isUsingOneTickSecondary = weaponID === WEAPON_ID_MAP.CROSSBOW || weaponID === WEAPON_ID_MAP.REPEATER_CROSSBOW;
                     const distanceSq = getDistSq(source.real_position, Client.player.real_position);
-                    const rangedThreats = ModManager.enemyData.rangedInstaThreats > 0;
+                    const rangedThreats = tickState.enemyData.rangedInstaThreats > 0;
 
                     if (isDiaPolearm && inRange(distanceSq, BOOST_TICK_MIN_DIST_SQ, BOOST_TICK_MAX_DIST_SQ) && rangedThreats && isUsingOneTickSecondary) {
                         DefenseSystem.isBeingBowInstaed = true;

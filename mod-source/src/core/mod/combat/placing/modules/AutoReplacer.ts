@@ -4,7 +4,7 @@ import Player from "@entities/Player";
 import AttackManager from "@core/mod/combat/core/AttackManager";
 import Angle from "@core/mod/combat/placing/Angle";
 import { FinderOptions } from "@core/mod/combat/placing/AngleFinder";
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import PacketTracker from "@core/utils/PacketTracker";
 import Placer, { PlacementTypes } from "@placing/utils/Placer";
 
@@ -21,7 +21,7 @@ export class Replacement {
         this.y = item.y;
         this.angle = item.angle;
         this.id = item.id;
-        this.tick = ModManager.tick;
+        this.tick = tickState.tick;
     }
 }
 
@@ -75,7 +75,7 @@ export default class AutoReplacer extends Placer {
         if (isSpikeTick && CombatUtils.isAttackPrimary(player.weapons[0]))
             AttackManager.spikeTicker.consider = true;
 
-        ModManager.activityList.push("autoReplace");
+        tickState.activityList.push("autoReplace");
         const took = performance.now() - now;
         this.update(took.toFixed(2));
         return undefined;

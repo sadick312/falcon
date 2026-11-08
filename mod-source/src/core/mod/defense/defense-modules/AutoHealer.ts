@@ -4,7 +4,7 @@ import PlacementSystem from "@core/mod/combat/core/PlacementSystem";
 import DefenseSystem, { DefenseContext } from "@core/mod/defense/DefenseSystem";
 import HealerUtils from "@core/mod/defense/utils/HealerUtils";
 import WingsUtils from "@core/mod/defense/utils/WingsUtils";
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import Menu from "@menu/Menu";
 
 export interface AutoHealerInternal {
@@ -34,13 +34,13 @@ export default class AutoHealer {
 
         DefenseSystem.alreadyHealed = true;
         for (let i = 0; i < times; i++) PlacementSystem.place(foodId);
-        ModManager.brainState.healingUsed = times;
-        ModManager.activityList.push(`autoHealing x${times}`);
+        tickState.brainState.healingUsed = times;
+        tickState.activityList.push(`autoHealing x${times}`);
     }
 
     private static healIfNoShame() {
         const player = Client.player;
-        if (ModManager.tick - player.hitTime <= 1)
+        if (tickState.tick - player.hitTime <= 1)
             return;
 
         // Blood Wings Optimizations: at high shame, let a hit with Blood Wings (already on) heal instead of eating:
@@ -49,44 +49,44 @@ export default class AutoHealer {
             Menu.getValue("bloodWingsOptimizations") && player.shameCount >= AutoHealer.BLOOD_WINGS_SHAME &&
             player.tailIndex === STORE_ACCESSORY_MAP.BLOOD_WINGS && WingsUtils.willHitPlayer()
         ) {
-            ModManager.brainState.healingResponse = "blood wings heal";
+            tickState.brainState.healingResponse = "blood wings heal";
             return;
         }
 
         this.heal();
-        ModManager.brainState.healingResponse = "0shame heal";
+        tickState.brainState.healingResponse = "0shame heal";
     }
 
     static main(ctx: DefenseContext) {
         const player = Client.player;
-        ModManager.brainState.healingInternal.currentHealth = player.health;
+        tickState.brainState.healingInternal.currentHealth = player.health;
         if (player.health === 100 || player.health <= 0 || player.clowned) return;
 
         const healthAfterDamage = player.health - ctx.totalDamage;
         const willDieIfDoNothing = healthAfterDamage <= 0;
         const alreadyForcedHat = DefenseSystem.skinIndex !== STORE_HAT_MAP.IGNORE;
 
-        ModManager.brainState.healingInternal.healthAfterDamage = healthAfterDamage;
-        ModManager.brainState.healingInternal.willDieIfDoNothing = willDieIfDoNothing;
-        ModManager.brainState.healingInternal.alreadyForcedHat = alreadyForcedHat;
-        ModManager.brainState.healingInternal.empDamage = ctx.empDamage;
-        ModManager.brainState.healingInternal.healthAfterSoldier = player.health - ctx.totalDamage * .75;
-        ModManager.brainState.healingInternal.expectedDamage = ctx.totalDamage;
+        tickState.brainState.healingInternal.healthAfterDamage = healthAfterDamage;
+        tickState.brainState.healingInternal.willDieIfDoNothing = willDieIfDoNothing;
+        tickState.brainState.healingInternal.alreadyForcedHat = alreadyForcedHat;
+        tickState.brainState.healingInternal.empDamage = ctx.empDamage;
+        tickState.brainState.healingInternal.healthAfterSoldier = player.health - ctx.totalDamage * .75;
+        tickState.brainState.healingInternal.expectedDamage = ctx.totalDamage;
 
         if (willDieIfDoNothing && alreadyForcedHat) {
             // The Hat System can't put on a hat we don't own, so only count on soldier's 0.75× when we have it.
             if (DefenseSystem.skinIndex === STORE_HAT_MAP.SOLDIER_HELMET && player.skins[STORE_HAT_MAP.SOLDIER_HELMET]) {
                 if (player.health - ctx.totalDamage * .75 <= 0) {
                     this.heal();
-                    ModManager.brainState.healingResponse = "instant soldier + heal";
+                    tickState.brainState.healingResponse = "instant soldier + heal";
                     return;
                 } else {
-                    ModManager.brainState.healingResponse = "instant soldier + no heal";
+                    tickState.brainState.healingResponse = "instant soldier + no heal";
                     return;
                 }
             } else {
                 this.heal();
-                ModManager.brainState.healingResponse = "instant random hat + heal";
+                tickState.brainState.healingResponse = "instant random hat + heal";
                 return;
             }
         }
@@ -94,13 +94,13 @@ export default class AutoHealer {
         if (willDieIfDoNothing) {
             if (ctx.canEMP && ctx.empDamage > 0 && healthAfterDamage + ctx.empDamage > 0 && player.skins[STORE_HAT_MAP.EMP_HELMET]) {
                 DefenseSystem.skinIndex = STORE_HAT_MAP.EMP_HELMET;
-                ModManager.brainState.healingResponse = "0shame emp anti";
+                tickState.brainState.healingResponse = "0shame emp anti";
             } else if (ctx.canSoldier && player.health - ctx.totalDamage * .75 > 0 && player.skins[STORE_HAT_MAP.SOLDIER_HELMET]) {
                 DefenseSystem.skinIndex = STORE_HAT_MAP.SOLDIER_HELMET;
-                ModManager.brainState.healingResponse = "0shame soldier anti";
+                tickState.brainState.healingResponse = "0shame soldier anti";
             } else {
                 this.heal();
-                ModManager.brainState.healingResponse = "instant heal";
+                tickState.brainState.healingResponse = "instant heal";
                 return;
             }
         }

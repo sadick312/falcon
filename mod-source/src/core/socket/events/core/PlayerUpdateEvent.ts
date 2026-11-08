@@ -9,6 +9,7 @@ import PlayerManager from "@core/logic/players/PlayerManager";
 import TextManager from "@core/logic/TextManager";
 import DefenseUtils from "@core/mod/defense/utils/DefenseUtils";
 import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import PacketReplayer from "@core/PacketReplayer";
 import MessageHandler from "@core/socket/events/utils/MessageHandler";
 import FakeSocket from "@core/socket/FakeSocket";
@@ -29,11 +30,11 @@ export default class PlayerUpdateEvent extends MessageHandler<UpdatePlayerPacket
     private preTick() {
         Client.buildingsHit = [];
 
-        ModManager.tick++;
-        ModManager.enemyData.nearest = null;
-        ModManager.enemyData.nearby.length = 0;
-        ModManager.enemyData.all.length = 0;
-        ModManager.enemyData.rangedInstaThreats = 0;
+        tickState.tick++;
+        tickState.enemyData.nearest = null;
+        tickState.enemyData.nearby.length = 0;
+        tickState.enemyData.all.length = 0;
+        tickState.enemyData.rangedInstaThreats = 0;
     }
 
     private onTick(positions: number[], attributes: WireValue[]) {
@@ -172,14 +173,14 @@ export default class PlayerUpdateEvent extends MessageHandler<UpdatePlayerPacket
             PlayerCombatManager.update(player, player.weaponIndex, player.weaponVariant);
 
             if (myPos && !Client.isFriendly(player.sid)) {
-                ModManager.enemyData.all.push(player);
+                tickState.enemyData.all.push(player);
 
                 const pos = player.real_position;
                 const distanceSq = getDistSq(pos, myPos);
 
                 if (smallestDistance > distanceSq) {
                     smallestDistance = distanceSq;
-                    ModManager.enemyData.nearest = player;
+                    tickState.enemyData.nearest = player;
                 }
 
                 const primaryId = player.weaponData.primary;
@@ -200,16 +201,16 @@ export default class PlayerUpdateEvent extends MessageHandler<UpdatePlayerPacket
 
                 // idk if these ranges are right, just guessed pls no attack me :(
                 if (canBoostTick && inRange(distanceSq, BOOST_TICK_MIN_DIST_SQ, BOOST_TICK_MAX_DIST_SQ)) {
-                    ModManager.enemyData.rangedInstaThreats++;
+                    tickState.enemyData.rangedInstaThreats++;
                 }
 
                 if (inRange(distanceSq, BOW_INSTA_MIN_DIST_SQ, BOW_INSTA_MAX_DIST_SQ) && canBowInsta && DefenseUtils.isInLineOfSight(player, PlayerCombatManager.fetch(player, 1))) {
-                    ModManager.enemyData.rangedInstaThreats++;
+                    tickState.enemyData.rangedInstaThreats++;
                 }
 
                 if (distanceSq <= NEARBY_ENEMY_DIST_SQ) {
                     player.ticksNotNearby = 0;
-                    ModManager.enemyData.nearby.push(player);
+                    tickState.enemyData.nearby.push(player);
                 } else {
                     player.ignoreDamageConsideration = false;
                     player.ticksNotNearby++;
@@ -252,8 +253,8 @@ export default class PlayerUpdateEvent extends MessageHandler<UpdatePlayerPacket
             player.damageTaken = 0;
         }
 
-        if (ModManager.enemyData.nearest && myPos)
-            ModManager.enemyData.angle = getDir(ModManager.enemyData.nearest.real_position, myPos);
+        if (tickState.enemyData.nearest && myPos)
+            tickState.enemyData.angle = getDir(tickState.enemyData.nearest.real_position, myPos);
     }
 
     run(positions: number[], attributes: WireValue[], hidden: number[]) {
@@ -267,8 +268,8 @@ export default class PlayerUpdateEvent extends MessageHandler<UpdatePlayerPacket
 
         ModManager.main();
         if (Client.socket instanceof FakeSocket)
-            console.log(ModManager.brainState);
+            console.log(tickState.brainState);
 
-        for (const e of ModManager.enemyData.all) e.damages.length = 0;
+        for (const e of tickState.enemyData.all) e.damages.length = 0;
     }
 }

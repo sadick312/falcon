@@ -10,7 +10,7 @@ import PlayerManager from "@core/logic/players/PlayerManager";
 import AttackManager from "@core/mod/combat/core/AttackManager";
 import AttackQueuePool, { AttackQueue } from "@core/mod/combat/core/AttackQueuePool";
 import HatSystem from "@core/mod/defense/defense-modules/HatSystem";
-import ModManager from "@core/ModManager";
+import { tickState } from "@core/TickState";
 import Menu from "@menu/Menu";
 import getDir from "@utils/angle/getDir";
 import { BULL_DAMAGE_MULT } from "@constants/world";
@@ -27,7 +27,7 @@ export default class AutoMeleeSyncer extends CombatModule {
     }
 
     protected canExecute() {
-        if (!ModManager.enemyData.all.length) return false;
+        if (!tickState.enemyData.all.length) return false;
         if (AttackManager.isAttacking()) return false;
         if (!HatSystem.allowHatSwitch()) return false;
         if (Client.player.tailIndex === STORE_ACCESSORY_MAP.MONKEY_TAIL) return false;
@@ -58,7 +58,7 @@ export default class AutoMeleeSyncer extends CombatModule {
         if (ourPrimary.reload !== 1 || partnerPrimary.reload !== 1) return;
         if (ourPrimary.dmg * BULL_DAMAGE_MULT + partnerPrimary.dmg * BULL_DAMAGE_MULT < 100) return;
 
-        const allEnemies = ModManager.enemyData.all;
+        const allEnemies = tickState.enemyData.all;
 
         let angleX = 0;
         let angleY = 0;
