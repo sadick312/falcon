@@ -1,6 +1,6 @@
 import { Entity } from "@constants/Entity";
 import GameObject from "@constants/GameObject";
-import items from "@constants/items";
+import { getProjectile } from "@constants/items";
 import Player from "@entities/Player";
 import Client from "@core/Client";
 import ObjectManager from "@core/logic/ObjectManager";
@@ -26,7 +26,7 @@ export default class SimulationProjectile implements Entity {
         public layer: number,
         public ownerSID: number
     ) {
-        const data = items.projectiles[indx];
+        const data = getProjectile(indx);
         this.dmg = data.dmg;
         this.scale = data.scale;
     }
@@ -50,7 +50,7 @@ export default class SimulationProjectile implements Entity {
         this.ownerSID = ownerSID;
         this.active = true;
 
-        const data = items.projectiles[indx];
+        const data = getProjectile(indx);
         this.dmg = data.dmg;
         this.scale = data.scale;
     }
@@ -82,11 +82,12 @@ export default class SimulationProjectile implements Entity {
 
         for (let i = 0, len = players.length; i < len; i++) {
             const player = players[i];
+            if (!player) continue;
             const playerPos = player.real_position;
             const playerNext = player.next_position;
             const isEnemy = this.ownerSID === -1 ? Client.isFriendly(player.sid) : !Client.isTeam(player, this.ownerSID);
 
-            if (player && isEnemy) {
+            if (isEnemy) {
                 if (player.sid === Client.mySID && lineInRect(
                     playerNext.x - 35, playerNext.y - 35,
                     playerNext.x + 35, playerNext.y + 35,
@@ -112,6 +113,7 @@ export default class SimulationProjectile implements Entity {
 
         for (let i = 0, len = gameObjects.length; i < len; i++) {
             const gameObject = gameObjects[i];
+            if (!gameObject) continue;
             const tmpScale = gameObject.getScale();
 
             if (gameObject.active && this.layer <= gameObject.layer && !gameObject.ignoreCollision) {
@@ -131,13 +133,11 @@ export default class SimulationProjectile implements Entity {
     }
 
     private resolveCollisions(hitList: (GameObject | Player)[]) {
-        if (hitList.length === 0) return;
-
-        let hitObj: GameObject | Player = hitList[0];
+        let hitObj = hitList[0];
+        if (!hitObj) return;
         let shortDistSq = Infinity;
 
-        for (let i = 0, len = hitList.length; i < len; i++) {
-            const obj = hitList[i];
+        for (const obj of hitList) {
             const distSq = obj instanceof Player ?
                 obj.sid === Client.mySID ?
                     Math.min(getDistSq(this, obj.next_position), getDistSq(this, obj.real_position)) :

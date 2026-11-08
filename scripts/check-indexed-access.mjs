@@ -25,7 +25,13 @@ const OPTED_IN = [
     "src/utils/constants/EntityHandler.ts",
     "src/services/",
     "src/utils/constants/items.ts",
-    "src/utils/constants/store.ts"
+    "src/utils/constants/store.ts",
+    "src/utils/constants/aiTypes.ts",
+    "src/utils/constants/GameObject.ts",
+    "src/utils/utils/",
+    "src/constants/",
+    "src/core/mod/defense/utils/ObjectUtils.ts",
+    "src/rendering/core/SpriteCache.ts"
 ];
 
 const root = resolve(import.meta.dirname, "..");

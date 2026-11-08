@@ -1,5 +1,5 @@
 import { Entity } from "@constants/Entity";
-import items from "@constants/items";
+import items, { ListItem } from "@constants/items";
 import { GameObjectSimulationState } from "@simulation/SimulationStates";
 
 export default class GameObject implements Entity {
@@ -68,7 +68,7 @@ export default class GameObject implements Entity {
         itemId: number,
         ownerSID?: number
     ) {
-        const data = items.list[itemId] || {};
+        const data: Partial<ListItem> = items.list[itemId] || {};
         const group = data.group;
 
         this.layer = 2;

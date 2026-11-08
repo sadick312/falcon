@@ -903,4 +903,24 @@ for (const item of list) {
 }
 
 const items: Items = { groups, projectiles, weapons, list };
+
+// Checked lookups for code that already knows the id is valid (a held weapon, a placed building...). Each throws for an
+// id the tables don't have, just as reading a field of the missing entry threw before, but with a clear message.
+export function getWeapon(id: number): Weapon {
+    const weapon = weapons[id];
+    if (weapon === undefined) throw new RangeError(`Unknown weapon id ${id}`);
+    return weapon;
+}
+
+export function getItem(id: number): ListItem {
+    const item = list[id];
+    if (item === undefined) throw new RangeError(`Unknown item id ${id}`);
+    return item;
+}
+
+export function getProjectile(id: number): IProjectile {
+    const projectile = projectiles[id];
+    if (projectile === undefined) throw new RangeError(`Unknown projectile id ${id}`);
+    return projectile;
+}
 export default items;

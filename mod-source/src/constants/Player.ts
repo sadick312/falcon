@@ -1,6 +1,7 @@
 import { Entity } from "@constants/Entity";
 import GameObject from "@constants/GameObject";
-import items, { LIST_ID_MAP, Weapon, WEAPON_VARIANT_MAP } from "@constants/items";
+import { at } from "@utils/array/at";
+import { getItem, getProjectile, getWeapon, LIST_ID_MAP, Weapon, WEAPON_VARIANT_MAP } from "@constants/items";
 import PlayerInitType from "@constants/PlayerInitType";
 import store from "@constants/store";
 import Client from "@core/Client";
@@ -31,10 +32,11 @@ interface IPlacePotential {
 }
 
 function renderPlayerWeapon(ctx: CanvasRenderingContext2D, weapon: Weapon, weaponVariant: number) {
-    RendererUtils.renderTool(weapon, ScriptConfig.WEAPON_VARIANTS[weaponVariant], 35, 0, ctx);
+    const variant = ScriptConfig.WEAPON_VARIANTS[weaponVariant];
+    if (variant) RendererUtils.renderTool(weapon, variant, 35, 0, ctx);
 
     if (weapon.projectile && !weapon.hideProjectile) {
-        renderProjectile(35, 0, items.projectiles[weapon.projectile], ctx);
+        renderProjectile(35, 0, getProjectile(weapon.projectile), ctx);
     }
 }
 
@@ -387,7 +389,7 @@ export default class Player implements Entity {
     }
 
     render(mainContext: CanvasRenderingContext2D) {
-        const weapon = items.weapons[this.weaponIndex];
+        const weapon = getWeapon(this.weaponIndex);
 
         const handAngle = Math.PI / 4 * (weapon.armS ?? 1);
         const oHandAngle = (this.buildIndex === -1) ? (weapon.hndS ?? 1) : 1;
@@ -402,7 +404,7 @@ export default class Player implements Entity {
             renderPlayerWeapon(mainContext, weapon, this.weaponVariant);
         }
 
-        mainContext.fillStyle = RendererUtils.skinColors[this.skinColor];
+        mainContext.fillStyle = RendererUtils.skinColors[this.skinColor] ?? "";
 
         RendererUtils.drawCircle(
             this.scale * Math.cos(handAngle),
@@ -424,7 +426,7 @@ export default class Player implements Entity {
         }
 
         if (this.buildIndex >= 0) {
-            const item = items.list[this.buildIndex];
+            const item = getItem(this.buildIndex);
             const tmpSprite = SpriteCache.getItemSprite(item);
 
             mainContext.drawImage(tmpSprite, this.scale - item.holdOffset, -tmpSprite.width / 2);
@@ -465,8 +467,8 @@ export default class Player implements Entity {
         return { sid: -1, x: 0, y: 0, velX: 0, slowMult: 1, velY: 0, spikeDamages: 0, team: null, scale: 35, health: 100, skinIndex: 0, tailIndex: 0, maxHealth: 100, buildIndex: -1, weaponIndex: 0, lockMove: false, zIndex: 0 };
     }
 
-    static getEmptyState() {
-        const state = this.playerSimStateBuffer[this.playerSimStateBufferHead];
+    static getEmptyState(): PlayerSimulationState {
+        const state = at(this.playerSimStateBuffer, this.playerSimStateBufferHead);
         this.playerSimStateBufferHead = (this.playerSimStateBufferHead + 1) % this.playerSimStateBuffer.length;
         return state;
     }
@@ -540,7 +542,7 @@ export default class Player implements Entity {
         state.lockMove = !!this.trap;
         state.zIndex = this.zIndex;
         state.spikeDamages = 0;
-        state.slowMult = this.justAttacked ? 1 - (items.weapons[this.weaponIndex].hitSlow ?? .3) : 1;
+        state.slowMult = this.justAttacked ? 1 - (getWeapon(this.weaponIndex).hitSlow ?? .3) : 1;
 
         return state;
     }

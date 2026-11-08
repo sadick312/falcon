@@ -234,4 +234,13 @@ const aiTypes = [{
     chargePlayer: true,
 }];
 
+export type AiType = (typeof aiTypes)[number];
+
+/** The animal type with this id; throws for an id the table doesn't have (reading a field of it threw before too). */
+export function getAiType(id: number): AiType {
+    const type = aiTypes[id];
+    if (type === undefined) throw new RangeError(`Unknown animal type id ${id}`);
+    return type;
+}
+
 export default aiTypes;

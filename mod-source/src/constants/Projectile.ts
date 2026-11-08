@@ -1,5 +1,5 @@
 import { Entity } from "@constants/Entity";
-import items from "@constants/items";
+import { getProjectile } from "@constants/items";
 
 export default class Projectile implements Entity {
     turretHandlerIndex: number = -1;
@@ -20,7 +20,7 @@ export default class Projectile implements Entity {
         public layer: number,
         public indx: number
     ) {
-        const data = items.projectiles[indx];
+        const data = getProjectile(indx);
 
         this.scale = data.scale;
         this.src = data.src ?? "";
@@ -45,7 +45,7 @@ export default class Projectile implements Entity {
         this.indx = indx;
         this.active = true;
 
-        const data = items.projectiles[indx];
+        const data = getProjectile(indx);
         this.scale = data.scale;
         this.src = data.src ?? "";
         this.dmg = data.dmg;

@@ -5,6 +5,7 @@ import getDir from "@utils/angle/getDir";
 import getDist from "@utils/geometry/getDist";
 import IntervalHelper, { Interval } from "@utils/geometry/IntervalHelper";
 import { PLAYER_SCALE } from "@constants/world";
+import { at } from "@utils/array/at";
 
 export default class ObjectUtils {
     private static readonly MAX_INTERVALS = 64;
@@ -39,14 +40,15 @@ export default class ObjectUtils {
         const minAngle = builderToVictim - theta;
         const maxAngle = builderToVictim + theta;
 
-        ObjectUtils.spikeArcBuffer[0][0] = minAngle;
-        ObjectUtils.spikeArcBuffer[0][1] = maxAngle;
+        const firstArc = at(ObjectUtils.spikeArcBuffer, 0);
+        firstArc[0] = minAngle;
+        firstArc[1] = maxAngle;
         ObjectUtils.spikeArcBufferLength = 1;
 
         const closeObjects = ObjectManager.pool.closeObjects;
         for (let i = 0, len = closeObjects.length; i < len; i++) {
             const gameObject = closeObjects[i];
-            if (ignoreSID === gameObject.sid) continue;
+            if (!gameObject || ignoreSID === gameObject.sid) continue;
 
             const blockedCount = IntervalHelper.computeInterval(builderPos, gameObject, item);
             if (blockedCount === 0) continue;
@@ -56,12 +58,15 @@ export default class ObjectUtils {
 
                 const currentCount = ObjectUtils.spikeArcBufferLength;
                 for (let k = 0; k < currentCount; k++) {
-                    ObjectUtils.swapBuffer[k][0] = ObjectUtils.spikeArcBuffer[k][0];
-                    ObjectUtils.swapBuffer[k][1] = ObjectUtils.spikeArcBuffer[k][1];
+                    const from = at(ObjectUtils.spikeArcBuffer, k);
+                    const to = at(ObjectUtils.swapBuffer, k);
+                    to[0] = from[0];
+                    to[1] = from[1];
                 }
 
-                const bStart = IntervalHelper.computeBuffer[j][0];
-                const bEnd = IntervalHelper.computeBuffer[j][1];
+                const blocked = at(IntervalHelper.computeBuffer, j);
+                const bStart = blocked[0];
+                const bEnd = blocked[1];
 
                 ObjectUtils.spikeArcBufferLength = IntervalHelper.subtractInterval(currentCount, bStart, bEnd, ObjectUtils.swapBuffer);
             }

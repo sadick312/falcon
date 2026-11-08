@@ -1,4 +1,4 @@
-import aiTypes from "@constants/aiTypes";
+import { getAiType } from "@constants/aiTypes";
 import { Entity } from "@constants/Entity";
 import EntityHandler from "@constants/EntityHandler";
 import RendererUtils from "@rendering/RendererUtils";
@@ -61,7 +61,7 @@ export default class Ai implements Entity {
         public dir: number,
         id: number
     ) {
-        const data = aiTypes[id];
+        const data = getAiType(id);
 
         this.last_render_position.x = this.render_position.x = x;
         this.last_render_position.y = this.render_position.y = y;

@@ -5,6 +5,7 @@ import AngleFinder from "@placing/AngleFinder";
 import getDir from "@utils/angle/getDir";
 import normalizeAngle from "@utils/angle/normalizeAngle";
 import getDistSq from "@utils/geometry/getDistSq";
+import { at } from "@utils/array/at";
 
 export type Interval = [start: number, end: number];
 
@@ -12,7 +13,7 @@ export default class IntervalHelper {
     private static readonly MAX_INTERVALS = 64;
     public static readonly intervalBuffer: Interval[] = Array.from({ length: IntervalHelper.MAX_INTERVALS }, () => [0, 0]);
 
-    public static readonly computeBuffer: Interval[] = Array.from({ length: 2 }, () => [0, 0]);
+    public static readonly computeBuffer: [Interval, Interval] = [[0, 0], [0, 0]];
     public static computeBufferLength = 0;
 
     static subtractInterval(
@@ -25,25 +26,29 @@ export default class IntervalHelper {
         const out = IntervalHelper.intervalBuffer;
 
         for (let i = 0; i < inputCount; i++) {
-            const iStart = inputBuffer[i][0];
-            const iEnd = inputBuffer[i][1];
+            const input = at(inputBuffer, i);
+            const iStart = input[0];
+            const iEnd = input[1];
 
             if (bEnd <= iStart || bStart >= iEnd) {
-                out[resultCount][0] = iStart;
-                out[resultCount][1] = iEnd;
+                const slot = at(out, resultCount);
+                slot[0] = iStart;
+                slot[1] = iEnd;
                 resultCount++;
                 continue;
             }
 
             if (bStart > iStart) {
-                out[resultCount][0] = iStart;
-                out[resultCount][1] = bStart;
+                const slot = at(out, resultCount);
+                slot[0] = iStart;
+                slot[1] = bStart;
                 resultCount++;
             }
 
             if (bEnd < iEnd) {
-                out[resultCount][0] = bEnd;
-                out[resultCount][1] = iEnd;
+                const slot = at(out, resultCount);
+                slot[0] = bEnd;
+                slot[1] = iEnd;
                 resultCount++;
             }
         }

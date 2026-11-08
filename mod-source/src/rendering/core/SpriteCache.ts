@@ -1,5 +1,5 @@
 import GameObject from "@constants/GameObject";
-import items, { ListItem } from "@constants/items";
+import { getItem, ListItem } from "@constants/items";
 import randFloat from "@utils/random/randFloat";
 import ScriptConfig from "@utils/config/ScriptConfig";
 import Client from "../../core/Client";
@@ -52,10 +52,10 @@ export default class SpriteCache {
             }
         }
 
-        const objData = items.list[obj.id];
+        const objData = getItem(obj.id);
 
-        if (!asIcon && this.itemSprites[objId] && this.itemSprites[objId])
-            return this.itemSprites[objId];
+        const cached = asIcon ? undefined : this.itemSprites[objId];
+        if (cached) return cached;
 
         const scale = obj.scale;
         const padding = (objData.spritePadding || 0);
