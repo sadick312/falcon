@@ -27,6 +27,7 @@ import renderOneTickLine from "@rendering/utils/mod/renderOneTickLine";
 import renderPathfindPath from "@rendering/utils/mod/renderPathfindPath";
 import renderPlacements from "@rendering/utils/mod/renderPlacements";
 import { profileEnd, profileLap, profileStart } from "@services/profiler/Profiler";
+import { frameStats } from "@rendering/FrameStats";
 
 CanvasRenderingContext2D.prototype.roundRect = function (x: number, y: number, width: number, height: number, radius: number): CanvasRenderingContext2D {
     radius = Math.max(0, Math.min(radius, width / 2, height / 2));
@@ -51,7 +52,6 @@ export default class RendererSystem {
 
     private static lastUpdate = performance.now();
 
-    static fps = 0;
     private static fpsCount = 0;
     private static lastUpdateFrames = 0;
 
@@ -59,11 +59,11 @@ export default class RendererSystem {
         this.fpsCount++;
 
         if (performance.now() - this.lastUpdateFrames >= 1e3) {
-            this.fps = this.fpsCount;
+            frameStats.fps = this.fpsCount;
             this.lastUpdateFrames = performance.now();
             this.fpsCount = 0;
 
-            pingDisplay.innerText = `Ping: ${Client.pingTime} ms | FPS: ${this.fps} | BWin: ${PacketBatcher.effectiveBatchWindow.toFixed(1)} ms | Jitter: ${PacketBatcher.tickJitter.toFixed(1)} ms`;
+            pingDisplay.innerText = `Ping: ${Client.pingTime} ms | FPS: ${frameStats.fps} | BWin: ${PacketBatcher.effectiveBatchWindow.toFixed(1)} ms | Jitter: ${PacketBatcher.tickJitter.toFixed(1)} ms`;
         }
     }
 

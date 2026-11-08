@@ -31,7 +31,7 @@ import { socketHooks } from "@core/socket/socketHooks";
 import PacketBatcher from "@core/utils/PacketBatcher";
 import Menu, { ChatLog } from "@menu/Menu";
 import CameraManager from "@rendering/core/CameraManager";
-import RendererSystem from "@rendering/RendererSystem";
+import { frameStats } from "@rendering/FrameStats";
 import PacketMap, { HandledServerPacket, PacketHandlers } from "@root/utils/socket/PacketMap";
 import PacketRecorder from "@services/packet-recorder/PacketRecorder";
 import { showServerRestarting } from "@ui/ConnectionError";
@@ -216,7 +216,7 @@ export default class SocketListener {
                 PingTracker.update(rawPing);
     
                 Client.pingTime = Math.round(rawPing * 1e3) / 1e3;
-                pingDisplay.innerText = `Ping: ${Client.pingTime} ms | FPS: ${RendererSystem.fps} | BWin: ${PacketBatcher.effectiveBatchWindow.toFixed(1)} ms | Jitter: ${PacketBatcher.tickJitter.toFixed(1)} ms`;
+                pingDisplay.innerText = `Ping: ${Client.pingTime} ms | FPS: ${frameStats.fps} | BWin: ${PacketBatcher.effectiveBatchWindow.toFixed(1)} ms | Jitter: ${PacketBatcher.tickJitter.toFixed(1)} ms`;
             },
 
             [PacketMap.SERVER_TO_CLIENT.ADD_ALLIANCE]: (data) => {

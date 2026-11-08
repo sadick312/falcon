@@ -7,7 +7,7 @@ import TextManager from "@core/logic/TextManager";
 import { ModBrainState } from "@core/ModManager";
 import Socket from "@core/socket/Socket";
 import { Decoder } from "@msgpack/msgpack";
-import RendererSystem from "@rendering/RendererSystem";
+import { frameStats } from "@rendering/FrameStats";
 import { PacketLog } from "@root/utils/socket/PacketLogging";
 import PacketMap, { MOOMOO_SERVER_TO_CLIENT_MAP } from "@root/utils/socket/PacketMap";
 import { packetReplayerOptionsPage } from "@ui/Loader";
@@ -109,7 +109,7 @@ document.addEventListener("keyup", (ev) => {
             ObjectManager.removeAll();
             ProjectileManager.projectiles.removeAll();
             ais.removeAll();
-            PacketReplayer.slowTime = PacketReplayer.currentDelta - (1e3 / RendererSystem.fps);
+            PacketReplayer.slowTime = PacketReplayer.currentDelta - (1e3 / frameStats.fps);
             PacketReplayer.runForOneTick = true;
             PacketReplayer.currentDelta = 0;
             PacketReplayer.currentIndex = 0;
