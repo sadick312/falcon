@@ -70,4 +70,86 @@ describe("Movement / knockback simulation", () => {
         const oneCut = 1.6 * 0.75 * Math.pow(0.993, 111);
         expect(next.velX).toBeCloseTo(oneCut, 5);
     });
+
+    // Fixed scenarios with the expected numbers worked out from 1.8.2's formulas (dt = 111 ms per tick).
+    const DT = 111;
+    const DECEL = Math.pow(0.993, DT);
+    const RIVER_Y = 7200; // the map's middle, inside the river band
+
+    /** Our state at (x, y), standing still, with hat `skin` and platform flag `zIndex`. */
+    async function stateAt(x: number, y: number, skin = 0, zIndex = 0) {
+        const { Sim } = await setUp();
+        const s = game!.Client.player.getSimulationState();
+        Object.assign(s, { x, y, velX: 0, velY: 0, skinIndex: skin, zIndex, slowMult: 1, lockMove: false });
+        return { Sim, s };
+    }
+
+    it("river: the current pushes a still player right by 0.0011 × dt per tick", async () => {
+        const { WATER_CURRENT } = await import("@constants/world");
+        const { Sim, s } = await stateAt(5000, RIVER_Y);
+        const next = Sim.simTick(s, null);
+        const vel = WATER_CURRENT * DT;
+        expect(next.x).toBeCloseTo(5000 + vel * DT, 6);
+        expect(next.y).toBe(RIVER_Y);
+        expect(next.velX).toBeCloseTo(vel * DECEL, 9);
+    });
+
+    it("river: the Flipper Hat cuts the current to 40%", async () => {
+        const { WATER_CURRENT } = await import("@constants/world");
+        const { Sim, s } = await stateAt(5000, RIVER_Y, 31);
+        const next = Sim.simTick(s, null);
+        expect(next.x).toBeCloseTo(5000 + WATER_CURRENT * 0.4 * DT * DT, 6);
+    });
+
+    it("river: no current on a platform (zIndex), or just outside the band", async () => {
+        const { RIVER_HALF_WIDTH } = await import("@constants/world");
+        const onPlatform = await stateAt(5000, RIVER_Y, 0, 1);
+        expect(onPlatform.Sim.simTick(onPlatform.s, null).x).toBe(5000);
+
+        game?.done();
+        const outside = await stateAt(5000, RIVER_Y - RIVER_HALF_WIDTH - 1);
+        expect(outside.Sim.simTick(outside.s, null).x).toBe(5000);
+    });
+
+    it("river: swimming across is 0.33× the speed on land (0.75× with the Flipper Hat)", async () => {
+        const up = -Math.PI / 2;
+        const speedAt = async (y: number, skin = 0) => {
+            game?.done();
+            const { Sim, s } = await stateAt(5000, y, skin);
+            return Sim.simTick(s, up).velY;
+        };
+        const land = await speedAt(3000);
+        expect(land).toBeLessThan(0);
+        expect(await speedAt(RIVER_Y)).toBeCloseTo(land * 0.33, 9);
+        expect(await speedAt(RIVER_Y, 31)).toBeCloseTo(land * 0.75, 9);
+    });
+
+    it("knockback: pushes away from the hitter by knockPower, then slows by 0.993^dt each tick", async () => {
+        const { Sim, s } = await stateAt(1000, 3000);
+        const res = Sim.simulate(s, [[{ type: "knockback", pos: { x: 900, y: 3000 }, knockPower: 0.6 }]], 2);
+        // Tick 1 moves 0.6 × dt, tick 2 the slowed 0.6 × 0.993^dt × dt; straight away from the hitter.
+        expect(res.pos.x).toBeCloseTo(1000 + 0.6 * DT + 0.6 * DECEL * DT, 6);
+        expect(res.pos.y).toBeCloseTo(3000, 9);
+    });
+
+    it("knockback: a diagonal hit splits the push by direction", async () => {
+        const { Sim, s } = await stateAt(1000, 3000);
+        const res = Sim.simulate(s, [[{ type: "knockback", pos: { x: 900, y: 2900 }, knockPower: 0.6 }]], 1);
+        const each = 0.6 * Math.SQRT1_2 * DT;
+        expect(res.pos.x).toBeCloseTo(1000 + each, 6);
+        expect(res.pos.y).toBeCloseTo(3000 + each, 6);
+    });
+
+    it("knockback: deals its damage and counts a kill as a one-tick", async () => {
+        const { Sim, s } = await stateAt(1000, 3000);
+        const res = Sim.simulate(s, [[{ type: "knockback", pos: { x: 900, y: 3000 }, knockPower: 0.3, damage: 200 }]], 1);
+        expect(res.oneTicked).toBe(true);
+    });
+
+    it("map edge: a knockback into the border stops at the player's radius", async () => {
+        const { Sim, s } = await stateAt(60, 3000);
+        const res = Sim.simulate(s, [[{ type: "knockback", pos: { x: 160, y: 3000 }, knockPower: 1 }]], 1);
+        expect(res.pos.x).toBe(s.scale);
+    });
 });
+
