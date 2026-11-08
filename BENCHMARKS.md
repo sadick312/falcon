@@ -64,6 +64,25 @@ AngleFinder is 35–48% of a tick, so it is the first thing to look at in Phase 
 Even the slowest (the signature, only on servers that need it) costs about 5 µs, and the mod sends a few packets
 per tick, so packet code is not worth optimizing.
 
+Added later (measured while the PC was about 5× slower: the HMAC signature took 28.8 µs instead of 5.1, so divide
+by about 5 to compare with the table above):
+
+| Operation | µs on the busy PC | ≈ quiet PC |
+|---|---:|---:|
+| PacketBatcher: queue + order + hand on a 20-packet tick | 10.9 | ~2 |
+
+## Pathfinder (`pathfinder.bench-run.ts`)
+
+A base-like field of 40 trees and walls between start and goal, 1,900 apart (83×20 cells, 710 blocked); best of
+5 rounds, on the same busy PC.
+
+| Step | µs on the busy PC | ≈ quiet PC |
+|---|---:|---:|
+| `Pathfinder.find`: build the grid (main thread) | 26–98 | ~5–20 |
+| A* search, path of 65 cells (in the web worker, off the main thread) | 380 | ~75 |
+
+Both are small next to a 111 ms tick, and the search doesn't block the game at all.
+
 ## Phase 3 results
 
 Each change is measured with alternating old/new runs (old, new, old, new...), comparing the median of the
@@ -98,7 +117,10 @@ times in a row (players and buildings come and go).
 | steady | 5361 | 82.28 MB | 82.59 MB | +0.3 MB |
 | churn | 5401 | 101.50 MB | 101.71 MB | +0.2 MB |
 
-Flat: no leak. Player and building counts stay the same throughout. (A first run showed about 1 MB per minute,
+Flat: no leak. Player and building counts stay the same throughout. The soak test also writes a heap snapshot
+after minute 2 and at the end (`results/soak-<run>-start/end.heapsnapshot`, which Chrome DevTools > Memory > Load
+opens) and compares the live objects per type: the only type that grew was plain `Object`, by 6 (of about
+33,000) in both runs. (A first run showed about 1 MB per minute,
 which turned out to be the test harness: Vitest's spies remember every call, and the replay kept every sent packet.
 The soak test now clears the spies, and the replay hashes sent packets as they go; the packet fingerprints are
 unchanged.)
