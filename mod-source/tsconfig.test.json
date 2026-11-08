@@ -2,7 +2,9 @@
     // Typechecks the tests and the replay benchmark against the mod's settings (npm run typecheck).
     "extends": "./tsconfig.json",
     "compilerOptions": {
-        "types": ["cloudflare-turnstile", "./src/types", "node"]
+        "types": ["cloudflare-turnstile", "./src/types", "node"],
+        // The mod itself is checked with this on (tsconfig.json); tests and benchmarks index fixtures freely.
+        "noUncheckedIndexedAccess": false
     },
     "include": ["src", "test", "bench"]
 }
