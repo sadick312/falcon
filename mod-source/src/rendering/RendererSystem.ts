@@ -28,6 +28,7 @@ import renderPathfindPath from "@rendering/utils/mod/renderPathfindPath";
 import renderPlacements from "@rendering/utils/mod/renderPlacements";
 import { profileEnd, profileLap, profileStart } from "@services/profiler/Profiler";
 import { frameStats } from "@rendering/FrameStats";
+import { at } from "@utils/array/at";
 
 CanvasRenderingContext2D.prototype.roundRect = function (x: number, y: number, width: number, height: number, radius: number): CanvasRenderingContext2D {
     radius = Math.max(0, Math.min(radius, width / 2, height / 2));
@@ -83,7 +84,7 @@ export default class RendererSystem {
         let delta = Client.mode === "replay" && PacketReplayer.isPaused ? 0 : now - this.lastUpdate;
 
         if (Client.mode === "replay" && !PacketReplayer.runForOneTick)
-            delta *= PacketReplayer.speeds[PacketReplayer.currentSpeedIndex];
+            delta *= at(PacketReplayer.speeds, PacketReplayer.currentSpeedIndex);
 
         if (delta > 0 && PacketReplayer.slowTime !== 0) {
             delta = PacketReplayer.slowTime;

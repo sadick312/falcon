@@ -1,4 +1,4 @@
-import items, { IProjectile } from "@constants/items";
+import { getProjectile, IProjectile } from "@constants/items";
 import Projectile from "@entities/Projectile";
 import ProjectileManager from "@core/logic/ProjectileManager";
 import { tickState } from "@core/TickState";
@@ -10,15 +10,16 @@ const projectileSprites: Record<string, HTMLImageElement> = {};
 
 export function renderProjectile(x: number, y: number, obj: Projectile | IProjectile, ctx: CanvasRenderingContext2D) {
     if (obj.src) {
-        const tmpSrc = items.projectiles[obj.indx].src!;
+        const tmpSrc = getProjectile(obj.indx).src!;
         let tmpSprite = projectileSprites[tmpSrc];
 
         if (!tmpSprite) {
-            tmpSprite = new Image();
-            tmpSprite.crossOrigin = "anonymous";
+            const sprite = new Image();
+            tmpSprite = sprite;
+            sprite.crossOrigin = "anonymous";
 
-            tmpSprite.onload = () => {
-                tmpSprite.isLoaded = true;
+            sprite.onload = () => {
+                sprite.isLoaded = true;
             }
 
             tmpSprite.src = `../../img/weapons/${tmpSrc}.png`;

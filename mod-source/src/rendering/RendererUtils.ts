@@ -416,11 +416,12 @@ export default class RendererUtils {
         let tmpSprite = this.toolSprites[tmpSrc];
 
         if (!tmpSprite) {
-            tmpSprite = new Image();
-            tmpSprite.crossOrigin = "anonymous";
+            const sprite = new Image();
+            tmpSprite = sprite;
+            sprite.crossOrigin = "anonymous";
 
-            tmpSprite.onload = () => {
-                tmpSprite.isLoaded = true;
+            sprite.onload = () => {
+                sprite.isLoaded = true;
             };
 
             tmpSprite.src = `../../img/weapons/${tmpSrc}.png`;

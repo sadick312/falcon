@@ -31,6 +31,11 @@ export default function renderNames() {
     const totalLen = playersLen + ais.all.length;
     const crownPad = 35;
     const tmpS = 60;
+    const icons = SpriteCache.iconSprites;
+    const crownIcon = icons["crown"];
+    const skullIcon = icons["skull"];
+    const oneTickIcon = icons["oneTickCrosshair"];
+    const crosshairIcon = icons["crosshair"];
 
     for (let i = 0; i < totalLen; i++) {
         const entity = players[i] || ais.all[i - playersLen];
@@ -52,11 +57,11 @@ export default function renderNames() {
                 mainContext.strokeText(tmpName, entity.render_position.x - xOffset, (entity.render_position.y - yOffset - entity.scale) - RendererUtils.nameY);
                 mainContext.fillText(tmpName, entity.render_position.x - xOffset, (entity.render_position.y - yOffset - entity.scale) - RendererUtils.nameY);
 
-                if (entity.isLeader && SpriteCache.iconSprites["crown"].isLoaded) {
+                if ((entity as Player).isLeader && crownIcon?.isLoaded) {
                     const tmpX = entity.render_position.x - xOffset - (tmpS / 2) - nameHalfWidth - crownPad;
 
                     mainContext.drawImage(
-                        SpriteCache.iconSprites["crown"],
+                        crownIcon,
                         tmpX,
                         (entity.render_position.y - yOffset - entity.scale) - RendererUtils.nameY - (tmpS / 2) - 5,
                         tmpS,
@@ -64,11 +69,11 @@ export default function renderNames() {
                     );
                 }
 
-                if (entity.iconIndex == 1 && SpriteCache.iconSprites["skull"].isLoaded) {
+                if ((entity as Player).iconIndex == 1 && skullIcon?.isLoaded) {
                     const tmpX = entity.render_position.x - xOffset - (tmpS / 2) + nameHalfWidth + crownPad;
 
                     mainContext.drawImage(
-                        SpriteCache.iconSprites["skull"],
+                        skullIcon,
                         tmpX,
                         (entity.render_position.y - yOffset - entity.scale) - RendererUtils.nameY - (tmpS / 2) - 5,
                         tmpS,
@@ -78,17 +83,17 @@ export default function renderNames() {
             }
 
             if (entity.isPlayer && tickState.enemyData.nearest?.sid === entity.sid) {
-                if (AttackManager.oneTicker.tapMode && SpriteCache.iconSprites["oneTickCrosshair"].isLoaded) {
+                if (AttackManager.oneTicker.tapMode && oneTickIcon?.isLoaded) {
                     mainContext.drawImage(
-                        SpriteCache.iconSprites["oneTickCrosshair"],
+                        oneTickIcon,
                         entity.render_position.x - xOffset - tmpS / 2,
                         entity.render_position.y - yOffset - tmpS / 2,
                         tmpS,
                         tmpS
                     );
-                } else if (AttackManager.autoInstaToggle && SpriteCache.iconSprites["crosshair"].isLoaded) {
+                } else if (AttackManager.autoInstaToggle && crosshairIcon?.isLoaded) {
                     mainContext.drawImage(
-                        SpriteCache.iconSprites["crosshair"],
+                        crosshairIcon,
                         entity.render_position.x - xOffset - tmpS / 2,
                         entity.render_position.y - yOffset - tmpS / 2,
                         tmpS,

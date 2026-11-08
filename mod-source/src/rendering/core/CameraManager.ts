@@ -13,7 +13,7 @@ export default class CameraManager {
     static camX = ScriptConfig.MAP_SIZE / 2;
     static camY = ScriptConfig.MAP_SIZE / 2;
 
-    private static offsetBuf = [0, 0];
+    private static offsetBuf: [x: number, y: number] = [0, 0];
 
     static getOffset() {
         const xOffset = this.camX - RenderingConfig.maxScreenWidth / 2;
@@ -54,6 +54,7 @@ export default class CameraManager {
 
         for (let i = 0; i < totalLen; i++) {
             const entity = players[i] || ais.all[i - playersLen];
+            if (!entity) continue;
 
             if (entity.forcePos) {
                 entity.render_position.x = entity.real_position.x;

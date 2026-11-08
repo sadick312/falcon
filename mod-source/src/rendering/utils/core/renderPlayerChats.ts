@@ -12,6 +12,7 @@ export default function renderPlayerChats(delta: number) {
 
     for (let i = 0, len = players.length; i < len; i++) {
         const player = players[i];
+        if (!player) continue;
 
         mainContext.save();
         mainContext.translate(player.render_position.x - xOffset, player.render_position.y - yOffset);

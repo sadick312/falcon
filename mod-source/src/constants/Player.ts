@@ -289,9 +289,10 @@ export default class Player implements Entity {
         this.skinColor = data[9];
     }
 
-    getReload(group: 0 | 1 | 2) {
-        if (group === 2) return this.reloads[53];
-        return this.reloads[group === 1 ? this.weaponData.secondary : this.weaponData.primary];
+    /** 0..1; NaN for a weapon with no reload yet, which compares and adds up just like the missing entry did. */
+    getReload(group: 0 | 1 | 2): number {
+        if (group === 2) return this.reloads[53] ?? NaN;
+        return this.reloads[group === 1 ? this.weaponData.secondary : this.weaponData.primary] ?? NaN;
     }
 
     getLastReload(group: 0 | 1) {

@@ -84,8 +84,7 @@ const layerBuckets: GameObject[][] = [
 
 export function prepareGameObjects(delta: number) {
     renderableGameObjects.length = 0;
-    for (let i = 0, len = layerBuckets.length; i < len; i++)
-        layerBuckets[i].length = 0;
+    for (const bucket of layerBuckets) bucket.length = 0;
 
     const halfWidth = RenderingConfig.maxScreenWidth / 2;
     const halfHeight = RenderingConfig.maxScreenHeight / 2;
@@ -113,11 +112,13 @@ export function prepareGameObjects(delta: number) {
         if (isOnScreen(tmpX, tmpY, gameObject.scale + gameObject.blocker)) {
             const targetLayer = gameObject.layer + 1;
 
-            if (!layerBuckets[targetLayer]) {
-                layerBuckets[targetLayer] = [];
+            let bucket = layerBuckets[targetLayer];
+            if (!bucket) {
+                bucket = [];
+                layerBuckets[targetLayer] = bucket;
             }
 
-            layerBuckets[targetLayer].push(gameObject);
+            bucket.push(gameObject);
         }
     }
 
@@ -137,6 +138,7 @@ export default function renderGameObjects(delta: number, layer: number) {
 
     for (let i = 0, len = layerBucket.length; i < len; i++) {
         const gameObject = layerBucket[i];
+        if (!gameObject) continue;
         const tmpX = gameObject.x + gameObject.xWiggle - xOffset;
         const tmpY = gameObject.y + gameObject.yWiggle - yOffset;
 

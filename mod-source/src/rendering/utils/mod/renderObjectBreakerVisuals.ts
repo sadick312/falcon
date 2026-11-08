@@ -1,5 +1,5 @@
 import GameObject from "@constants/GameObject";
-import items from "@constants/items";
+import { getWeapon } from "@constants/items";
 import Client from "@core/Client";
 import CombatController from "@core/mod/combat/core/CombatController";
 import BreakerUtils from "@core/mod/defense/utils/BreakerUtils";
@@ -30,7 +30,7 @@ export default function renderObjectBreakerVisuals(gameObject: GameObject, mainC
     if (!Client.player) return;
 
     const isObjectBreakingMode = isBreakingMode();
-    const isWithinRange = BreakerUtils.getObjectAttackDistance(Client.player, gameObject, items.weapons[Client.weaponIndex].range);
+    const isWithinRange = BreakerUtils.getObjectAttackDistance(Client.player, gameObject, getWeapon(Client.weaponIndex).range);
 
     if (isObjectBreakingMode && gameObject.isBreaking && isWithinRange) {
         mainContext.save();

@@ -16,6 +16,7 @@ export default function renderPathfindPath() {
     for (let i = 0, len = path.length - 1; i < len; i++) {
         const node = path[i];
         const nextNode = path[i + 1];
+        if (!node || !nextNode) continue;
 
         mainContext.save();
         mainContext.strokeStyle = "cyan";

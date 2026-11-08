@@ -1,6 +1,7 @@
 import Client from "@core/Client";
 import RendererUtils from "@rendering/RendererUtils";
 import getElem from "@utils/dom/getElem";
+import { at } from "@utils/array/at";
 import ScriptConfig from "@utils/config/ScriptConfig";
 
 const mapDisplay = getElem<"canvas">("map-canvas");
@@ -42,11 +43,13 @@ export default function renderMinimap() {
         const minimapData = Client.minimapData;
         if (player.team && minimapData.length) {
             for (let i = 0; i < minimapData.length; i += 2) {
+                const x = at(minimapData, i);
+                const y = at(minimapData, i + 1);
                 mapContext.fillStyle = "rgba(255, 255, 255, 0.35)";
 
                 RendererUtils.drawCircle(
-                    (minimapData[i] / ScriptConfig.MAP_SIZE) * mapDisplay.width,
-                    (minimapData[i + 1] / ScriptConfig.MAP_SIZE) * mapDisplay.width,
+                    (x / ScriptConfig.MAP_SIZE) * mapDisplay.width,
+                    (y / ScriptConfig.MAP_SIZE) * mapDisplay.width,
                     mapContext,
                     7,
                     true
