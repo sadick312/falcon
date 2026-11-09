@@ -682,6 +682,11 @@ export default class AngleFinder {
         this.getSampleResponse[1] = 0;
     }
 
+    /** For a caller that skips the `reusePreplacePass` call it would have made: drops what that call would have. */
+    static invalidateReuse() {
+        this.objectPass.valid = false;
+    }
+
     static compute(player: Player, options?: Readonly<FinderOptions>) {
         const start = __DEV__ ? profileStart() : 0;
         const count = this.computeAngles(player, options);

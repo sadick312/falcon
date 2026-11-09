@@ -55,6 +55,18 @@ export default class PlayerPlacementManager {
         }
     }
 
+    /**
+     * Whether any of the player's spike spots can touch us. Every spot the Angle Finder offers sits `offset` from the
+     * player (PLAYER_SCALE + spike + placeOffset), and "onMe" keeps a spot closer than PLAYER_SCALE + spike to us, so
+     * from farther than the two added together none can (+1 so rounding can't skip a spot right at the edge).
+     */
+    private static canPlaceOnMe(player: Player) {
+        const spikeItem = getItem(player.items[2] ?? NaN);
+        const offset = PLAYER_SCALE + spikeItem.scale + (spikeItem.placeOffset ?? 0);
+        const reach = offset + PLAYER_SCALE + spikeItem.scale + 1;
+        return withinDist(player.real_position, Client.player.real_position, reach);
+    }
+
     static update(player: Player) {
         const placePotential = player.placePotential;
         placePotential.onMeBufferIndex = 0;
@@ -63,6 +75,12 @@ export default class PlayerPlacementManager {
         placePotential.allMaxX = placePotential.allMaxY = -Infinity;
 
         this.computeFor(player, "all", "allBufferIndex");
+
+        // The second call keeps only the spots that touch us, and most enemies are too far away for any to.
+        if (!this.canPlaceOnMe(player)) {
+            AngleFinder.invalidateReuse();
+            return;
+        }
 
         // Same player and nothing changed since the call above, so this one can reuse its pass over the objects.
         this.finderOptions.preplace = false;
