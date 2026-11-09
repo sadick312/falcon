@@ -116,7 +116,7 @@ Feature-by-feature audit for MooMoo.io **v1.8.2** (sandbox.moomodding.io). Start
 | 53 | Packet budget | utils/PacketTracker.ts | fixed + tested | Fixed: nothing counted in the first second |
 | 54 | Chat commands (`!help`, `!plog`, ...) | utils/ChatCommands.ts | fixed + tested | Fixed: `!constructor` threw |
 | 55 | Packet recorder (`!plog`) | services/packet-recorder/PacketRecorder.ts | fixed + tested | Tests exist. Fixed: a saved spawn per respawn |
-| 56 | Packet replayer | PacketReplayer.ts | fixed + tested | Fixed: unusable files threw. Possible issue P28 (replays never place) |
+| 56 | Packet replayer | PacketReplayer.ts | fixed + tested | Fixed: unusable files threw. P28 fixed: replays place |
 | 57 | UI events (clan menu, items, notifications, values, upgrades) | events/updateClanMenu.ts, updateItems.ts, updateNotifications.ts, updatePlayerValue.ts, updateUpgrades.ts | tested | |
 | 58 | Packet names and types | utils/socket/PacketMap.ts | tested |  |
 
@@ -352,7 +352,7 @@ Possible issues waiting for a decision are listed under "Possible issues (Step 1
 
 ## Possible issues (Step 1)
 
-P1-P25: all fixed as suggested on 1 Nov 2026; see the Result column. P26-P27 skipped by the user. P28 not decided. P29 fixed as suggested on 6 Nov 2026.
+P1-P25: all fixed as suggested on 1 Nov 2026; see the Result column. P26-P27 skipped by the user. P28-P29 fixed as suggested on 6 Nov 2026.
 
 | # | Where | What I found | Why I'm asking | Result |
 |---|---|---|---|---|
@@ -383,5 +383,5 @@ P1-P25: all fixed as suggested on 1 Nov 2026; see the Result column. P26-P27 ski
 | P25 | [PlayerCombatManager.ts:130](mod-source/src/core/logic/players/core/PlayerCombatManager.ts:130) `updateReloads` | 1.8.2 sets a reload to `weapon.speed × hat.atkSpd` at the swing (Samurai Armor 0.78). Falcon always uses `weapon.speed`, so enemies (and we) in Samurai Armor reload 22% sooner than Falcon thinks | Using the hat worn at the swing makes Falcon see Samurai Armor attacks coming sooner (more defense) and time its own Samurai swings right. I suggest doing it | Fixed as suggested (`67e463c`) |
 | P26 | [HealthUpdateEvent.ts:74](mod-source/src/core/socket/events/core/HealthUpdateEvent.ts:74) `onHeal` | Every health gain counts as eating for shame (+1 within a tick of a hit, else −2). In 1.8.2 only eating food changes shame; regen, healing accessories and healing pads don't. Falcon's shame count can therefore drift, and ours decides when Auto Heal is safe to eat | For our own player, count shame only on ticks where we actually ate (we know when we send food); enemies stay as they are (we can't see their food). I suggest doing that | Skipped (user's decision) |
 | P27 | [PacketBatcher.ts:72](mod-source/src/core/utils/PacketBatcher.ts:72) `flush` | The batch is sorted so the player update comes last. With two ticks in one batch (a lag burst), both updates go to the end, so tick N runs with tick N+1's swings, hits and health changes already counted | Splitting the batch at each update (packets before an update stay with it; anything after the last update still goes before it, as now) keeps single-tick batches exactly as they are and fixes bursts. I suggest doing it | Skipped (user's decision) |
-| P28 | [Client.ts:77](mod-source/src/core/Client.ts:77) `connect` (replay mode) | Replay mode returns before `PacketTracker.init()`, so every placement request in a replay is refused: replays and the replay benchmark never show Falcon's placements | Starting the budget in replays makes them show placements, but changes every recorded benchmark result. Not decided (audit stopped) | Not decided |
+| P28 | `Client.connect` (replay mode; now [Connection.ts:36](mod-source/src/core/Connection.ts:36)) | Replay mode returns before `PacketTracker.init()`, so every placement request in a replay is refused: replays and the replay benchmark never show Falcon's placements | Starting the budget in replays makes them show placements, but changes every recorded benchmark result | Fixed as suggested (`73ad03e`); the three sample replay fingerprints did not change |
 | P29 | [remove.js](falcon-launcher/src/remove.js) | The content script removes every added `<script>` with a `src`, which includes the Cloudflare Turnstile script Falcon itself adds on sandbox.moomoo.io (1.9.0 only; moomodding.io has no captcha). Browsers usually keep loading an already-inserted script even if it's removed, so this may be harmless; the test environment can't show it | Exempting challenges.cloudflare.com from the removal is safe either way | Fixed as suggested (`168d5c6`) |
