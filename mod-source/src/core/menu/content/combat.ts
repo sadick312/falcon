@@ -43,6 +43,13 @@ export const combatSettings: IMenuItem[] = [{
         id: "musketInsta",
         description: "With polearm + musket: bull helmet + polearm, then turret gear + musket, when the damage kills the nearest enemy at its current health (assuming soldier helmet for the second hit).",
         type: "toggle",
+        settings: [{
+            label: "Katana + musket",
+            id: "musketInsta:katana",
+            description: "Also runs the combo with katana + musket, using the katana's damage (40) and shorter reach (118).",
+            type: "toggle",
+            status: false
+        }],
         status: false
     }, {
         label: "Auto Push Strikes",

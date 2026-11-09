@@ -16,11 +16,14 @@ import { BULL_DAMAGE_MULT } from "@constants/world";
 const SOLDIER_MULT = 0.75;
 /** Turret gear's own bullet (projectile 1). */
 const TURRET_BULLET_DMG = getProjectile(1).dmg;
+/** The musket's bullet. */
+const MUSKET_DMG = getProjectile(getWeapon(WEAPON_ID_MAP.MUSKET).projectile!).dmg;
 
 /**
  * Polearm + musket insta: bull helmet + polearm hit, then on the next tick turret gear + musket shot (the turret gear
  * fires its bullet too). Unlike Knockback Instakills, which waits for a knockback into spikes, this goes when the raw
  * damage kills the nearest enemy at its current health, assuming it has soldier helmet on for the second hit.
+ * With the "Katana + musket" sub-toggle, katana works as the first hit too, with its own damage and reach.
  */
 export default class MusketInstakiller extends CombatModule {
     private attackAction!: AttackQueue;
@@ -51,29 +54,31 @@ export default class MusketInstakiller extends CombatModule {
         return !!tickState.enemyData.nearest;
     }
 
-    /** The damage the combo deals to `enemy`: the bull polearm hit plus the musket shot and turret bullet. */
-    static comboDamage(polearmDmg: number, enemySkin: number) {
+    /** The damage the combo deals to `enemy`: the bull melee hit plus the musket shot and turret bullet. */
+    static comboDamage(meleeDmg: number, enemySkin: number) {
         const firstMult = enemySkin === STORE_HAT_MAP.SOLDIER_HELMET ? SOLDIER_MULT : 1;
-        const musketDmg = getProjectile(getWeapon(WEAPON_ID_MAP.MUSKET).projectile!).dmg;
-        return polearmDmg * BULL_DAMAGE_MULT * firstMult + (musketDmg + TURRET_BULLET_DMG) * SOLDIER_MULT;
+        return meleeDmg * BULL_DAMAGE_MULT * firstMult + (MUSKET_DMG + TURRET_BULLET_DMG) * SOLDIER_MULT;
     }
 
     protected execute() {
         const player = Client.player;
         const enemy = tickState.enemyData.nearest!;
+        const melee = player.weapons[0];
 
-        if (player.weapons[0] !== WEAPON_ID_MAP.POLEARM || player.weapons[1] !== WEAPON_ID_MAP.MUSKET) return;
+        if (player.weapons[1] !== WEAPON_ID_MAP.MUSKET) return;
+        if (melee !== WEAPON_ID_MAP.POLEARM && !(melee === WEAPON_ID_MAP.KATANA && Menu.getValue("musketInsta:katana"))) return;
         if (!player.skins[STORE_HAT_MAP.BULL_HELMET] || !player.skins[STORE_HAT_MAP.TURRET_GEAR]) return;
 
         const primary = PlayerCombatManager.fetch(player, 0);
         const secondary = PlayerCombatManager.fetch(player, 1);
         if (primary.reload !== 1 || secondary.reload !== 1 || player.getReload(2) !== 1) return;
 
-        if (!CombatUtils.getCombatDistance(player, enemy, getWeapon(WEAPON_ID_MAP.POLEARM).range - 1)) return;
+        if (!CombatUtils.getCombatDistance(player, enemy, getWeapon(melee).range - 1)) return;
         if (!DefenseUtils.isInLineOfSight(enemy, secondary)) return;
         if (MusketInstakiller.comboDamage(primary.dmg, enemy.skinIndex) < enemy.health) return;
 
         const attackAction = this.attackAction;
+        attackAction.sequence[0].wpnId = melee;
         attackAction.grade = 2;
         AttackManager.addAttackQueue(attackAction);
     }

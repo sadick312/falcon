@@ -16,6 +16,7 @@ The **Favorites** tab lists the settings you starred; **Credits** has no setting
   - **Knockback Instakills** (`attackFactoringKB:insta`, toggle, default: on) — Automatically instakills enemies factoring knocking potential.
     - **Allow While Trapped** (`attackFactoringKB:insta:allowInTrap`, toggle, default: off) — Lets these instakills run while you are trapped, as long as Auto Breaker has no spikes to break around you.
   - **Musket Insta** (`musketInsta`, toggle, default: off) — With polearm + musket: bull helmet + polearm, then turret gear + musket, when the damage kills the nearest enemy at its current health (assuming soldier helmet for the second hit).
+    - **Katana + musket** (`musketInsta:katana`, toggle, default: off) — Also runs the combo with katana + musket, using the katana's damage (40) and shorter reach (118).
   - **Auto Push Strikes** (`attackInPush`, toggle, default: on) — Automatically attacks enemies during auto pushing once collision is made with a spike.
     - **Dagger Shame Strike Threshold** (`daggerShameStrikeThres`, slider 2–7, default: 4) — Shame Strike waits until the enemy's shame count reaches this number.
     - **Dagger Attack Method** (`attackInPush:dagger_method`, select, default: Shame Strike) — Determines what method to use to attack enemies when our primary weapon is daggers. Shame Strike method makes the mod wait for enemies to gain a high shameCount before attacking with turret. Bullspam method makes the mod do constant brute force attacking. Disabled makes the mod do nothing. Options: Shame Strike / Bullspam / Disabled.
@@ -74,7 +75,7 @@ The **Favorites** tab lists the settings you starred; **Credits** has no setting
   - **Pattern Recognition** (`usePatternRec`, toggle, default: on) — Adapts defensive calculations based on common enemy attack patterns.
   - **Auto Healing** (`autoHeal`, toggle, default: on) — Responds to dangers by auto healing.
   - **Hat Switching** (`defensiveHatSwitching`, toggle, default: on) — Allows the action of hat switching to mitigate potential damages.
-  - **Blood Wings Optimizations** (`bloodWingsOptimizations`, toggle, default: off) — While hurt, wears Blood Wings for melee hits on enemies (heals 20% of the damage, without shame). At 4+ shame, Auto Heal lets such a hit heal instead of eating.
+  - **Blood Wings Optimizations** (`bloodWingsOptimizations`, toggle, default: off) — Uses blood wings for defensive purposes (e.g. no-soldier antionetick, no-shame antishamegrind, etc).
   - **Angel Wings Regen** (`angelWingsRegen`, toggle, default: off) — While hurt and no enemy is close, wears Angel Wings (3 health a second, without shame) instead of Monkey Tail.
 - **Safe Walk** (`safeWalk`, toggle, default: on) — Prevents walking into dangerous or annoying buildings.
   - **Ignore My Teleports** (`safeWalkIgnoreMyTps`, toggle, default: on) — Safe walk doesn't stop you from walking into your own teleports.
