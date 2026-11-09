@@ -11,6 +11,7 @@ import AngleGrader from "@placing/AngleGrader";
 import Grader from "@placing/grader-modules/Grader";
 import getDir from "@utils/angle/getDir";
 import normalizeAngle from "@utils/angle/normalizeAngle";
+import { tickState } from "@core/TickState";
 import { profileEnd, profileStart } from "@services/profiler/Profiler";
 import ScriptConfig from "@utils/config/ScriptConfig";
 import getDistSq from "@utils/geometry/getDistSq";
@@ -555,7 +556,8 @@ export default class AngleFinder {
         const previousCandidates = Grader.candidates;
         if (options.grade) {
             const reachOf = (item: ListItem) => PLAYER_SCALE + item.scale + (item.placeOffset ?? 0) + 15 + item.scale;
-            Grader.setCandidates(playerPos, Math.max(reachOf(trapItem), reachOf(spikeItem)));
+            // The same list AngleGrader hands prepare(), so what each candidate is to each enemy can be worked out here.
+            Grader.setCandidates(playerPos, Math.max(reachOf(trapItem), reachOf(spikeItem)), tickState.enemyData.nearby);
         }
 
         try {

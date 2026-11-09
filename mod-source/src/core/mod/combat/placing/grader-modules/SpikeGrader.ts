@@ -35,7 +35,7 @@ export default class SpikeGrader extends Grader {
         // With 1.8.2's snow and water slowdowns and the river current (as Safe Walk), so in the snow or the river the
         // step we'd take is measured at the speed we really have there.
         const projection = MovementManager.project(player, moveDir, false, undefined, true);
-        const spikesNear = this.trapsNearMap.get(enemy.sid)!;
+        const spikesNear = this.trapsNearMap[enemy.sid]!;
         const isEnemyInTrap = enemy.trap && enemy.trap.active && !enemy.trap.isGhost && (!spike.preplace || !enemy.trap.willBreak);
 
         if (!withinDist(projection, spike, spike.scale + PLAYER_SCALE)) return;
@@ -191,7 +191,7 @@ export default class SpikeGrader extends Grader {
     }
 
     private factorSpikeHit(spike: Angle, enemy: Player) {
-        const distanceSq = this.distanceSqMap.get(enemy.sid)!;
+        const distanceSq = this.distanceSqMap[enemy.sid]!;
         const placeReach = enemy.placePotential.range + spike.scale;
         const placeReachSq = placeReach * placeReach;
 
@@ -236,7 +236,7 @@ export default class SpikeGrader extends Grader {
         const preferedRadiusSq = preferedRadius * preferedRadius;
         if (distanceSq > radiusSq) return;
 
-        const spikesNear = this.spikesNearMap.get(enemySid)!;
+        const spikesNear = this.spikesNearMap[enemySid]!;
         if (!spikesNear) spike.spikePush.add(enemySid);
 
         spike.grade += !spikesNear ? .5 : .25;
@@ -246,12 +246,12 @@ export default class SpikeGrader extends Grader {
     grade(spike: Angle, enemy: Player) {
         this.factorBlockedMovement(spike, enemy);
 
-        const trapsNear = this.trapsNearMap.get(enemy.sid)!;
+        const trapsNear = this.trapsNearMap[enemy.sid]!;
         if (trapsNear) spike.grade += .5;
         spike.grade += trapsNear;
 
         if (!spike.preplace) {
-            const direction = this.directionMap.get(enemy.sid)!;
+            const direction = this.directionMap[enemy.sid]!;
             spike.grade += (Math.PI - getAngleDist(spike.angle, direction)) / (Math.PI * 2);
         }
 

@@ -12,7 +12,7 @@ export default class TrapGrader extends Grader {
     private readonly TRAP_SCALE_SQ = 49 * 49;
 
     private factorTrapHit(trap: Angle, enemy: Player) {
-        const distanceSq = this.distanceSqMap.get(enemy.sid)!;
+        const distanceSq = this.distanceSqMap[enemy.sid]!;
         const placeReach = enemy.placePotential.range + trap.scale;
 
         if (distanceSq < this.TRAP_SCALE_SQ) {
@@ -28,12 +28,12 @@ export default class TrapGrader extends Grader {
 
     grade(trap: Angle, enemy: Player) {
         if (!trap.preplace) {
-            const spikesNear = this.spikesNearMap.get(enemy.sid)!;
+            const spikesNear = this.spikesNearMap[enemy.sid]!;
             trap.grade += spikesNear;
         }
 
         if (!trap.preplace) {
-            const direction = this.directionMap.get(enemy.sid)!;
+            const direction = this.directionMap[enemy.sid]!;
             trap.grade += (Math.PI - getAngleDist(trap.angle, direction)) / (Math.PI * 2);
         }
 

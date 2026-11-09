@@ -14,12 +14,20 @@ import getDistSq from "@utils/geometry/getDistSq";
 import withinDist from "@utils/geometry/withinDist";
 import { isCactusObject } from "@constants/world";
 
+/**
+ * Per enemy, indexed by the enemy's sid. Every entry the graders read is written by prepare() for the same angle
+ * first, so entries left by enemies that are gone are never read. (These were Maps; set() per angle and enemy was
+ * a good part of prepare's time.)
+ */
 interface GraderEnemyCache {
-    directionMap: Map<number, number>;
-    distanceSqMap: Map<number, number>;
-    trapsNearMap: Map<number, number>;
-    spikesNearMap: Map<number, number>;
+    directionMap: number[];
+    distanceSqMap: number[];
+    trapsNearMap: number[];
+    spikesNearMap: number[];
 }
+
+/** What a spike or trap is to an enemy, for prepare's count of what's near it. */
+const enum ObjectKind { None = 0, Spike = 1, Trap = 2, NotWorkedOut = 255 }
 
 interface GraderInternalCache {
     enemies: GraderEnemyCache;
@@ -31,16 +39,19 @@ export default abstract class Grader {
 
     protected internalCache: GraderInternalCache = {
         enemies: {
-            directionMap: new Map(),
-            distanceSqMap: new Map(),
-            trapsNearMap: new Map(),
-            spikesNearMap: new Map()
+            directionMap: [],
+            distanceSqMap: [],
+            trapsNearMap: [],
+            spikesNearMap: []
         },
         canAbuse: false
     };
 
     /** The spikes and traps in range of the angle being prepared, reused between calls. */
     private objectsInRange: GameObject[] = [];
+
+    /** The same as indexes into Grader.candidates, when prepare() uses the candidates. */
+    private candidatesInRange: number[] = [];
 
     /**
      * Set by the Angle Finder while it grades one player's angles: the active spikes and traps (in allSpikes then
@@ -50,8 +61,31 @@ export default abstract class Grader {
 
     private static candidateBuffer: GameObject[] = [];
 
-    /** Picks the spikes and traps that can be within `15 + item + object` of an angle at most `maxReach` from `center`. */
-    static setCandidates(center: { x: number; y: number }, maxReach: number) {
+    /**
+     * What each candidate is to each of `candidateEnemies` (at candidate * enemies + enemy), for normal and for
+     * preplace angles. Team, cactus and "about to break" don't change while one player's angles are graded, so
+     * each is worked out the first time an angle needs it and reused for the rest of the angles (NotWorkedOut until
+     * then; working all of them out up front cost more than it saved when only a few angles are graded).
+     */
+    private static candidateKinds = new Uint8Array(64);
+    private static candidatePreplaceKinds = new Uint8Array(64);
+    private static candidateEnemies: Player[] | null = null;
+
+    private static objectKind(enemy: Player, gameObject: GameObject, preplace: boolean) {
+        const isTeam = Client.isTeam(enemy, gameObject.ownerSID ?? -1);
+        const willBreak = preplace && gameObject.willBreak;
+        const isTrap = gameObject.trap && !isTeam && !willBreak;
+        const isSpike = gameObject.dmg && !isTeam && !willBreak;
+
+        if (isCactusObject(gameObject) || isSpike) return ObjectKind.Spike;
+        return isTrap ? ObjectKind.Trap : ObjectKind.None;
+    }
+
+    /**
+     * Picks the spikes and traps that can be within `15 + item + object` of an angle at most `maxReach` from `center`,
+     * and what each is to each of `enemies` (the list prepare() will be given).
+     */
+    static setCandidates(center: { x: number; y: number }, maxReach: number, enemies: Player[]) {
         const list = this.candidateBuffer;
         list.length = 0;
 
@@ -65,6 +99,17 @@ export default abstract class Grader {
             if (withinDist(center, gameObject, maxReach + gameObject.scale + 1)) list.push(gameObject);
         }
 
+        const enemyCount = enemies.length;
+        const size = list.length * enemyCount;
+        if (this.candidateKinds.length < size) {
+            this.candidateKinds = new Uint8Array(size * 2);
+            this.candidatePreplaceKinds = new Uint8Array(size * 2);
+        }
+
+        this.candidateKinds.fill(ObjectKind.NotWorkedOut, 0, size);
+        this.candidatePreplaceKinds.fill(ObjectKind.NotWorkedOut, 0, size);
+
+        this.candidateEnemies = enemies;
         this.candidates = list;
     }
 
@@ -191,15 +236,6 @@ export default abstract class Grader {
 
         const { directionMap, distanceSqMap, trapsNearMap, spikesNearMap } = this.internalCache.enemies;
 
-        // Every enemy's entry is rewritten below and graders only read the enemies passed in, so the maps only
-        // need clearing to drop enemies that left. Map.clear() allocates a new table, and this runs per angle.
-        if (directionMap.size > enemies.length) {
-            directionMap.clear();
-            distanceSqMap.clear();
-            trapsNearMap.clear();
-            spikesNearMap.clear();
-        }
-
         this.factorPotentialObjects(item, allowPreplace);
         if (!item.preplace)
             this.applyDecay(item);
@@ -207,17 +243,20 @@ export default abstract class Grader {
         let canAbuse = true;
 
         // Which spikes and traps are in range depends only on the angle, so find them once for all enemies. The
-        // Angle Finder hands over the ones within reach of the player once per call (Grader.candidates); this used to
-        // walk every nearby spike and trap for every angle.
+        // Angle Finder hands over the ones within reach of the player once per call (Grader.candidates), with what
+        // each is to each enemy; this used to walk every nearby spike and trap, and check each per enemy, per angle.
         const objectsInRange = this.objectsInRange;
         if (objectsInRange.length) objectsInRange.length = 0;
+        const candidatesInRange = this.candidatesInRange;
+        if (candidatesInRange.length) candidatesInRange.length = 0;
 
         const candidates = Grader.candidates;
-        if (enemies.length && candidates) {
+        const useCandidates = enemies.length > 0 && candidates !== null && Grader.candidateEnemies === enemies;
+        if (useCandidates) {
             for (let i = 0, len = candidates.length; i < len; i++) {
                 const gameObject = candidates[i];
                 if (gameObject === undefined) continue;
-                if (withinDist(item, gameObject, 15 + item.scale + gameObject.scale)) objectsInRange.push(gameObject);
+                if (withinDist(item, gameObject, 15 + item.scale + gameObject.scale)) candidatesInRange.push(i);
             }
         } else {
             const spikesLength = allSpikes.length;
@@ -230,17 +269,18 @@ export default abstract class Grader {
             }
         }
 
-        const inRangeLength = objectsInRange.length;
+        const kinds = item.preplace ? Grader.candidatePreplaceKinds : Grader.candidateKinds;
+        const enemyCount = enemies.length;
 
-        for (let i = 0, len = enemies.length; i < len; i++) {
-            const enemy = enemies[i];
+        for (let e = 0; e < enemyCount; e++) {
+            const enemy = enemies[e];
             if (enemy === undefined) continue;
             const pos = enemy.real_position;
 
             const distanceSq = getDistSq(pos, item);
 
-            directionMap.set(enemy.sid, getDir(pos, item));
-            distanceSqMap.set(enemy.sid, distanceSq);
+            directionMap[enemy.sid] = getDir(pos, item);
+            distanceSqMap[enemy.sid] = distanceSq;
 
             const proposedCanAbuse = this.factorAngleAbuse(item, enemy);
             if (canAbuse) canAbuse = proposedCanAbuse;
@@ -248,24 +288,25 @@ export default abstract class Grader {
             let trapsNear = 0;
             let spikesNear = 0;
 
-            for (let i = 0; i < inRangeLength; i++) {
-                const gameObject = objectsInRange[i];
-                if (gameObject === undefined) continue;
-                const isTeam = Client.isTeam(enemy, gameObject.ownerSID ?? -1);
-                const willBreak = item.preplace && gameObject.willBreak;
-                const isTrap = gameObject.trap && !isTeam && !willBreak;
-                const isSpike = gameObject.dmg && !isTeam && !willBreak;
-                const isCactus = isCactusObject(gameObject);
-
-                if (isCactus || isSpike) {
-                    spikesNear++;
-                } else if (isTrap) {
-                    trapsNear++;
+            if (useCandidates) {
+                for (let i = 0, len = candidatesInRange.length; i < len; i++) {
+                    const c = candidatesInRange[i]!;
+                    const slot = c * enemyCount + e;
+                    let kind = kinds[slot];
+                    if (kind === ObjectKind.NotWorkedOut) kind = kinds[slot] = Grader.objectKind(enemy, candidates[c]!, item.preplace);
+                    if (kind === ObjectKind.Spike) spikesNear++;
+                    else if (kind === ObjectKind.Trap) trapsNear++;
+                }
+            } else {
+                for (let i = 0, len = objectsInRange.length; i < len; i++) {
+                    const kind = Grader.objectKind(enemy, objectsInRange[i]!, item.preplace);
+                    if (kind === ObjectKind.Spike) spikesNear++;
+                    else if (kind === ObjectKind.Trap) trapsNear++;
                 }
             }
 
-            trapsNearMap.set(enemy.sid, trapsNear);
-            spikesNearMap.set(enemy.sid, spikesNear);
+            trapsNearMap[enemy.sid] = trapsNear;
+            spikesNearMap[enemy.sid] = spikesNear;
         }
 
         if (item.predict && !item.priority) {
