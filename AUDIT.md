@@ -164,7 +164,7 @@ Feature-by-feature audit for MooMoo.io **v1.8.2** (sandbox.moomodding.io). Start
 |---|---|---|---|---|
 | 77 | Background worker (injects the mod) | src/background.ts, manifest.json | tested | Host access limited to https |
 | 78 | Page loader (shared with Quick Inject) | src/gameLoader.ts, mod-source/packaging/build-inject.mjs | tested |  |
-| 79 | Content script | src/remove.js | tested | Possible issue P29 |
+| 79 | Content script | src/remove.js | fixed + tested | P29 fixed: Cloudflare Turnstile kept |
 
 ## 1.8.2 differences
 
@@ -352,7 +352,7 @@ Possible issues waiting for a decision are listed under "Possible issues (Step 1
 
 ## Possible issues (Step 1)
 
-P1-P25: all fixed as suggested on 1 Nov 2026; see the Result column. P26-P27 skipped by the user. P28-P29 not decided.
+P1-P25: all fixed as suggested on 1 Nov 2026; see the Result column. P26-P27 skipped by the user. P28 not decided. P29 fixed as suggested on 6 Nov 2026.
 
 | # | Where | What I found | Why I'm asking | Result |
 |---|---|---|---|---|
@@ -384,4 +384,4 @@ P1-P25: all fixed as suggested on 1 Nov 2026; see the Result column. P26-P27 ski
 | P26 | [HealthUpdateEvent.ts:74](mod-source/src/core/socket/events/core/HealthUpdateEvent.ts:74) `onHeal` | Every health gain counts as eating for shame (+1 within a tick of a hit, else −2). In 1.8.2 only eating food changes shame; regen, healing accessories and healing pads don't. Falcon's shame count can therefore drift, and ours decides when Auto Heal is safe to eat | For our own player, count shame only on ticks where we actually ate (we know when we send food); enemies stay as they are (we can't see their food). I suggest doing that | Skipped (user's decision) |
 | P27 | [PacketBatcher.ts:72](mod-source/src/core/utils/PacketBatcher.ts:72) `flush` | The batch is sorted so the player update comes last. With two ticks in one batch (a lag burst), both updates go to the end, so tick N runs with tick N+1's swings, hits and health changes already counted | Splitting the batch at each update (packets before an update stay with it; anything after the last update still goes before it, as now) keeps single-tick batches exactly as they are and fixes bursts. I suggest doing it | Skipped (user's decision) |
 | P28 | [Client.ts:77](mod-source/src/core/Client.ts:77) `connect` (replay mode) | Replay mode returns before `PacketTracker.init()`, so every placement request in a replay is refused: replays and the replay benchmark never show Falcon's placements | Starting the budget in replays makes them show placements, but changes every recorded benchmark result. Not decided (audit stopped) | Not decided |
-| P29 | [remove.js](falcon-launcher/src/remove.js) | The content script removes every added `<script>` with a `src`, which includes the Cloudflare Turnstile script Falcon itself adds on sandbox.moomoo.io (1.9.0 only; moomodding.io has no captcha). Browsers usually keep loading an already-inserted script even if it's removed, so this may be harmless; the test environment can't show it | Exempting challenges.cloudflare.com from the removal is safe either way. Not decided | Not decided |
+| P29 | [remove.js](falcon-launcher/src/remove.js) | The content script removes every added `<script>` with a `src`, which includes the Cloudflare Turnstile script Falcon itself adds on sandbox.moomoo.io (1.9.0 only; moomodding.io has no captcha). Browsers usually keep loading an already-inserted script even if it's removed, so this may be harmless; the test environment can't show it | Exempting challenges.cloudflare.com from the removal is safe either way | Fixed as suggested (`168d5c6`) |
