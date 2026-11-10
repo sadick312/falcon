@@ -42,6 +42,7 @@ function resetGameState() {
     HatSystem.reset();
     CombatController.attackState.confirm = false;
     CombatController.attackState.status = false;
+    CombatController.manualGather = false;
 
     Client.player = undefined as unknown as Player;
     Client.mySID = -1;

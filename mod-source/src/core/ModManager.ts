@@ -107,7 +107,13 @@ export default class ModManager {
     }
 
     static updateDirection() {
-        const aimAngle = this.getAttackDir(true);
+        let aimAngle = this.getAttackDir(true);
+
+        // "Aim With Mouse While Gathering": with auto-gather on by hand (E) and nothing of Falcon's aiming, the server
+        // swung in whatever direction was last sent, not at the mouse; send the mouse direction.
+        if (aimAngle === undefined && CombatController.manualGather && Menu.getValue("mouseAimWhileGathering")) {
+            aimAngle = Input.getAttackDir();
+        }
 
         if (typeof aimAngle === "number") {
             Client.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.SEND_AIM, aimAngle);

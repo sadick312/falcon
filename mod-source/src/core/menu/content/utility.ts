@@ -227,6 +227,12 @@ export const utilitySettings: IMenuItem[] = [{
     type: "toggle",
     status: false
 }, {
+    label: "Aim With Mouse While Gathering",
+    id: "mouseAimWhileGathering",
+    description: "With auto-gather on (E), swings toward your mouse. Off: Falcon doesn't send your mouse direction in normal play, so the swings go wherever it was last aiming.",
+    type: "toggle",
+    status: false
+}, {
     label: "Kill Chat",
     id: "killChat",
     description: "Automatically chats something whenever your killCount increases.",

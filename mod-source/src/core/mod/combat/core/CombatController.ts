@@ -17,6 +17,11 @@ type CombatControllerMode = "autobreak" | "tankspam" | "autobreakspike" | "bulls
 
 export default class CombatController {
     static tankSpam = false;
+    /**
+     * Auto-gather turned on by hand with E (the server swings by itself while it's on). 1.8.2 resets it on death and
+     * for a new connection, and so do we.
+     */
+    static manualGather = false;
     static attackState = {
         confirm: false,
         status: false

@@ -219,6 +219,7 @@ document.addEventListener("keydown", (event) => {
                     PacketMap.CLIENT_TO_SERVER.AUTO_GATHER,
                     1
                 );
+                CombatController.manualGather = !CombatController.manualGather;
             } else if (event.shiftKey && event.code === "KeyZ") {
                 SpriteCache.reset();
                 SpriteCache.renderIcons();

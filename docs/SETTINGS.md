@@ -80,6 +80,7 @@ The **Favorites** tab lists the settings you starred; **Credits** has no setting
 - **Auto Break** (`autoBreak`, toggle, default: on) — Automatically breaks buildings while trapped.
   - **Break Traps From Any Angle** (`trapBreakAnyAngle`, toggle, default: off) — While trapped, turns the swing to hit as many enemy spikes and traps at once as possible (a swing hits everything in reach within about 69 degrees of the aim), while still hitting every enemy spike and trap the usual aim hits. Avoids hitting your own buildings when it can. Only while trapped.
 - **Auto Respawn** (`autoRespawn`, toggle, default: off) — Automatically respawns when you die.
+- **Aim With Mouse While Gathering** (`mouseAimWhileGathering`, toggle, default: off) — With auto-gather on (E), swings toward your mouse. Off: Falcon doesn't send your mouse direction in normal play, so the swings go wherever it was last aiming.
 - **Kill Chat** (`killChat`, toggle, default: off) — Automatically chats something whenever your killCount increases.
 - **Auto Play** (`autoPlay`, toggle, default: off) — Auto play? Might as well, the whole client basically does everything for you. Now let's automate movement too! Requires you to enable all the other modules for this to be good.
   - **Follow** (`followTo`, number -1–500, default: -1, not saved) — Follow ANY player with via their in-game SID. To follow with no one, set the value to -1.

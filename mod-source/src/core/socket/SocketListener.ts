@@ -466,6 +466,7 @@ export default class SocketListener {
                 Client.upgradesObtained.clear();
                 CombatController.attackState.confirm = false;
                 CombatController.attackState.status = false;
+                CombatController.manualGather = false;
     
                 if (Client.player) Client.lastDeath = {
                     x: Client.player.render_position.x,
