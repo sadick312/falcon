@@ -261,7 +261,8 @@ export default class DefenseSystem {
         const secondary = PlayerCombatManager.fetch(enemy, 1);
         const turret = PlayerCombatManager.fetch(enemy, 2);
 
-        if (turret.reload < HealerUtils.RELOAD_BUFFER) {
+        const exactReload = Menu.getValue("exactThreatReload") === true;
+        if (!HealerUtils.isThreatReady(turret.reload, exactReload)) {
             state.canEMP = false;
         }
 
@@ -272,9 +273,9 @@ export default class DefenseSystem {
         const hasMonkeyTailOn = enemy.skinIndex !== STORE_HAT_MAP.BULL_HELMET && enemy.tailIndex === STORE_ACCESSORY_MAP.MONKEY_TAIL;
         const canThisEnemyPlaceOnMe = enemy.placePotential.onMeBufferIndex > 0;
 
-        let primaryDamage = primary.reload >= HealerUtils.RELOAD_BUFFER && this.isInRange(player, enemy, primary) ? (hasMonkeyTailOn ? primary.dmg : primary.dmg * BULL_DAMAGE_MULT) : 0;
-        let secondaryDamage = secondary.reload >= HealerUtils.RELOAD_BUFFER && this.isInRange(player, enemy, secondary) && DefenseUtils.isInLineOfSight(enemy, secondary) ? secondary.dmg : 0;
-        const turretDamage = turret.reload >= HealerUtils.RELOAD_BUFFER && DefenseUtils.isInLineOfSight(enemy, turret) ? TURRET_BULLET_DAMAGE : 0;
+        let primaryDamage = HealerUtils.isThreatReady(primary.reload, exactReload) && this.isInRange(player, enemy, primary) ? (hasMonkeyTailOn ? primary.dmg : primary.dmg * BULL_DAMAGE_MULT) : 0;
+        let secondaryDamage = HealerUtils.isThreatReady(secondary.reload, exactReload) && this.isInRange(player, enemy, secondary) && DefenseUtils.isInLineOfSight(enemy, secondary) ? secondary.dmg : 0;
+        const turretDamage = HealerUtils.isThreatReady(turret.reload, exactReload) && DefenseUtils.isInLineOfSight(enemy, turret) ? TURRET_BULLET_DAMAGE : 0;
 
         if (primaryDamage > 0 && turretDamage > 0) {
             // Worst case, whatever either of us wears: a Monkey Tail enemy can take the tail off and hit at full damage,

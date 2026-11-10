@@ -32,6 +32,12 @@ export const defenseSettings: IMenuItem[] = [{
             description: "At 7 shame, doesn't eat within 120 ms of a hit: in 1.8.2 that food would reach 8 shame, lock eating for 30 s and not even heal. It waits for the next tick instead, when eating lowers shame.",
             type: "toggle",
             status: false
+        }, {
+            label: "Exact Threat Reload",
+            id: "exactThreatReload",
+            description: "Counts an enemy weapon's damage for the next tick only when it is fully reloaded now, which is exactly when its hit can land next tick. Off: counts it from 90% reloaded, which sometimes counts a slow weapon a tick early (extra heals and soldier helmets for nothing). On a laggy server a fast weapon can very rarely be a tick sooner than counted.",
+            type: "toggle",
+            status: false
         }],
         status: true
     }, {

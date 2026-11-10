@@ -81,6 +81,7 @@ The **Favorites** tab lists the settings you starred; **Credits** has no setting
   - **Pattern Recognition** (`usePatternRec`, toggle, default: on) — Adapts defensive calculations based on common enemy attack patterns.
   - **Auto Healing** (`autoHeal`, toggle, default: on) — Responds to dangers by auto healing.
     - **Shame-Safe Healing** (`shameSafeHealing`, toggle, default: off) — At 7 shame, doesn't eat within 120 ms of a hit: in 1.8.2 that food would reach 8 shame, lock eating for 30 s and not even heal. It waits for the next tick instead, when eating lowers shame.
+    - **Exact Threat Reload** (`exactThreatReload`, toggle, default: off) — Counts an enemy weapon's damage for the next tick only when it is fully reloaded now, which is exactly when its hit can land next tick. Off: counts it from 90% reloaded, which sometimes counts a slow weapon a tick early (extra heals and soldier helmets for nothing). On a laggy server a fast weapon can very rarely be a tick sooner than counted.
   - **Hat Switching** (`defensiveHatSwitching`, toggle, default: on) — Allows the action of hat switching to mitigate potential damages.
   - **Blood Wings Optimizations** (`bloodWingsOptimizations`, toggle, default: off) — Uses blood wings for defensive purposes (e.g. no-soldier antionetick, no-shame antishamegrind, etc).
   - **Angel Wings Regen** (`angelWingsRegen`, toggle, default: off) — While hurt and no enemy is close, wears Angel Wings (3 health a second, without shame) instead of Monkey Tail.
