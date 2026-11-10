@@ -19,6 +19,7 @@ import ScriptConfig from "@utils/config/ScriptConfig";
 import getDist from "@utils/geometry/getDist";
 import getDistSq from "@utils/geometry/getDistSq";
 import inRange from "@utils/math/inRange";
+import reloadedByNextTick from "@utils/math/reloadedByNextTick";
 import { BULL_DAMAGE_MULT } from "@constants/world";
 import { SOLDIER_DAMAGE_TAKEN, TURRET_BULLET_DAMAGE } from "@constants/hatNumbers";
 
@@ -183,8 +184,7 @@ export default class OneTicker extends CombatModule {
         const nearestEnemy = tickState.enemyData.nearest!;
 
         const primary = PlayerCombatManager.fetch(player, 0);
-        const turretReloadPerTick = ScriptConfig.SERVER_UPDATE_SPEED / ScriptConfig.TURRET_GEAR_RELOAD;
-        const turretReloaded = player.getReload(2) + turretReloadPerTick >= 1;
+        const turretReloaded = reloadedByNextTick(player.getReload(2), ScriptConfig.TURRET_GEAR_RELOAD);
         const fullyReloaded = primary.reload === 1 && turretReloaded;
         const isInLineOfSight = CombatUtils.canTurretHit(nearestEnemy);
 
@@ -197,8 +197,7 @@ export default class OneTicker extends CombatModule {
         const enemyAngle = tickState.enemyData.angle;
 
         const primary = PlayerCombatManager.fetch(player, 0);
-        const turretReloadPerTick = ScriptConfig.SERVER_UPDATE_SPEED / ScriptConfig.TURRET_GEAR_RELOAD;
-        const turretReloaded = player.getReload(2) + turretReloadPerTick >= 1;
+        const turretReloaded = reloadedByNextTick(player.getReload(2), ScriptConfig.TURRET_GEAR_RELOAD);
         const minDistSq = this.minDist * this.minDist;
         const distanceSq = getDistSq(nearestEnemy.real_position, player.real_position);
 
