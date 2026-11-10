@@ -76,7 +76,7 @@ export default class HealthUpdateEvent extends MessageHandler<HealthUpdatePacket
 
         player.health = health;
         if (health <= 0 && !Client.isFriendly(sid)) {
-            Menu.chatLogs.push(new ChatLog(`${player.name} {${player.sid}} has died (${player.damages.join(",")})`, "death"));
+            Menu.addChatLog(new ChatLog(`${player.name} {${player.sid}} has died (${player.damages.join(",")})`, "death"));
             if (Menu.selectedTab === 5) drawChatLog();
         }
     }

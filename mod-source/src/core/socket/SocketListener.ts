@@ -198,7 +198,7 @@ export default class SocketListener {
             const player = PlayerManager.get(id);
 
             if (player) {
-                Menu.chatLogs.push(new ChatLog(`${player.name} {${player.sid}} has left the game`, "leave"));
+                Menu.addChatLog(new ChatLog(`${player.name} {${player.sid}} has left the game`, "leave"));
                 if (Menu.selectedTab === 5) drawChatLog();
                 PlayerManager.remove(player);
 
@@ -303,7 +303,7 @@ export default class SocketListener {
                 updatePlayerValue();
                 updateItems(null, false);
             } else {
-                Menu.chatLogs.push(new ChatLog(`encountered ${tmpPlayer.name} {${tmpPlayer.sid}}`, "encounter"));
+                Menu.addChatLog(new ChatLog(`encountered ${tmpPlayer.name} {${tmpPlayer.sid}}`, "encounter"));
                 if (Menu.selectedTab === 5) drawChatLog();
             }
         });
@@ -322,12 +322,7 @@ export default class SocketListener {
                 player.chatMessages.unshift(new ChatMessage(msg));
 
                 if (!/@@@@@/g.test(msg) && msg.trim()) {
-                    if (Menu.chatLogs.length > 500) {
-                        Menu.chatLogs.length = 0;
-                        Menu.chatLogs.push(new ChatLog(`Automatically cleared chat log.`));
-                    }
-
-                    Menu.chatLogs.push(new ChatLog(`${player.name} {${player.sid}} - ${msg}`));
+                    Menu.addChatLog(new ChatLog(`${player.name} {${player.sid}} - ${msg}`));
 
                     if (msg === "!clear" && sid === Client.mySID) {
                         Menu.chatLogs.length = 1;

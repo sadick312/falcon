@@ -1105,6 +1105,13 @@ export const menuContent: IMenuContent = {
 
 export default class Menu {
     static chatLogs: ChatLog[] = [new ChatLog("Loaded Falcon Mod")];
+    private static readonly MAX_CHAT_LOGS = 500;
+
+    /** Adds a console/chat log entry, keeping only the newest 500 (long sessions used to grow forever). */
+    static addChatLog(log: ChatLog) {
+        this.chatLogs.push(log);
+        if (this.chatLogs.length > this.MAX_CHAT_LOGS) this.chatLogs.splice(0, this.chatLogs.length - this.MAX_CHAT_LOGS);
+    }
 
     static tabHolder: HTMLDivElement;
     static contentElement: HTMLDivElement;
