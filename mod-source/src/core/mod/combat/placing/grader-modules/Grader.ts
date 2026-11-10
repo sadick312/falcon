@@ -139,7 +139,11 @@ export default abstract class Grader {
 
         for (let i = 0; i < count; i++) {
             const point = all[i];
-            if (point && getDistSq(point, item) <= scaleSq) {
+            if (point === undefined) continue;
+            // getDistSq written out: per angle, enemy and point, its returned number was allocated.
+            const dx = point.x - item.x;
+            const dy = point.y - item.y;
+            if (dx * dx + dy * dy <= scaleSq) {
                 placePotential.allLastHit = i;
                 item.priority = true;
                 return false;
@@ -277,10 +281,11 @@ export default abstract class Grader {
             if (enemy === undefined) continue;
             const pos = enemy.real_position;
 
-            const distanceSq = getDistSq(pos, item);
-
-            directionMap[enemy.sid] = getDir(pos, item);
-            distanceSqMap[enemy.sid] = distanceSq;
+            // getDistSq and getDir written out: this runs per angle and enemy, and their returned numbers were allocated.
+            const dx = pos.x - item.x;
+            const dy = pos.y - item.y;
+            directionMap[enemy.sid] = Math.atan2(dy, dx);
+            distanceSqMap[enemy.sid] = dx * dx + dy * dy;
 
             const proposedCanAbuse = this.factorAngleAbuse(item, enemy);
             if (canAbuse) canAbuse = proposedCanAbuse;

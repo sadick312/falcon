@@ -9,12 +9,10 @@ import { Point } from "@mod-types/index";
 import Angle from "@placing/Angle";
 import AngleGrader from "@placing/AngleGrader";
 import Grader from "@placing/grader-modules/Grader";
-import getDir from "@utils/angle/getDir";
 import normalizeAngle from "@utils/angle/normalizeAngle";
 import { tickState } from "@core/TickState";
 import { profileEnd, profileStart } from "@services/profiler/Profiler";
 import ScriptConfig from "@utils/config/ScriptConfig";
-import getDistSq from "@utils/geometry/getDistSq";
 import { PLAYER_SCALE, RIVER_HALF_WIDTH } from "@constants/world";
 
 type AngleItemContextIntervals = "open" | "raw" | "invalid" | "valid";
@@ -103,6 +101,8 @@ interface ObjectPassCache {
     trapRawIndex: number;
     willBreak: GameObject[];
 }
+
+const TWO_PI = Math.PI * 2;
 
 function insertionSortIntervals(arr: Float32Array, n: number) {
     for (let i = 2; i < n; i += 2) {
@@ -259,7 +259,11 @@ export default class AngleFinder {
         const totalRadius = itemScale + objScale;
         const totalRadiusSq = totalRadius * totalRadius;
 
-        const distanceSq = getDistSq(playerPos, obj);
+        // getDistSq, getDir and normalizeAngle written out in this function: it runs for every nearby object and item,
+        // and the numbers those calls returned were allocated.
+        const dx = playerPos.x - obj.x;
+        const dy = playerPos.y - obj.y;
+        const distanceSq = dx * dx + dy * dy;
         const maxReach = placementOffset + totalRadius;
 
         if (distanceSq > maxReach * maxReach) return index;
@@ -291,9 +295,9 @@ export default class AngleFinder {
 
         const thetha = Math.acos(cosVal);
 
-        const dir = getDir(obj, playerPos);
-        const start = normalizeAngle(dir - thetha);
-        const end = normalizeAngle(dir + thetha);
+        const dir = Math.atan2(obj.y - playerPos.y, obj.x - playerPos.x);
+        const start = ((dir - thetha) % TWO_PI + TWO_PI) % TWO_PI;
+        const end = ((dir + thetha) % TWO_PI + TWO_PI) % TWO_PI;
 
         if (start > end) {
             interval[index++] = start;
@@ -730,7 +734,10 @@ export default class AngleFinder {
             for (let i = 0, len = closeObjects.length; i < len; i++) {
                 const gameObject = closeObjects[i];
                 if (!gameObject || !gameObject.active || gameObject.isGhost) continue;
-                if (getDistSq(playerPos, gameObject) > reachSq) continue;
+                // getDistSq written out: called here for every nearby object, its returned number was allocated.
+                const dx = playerPos.x - gameObject.x;
+                const dy = playerPos.y - gameObject.y;
+                if (dx * dx + dy * dy > reachSq) continue;
 
                 // Stop while there is still room: a Float32Array silently drops writes past its end.
                 const limit = AngleFinder.MAX_INTERVALS * 2 - AngleFinder.INTERVAL_HEADROOM;
