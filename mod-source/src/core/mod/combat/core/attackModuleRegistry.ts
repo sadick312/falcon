@@ -10,7 +10,7 @@ import type ShameGrinder from "@combat-modules/ShameGrinder";
 import type SpikeTicker from "@combat-modules/SpikeTicker";
 import type ModModule from "@core/mod/utils/ModModule";
 
-export interface AttackModules {
+interface AttackModules {
     spikeTicker: SpikeTicker;
     appleInstakiller: AppleInstakiller;
     shameGrinder: ShameGrinder;

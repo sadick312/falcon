@@ -32,7 +32,7 @@ class Placement {
 }
 
 /** What PlacementSystem.place did: sent the placement, or nothing because of the building limit or a missing item. */
-export type PlaceResult = "placed" | "full" | "not-owned";
+type PlaceResult = "placed" | "full" | "not-owned";
 
 export default class PlacementSystem {
     static AutoPlacer = new AutoPlacer();

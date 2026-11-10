@@ -39,7 +39,7 @@ const quitClientBtn = getElem<"button">("quit-client-btn");
 const skinSelector = getElem("skin-selector");
 const actionBar = getElem("action-bar");
 
-export const packetReplayerOptionsPage = getElem("packet-replayer-options-page");
+const packetReplayerOptionsPage = getElem("packet-replayer-options-page");
 
 function updateSkinColorPicker() {
     skinSelector.innerHTML = "";

@@ -41,7 +41,7 @@ export interface ModBrainState {
     trapHitState: number;
 }
 
-export interface IEnemyData {
+interface IEnemyData {
     nearest: Player | null;
     nearby: Player[];
     all: Player[];

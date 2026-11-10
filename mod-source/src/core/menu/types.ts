@@ -4,7 +4,7 @@ export interface IMenuTab {
     icon: string;
 }
 
-export interface IMenuOptions {
+interface IMenuOptions {
     label: string;
     value: unknown;
 }
