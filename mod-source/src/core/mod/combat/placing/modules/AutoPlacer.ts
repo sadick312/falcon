@@ -93,7 +93,10 @@ export default class AutoPlacer extends Placer {
 
     private placePreplacement(index: number) {
         const padding = Menu.getValue("prenorounding") ? 0 : .5;
-        let waitMs = ScriptConfig.SERVER_UPDATE_SPEED - PingTracker.getStablePing() + padding;
+        // Sent to reach the server right as its next tick starts. With "Jitter-Safe Timing", later by the ping jitter:
+        // a placement that arrives late still lands (a tick later), one that arrives early fails.
+        let waitMs = ScriptConfig.SERVER_UPDATE_SPEED - PingTracker.getStablePing() + padding +
+            PingTracker.jitterMargin(Menu.getValue("jitterSafeTiming") === true);
 
         const preplacement = at(this.preplacements, index);
         const arr = preplacement.placements;

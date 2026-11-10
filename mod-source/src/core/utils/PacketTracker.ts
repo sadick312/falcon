@@ -109,7 +109,8 @@ export default class PacketTracker {
         if (amount <= 0) return 0;
 
         const halfAvgPing = PingTracker.getStablePing() / 2;
-        const realNow = performance.now() - halfAvgPing;
+        // With "Jitter-Safe Timing", older packets are counted as still in the server's 1 s window for one jitter longer.
+        const realNow = performance.now() - halfAvgPing - PingTracker.jitterMargin(Menu.getValue("jitterSafeTiming") === true);
         const unitCost = PacketAllocationPool[type];
 
         const currentUsage = this.getCurrent() + this.currentBaseline + this.reservedPackets;

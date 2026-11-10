@@ -52,6 +52,15 @@ export default class PingTracker {
         return this.jitter;
     }
 
+    /**
+     * Extra room for timings that depend on ping, for the "Jitter-Safe Timing" setting: the jitter when it is on
+     * (`enabled`), 0 when it is off, so the timings are exactly as before. Callers pass the setting in so this file
+     * stays free of the menu.
+     */
+    static jitterMargin(enabled: boolean) {
+        return enabled ? this.jitter : 0;
+    }
+
     /** Samples taken since the last reset (at most the 5 the median uses). */
     static get sampleCount() {
         return this.count;

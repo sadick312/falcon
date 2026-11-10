@@ -21,7 +21,9 @@ export default class HealthUpdateEvent extends MessageHandler<HealthUpdatePacket
      * since we can't tell what they ate.
      */
     private static ateRecently() {
-        const ticksOfPing = Math.ceil(PingTracker.getStablePing() / ScriptConfig.SERVER_UPDATE_SPEED);
+        // With "Jitter-Safe Timing", room for a heal that comes back late because the ping jumped (twice the jitter).
+        const jitterRoom = 2 * PingTracker.jitterMargin(Menu.getValue("jitterSafeTiming") === true);
+        const ticksOfPing = Math.ceil((PingTracker.getStablePing() + jitterRoom) / ScriptConfig.SERVER_UPDATE_SPEED);
         return tickState.tick - Client.lastAteTick <= 2 + ticksOfPing;
     }
 

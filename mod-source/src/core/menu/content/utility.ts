@@ -133,6 +133,13 @@ export const utilitySettings: IMenuItem[] = [{
         type: "toggle",
         status: false
     }, {
+        label: "Jitter-Safe Timing",
+        id: "jitterSafeTiming",
+        description: "When your ping jumps around, leaves room for it in the three timings that use ping: preplacements are sent later by the jitter (late still places, early fails), the check that a heal of ours was food waits longer, and the packet budget counts older packets a little longer. No effect on a steady connection.",
+        icon: WIFI_ICON,
+        type: "toggle",
+        status: false
+    }, {
         label: "Artificial Ping",
         id: "artificialPing",
         description: "Artificially increases ping. This toggle does actually make your ping worse. Unlike with other toggles, this toggle will not be automatically saved.",
