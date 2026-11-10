@@ -20,7 +20,16 @@
  *   them, so the browser handles them normally. Falcon binds none of these keys.
  *
  * The game's other timers (a 5 s server-list refresh, a 1 s UI check) stay; they're cheap and have no handle.
+ *
+ * The site's current page (since early Nov 2026, /assets/bundle.js, checked 10 Nov 2026) has no hackfix.js: the game
+ * keeps its socket in a private module (`new window.WebSocket(address)`), so the slots above stay empty. It still
+ * pings every 2.5 s (`io.send("ping")`), and every packet it sends is msgpack `[letter, data]`. So we also wrap
+ * WebSocket.prototype.send: a socket that isn't Falcon's and sends a MooMoo game packet is closed and the packet
+ * dropped. Other sockets on the page (anything not sending game packets) are left alone. Its draw loop still calls
+ * the global requestAnimFrame, so that part works unchanged.
  */
+
+import { GAME_V182 } from "@constants/gameVersion";
 
 /** The minimal WebSocket surface the guard needs, so tests can pass plain objects. */
 interface ClosableSocket {
@@ -61,6 +70,50 @@ function isDevToolsShortcut(event: KeyboardEvent) {
     if (key === 123) return true;
     if (event.ctrlKey && event.shiftKey && (key === 73 || key === 74 || key === 67)) return true;
     return event.ctrlKey && !event.shiftKey && key === 85;
+}
+
+const GAME_PACKET_TYPES = new Set<number>(GAME_V182.clientToServer.map(type => type.charCodeAt(0)));
+
+/** msgpack `[type, data]` with a one-letter packet type the game sends: 0x92 (array of 2), 0xa1 (1-char string), letter. */
+export function isGamePacket(data: unknown): boolean {
+    let bytes: Uint8Array;
+    if (data instanceof ArrayBuffer) bytes = new Uint8Array(data, 0, Math.min(3, data.byteLength));
+    else if (ArrayBuffer.isView(data)) bytes = new Uint8Array(data.buffer, data.byteOffset, Math.min(3, data.byteLength));
+    else return false;
+
+    return bytes.length === 3 && bytes[0] === 0x92 && bytes[1] === 0xa1 && GAME_PACKET_TYPES.has(bytes[2] ?? -1);
+}
+
+/** Marks a WebSocket.prototype.send we already wrapped, so loading the guard twice doesn't wrap it twice. */
+const WRAPPED = Symbol.for("falcon.vanillaGuard.send");
+
+interface SendGuard {
+    /** The current guard's check; replaced when the guard is installed again (fresh module, e.g. in tests). */
+    onSend: (socket: WebSocket, data: unknown) => boolean;
+}
+
+/**
+ * Wraps WebSocket.prototype.send once. `onSend` returns false to drop the packet. Falcon's own Socket extends the
+ * same WebSocket class, so its packets pass through here too and must be let through by `onSend`.
+ */
+function guardSend(onSend: SendGuard["onSend"]) {
+    const proto = (typeof WebSocket === "function" ? WebSocket.prototype : undefined) as
+        (WebSocket & { [WRAPPED]?: SendGuard }) | undefined;
+    if (!proto || typeof proto.send !== "function") return;
+
+    const existing = proto[WRAPPED];
+    if (existing) {
+        existing.onSend = onSend;
+        return;
+    }
+
+    const guard: SendGuard = { onSend };
+    const nativeSend = proto.send;
+    proto.send = function (this: WebSocket, data: Parameters<WebSocket["send"]>[0]) {
+        if (!guard.onSend(this, data)) return;
+        return nativeSend.call(this, data);
+    };
+    Object.defineProperty(proto, WRAPPED, { value: guard, configurable: true });
 }
 
 let installed: VanillaGuardResult | null = null;
@@ -124,6 +177,18 @@ export function stopVanillaGame(options: VanillaGuardOptions = {}): VanillaGuard
     } catch {
         win.requestAnimFrame = noopAnimFrame;
     }
+
+    // The current page's game socket: closed the first time it sends (its ping comes within 2.5 s).
+    guardSend((socket, data) => {
+        if (isOwn(socket) || !isGamePacket(data)) return true;
+
+        const before = result.closedSockets;
+        closeIfVanilla(socket);
+        if (result.closedSockets > before) {
+            console.info("[Falcon] Closed the vanilla game's connection (it sent a game packet underneath Falcon).");
+        }
+        return false;
+    });
 
     window.addEventListener("keydown", (event) => {
         if (isDevToolsShortcut(event)) event.stopImmediatePropagation();
