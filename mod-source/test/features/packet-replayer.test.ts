@@ -2,8 +2,8 @@
 // packet handlers with a FakeSocket, so the mod's decisions can be watched tick by tick (pause, step with the arrow
 // keys, seek, x0.125-x1 speed) next to the brain state recorded at the time.
 import { encode } from "@msgpack/msgpack";
-import { afterEach, describe, expect, it } from "vitest";
-import { type Game, startGame } from "../helpers/game";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { type Game, ME, startGame } from "../helpers/game";
 
 let game: Game | undefined;
 afterEach(() => game?.done());
@@ -44,5 +44,18 @@ describe("Packet replayer", () => {
         await import("@core/Connection");
         await Client.connect();
         expect(PacketTracker.request("PLACE", 4)).toBe(4);
+    });
+
+    it("doesn't print the brain state to the console on every replay tick", async () => {
+        // A leftover debug log printed the whole brain state each tick in replay mode, flooding the console in the
+        // Packet Replayer and slowing replays. The replayer already shows the recorded brain state on screen.
+        game = await startGame();
+        game.spawn({ sid: ME, x: 1000, y: 1000, weaponIndex: 0 });
+        const { tickState } = await import("@core/TickState");
+        const log = vi.mocked(console.log);
+        log.mockClear();
+        game.update();
+        game.update();
+        expect(log.mock.calls.some(args => args[0] === tickState.brainState)).toBe(false);
     });
 });

@@ -13,7 +13,6 @@ import ModManager from "@core/ModManager";
 import { tickState } from "@core/TickState";
 import PacketReplayer from "@core/PacketReplayer";
 import MessageHandler from "@core/socket/events/utils/MessageHandler";
-import FakeSocket from "@core/socket/FakeSocket";
 import Menu from "@menu/Menu";
 import CameraManager from "@rendering/core/CameraManager";
 import PacketMap, { WireValue } from "@root/utils/socket/PacketMap";
@@ -268,13 +267,8 @@ export default class PlayerUpdateEvent extends MessageHandler<UpdatePlayerPacket
         this.onTick(positions, attributes);
         this.postTick(hidden);
 
-        // run the mod brain regardless of socket instance but
-        // log brainState to debug if changes result in correct response while in replay mode
-        // used to fix healing issues and stuff :)
-
+        // The mod brain runs in live games and replays alike.
         ModManager.main();
-        if (Client.socket instanceof FakeSocket)
-            console.log(tickState.brainState);
 
         for (const e of tickState.enemyData.all) e.damages.length = 0;
     }
