@@ -67,6 +67,9 @@ ${bundle}
             console.warn("[Falcon] The normal game is also running (hook mode). It will be disconnected, but for " +
                 "best performance choose 'bundle replacement' or 'HTML replacement' in Quick Inject.");
             closeVanillaSocket();
+            // The normal game reschedules its render loop through window.requestAnimFrame every
+            // frame; a no-op stops that loop (it kept drawing to a hidden canvas, wasting CPU).
+            window.requestAnimFrame = function () { };
         }
 
         window.oldHTML = document.documentElement.innerHTML;
