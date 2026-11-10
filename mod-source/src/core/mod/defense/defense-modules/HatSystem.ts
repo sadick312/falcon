@@ -285,14 +285,8 @@ export default class HatSystem {
             return;
         }
 
-        if (pool[id]) return;
-        if (curr === 0) return;
-
-        this.sentHatPacket = true;
-        Client.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.STORE, false, 0, isAccessory);
-
-        if (isAccessory) ModManager.brainState.accUsed = 0;
-        else ModManager.brainState.hatUsed = 0;
+        // Wanted hat isn't owned: keep the current one. (This used to unequip the current hat,
+        // e.g. dropping Soldier Helmet just because Winter Cap wasn't bought yet.)
     }
 
     static storeBuy(id: number, isAccessory: boolean) {
