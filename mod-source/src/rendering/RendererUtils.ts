@@ -370,10 +370,11 @@ export default class RendererUtils {
 
         if (!tmpObj) {
             tmpObj = store.accessories.find(e => e.id == id)!;
-            this.accessPointers[id] = tmpObj;
+            if (tmpObj) this.accessPointers[id] = tmpObj;
         }
 
-        if (tmpAccessory.isLoaded) {
+        // Unknown accessory id (newer server data): skip instead of crashing the render loop.
+        if (tmpObj && tmpAccessory.isLoaded) {
             mainContext.save();
             mainContext.translate(-20 - (tmpObj.xOff ?? 0), 0);
             mainContext.drawImage(tmpAccessory, -tmpObj.scale / 2, -tmpObj.scale / 2, tmpObj.scale, tmpObj.scale);
@@ -404,8 +405,11 @@ export default class RendererUtils {
         let tmpObj = parent || this.skinPointers[id];
         if (!tmpObj) {
             tmpObj = store.hatMap.get(+id)!;
-            this.skinPointers[id] = tmpObj;
+            if (tmpObj) this.skinPointers[id] = tmpObj;
         }
+
+        // Unknown hat id (newer server data): skip instead of crashing the render loop.
+        if (!tmpObj) return;
 
         if (tmpSkin.isLoaded) {
             mainContext.drawImage(tmpSkin, -tmpObj.scale / 2, -tmpObj.scale / 2, tmpObj.scale, tmpObj.scale);

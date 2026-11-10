@@ -184,6 +184,7 @@ export default class Player implements Entity {
         public sid: number
     ) {
         for (const hat of store.hats) {
+            if (hat.dontSell) continue; // e.g. Shame can't be equipped by the player
             if (!hat.price || Client.mode === "replay") this.skins[hat.id] = true;
         }
 

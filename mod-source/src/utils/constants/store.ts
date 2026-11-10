@@ -6,6 +6,8 @@ export interface Hat {
     desc: string;
 
     topSprite?: boolean;
+    /** Not purchasable/equippable by players (e.g. Shame, which the server forces on). */
+    dontSell?: boolean;
     spdMult?: number;
     dmgMult?: number;
     aMlt?: number;
@@ -42,6 +44,7 @@ export interface Hat {
 export const hats: Hat[] = [{
     id: 45,
     name: "Shame!",
+    dontSell: true,
     price: 0,
     scale: 120,
     desc: "hacks are for losers"
@@ -123,6 +126,13 @@ export const hats: Hat[] = [{
     price: 0,
     scale: 120,
     desc: "like and subscribe"
+}, {
+    // Present in 1.8.2 (moomodding data), missing before -> crashed hat rendering when worn.
+    id: 59,
+    name: "Megalodon Hat",
+    price: 0,
+    scale: 120,
+    desc: "when make chicken v5, me fan"
 }, {
     id: 57,
     name: "Pumpkin",
