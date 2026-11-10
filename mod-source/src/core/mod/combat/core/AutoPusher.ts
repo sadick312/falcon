@@ -13,6 +13,7 @@ import getDistSq from "@utils/geometry/getDistSq";
 import withinDist from "@utils/geometry/withinDist";
 import Pathfinder from "../../../../services/pathfinding/Pathfinder";
 import { PLAYER_SCALE } from "@constants/world";
+import { SOLDIER_DAMAGE_TAKEN } from "@constants/hatNumbers";
 
 export default class AutoPusher {
     static moveDir: number | null = 0;
@@ -160,7 +161,7 @@ export default class AutoPusher {
         const distanceFromSpike = getDist(closestSpike, enemyPos) - totalScale;
 
         if (withinDist(enemyPos, playerPos, 95) && (withinDist(enemyNext, closestSpike, realScale) || distanceFromSpike <= 0)) {
-            if (this.stopTicks > 0 && !nearestEnemy.damages.some(dmg => dmg === closestSpike.dmg * .75 || dmg === closestSpike.dmg)) {
+            if (this.stopTicks > 0 && !nearestEnemy.damages.some(dmg => dmg === closestSpike.dmg * SOLDIER_DAMAGE_TAKEN || dmg === closestSpike.dmg)) {
                 return false;
             }
 

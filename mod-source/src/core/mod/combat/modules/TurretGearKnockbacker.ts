@@ -12,6 +12,7 @@ import { tickState } from "@core/TickState";
 import Menu from "@menu/Menu";
 import MovementPhysicsSimulator, { DamageSimAction, KnockbackSimAction } from "@simulation/MovementPhysicsSimulator";
 import withinDist from "@utils/geometry/withinDist";
+import { TURRET_BULLET_DAMAGE } from "@constants/hatNumbers";
 
 type TurretGearKBSimActions = [
     [DamageSimAction],
@@ -40,7 +41,7 @@ export default class TurretGearKnockbacker extends CombatModule {
     private simActions: TurretGearKBSimActions = [
         [{
             type: "damage",
-            damage: 25
+            damage: TURRET_BULLET_DAMAGE
         }],
         [{
             type: "knockback",

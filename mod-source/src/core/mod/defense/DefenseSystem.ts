@@ -31,6 +31,7 @@ import getDistSq from "@utils/geometry/getDistSq";
 import lineInCircle from "@utils/geometry/lineInCircle";
 import withinDist from "@utils/geometry/withinDist";
 import { BULL_DAMAGE_MULT, isCactusObject, PLAYER_SCALE } from "@constants/world";
+import { TURRET_BULLET_DAMAGE } from "@constants/hatNumbers";
 
 interface EnemyProcessResult {
     primaryDamage: number;
@@ -273,7 +274,7 @@ export default class DefenseSystem {
 
         let primaryDamage = primary.reload >= HealerUtils.RELOAD_BUFFER && this.isInRange(player, enemy, primary) ? (hasMonkeyTailOn ? primary.dmg : primary.dmg * BULL_DAMAGE_MULT) : 0;
         let secondaryDamage = secondary.reload >= HealerUtils.RELOAD_BUFFER && this.isInRange(player, enemy, secondary) && DefenseUtils.isInLineOfSight(enemy, secondary) ? secondary.dmg : 0;
-        const turretDamage = turret.reload >= HealerUtils.RELOAD_BUFFER && DefenseUtils.isInLineOfSight(enemy, turret) ? 25 : 0;
+        const turretDamage = turret.reload >= HealerUtils.RELOAD_BUFFER && DefenseUtils.isInLineOfSight(enemy, turret) ? TURRET_BULLET_DAMAGE : 0;
 
         if (primaryDamage > 0 && turretDamage > 0) {
             // Worst case, whatever either of us wears: a Monkey Tail enemy can take the tail off and hit at full damage,
@@ -326,8 +327,8 @@ export default class DefenseSystem {
                 sources.push(hasNotEvenAttacked ? longestTickSinceHit > 18 ? `superReducedSecondaryDamage` : `reducedSecondaryDamage` : `secondaryDamage`);
 
                 if (turretDamage > 0) {
-                    state.totalDamage += 25;
-                    state.empDamage += 25;
+                    state.totalDamage += TURRET_BULLET_DAMAGE;
+                    state.empDamage += TURRET_BULLET_DAMAGE;
                     sources.push("turretDamage");
                 }
             }
@@ -397,7 +398,7 @@ export default class DefenseSystem {
         let isSecondaryHitRecently = false;
         let highestSpikeDamage = 20;
 
-        state.totalDamage += player.turretThreats * 25;
+        state.totalDamage += player.turretThreats * TURRET_BULLET_DAMAGE;
         if (player.turretThreats > 0) state.canEMP = false;
 
         for (let i = 0, len = nearby.length; i < len; i++) {

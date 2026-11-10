@@ -17,6 +17,7 @@ import Menu from "@menu/Menu";
 import lineInRect from "@utils/geometry/lineInRect";
 import withinDist from "@utils/geometry/withinDist";
 import { BULL_DAMAGE_MULT, isCactusObject } from "@constants/world";
+import { TURRET_BULLET_DAMAGE } from "@constants/hatNumbers";
 
 type AutoInstakillerSimActions = [
     [DamageSimAction, DamageSimAction, KnockbackSimAction],
@@ -150,7 +151,7 @@ export default class AutoInstakiller extends CombatModule {
             const hammerKbAction = isFasterExecution ? sourceOneKB_1 : sourceOneKB_2;
             const turretKbAction = sourceTwoKB_2;
 
-            turretDmgAction.damage = 25;
+            turretDmgAction.damage = TURRET_BULLET_DAMAGE;
             // A spike-gear target reverses the combo with any secondary; Monkey Tail doesn't cut projectile damage.
             hammerDamageAction.damage = CombatUtils.getMonkeyDamage(secondary.dmg, hasProjectile);
             hammerDamageAction.dontUse = false;
@@ -186,7 +187,7 @@ export default class AutoInstakiller extends CombatModule {
             const turretKbAction = sourceOneKB_3;
             const secondaryKbAction = isFasterExecution ? sourceTwoKB_2 : sourceTwoKB_3;
 
-            turretDmgAction.damage = 25;
+            turretDmgAction.damage = TURRET_BULLET_DAMAGE;
             secondaryDamageAction.damage = CombatUtils.getMonkeyDamage(secondary.dmg, hasProjectile);
             secondaryDamageAction.dontUse = false;
 

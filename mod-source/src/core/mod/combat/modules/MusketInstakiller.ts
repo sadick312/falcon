@@ -11,11 +11,9 @@ import DefenseUtils from "@core/mod/defense/utils/DefenseUtils";
 import { tickState } from "@core/TickState";
 import Menu from "@menu/Menu";
 import { BULL_DAMAGE_MULT } from "@constants/world";
+import { SOLDIER_DAMAGE_TAKEN, TURRET_BULLET_DAMAGE } from "@constants/hatNumbers";
 
-/** Soldier helmet's damage multiplier (1.8.2: dmgMult .75). */
-const SOLDIER_MULT = 0.75;
 /** Turret gear's own bullet (projectile 1). */
-const TURRET_BULLET_DMG = getProjectile(1).dmg;
 /** The musket's bullet. */
 const MUSKET_DMG = getProjectile(getWeapon(WEAPON_ID_MAP.MUSKET).projectile!).dmg;
 
@@ -56,8 +54,8 @@ export default class MusketInstakiller extends CombatModule {
 
     /** The damage the combo deals to `enemy`: the bull melee hit plus the musket shot and turret bullet. */
     static comboDamage(meleeDmg: number, enemySkin: number) {
-        const firstMult = enemySkin === STORE_HAT_MAP.SOLDIER_HELMET ? SOLDIER_MULT : 1;
-        return meleeDmg * BULL_DAMAGE_MULT * firstMult + (MUSKET_DMG + TURRET_BULLET_DMG) * SOLDIER_MULT;
+        const firstMult = enemySkin === STORE_HAT_MAP.SOLDIER_HELMET ? SOLDIER_DAMAGE_TAKEN : 1;
+        return meleeDmg * BULL_DAMAGE_MULT * firstMult + (MUSKET_DMG + TURRET_BULLET_DAMAGE) * SOLDIER_DAMAGE_TAKEN;
     }
 
     protected execute() {

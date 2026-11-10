@@ -11,6 +11,7 @@ import Menu from "@menu/Menu";
 import AutoGrinder from "@placing/modules/AutoGrinder";
 import PacketMap from "@root/utils/socket/PacketMap";
 import { Input } from "@ui/Input";
+import { SOLDIER_DAMAGE_TAKEN, TURRET_BULLET_DAMAGE } from "@constants/hatNumbers";
 
 type CombatControllerMode = "autobreak" | "tankspam" | "autobreakspike" | "bullspam" | "autogrind" | "object breaking" | "pit object breaking" | "none";
 
@@ -80,9 +81,9 @@ export default class CombatController {
             for (let i = 0; i < damages.length; i++) {
                 const dmg = nearestEnemy.damages[i];
                 if (dmg === undefined) continue;
-                const dmgAfterSoldier = dmg / .75;
+                const dmgAfterSoldier = dmg / SOLDIER_DAMAGE_TAKEN;
 
-                if (Math.abs(dmgAfterSoldier - 25) <= .001 || dmg === 25) {
+                if (Math.abs(dmgAfterSoldier - TURRET_BULLET_DAMAGE) <= .001 || dmg === TURRET_BULLET_DAMAGE) {
                     // one tick failed (turret damage should register after all actions end lol)
                     AttackManager.stopAttackAction();
                     return false;

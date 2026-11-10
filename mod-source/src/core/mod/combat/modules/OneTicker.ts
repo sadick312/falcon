@@ -20,6 +20,7 @@ import getDist from "@utils/geometry/getDist";
 import getDistSq from "@utils/geometry/getDistSq";
 import inRange from "@utils/math/inRange";
 import { BULL_DAMAGE_MULT } from "@constants/world";
+import { SOLDIER_DAMAGE_TAKEN, TURRET_BULLET_DAMAGE } from "@constants/hatNumbers";
 
 interface OneTickStep {
     moveIndex: number;
@@ -187,7 +188,7 @@ export default class OneTicker extends CombatModule {
         const fullyReloaded = primary.reload === 1 && turretReloaded;
         const isInLineOfSight = CombatUtils.canTurretHit(nearestEnemy);
 
-        return fullyReloaded && isInLineOfSight && primary.dmg * BULL_DAMAGE_MULT + 25 >= 100;
+        return fullyReloaded && isInLineOfSight && primary.dmg * BULL_DAMAGE_MULT + TURRET_BULLET_DAMAGE >= 100;
     }
 
     protected execute() {
@@ -268,7 +269,7 @@ export default class OneTicker extends CombatModule {
         const isFasterExecution = PlayerStateManager.updatesBefore(player.sid, nearestEnemy.sid);
         if (isFasterExecution === null) return;
 
-        let totalDmg = 25 + primary.dmg * BULL_DAMAGE_MULT;
+        let totalDmg = TURRET_BULLET_DAMAGE + primary.dmg * BULL_DAMAGE_MULT;
         const bTickOffset = tickState.tick - nearestEnemy.bullTick;
 
         const knockbackAction = this.simActions[0][0];
@@ -283,8 +284,8 @@ export default class OneTicker extends CombatModule {
 
         if (bTickOffset % 9 === 8) totalDmg += 5;
         if (!nearestEnemy.trap || nearestEnemy.damages.length) totalDmg += simResult.spikesHit * 35;
-        if (isTankOrSoldier && !ignoreHats && this.willStayInSoldier(nearestEnemy)) totalDmg *= .75;
-        if (nearestEnemy.skinIndex === STORE_HAT_MAP.EMP_HELMET && !ignoreHats) totalDmg -= 25;
+        if (isTankOrSoldier && !ignoreHats && this.willStayInSoldier(nearestEnemy)) totalDmg *= SOLDIER_DAMAGE_TAKEN;
+        if (nearestEnemy.skinIndex === STORE_HAT_MAP.EMP_HELMET && !ignoreHats) totalDmg -= TURRET_BULLET_DAMAGE;
         if (totalDmg < 100) return;
 
         this.commit(firstStep, secondStep);

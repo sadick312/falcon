@@ -26,6 +26,7 @@ import getDistSq from "@utils/geometry/getDistSq";
 import getMagSq from "@utils/geometry/getMagSq";
 import withinDist from "@utils/geometry/withinDist";
 import { PLAYER_SCALE, BULL_DAMAGE_MULT } from "@constants/world";
+import { SOLDIER_DAMAGE_TAKEN } from "@constants/hatNumbers";
 
 export interface AutoBreakerInternal {
     replaceSpike: boolean;
@@ -183,7 +184,7 @@ export default class AutoBreaker {
         }
 
         if (!targetSpike) return;
-        if (totalDamage * .75 < 100) return;
+        if (totalDamage * SOLDIER_DAMAGE_TAKEN < 100) return;
         this.useKatana = true;
 
         this.setTarget(

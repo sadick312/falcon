@@ -10,6 +10,7 @@ import MessageHandler from "@core/socket/events/utils/MessageHandler";
 import { ChatLog } from "@menu/Menu";
 import PacketMap from "@root/utils/socket/PacketMap";
 import ScriptConfig from "@utils/config/ScriptConfig";
+import { ANGEL_WINGS_REGEN, BULL_HEALTH_DRAIN } from "@constants/hatNumbers";
 
 type HealthUpdatePacket = typeof PacketMap.SERVER_TO_CLIENT.UPDATE_HEALTH;
 
@@ -49,8 +50,8 @@ export default class HealthUpdateEvent extends MessageHandler<HealthUpdatePacket
         // helmet would miss our own drain (keeping the helmet on up to 9 more ticks) and lose enemies' bull timing.
         // Nothing else in 1.8.2 deals exactly 5. The 2 with Angel Wings is too common a number to count without the
         // helmet visibly on.
-        const isBullDrain = delta === -5 ||
-            (delta === -2 && player.skinIndex === STORE_HAT_MAP.BULL_HELMET && player.tailIndex === STORE_ACCESSORY_MAP.ANGEL_WINGS);
+        const isBullDrain = delta === -BULL_HEALTH_DRAIN ||
+            (delta === ANGEL_WINGS_REGEN - BULL_HEALTH_DRAIN && player.skinIndex === STORE_HAT_MAP.BULL_HELMET && player.tailIndex === STORE_ACCESSORY_MAP.ANGEL_WINGS);
 
         if (isBullDrain) {
             player.bullTick = tick - 1;

@@ -5,6 +5,7 @@ import Client from "@core/Client";
 import ObjectManager from "@core/logic/ObjectManager";
 import { PlayerSimulationState } from "@simulation/SimulationStates";
 import lineInRect from "@utils/geometry/lineInRect";
+import { MONKEY_TAIL_DAMAGE_MULT } from "@constants/hatNumbers";
 
 export default class CombatUtils {
     static isAttackPrimary(id: number) {
@@ -17,7 +18,7 @@ export default class CombatUtils {
 
     static getMonkeyDamage(dmg: number, isProjectile: boolean = false) {
         if (isProjectile) return dmg;
-        return dmg * (Client.player.tailIndex === STORE_ACCESSORY_MAP.MONKEY_TAIL ? .2 : 1);
+        return dmg * (Client.player.tailIndex === STORE_ACCESSORY_MAP.MONKEY_TAIL ? MONKEY_TAIL_DAMAGE_MULT : 1);
     }
 
     static canTurretHit(victim: Player) {

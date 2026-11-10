@@ -6,6 +6,7 @@ import HealerUtils from "@core/mod/defense/utils/HealerUtils";
 import WingsUtils from "@core/mod/defense/utils/WingsUtils";
 import { tickState } from "@core/TickState";
 import Menu from "@menu/Menu";
+import { SOLDIER_DAMAGE_TAKEN } from "@constants/hatNumbers";
 
 export interface AutoHealerInternal {
     healthAfterDamage: number;
@@ -70,13 +71,13 @@ export default class AutoHealer {
         tickState.brainState.healingInternal.willDieIfDoNothing = willDieIfDoNothing;
         tickState.brainState.healingInternal.alreadyForcedHat = alreadyForcedHat;
         tickState.brainState.healingInternal.empDamage = ctx.empDamage;
-        tickState.brainState.healingInternal.healthAfterSoldier = player.health - ctx.totalDamage * .75;
+        tickState.brainState.healingInternal.healthAfterSoldier = player.health - ctx.totalDamage * SOLDIER_DAMAGE_TAKEN;
         tickState.brainState.healingInternal.expectedDamage = ctx.totalDamage;
 
         if (willDieIfDoNothing && alreadyForcedHat) {
             // The Hat System can't put on a hat we don't own, so only count on soldier's 0.75× when we have it.
             if (DefenseSystem.skinIndex === STORE_HAT_MAP.SOLDIER_HELMET && player.skins[STORE_HAT_MAP.SOLDIER_HELMET]) {
-                if (player.health - ctx.totalDamage * .75 <= 0) {
+                if (player.health - ctx.totalDamage * SOLDIER_DAMAGE_TAKEN <= 0) {
                     this.heal();
                     tickState.brainState.healingResponse = "instant soldier + heal";
                     return;
@@ -95,7 +96,7 @@ export default class AutoHealer {
             if (ctx.canEMP && ctx.empDamage > 0 && healthAfterDamage + ctx.empDamage > 0 && player.skins[STORE_HAT_MAP.EMP_HELMET]) {
                 DefenseSystem.skinIndex = STORE_HAT_MAP.EMP_HELMET;
                 tickState.brainState.healingResponse = "0shame emp anti";
-            } else if (ctx.canSoldier && player.health - ctx.totalDamage * .75 > 0 && player.skins[STORE_HAT_MAP.SOLDIER_HELMET]) {
+            } else if (ctx.canSoldier && player.health - ctx.totalDamage * SOLDIER_DAMAGE_TAKEN > 0 && player.skins[STORE_HAT_MAP.SOLDIER_HELMET]) {
                 DefenseSystem.skinIndex = STORE_HAT_MAP.SOLDIER_HELMET;
                 tickState.brainState.healingResponse = "0shame soldier anti";
             } else {
