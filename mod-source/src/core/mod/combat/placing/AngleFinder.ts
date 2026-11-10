@@ -102,8 +102,6 @@ interface ObjectPassCache {
     willBreak: GameObject[];
 }
 
-const TWO_PI = Math.PI * 2;
-
 function insertionSortIntervals(arr: Float32Array, n: number) {
     for (let i = 2; i < n; i += 2) {
         const currentStart = arr[i] ?? NaN;
@@ -296,8 +294,8 @@ export default class AngleFinder {
         const thetha = Math.acos(cosVal);
 
         const dir = Math.atan2(obj.y - playerPos.y, obj.x - playerPos.x);
-        const start = ((dir - thetha) % TWO_PI + TWO_PI) % TWO_PI;
-        const end = ((dir + thetha) % TWO_PI + TWO_PI) % TWO_PI;
+        const start = normalizeAngle(dir - thetha);
+        const end = normalizeAngle(dir + thetha);
 
         if (start > end) {
             interval[index++] = start;
