@@ -30,15 +30,14 @@ import StoreItemsUpdateEvent from "@core/socket/events/core/StoreItemsUpdateEven
 import FakeSocket from "@core/socket/FakeSocket";
 import Socket, { respawnMainCard } from "@core/socket/Socket";
 import { socketHooks } from "@core/socket/socketHooks";
-import PacketBatcher from "@core/utils/PacketBatcher";
 import Menu, { ChatLog } from "@menu/Menu";
 import CameraManager from "@rendering/core/CameraManager";
-import { frameStats } from "@rendering/FrameStats";
 import PacketMap, { HandledServerPacket, PacketHandlers } from "@root/utils/socket/PacketMap";
 import PacketRecorder from "@services/packet-recorder/PacketRecorder";
 import { showServerRestarting } from "@ui/ConnectionError";
 import { enterGameBtn } from "@ui/enterGameBtn";
 import { gameUI, loadingCirclePage, respawnPage } from "@ui/Loader";
+import { pingDisplayText } from "@ui/pingDisplayText";
 import ScriptConfig from "@utils/config/ScriptConfig";
 import getElem from "@utils/dom/getElem";
 import kFormat from "@utils/math/kFormat";
@@ -72,6 +71,17 @@ export default class SocketListener {
     private static socket: Socket | FakeSocket;
     private static lastPingSocket = 0;
     private static awaitingPong = false;
+    /**
+     * We gave up on a ping (no reply within 5 s) and sent a new one. Replies carry no id, so the next reply may be the
+     * old ping's, late (after a stall): timing it against the new ping read far too low, e.g. 200 ms after a 5.2 s
+     * stall. So that reply only ends the wait, without a sample. (Counting the replies still owed instead would stop
+     * ping measurement for good if the server ever dropped one.)
+     */
+    private static replyUncertain = false;
+    /** The tab was hidden while this ping was out: the browser holds timers and messages back, so the time is not the network's. */
+    private static pingTainted = false;
+    /** A round trip longer than this is a stall (tab frozen, debugger, lag spike), not a network ping; not used as a sample. */
+    static readonly MAX_VALID_PING = 2e3;
 
     static pingSocket() {
         if (!this.isInitialized) return;
@@ -79,10 +89,33 @@ export default class SocketListener {
         // A reply slower than the 1s interval would otherwise be timed against the newer ping and read far too low.
         const now = performance.now();
         if (this.awaitingPong && now - this.lastPingSocket < 5e3) return;
+        this.replyUncertain = this.awaitingPong;
 
         this.awaitingPong = true;
+        this.pingTainted = typeof document !== "undefined" && document.hidden;
         this.lastPingSocket = now;
         this.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.PING_SOCKET);
+    }
+
+    /** The tab went to the background: the ping that is out now won't give a clean sample. */
+    static taintPendingPing() {
+        if (this.awaitingPong) this.pingTainted = true;
+    }
+
+    /** The pong handler: times the reply against its own ping and passes clean samples to PingTracker. */
+    static onPong() {
+        if (!this.awaitingPong) return;
+        this.awaitingPong = false;
+
+        const rawPing = performance.now() - this.lastPingSocket;
+        if (this.replyUncertain || this.pingTainted || rawPing > this.MAX_VALID_PING) {
+            this.replyUncertain = false;
+            return;
+        }
+
+        PingTracker.update(rawPing);
+        Client.pingTime = Math.round(rawPing * 1e3) / 1e3;
+        pingDisplay.innerText = pingDisplayText();
     }
 
     /** Downloads the last ~15s of packets as an .fpl file (always when manual; on death, depending on the logging toggles). */
@@ -119,6 +152,8 @@ export default class SocketListener {
     /** Stops the 1s ping loop. Called when the socket closes so the interval doesn't outlive it. */
     static stopPinging() {
         this.awaitingPong = false;
+        this.replyUncertain = false;
+        this.pingTainted = false;
         if (this.pingTimer === undefined) return;
         clearInterval(this.pingTimer);
         this.pingTimer = undefined;
@@ -210,16 +245,7 @@ export default class SocketListener {
                 }
             },
 
-            [PacketMap.SERVER_TO_CLIENT.PING_RESPONSE]: () => {
-                if (!this.awaitingPong) return;
-                this.awaitingPong = false;
-    
-                const rawPing = performance.now() - this.lastPingSocket;
-                PingTracker.update(rawPing);
-    
-                Client.pingTime = Math.round(rawPing * 1e3) / 1e3;
-                pingDisplay.innerText = `Ping: ${Client.pingTime} ms | FPS: ${frameStats.fps} | BWin: ${PacketBatcher.effectiveBatchWindow.toFixed(1)} ms | Jitter: ${PacketBatcher.tickJitter.toFixed(1)} ms`;
-            },
+            [PacketMap.SERVER_TO_CLIENT.PING_RESPONSE]: () => this.onPong(),
 
             [PacketMap.SERVER_TO_CLIENT.ADD_ALLIANCE]: (data) => {
                 Client.alliances.push(data);
@@ -491,3 +517,8 @@ export default class SocketListener {
 // Socket calls these instead of importing this module (see core/socket/socketHooks.ts).
 socketHooks.onDispatch = (type, data) => logPacket(type, data);
 socketHooks.onClose = () => SocketListener.stopPinging();
+
+// A ping that is out while the tab goes to the background is timed by the browser's throttling, not the network.
+document.addEventListener("visibilitychange", () => {
+    if (document.hidden) SocketListener.taintPendingPing();
+});

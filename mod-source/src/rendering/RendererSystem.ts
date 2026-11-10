@@ -1,7 +1,7 @@
 import Client, { pingDisplay } from "@core/Client";
 import { mainContext, pixelDensity } from "@rendering/RenderContext";
 import PacketReplayer, { pauseIcon } from "@core/PacketReplayer";
-import PacketBatcher from "@core/utils/PacketBatcher";
+import { pingDisplayText } from "@ui/pingDisplayText";
 import Menu from "@menu/Menu";
 import CameraManager from "@rendering/core/CameraManager";
 import SpriteCache from "@rendering/core/SpriteCache";
@@ -64,7 +64,7 @@ export default class RendererSystem {
             this.lastUpdateFrames = performance.now();
             this.fpsCount = 0;
 
-            pingDisplay.innerText = `Ping: ${Client.pingTime} ms | FPS: ${frameStats.fps} | BWin: ${PacketBatcher.effectiveBatchWindow.toFixed(1)} ms | Jitter: ${PacketBatcher.tickJitter.toFixed(1)} ms`;
+            pingDisplay.innerText = pingDisplayText();
         }
     }
 
