@@ -2,6 +2,37 @@
 
 What changed in Falcon, newest first. Each entry names the commit(s) for the details.
 
+## Unreleased (branch review/stability, dead-code cleanup)
+
+Nothing a player does in a fight changes: replay fingerprints are unchanged by every commit here.
+
+### Fixed
+- Menu on/off switches were invisible with a Windows contrast theme (Chrome's forced colors painted the switch
+  and its knob the same grey); they keep their own colours now. (9473852)
+- The Packet Replayer printed the whole brain state to the console on every tick, flooding it. (50ac6b4)
+
+### Changed
+- One helper, `reloadedByNextTick`, for "reloaded after one more server tick", used by One Tick and the
+  object-break check instead of the sum written out by hand (One Tick's soldier check keeps its own form: it
+  differs for a weapon with no reload data yet). (40fe050, 6f77cc0, e8d4492)
+- Angle Finder uses the shared `normalizeAngle`. (dd133a6)
+- Eight exports only their own file used are no longer exported, and a commented-out packet cost is gone.
+  (5e212ee, 760c9bf, 4140049)
+
+### Added
+- `npm run check:dead`: builds the mod and reports files nothing uses, exports nothing else uses and menu settings
+  nothing reads (knip can't run on this PC). (8470751)
+- Tests for low-coverage combat code: the packet budget's frees and caps (68% -> 87% branches), each spike-grading
+  rule (58% -> 78%), and the great-hammer push into our trap with each condition that stops it (64% -> 84%).
+  (675e17c)
+- The TaskScheduler timing test no longer fails on a busy PC (still checks a task never runs early). (ad0d7e6)
+
+### Measured, not changed
+- Dead code: no unused files, npm packages, settings or features (e.g. no empty webhook sender) were found;
+  the bundle shrank by 83 bytes from the removals.
+- Speed: a one-distance-per-object version of the object-break check behaved identically but showed no clear
+  gain while other test runs were loading the PC, so it was not kept.
+
 ## Unreleased (branch review/stability, Part 1 and the ping/lag brief)
 
 Every new behaviour is a menu toggle that is off by default, so Falcon plays exactly as before until you turn it
