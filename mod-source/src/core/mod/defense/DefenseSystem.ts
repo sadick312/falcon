@@ -1,3 +1,4 @@
+import Latency from "@core/mod/utils/Latency";
 import CombatUtils from "@combat-utils/CombatUtils";
 import items, { LIST_ID_MAP, WEAPON_ID_MAP, WEAPON_VARIANT_MAP } from "@constants/items";
 import Player from "@constants/Player";
@@ -194,6 +195,15 @@ export default class DefenseSystem {
 
     private static oldConsiderAutoBreakHit = false;
 
+    private static leadSelf = { x: 0, y: 0 };
+    private static leadEnemy = { x: 0, y: 0 };
+
+    private static inRangeAfterLead(player: Player, enemy: Player, range: number) {
+        if (!Latency.isCompensationEnabled()) return false;
+        const lead = Latency.getActionLeadMs();
+        return withinDist(Latency.predict(player, lead, this.leadSelf), Latency.predict(enemy, lead, this.leadEnemy), range);
+    }
+
     private static isInRange(player: Player, enemy: Player, weapon: WeaponFetchData) {
         const wpnData = items.weapons[weapon.id];
         const HITBOX_OFFSET = 63;
@@ -206,7 +216,9 @@ export default class DefenseSystem {
             return withinDist(player.real_position, enemy.next_position, wpnData.range + HITBOX_OFFSET) ||
                 withinDist(player.next_position, enemy.real_position, wpnData.range + HITBOX_OFFSET) ||
                 withinDist(player.next_position, enemy.next_position, wpnData.range + HITBOX_OFFSET) ||
-                withinDist(player.real_position, enemy.real_position, wpnData.range + HITBOX_OFFSET);
+                withinDist(player.real_position, enemy.real_position, wpnData.range + HITBOX_OFFSET) ||
+                // High ping: our hat/heal response lands ~RTT later, so also check that moment.
+                this.inRangeAfterLead(player, enemy, wpnData.range + HITBOX_OFFSET);
         }
 
         const playerPos = player.real_position;

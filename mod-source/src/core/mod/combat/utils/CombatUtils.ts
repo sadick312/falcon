@@ -1,3 +1,4 @@
+import Latency from "@core/mod/utils/Latency";
 import items, { WEAPON_ID_MAP } from "@constants/items";
 import Player from "@constants/Player";
 import { STORE_ACCESSORY_MAP, STORE_HAT_MAP } from "@constants/store";
@@ -94,8 +95,29 @@ export default class CombatUtils {
         return player.skinIndex === STORE_HAT_MAP.SOLDIER_HELMET ? dmg * .75 : dmg;
     }
 
+    private static landingA = { x: 0, y: 0 };
+    private static landingB = { x: 0, y: 0 };
+
+    /**
+     * Will `victim` be within `range` of `attacker` when an attack we send now lands on the server?
+     * Uses both players' predicted positions ~RTT + half a tick ahead (Latency), so at high ping we
+     * don't swing at enemies that will have walked out of range. Same hitbox rule as the server
+     * (range + 35 * 1.8).
+     */
+    static inRangeWhenLanding(attacker: Player, victim: Player, range: number) {
+        if (!Latency.isCompensationEnabled()) return this.getCombatDistance(attacker, victim, range);
+
+        const lead = Latency.getActionLeadMs();
+        Latency.predict(attacker, lead, this.landingA);
+        Latency.predict(victim, lead, this.landingB);
+
+        const dx = this.landingA.x - this.landingB.x;
+        const dy = this.landingA.y - this.landingB.y;
+        const total = range + 63;
+        return dx * dx + dy * dy <= total * total;
+    }
+
     static canAttack(victim: Player, attacker: Player, weaponId: number) {
-        const range = items.weapons[weaponId].range;
-        return this.getCombatDistance(attacker, victim, range);
+        return this.inRangeWhenLanding(attacker, victim, items.weapons[weaponId].range);
     }
 }

@@ -266,7 +266,7 @@ export default class AutoInstakiller extends CombatModule {
         const hasSpikeGear = nearestEnemy.skinIndex === STORE_HAT_MAP.SPIKE_GEAR;
         const hasGreatHammer = secondary.id === WEAPON_ID_MAP.GREAT_HAMMER;
         const weaponRange = hasGreatHammer ? items.weapons[secondary.id].range : items.weapons[primary.id].range;
-        if (!CombatUtils.getCombatDistance(player, nearestEnemy, weaponRange - 1)) return;
+        if (!CombatUtils.inRangeWhenLanding(player, nearestEnemy, weaponRange - 1)) return;
 
         const shouldReverseInsta = hasGreatHammer || hasSpikeGear;
         const hasProjectile = !!items.weapons[secondary.id].projectile;

@@ -1,3 +1,4 @@
+import Latency from "@core/mod/utils/Latency";
 import CombatUtils from "@combat-utils/CombatUtils";
 import GameObject from "@constants/GameObject";
 import items, { WEAPON_ID_MAP } from "@constants/items";
@@ -128,6 +129,35 @@ export default class ModManager {
         };
     }
 
+    private static aimEnemy = { x: 0, y: 0 };
+    private static aimSelf = { x: 0, y: 0 };
+
+    /**
+     * Angle from where we'll be to where the nearest enemy will be when our attack lands
+     * (RTT + half a tick ahead; for projectiles plus the flight time). Melee hits have a wide
+     * arc, but musket/bow shots miss moving targets at high ping without this lead.
+     */
+    static getPredictedAimAngle(weaponId?: number) {
+        const enemy = this.enemyData.nearest;
+        const player = Client.player;
+        if (!enemy || !player || !Latency.isCompensationEnabled()) return this.enemyData.angle;
+
+        const lead = Latency.getActionLeadMs();
+        let enemyLead = lead;
+
+        const weapon = typeof weaponId === "number" ? items.weapons[weaponId] : undefined;
+        if (weapon && weapon.projectile !== undefined) {
+            const speed = items.projectiles[weapon.projectile].speed ?? 1.5;
+            // Projectiles spawn 70 units in front of the shooter (2 * player scale).
+            const flight = Math.max(0, getDist(enemy.real_position, player.real_position) - 70) / speed;
+            enemyLead += flight;
+        }
+
+        Latency.predict(player, lead, this.aimSelf);
+        Latency.predict(enemy, enemyLead, this.aimEnemy);
+        return getDir(this.aimEnemy, this.aimSelf);
+    }
+
     static getAttackDir(autoaimmer: true): number | undefined;
     static getAttackDir(autoaimmer?: false): number;
 
@@ -141,7 +171,7 @@ export default class ModManager {
             const type = action.aimType;
             const nearestEnemy = this.enemyData.nearest;
             const trapAim = nearestEnemy && nearestEnemy.trap ? getDir(nearestEnemy.trap, player.real_position) : 0;
-            return typeof action.customAim !== "undefined" ? action.customAim : type === "nearest" ? this.enemyData.angle : trapAim;
+            return typeof action.customAim !== "undefined" ? action.customAim : type === "nearest" ? this.getPredictedAimAngle(action.wpnId) : trapAim;
         } else if (CombatController.currentMode === "autobreak" || CombatController.currentMode === "autobreakspike") {
             return AutoBreaker.aimAngle;
         } else if (CombatController.currentMode === "object breaking" || CombatController.currentMode === "pit object breaking") {
