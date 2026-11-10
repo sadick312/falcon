@@ -1,3 +1,4 @@
+import NameSpriteCache from "@rendering/core/NameSpriteCache";
 import { ais } from "@constants/Ai";
 import Player from "@constants/Player";
 import Client from "@core/Client";
@@ -39,18 +40,18 @@ export default function renderNames() {
             const teamName = (entity as Player).team;
             const tmpName = renderNames ? `${teamName ? `[${teamName}] ` : ""}${entity.name || ""}` : "";
 
+            let nameWidth = 0;
+
             if (tmpName) {
-                mainContext.font = `${(entity.nameScale || 30)}px Hammersmith One`;
-                mainContext.fillStyle = "#ffffff";
-                mainContext.textBaseline = "middle";
-                mainContext.textAlign = "center";
-                mainContext.lineWidth = (entity.nameScale ? 11 : 8);
-                mainContext.lineJoin = "round";
-                mainContext.strokeText(tmpName, entity.render_position.x - xOffset, (entity.render_position.y - yOffset - entity.scale) - RendererUtils.nameY);
-                mainContext.fillText(tmpName, entity.render_position.x - xOffset, (entity.render_position.y - yOffset - entity.scale) - RendererUtils.nameY);
+                // Cached sprite instead of strokeText/fillText every frame (see NameSpriteCache).
+                const sprite = NameSpriteCache.get(tmpName, entity.nameScale || 30, entity.nameScale ? 11 : 8, "#ffffff", RendererUtils.darkOutlineColor);
+                const nameX = entity.render_position.x - xOffset;
+                const nameY = (entity.render_position.y - yOffset - entity.scale) - RendererUtils.nameY;
+                mainContext.drawImage(sprite.canvas, nameX - sprite.width / 2, nameY - sprite.height / 2, sprite.width, sprite.height);
+                nameWidth = sprite.textWidth;
 
                 if (entity.isLeader && SpriteCache.iconSprites["crown"].isLoaded) {
-                    const tmpX = entity.render_position.x - xOffset - (tmpS / 2) - (mainContext.measureText(tmpName).width / 2) - crownPad;
+                    const tmpX = entity.render_position.x - xOffset - (tmpS / 2) - (nameWidth / 2) - crownPad;
 
                     mainContext.drawImage(
                         SpriteCache.iconSprites["crown"],
@@ -62,7 +63,7 @@ export default function renderNames() {
                 }
 
                 if (entity.iconIndex == 1 && SpriteCache.iconSprites["skull"].isLoaded) {
-                    const tmpX = entity.render_position.x - xOffset - (tmpS / 2) + (mainContext.measureText(tmpName).width / 2) + crownPad;
+                    const tmpX = entity.render_position.x - xOffset - (tmpS / 2) + (nameWidth / 2) + crownPad;
 
                     mainContext.drawImage(
                         SpriteCache.iconSprites["skull"],
@@ -95,89 +96,34 @@ export default function renderNames() {
             }
 
             if (renderShameCount && entity.isPlayer) {
-                mainContext.font = (entity.nameScale || 30) + "px Hammersmith One";
-                mainContext.fillStyle = "#ff0000";
-                mainContext.textBaseline = "middle";
-                mainContext.textAlign = "center";
-                mainContext.lineWidth = entity.nameScale ? 11 : 8;
-                mainContext.lineJoin = "round";
-
-                const shameXCoords = entity.render_position.x - xOffset + (mainContext.measureText(tmpName).width / 2) + crownPad + (entity.clowned ? crownPad * .5 : 0) + (entity.iconIndex == 1 ? crownPad * 1.5 : 0)
+                const shameXCoords = entity.render_position.x - xOffset + (nameWidth / 2) + crownPad + (entity.clowned ? crownPad * .5 : 0) + (entity.iconIndex == 1 ? crownPad * 1.5 : 0)
                 const shameYCoords = entity.render_position.y - yOffset - 35 - RendererUtils.nameY;
                 const text = entity.clowned ? (entity.shameTimer / 1e3).toFixed(1) : entity.shameCount.toString();
 
-                mainContext.strokeText(
-                    text,
-                    shameXCoords,
-                    shameYCoords
-                );
-
-                mainContext.fillText(
-                    text,
-                    shameXCoords,
-                    shameYCoords
-                );
+                NameSpriteCache.draw(mainContext, text, shameXCoords, shameYCoords, entity.nameScale || 30, entity.nameScale ? 11 : 8, "#ff0000", RendererUtils.darkOutlineColor);
             }
 
             if (entity.isPlayer && entity.sid === Client.mySID) {
                 if (renderPacketCounter) {
-                    mainContext.font = "13px Hammersmith One";
-                    mainContext.textBaseline = "middle";
-                    mainContext.textAlign = "center";
-                    mainContext.lineWidth = 4;
-                    mainContext.lineJoin = "round";
-
                     const packets = PacketTracker.getCurrent();
-                    const text = packets.toString();
-
                     const minPackets = 30;
                     const maxPackets = 120;
                     const ratio = Math.min(1, Math.max(0, (packets - minPackets) / (maxPackets - minPackets)));
                     const gbValue = Math.round(255 * (1 - ratio));
-                    mainContext.fillStyle = `rgb(255, ${gbValue}, ${gbValue})`;
 
                     const effectiveY = entity.render_position.y - yOffset - entity.scale - RendererUtils.nameY * 2;
-                    mainContext.strokeText(text, entity.render_position.x - xOffset, effectiveY);
-                    mainContext.fillText(text, entity.render_position.x - xOffset, effectiveY);
+                    NameSpriteCache.draw(mainContext, packets.toString(), entity.render_position.x - xOffset, effectiveY, 13, 4, `rgb(255, ${gbValue}, ${gbValue})`, RendererUtils.darkOutlineColor);
                 }
 
                 if (renderPlacementTime) {
-                    mainContext.font = "13px Hammersmith One";
-                    mainContext.fillStyle = "#fff";
-                    mainContext.textBaseline = "middle";
-                    mainContext.textAlign = "center";
-                    mainContext.lineWidth = 4;
-                    mainContext.lineJoin = "round";
-
                     const text = `[${Client.placementTime.join(", ")}]`;
                     const effectiveY = entity.render_position.y - yOffset - entity.scale - (RendererUtils.nameY / 2) + 5;
-
-                    mainContext.strokeText(text, entity.render_position.x - xOffset, effectiveY);
-                    mainContext.fillText(text, entity.render_position.x - xOffset, effectiveY);
+                    NameSpriteCache.draw(mainContext, text, entity.render_position.x - xOffset, effectiveY, 13, 4, "#fff", RendererUtils.darkOutlineColor);
                 }
             }
 
             if (renderOwnership && entity.isPlayer) {
-                mainContext.font = "14px Hammersmith One";
-                mainContext.fillStyle = "#fff";
-                mainContext.textBaseline = "middle";
-                mainContext.textAlign = "center";
-                mainContext.lineWidth = 8;
-                mainContext.lineJoin = "round";
-
-                const text = entity.sid.toString();
-
-                mainContext.strokeText(
-                    text,
-                    entity.render_position.x - xOffset,
-                    entity.render_position.y - yOffset
-                );
-
-                mainContext.fillText(
-                    text,
-                    entity.render_position.x - xOffset,
-                    entity.render_position.y - yOffset
-                );
+                NameSpriteCache.draw(mainContext, entity.sid.toString(), entity.render_position.x - xOffset, entity.render_position.y - yOffset, 14, 8, "#fff", RendererUtils.darkOutlineColor);
             }
 
             if (entity.health > 0) {
