@@ -141,7 +141,6 @@ export default class Client {
         return this.allianceMap.get(owner.team)?.has(player.sid) ?? false;
     }
 
-    static pingTime: number = 0;
     static minimapData: number[] = [];
     static placementTime = ["0", "0", "0", "0", "0"];
     static placementTimeHead = 0;

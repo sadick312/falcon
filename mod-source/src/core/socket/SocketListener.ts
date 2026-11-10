@@ -216,7 +216,6 @@ export default class SocketListener {
             const rawPing = PingTracker.onReply();
             if (rawPing < 0) return;
 
-            Client.pingTime = Math.round(rawPing * 1e3) / 1e3;
             updatePingDisplay(RendererSystem.fps);
         });
 
