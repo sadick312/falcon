@@ -83,8 +83,10 @@ Use this if you don't want to install the extension. It only works on moomodding
    `allow pasting` in the console first and press Enter.
 
 Either way Falcon replaces the page. If the normal game was already running underneath (the console way),
-Falcon stops it: it closes the game's own connection and stops its drawing, and the console shows
-`[Falcon] Stopped the vanilla game underneath Falcon`.
+Falcon stops it: it closes the game's own connection and stops its drawing. The console shows
+`[Falcon] Stopped the vanilla game underneath Falcon`, or on the site's current page (which has no
+`hackfix.js`) `[Falcon] Closed the vanilla game's connection` within about 2.5 seconds, the first time the game
+tries to send something.
 
 Pasting the file a second time on the same page does nothing; reload the page to start over.
 

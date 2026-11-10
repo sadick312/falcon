@@ -2,6 +2,46 @@
 
 What changed in Falcon, newest first. Each entry names the commit(s) for the details.
 
+## Unreleased (branch review/stability, Part 1 and the ping/lag brief)
+
+Every new behaviour is a menu toggle that is off by default, so Falcon plays exactly as before until you turn it
+on. Replay fingerprints are unchanged by every commit here.
+
+### Added
+- **Trust Seen Weapons** (Combat > Combat Modules, off): keeps an enemy's seen hunting bow or crossbow, and its
+  reload, instead of assuming a loaded musket whenever they hold their primary; guesses a katana, not a polearm,
+  for a seen short sword. (a005a54)
+- **Send Movement Instantly** (Utility > Packet Management, off): a movement key is sent at once instead of with
+  the next server tick, about 55 ms sooner on average (22-91 ms depending on ping), within the packet budget and
+  after Safe Walk. (d95f956)
+- **Jitter-Safe Timing** (Utility > Packet Management, off): when the ping jumps around, leaves room for it in the
+  three timings that use ping (preplacements, the "was that heal food" check, the packet budget). (a622ff9)
+- The ping display shows the current ping, the stable ping and the ping jitter; the old "Jitter" is now "Tick
+  jitter" (how unevenly server ticks arrive). (bcbfa6d)
+- Measuring tools: `bench/aim-report.bench-run.ts` (would each melee attack hit, and why not), `bench/long-ticks
+  .bench-run.ts` (slowest ticks, cold and warm), `bench/analysis/instant-move-latency.mjs`. (8b56b3e, 1471dda,
+  d95f956)
+- Tests: reload timing for every weapon with and without Samurai Armor (Falcon acts on the exact tick a weapon is
+  ready), socket and server-browser gaps, PacketBatcher's fake ticks and jitter, the artificial ping setting.
+  (a005a54, 3f64bb5, 24ca846, 568bff3)
+
+### Fixed
+- sandbox.moomodding.io's new game page (/assets/bundle.js since early November) printed "Could not read the game
+  version" on every start; it is now recognised as 1.8.2 (checked: same packets, items, hats and timings). (d12a520)
+- With Falcon pasted into the F12 console on the new page, the vanilla game kept its own connection open; it is
+  now closed the first time it sends (within 2.5 s). (a6b99cb)
+- Ping: a late reply after a stall was timed against the newer ping (e.g. 200 ms after a 5.2 s stall), pings
+  out while the tab was hidden and stalls over 2 s counted as ping, and a reconnect kept the old server's ping
+  for ~3 s. (bcbfa6d)
+
+### Measured, not changed
+- 1.8.2 timings (reloads, Bull Helmet, Turret Gear, Samurai Armor, damage) all match Falcon's values.
+- Aim: the server hits within 69 deg either side of the aim, so aim error almost never causes a miss; leading
+  the target gains nothing measurable. No angle wraparound bug exists.
+- Drawing: matching the measured tick interval would cut drawn lag ~22% but make motion up to 50% less even on
+  jittery Wi-Fi; no extrapolation cap is better in every lag spike. Unchanged.
+- Tick time: no tick over 16.7 ms in any sample (median 0.3-0.9 ms); nothing beat the 10% noise rule.
+
 ## Unreleased (branch review/stability, Parts 1-3)
 
 Everything after the "groups A-D" entry below. Replay fingerprints (sent packets and game state) are unchanged
