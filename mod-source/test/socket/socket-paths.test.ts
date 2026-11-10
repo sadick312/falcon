@@ -227,6 +227,50 @@ describe("the artificial ping setting", () => {
         delayed.forEach(d => d.cb());
         expect(native.sent.map(bytes => decode(bytes))).toEqual([["6", ["first"]], ["z", [3, false]]]);
     });
+
+    it("adds no delay at all when off, also after being on (nothing scheduled, sent and handled at once)", async () => {
+        const ctx = await withPing("60");
+        const { socket, native, receive, delayed, Menu } = ctx;
+        receive(["io-init", ["id"]]);
+        Menu.itemMap.artificialPing.status = false;
+
+        const handler = vi.fn();
+        socket.on("O", handler);
+        socket.processPacket("O", [1, 2]);
+        socket.sendMsg("6", "now");
+
+        expect(handler).toHaveBeenCalledWith(1, 2);
+        expect(native.sent.map(bytes => decode(bytes))).toEqual([["6", ["now"]]]);
+        expect(delayed).toHaveLength(0);
+    });
+});
+
+describe("TaskScheduler (runs the artificial ping's delays)", () => {
+    it("runs a task after its delay, not before, within a few ms", async () => {
+        vi.useRealTimers();
+        vi.resetModules();
+        const { default: TaskScheduler } = await import("@services/event-timer/TaskScheduler");
+        TaskScheduler.init();
+
+        const start = performance.now();
+        const ranAt = await new Promise<number>(resolve => TaskScheduler.setTimeout(() => resolve(performance.now()), 30));
+        const waited = ranAt - start;
+
+        expect(waited).toBeGreaterThanOrEqual(29.5);
+        expect(waited).toBeLessThan(50);
+    });
+
+    it("keeps going after a task throws", async () => {
+        vi.useRealTimers();
+        vi.resetModules();
+        const { default: TaskScheduler } = await import("@services/event-timer/TaskScheduler");
+        TaskScheduler.init();
+        vi.spyOn(console, "error").mockImplementation(() => { });
+
+        TaskScheduler.setTimeout(() => { throw new Error("boom"); }, 5);
+        const ran = await new Promise<boolean>(resolve => TaskScheduler.setTimeout(() => resolve(true), 15));
+        expect(ran).toBe(true);
+    });
 });
 
 describe("sending", () => {
