@@ -119,6 +119,13 @@ export const utilitySettings: IMenuItem[] = [{
         step: 5,
         status: 110
     }, {
+        label: "Send Movement Instantly",
+        id: "sendMovementInstantly",
+        description: "Sends a new walking direction the moment you press or release a movement key, instead of with the next server tick (about 55 ms sooner on average). Only while your keys steer (not during one ticks or auto push), Safe Walk still applies, and it waits for the next tick as before when the packet budget is full.",
+        icon: WIFI_ICON,
+        type: "toggle",
+        status: false
+    }, {
         label: "Artificial Ping",
         id: "artificialPing",
         description: "Artificially increases ping. This toggle does actually make your ping worse. Unlike with other toggles, this toggle will not be automatically saved.",

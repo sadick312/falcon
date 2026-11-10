@@ -7,6 +7,7 @@ import AttackManager from "@core/mod/combat/core/AttackManager";
 import AutoPusher from "@core/mod/combat/core/AutoPusher";
 import MovementUtils from "@core/mod/defense/utils/MovementUtils";
 import { tickState } from "@core/TickState";
+import PacketTracker from "@core/utils/PacketTracker";
 import Menu from "@menu/Menu";
 import PacketMap from "@root/utils/socket/PacketMap";
 import { Input } from "@ui/Input";
@@ -177,6 +178,30 @@ export default class MovementManager {
         }
 
         return false;
+    }
+
+    /**
+     * "Send Movement Instantly": a movement key changed between ticks. Normally the new direction only goes out with
+     * the next server tick (main below), 0-111 ms later. This sends it now, but only when the keys are what steers us
+     * (no one tick, tap mode or auto push in control), after the same Safe Walk check, and only when the packet budget
+     * has room; otherwise the next tick sends it as before. The tick then sees it already sent and sends nothing.
+     * Returns whether a packet was sent.
+     */
+    static sendNow() {
+        if (!Menu.getValue("sendMovementInstantly")) return false;
+        if (Client.mode === "replay" || !Client.player || !Client.isAlive) return false;
+
+        let moveDir = this.getMoveDir(true);
+        if (moveDir !== Client.lastMoveDir) return false; // a module steers this tick
+
+        if (typeof moveDir === "number" && Menu.getValue("safeWalk") && !Input.keys["ShiftLeft"] && this.checkAngleCollision(moveDir)) {
+            moveDir = null;
+        }
+        if (moveDir === this.lastMoveDir) return false;
+        if (PacketTracker.request("MOVE", 1) < 1) return false;
+
+        this.move(moveDir);
+        return true;
     }
 
     static main() {

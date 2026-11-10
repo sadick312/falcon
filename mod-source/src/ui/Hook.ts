@@ -3,6 +3,7 @@ import updateClanMenu, { allianceHolder } from "@core/events/updateClanMenu";
 import TextManager from "@core/logic/TextManager";
 import AttackManager from "@core/mod/combat/core/AttackManager";
 import CombatController from "@core/mod/combat/core/CombatController";
+import MovementManager from "@core/mod/defense/defense-modules/MovementManager";
 import ChatCommands from "@core/utils/ChatCommands";
 import PacketReplayer from "@core/PacketReplayer";
 import Menu from "@menu/Menu";
@@ -55,6 +56,8 @@ const chatInput = getElem<"input">("chat-input");
 function sendMoveDir() {
     const moveDir = getMoveDir();
     Client.lastMoveDir = moveDir;
+    // With "Send Movement Instantly" on, the new direction goes out now instead of with the next tick.
+    MovementManager.sendNow();
 }
 
 document.addEventListener("contextmenu", (event) => event.preventDefault());
