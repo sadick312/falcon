@@ -97,6 +97,7 @@ The **Favorites** tab lists the settings you starred; **Credits** has no setting
   - **Render Placement** (`renderPlacements`, toggle, default: on) — Draws ghost objects to where we'll place.
   - **Render Packet Count** (`renderPacketCounter`, toggle, default: on) — Draws a packet counter on top of the player.
   - **Show Activity** (`showActivity`, toggle, default: on) — Displays a live list of active modules and behaviors.
+  - **Hat Debug** (`showHatDecision`, toggle, default: off) — Shows which hat and accessory the Hat System wants this tick, and which of its rules chose them.
   - **Render Ownership** (`renderOwnership`, toggle, default: on) — Draws the unqiue sid values on both players and game objects.
   - **Render Placement Times** (`renderPlacementTime`, toggle, default: on) — Shows runtimes for the 6 most recent placements.
   - **Render Real Direction** (`renderRealDir`, toggle, default: on) — Renders the real direction of our player.

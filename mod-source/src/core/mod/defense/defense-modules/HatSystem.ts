@@ -38,6 +38,25 @@ export default class HatSystem {
         this.stopMoveDuration = 0;
     }
 
+    /** Which rule of the classic contract picked this tick's hat and accessory (shown by the Hat Debug overlay). */
+    static hatRule = "";
+    static accRule = "";
+    /** The hat and accessory those rules picked (-1: keep what is on). */
+    static hatPick: number = STORE_HAT_MAP.IGNORE;
+    static accPick: number = STORE_ACCESSORY_MAP.IGNORE;
+
+    private static hatBy<T extends STORE_HAT_ID>(rule: string, id: T): T {
+        this.hatRule = rule;
+        this.hatPick = id;
+        return id;
+    }
+
+    private static accBy<T extends STORE_ACCESSORY_ID>(rule: string, id: T): T {
+        this.accRule = rule;
+        this.accPick = id;
+        return id;
+    }
+
     static allowHatSwitch() {
         return DefenseSystem.skinIndex === STORE_HAT_MAP.IGNORE;
     }
@@ -161,80 +180,80 @@ export default class HatSystem {
                 DefenseSystem.skinIndex === STORE_HAT_MAP.SOLDIER_HELMET ?
                     "forceSoldier" : "forceEMP"
             );
-            return DefenseSystem.skinIndex;
+            return this.hatBy("1 defense forces it", DefenseSystem.skinIndex);
         }
 
         if (currentKillAction) {
             const id = currentKillAction.skinData[0];
             const isAccessory = currentKillAction.skinData[1];
-            if (!isAccessory) return id as STORE_HAT_ID;
+            if (!isAccessory) return this.hatBy("2 attack combo", id as STORE_HAT_ID);
         }
 
         const tapModeHat = AttackManager.oneTicker.getMoveHat();
         if (AttackManager.oneTicker.tapMode && tapModeHat !== STORE_HAT_MAP.IGNORE) {
-            return tapModeHat;
+            return this.hatBy("3 One Tick tap mode", tapModeHat);
         }
 
         if (CombatController.skinIndex !== STORE_HAT_MAP.IGNORE) {
             if (CombatController.skinIndex !== STORE_HAT_MAP.TANK_GEAR) {
                 if (CombatController.mustBeSoldier || DefenseSystem.state.spikeThreats > 0)
-                    return STORE_HAT_MAP.SOLDIER_HELMET;
+                    return this.hatBy("4a breaking: soldier needed", STORE_HAT_MAP.SOLDIER_HELMET);
 
                 if (player.skins[STORE_HAT_MAP.EMP_HELMET]) {
                     if (player.turretThreats > 0 || (!AutoBreaker.allSpikesBuffer.length && rangedInstaThreats > 0))
-                        return STORE_HAT_MAP.EMP_HELMET;
+                        return this.hatBy("4b breaking: EMP vs turret/ranged", STORE_HAT_MAP.EMP_HELMET);
                 }
 
                 if (this.canTick()) {
                     activityList.push("bullTick");
-                    return STORE_HAT_MAP.BULL_HELMET;
+                    return this.hatBy("4c breaking: bull tick", STORE_HAT_MAP.BULL_HELMET);
                 }
 
                 if (canUseSpikeGear && !AutoBreaker.allSpikesBuffer.length && CombatController.currentMode !== "autobreakspike")
-                    return STORE_HAT_MAP.SPIKE_GEAR;
+                    return this.hatBy("4d breaking: anti-bull", STORE_HAT_MAP.SPIKE_GEAR);
             }
 
-            return CombatController.skinIndex;
+            return this.hatBy("4e breaking/grinding asks", CombatController.skinIndex);
         }
 
         if (rangedInstaThreats > 0 && typeof Client.lastMoveDir !== "number" && player.skins[STORE_HAT_MAP.EMP_HELMET])
-            return STORE_HAT_MAP.EMP_HELMET;
+            return this.hatBy("5 EMP vs ranged insta", STORE_HAT_MAP.EMP_HELMET);
 
         if (this.canTick()) {
             activityList.push("bullTick");
-            return STORE_HAT_MAP.BULL_HELMET;
+            return this.hatBy("6 bull tick", STORE_HAT_MAP.BULL_HELMET);
         }
 
         if (player.turretThreats > 0 && player.skins[STORE_HAT_MAP.EMP_HELMET])
-            return STORE_HAT_MAP.EMP_HELMET;
+            return this.hatBy("7 EMP vs turret", STORE_HAT_MAP.EMP_HELMET);
 
-        if (canUseSpikeGear) return STORE_HAT_MAP.SPIKE_GEAR;
+        if (canUseSpikeGear) return this.hatBy("8 anti-bull", STORE_HAT_MAP.SPIKE_GEAR);
 
         // 1.8.2 slows players in water when |y - MAP_SIZE / 2| <= riverWidth / 2 (724 / 2), but not on a platform.
         if (isInWater(player.real_position.y, player.zIndex)) {
-            return STORE_HAT_MAP.FLIPPER_HAT;
+            return this.hatBy("9 in the river", STORE_HAT_MAP.FLIPPER_HAT);
         }
 
         if (nearestEnemy && this.shouldUseDefensiveGear(nearestEnemy)) {
             if (typeof Client.lastMoveDir !== "number" && rangedInstaThreats > 0 && player.skins[STORE_HAT_MAP.EMP_HELMET])
-                return STORE_HAT_MAP.EMP_HELMET;
+                return this.hatBy("10 enemy close + ranged insta", STORE_HAT_MAP.EMP_HELMET);
 
-            return STORE_HAT_MAP.SOLDIER_HELMET;
+            return this.hatBy("10 enemy close", STORE_HAT_MAP.SOLDIER_HELMET);
         }
 
         if (player.real_position.y <= ScriptConfig.SNOW_BIOME_TOP) {
-            return STORE_HAT_MAP.WINTER_CAP;
+            return this.hatBy("11 snow", STORE_HAT_MAP.WINTER_CAP);
         }
 
         if (typeof Client.lastMoveDir === "number") {
-            return STORE_HAT_MAP.BOOSTER_HAT;
+            return this.hatBy("12 moving", STORE_HAT_MAP.BOOSTER_HAT);
         }
 
         this.stopMoveDuration++;
         if (this.stopMoveDuration < 2)
-            return STORE_HAT_MAP.IGNORE;
+            return this.hatBy("13 just stopped (keep hat)", STORE_HAT_MAP.IGNORE);
 
-        return STORE_HAT_MAP.SOLDIER_HELMET;
+        return this.hatBy("13 standing still", STORE_HAT_MAP.SOLDIER_HELMET);
     }
 
     private static readonly CLOSE_DISTANCE_SQ = 350 * 350;
@@ -249,11 +268,11 @@ export default class HatSystem {
         if (currentKillAction) {
             const id = currentKillAction.skinData[0];
             const isAccessory = currentKillAction.skinData[1];
-            if (isAccessory) return id as STORE_ACCESSORY_ID;
+            if (isAccessory) return this.accBy("1 attack combo", id as STORE_ACCESSORY_ID);
         }
 
         if (AttackManager.currentAttackAction?.tickMode) {
-            return STORE_ACCESSORY_MAP.SHADOW_WINGS;
+            return this.accBy("2 One Tick move", STORE_ACCESSORY_MAP.SHADOW_WINGS);
         }
 
         if (nearestEnemy && AutoPusher.theSpike && primaryId !== WEAPON_ID_MAP.STICK) {
@@ -265,7 +284,7 @@ export default class HatSystem {
 
             if ((isNotDaggers || daggerBullSpam) && isWithinRange) {
                 tickState.activityList.push("forceStrikeWings");
-                return STORE_ACCESSORY_MAP.SHADOW_WINGS;
+                return this.accBy("3 push strike", STORE_ACCESSORY_MAP.SHADOW_WINGS);
             }
         }
 
@@ -275,7 +294,7 @@ export default class HatSystem {
         // healing doesn't add shame (it isn't eating).
         if (Menu.getValue("bloodWingsOptimizations") && isHurt && player.tails[STORE_ACCESSORY_MAP.BLOOD_WINGS] && WingsUtils.willHitPlayer()) {
             tickState.activityList.push("bloodWings");
-            return STORE_ACCESSORY_MAP.BLOOD_WINGS;
+            return this.accBy("4 Blood Wings heal", STORE_ACCESSORY_MAP.BLOOD_WINGS);
         }
 
         if (nearestEnemy && CombatUtils.isAttackPrimary(player.weapons[0] ?? NaN)) {
@@ -293,17 +312,17 @@ export default class HatSystem {
             const canUseCXWings = isWithinClosestRange && isAntiBullOn && hasAntiBullWeapon && isAntiBullable;
 
             if (isWithinRange) {
-                return canUseCXWings ? STORE_ACCESSORY_MAP.CORRUPT_X_WINGS : STORE_ACCESSORY_MAP.SHADOW_WINGS;
+                return this.accBy("5 enemy close", canUseCXWings ? STORE_ACCESSORY_MAP.CORRUPT_X_WINGS : STORE_ACCESSORY_MAP.SHADOW_WINGS);
             }
         }
 
         // Angel Wings Regen: out of a fight and hurt, regenerate 3 health a second (no shame) instead of Monkey Tail's speed.
         const isEnemyClose = !!nearestEnemy && getDistSq(player.real_position, nearestEnemy.real_position) <= this.CLOSE_DISTANCE_SQ;
         if (Menu.getValue("angelWingsRegen") && isHurt && !isEnemyClose && player.tails[STORE_ACCESSORY_MAP.ANGEL_WINGS]) {
-            return STORE_ACCESSORY_MAP.ANGEL_WINGS;
+            return this.accBy("6 Angel Wings regen", STORE_ACCESSORY_MAP.ANGEL_WINGS);
         }
 
-        return STORE_ACCESSORY_MAP.MONKEY_TAIL;
+        return this.accBy("7 default", STORE_ACCESSORY_MAP.MONKEY_TAIL);
     }
 
     private static readonly HATS_TO_DROP = new Set<number>([STORE_HAT_MAP.BULL_HELMET, STORE_HAT_MAP.TANK_GEAR, STORE_HAT_MAP.TURRET_GEAR]);

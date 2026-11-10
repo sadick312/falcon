@@ -77,6 +77,13 @@ export const visualSettings: IMenuItem[] = [{
         icon: CONSOLE_ICON,
         status: true
     }, {
+        label: "Hat Debug",
+        id: "showHatDecision",
+        description: "Shows which hat and accessory the Hat System wants this tick, and which of its rules chose them.",
+        type: "toggle",
+        icon: CONSOLE_ICON,
+        status: false
+    }, {
         label: "Render Ownership",
         id: "renderOwnership",
         description: "Draws the unqiue sid values on both players and game objects.",

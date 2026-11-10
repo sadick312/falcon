@@ -22,6 +22,7 @@ import AutoBreaker from "@core/mod/defense/modules/AutoBreaker";
 import ObjectBreaker from "@core/mod/defense/modules/ObjectBreaker";
 import TurretManager from "@core/mod/defense/modules/TurretManager";
 import BreakerUtils from "@core/mod/defense/utils/BreakerUtils";
+import hatDecisionText from "@core/mod/defense/utils/hatDecisionText";
 import GameEventTracker from "@core/mod/utils/GameEventTracker";
 import PingTracker from "@core/mod/utils/PingTracker";
 import PacketBatcher from "@core/utils/PacketBatcher";
@@ -352,6 +353,8 @@ export default class ModManager {
                 html += `<span>${this.activityList[i]}</span>`;
             }
         }
+
+        if (Menu.getValue("showHatDecision")) html += `<span>${hatDecisionText()}</span>`;
 
         // Writing innerHTML every tick forces a re-layout even when nothing changed.
         if (html === this.lastActivityHTML) return;
