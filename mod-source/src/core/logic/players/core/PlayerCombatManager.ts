@@ -1,3 +1,4 @@
+import Client from "@core/Client";
 import items, { WEAPON_ID_MAP, WEAPON_VARIANT_MAP } from "@constants/items";
 import Player from "@constants/Player";
 import ModManager from "@core/ModManager";
@@ -122,6 +123,13 @@ export default class PlayerCombatManager {
         return { dmg: 0, totalKnock: 0, knock: 0, reload: 0, variant: 0, id: 0, recentlyHit: false };
     }
 
+    /** Resources for one shot (bow/crossbow: wood, musket: 10 stone). Full price = safe worst case. */
+    static canAffordShot(player: Player, weaponId: number) {
+        const req = items.weapons[weaponId].req;
+        if (!req) return true;
+        return ((player as unknown as Record<string, number>)[req[0]] ?? 0) >= req[1];
+    }
+
     static fetch(player: Player, group: 0 | 1 | 2): WeaponFetchData {
         const data = this.weaponFetchDataBuffer[this.dataBufferHead];
         this.dataBufferHead = (this.dataBufferHead + 1) % this.weaponFetchDataBuffer.length;
@@ -151,6 +159,13 @@ export default class PlayerCombatManager {
         data.recentlyHit = recentlyHit;
         data.reload = reload;
         data.variant = variant;
+
+        // Our own bow/musket can't fire without ammo (1.8.2 checks it before every shot, even on
+        // sandbox servers which just don't take it away): treat it as not reloaded so combos skip it.
+        // Musket recoil (rec 0.35) only pushes the shooter and shows up in our next position update.
+        if (group !== 2 && hasProjectile && player.sid === Client.mySID && !this.canAffordShot(player, id)) {
+            data.reload = 0;
+        }
 
         return data;
     }
