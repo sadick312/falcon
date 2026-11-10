@@ -53,6 +53,10 @@ export default class SocketListener {
     static pingSocket() {
         if (!this.isInitialized) return;
 
+        // Only record pings that are really sent: a ping "sent" before the socket opened never gets
+        // a reply, and would shift every later reply onto the wrong send time (+1 s of fake ping).
+        if (this.socket instanceof Socket && this.socket.readyState !== WebSocket.OPEN) return;
+
         PingTracker.onSent();
         this.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.PING_SOCKET);
     }
