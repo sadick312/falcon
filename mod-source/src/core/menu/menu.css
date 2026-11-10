@@ -496,6 +496,9 @@ input[type=number] {
 }
 /* Keybinds tab */
 .keybindCategory {
+    /* The menu column is a scrolling flex box; without this the heading is squeezed to 0 height. */
+    flex-shrink: 0;
+    width: 100%;
     color: var(--theme-primary);
     font-size: 15px;
     margin: 14px 4px 6px;
