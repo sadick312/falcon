@@ -1,5 +1,5 @@
 import Player from "@constants/Player";
-import PingTracker from "@core/mod/utils/PingTracker";
+import Latency from "@core/mod/utils/Latency";
 
 /**
  * 1.8.2 "shame" rule, measured live on sandbox.moomodding.io:
@@ -35,7 +35,7 @@ export default class ShameRules {
     static msUntilSafeEat(player: Player, now: number = performance.now()) {
         if (!player.hitTimeMs) return 0;
         // Lowest recent RTT is the riskiest case (server sees our eat sooner).
-        const rtt = PingTracker.getMinPing();
+        const rtt = Latency.getLowRtt();
         return Math.max(0, this.WINDOW_MS + this.SAFETY_MS - (now - player.hitTimeMs) - rtt);
     }
 }

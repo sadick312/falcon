@@ -1,7 +1,7 @@
+import Latency from "@core/mod/utils/Latency";
 import Player from "@constants/Player";
 import PlacementSystem from "@core/mod/combat/core/PlacementSystem";
 import { FinderOptions } from "@core/mod/combat/placing/AngleFinder";
-import PingTracker from "@core/mod/utils/PingTracker";
 import ModManager from "@core/ModManager";
 import PlayerUpdateEvent from "@core/socket/events/core/PlayerUpdateEvent";
 import PacketTracker from "@core/utils/PacketTracker";
@@ -91,7 +91,7 @@ export default class AutoPlacer extends Placer {
 
     private placePreplacement(index: number) {
         const padding = Menu.getValue("prenorounding") ? 0 : .5;
-        let waitMs = ScriptConfig.SERVER_UPDATE_SPEED - PingTracker.getCurrentPing() + padding;
+        let waitMs = ScriptConfig.SERVER_UPDATE_SPEED - Latency.getRtt() + padding;
 
         const preplacement = this.preplacements[index];
         const arr = preplacement.placements;

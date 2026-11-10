@@ -4,7 +4,7 @@ import PlacementSystem from "@core/mod/combat/core/PlacementSystem";
 import DefenseSystem, { DefenseContext } from "@core/mod/defense/DefenseSystem";
 import HealerUtils from "@core/mod/defense/utils/HealerUtils";
 import ShameRules from "@core/mod/defense/utils/ShameRules";
-import PingTracker from "@core/mod/utils/PingTracker";
+import Latency from "@core/mod/utils/Latency";
 import PacketTracker from "@core/utils/PacketTracker";
 import ScriptConfig from "@utils/config/ScriptConfig";
 import ModManager from "@core/ModManager";
@@ -55,7 +55,7 @@ export default class AutoHealer {
 
         this.pendingHeal += Math.min(missing, times * amount);
         // The result arrives ~1 RTT later, within the next server tick; add a small margin.
-        this.pendingUntil = performance.now() + PingTracker.getAveragePing() + ScriptConfig.SERVER_UPDATE_SPEED + 50;
+        this.pendingUntil = performance.now() + Latency.getRtt() + ScriptConfig.SERVER_UPDATE_SPEED + 50;
         return times;
     }
 

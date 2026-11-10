@@ -6,7 +6,7 @@ import Client from "@core/Client";
 import ObjectManager from "@core/logic/ObjectManager";
 import PlayerManager from "@core/logic/players/PlayerManager";
 import ModManager from "@core/ModManager";
-import PingTracker from "@core/mod/utils/PingTracker";
+import Latency from "@core/mod/utils/Latency";
 import ScriptConfig from "@utils/config/ScriptConfig";
 import getDistSq from "@utils/geometry/getDistSq";
 
@@ -60,7 +60,7 @@ export default class TurretManager {
         const player = Client.player;
 
         // Our hat change needs ~half a round trip to reach the server; start early enough to cover it.
-        const leadTicks = 1 + Math.ceil((PingTracker.getAveragePing() / 2 + 20) / ScriptConfig.SERVER_UPDATE_SPEED);
+        const leadTicks = 1 + Math.ceil((Latency.getOneWay() + 20) / ScriptConfig.SERVER_UPDATE_SPEED);
 
         for (let i = 0, len = allTurrets.length; i < len; i++) {
             const gameObject = allTurrets[i];

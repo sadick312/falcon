@@ -1,5 +1,6 @@
+import updatePingDisplay from "@ui/PingDisplay";
 import Player, { ChatMessage } from "@constants/Player";
-import Client, { deathText, pingDisplay } from "@core/Client";
+import Client, { deathText } from "@core/Client";
 import updateClanMenu, { allianceHolder } from "@core/events/updateClanMenu";
 import updateItems from "@core/events/updateItems";
 import updateNotifications from "@core/events/updateNotifications";
@@ -25,7 +26,6 @@ import PlayerUpdateEvent from "@core/socket/events/core/PlayerUpdateEvent";
 import StoreItemsUpdateEvent from "@core/socket/events/core/StoreItemsUpdateEvent";
 import FakeSocket from "@core/socket/FakeSocket";
 import Socket, { respawnMainCard } from "@core/socket/Socket";
-import PacketBatcher from "@core/utils/PacketBatcher";
 import Menu, { ChatLog } from "@menu/Menu";
 import drawChatLog from "@menu/utils/drawChatLog";
 import CameraManager from "@rendering/core/CameraManager";
@@ -49,12 +49,11 @@ export default class SocketListener {
     static isInitialized = false;
 
     private static socket: Socket | FakeSocket;
-    private static lastPingSocket = 0;
 
     static pingSocket() {
         if (!this.isInitialized) return;
 
-        this.lastPingSocket = performance.now();
+        PingTracker.onSent();
         this.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.PING_SOCKET);
     }
 
@@ -210,11 +209,11 @@ export default class SocketListener {
         });
 
         this.socket.on(PacketMap.SERVER_TO_CLIENT.PING_RESPONSE, () => {
-            const rawPing = performance.now() - this.lastPingSocket;
-            PingTracker.update(rawPing);
+            const rawPing = PingTracker.onReply();
+            if (rawPing < 0) return;
 
             Client.pingTime = Math.round(rawPing * 1e3) / 1e3;
-            pingDisplay.innerText = `Ping: ${Client.pingTime} ms | FPS: ${RendererSystem.fps} | BWin: ${PacketBatcher.effectiveBatchWindow.toFixed(1)} ms`;
+            updatePingDisplay(RendererSystem.fps);
         });
 
         this.socket.on(PacketMap.SERVER_TO_CLIENT.ADD_ALLIANCE, (data) => {

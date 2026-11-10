@@ -1,3 +1,4 @@
+import PingTracker from "@core/mod/utils/PingTracker";
 import { ais } from "@constants/Ai";
 import Client from "@core/Client";
 import ObjectManager from "@core/logic/ObjectManager";
@@ -39,6 +40,7 @@ export default function resetGameState() {
     PotentialObjectManager.onRenderObjects.length = 0;
     TextManager.texts.clear();
     LegacyAdapter.reset();
+    PingTracker.reset(); // new server = different ping
     ModManager.enemyData.nearest = null;
     ModManager.enemyData.nearby.length = 0;
     ModManager.enemyData.all.length = 0;

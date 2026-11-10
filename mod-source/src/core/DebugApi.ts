@@ -1,3 +1,4 @@
+import Latency from "@core/mod/utils/Latency";
 import Client from "@core/Client";
 import PingTracker from "@core/mod/utils/PingTracker";
 import ModManager from "@core/ModManager";
@@ -25,7 +26,7 @@ export default function installDebugApi() {
         get weapon() { return Client.player?.weaponIndex ?? null; },
         get weapons() { return Client.player ? [...Client.player.weapons] : null; },
         get items() { return Client.player ? [...Client.player.items] : null; },
-        get ping() { return { avg: PingTracker.getAveragePing(), min: PingTracker.getMinPing() }; },
+        get ping() { return { median: PingTracker.getMedianPing(), min: PingTracker.getMinPing(), jitter: PingTracker.getJitter(), rtt: Latency.getRtt(), lead: Latency.getActionLeadMs(), lagging: Latency.isLagging() }; },
         get activity() { return [...ModManager.brainState.activityList]; }, // last completed tick
         get brain() { return ModManager.brainState; },
     };

@@ -729,11 +729,35 @@ export const menuContent: IMenuContent = {
                 id: "artificialPingAmt",
                 type: "slider",
                 min: 10,
-                step: 5,
-                max: 80,
-                status: 35
+                step: 10,
+                // Up to +300 ms so high-ping behaviour can be tested on a fast connection.
+                max: 300,
+                status: 50
             }],
             status: false
+        }, {
+            label: "Ping Compensation",
+            id: "pingCompensation",
+            description: "Leads aim, range checks and anti timing by your measured ping so features work at high ping. Use Adjust if it feels early (lower) or late (higher).",
+            icon: WIFI_ICON,
+            type: "toggle",
+            settings: [{
+                label: "Adjust (ms)",
+                id: "pingCompensationAdjust",
+                type: "slider",
+                min: -100,
+                step: 10,
+                max: 200,
+                status: 0
+            }],
+            status: true
+        }, {
+            label: "Show Ping Display",
+            id: "showPingDisplay",
+            description: "Shows ping (median ± jitter), FPS and lag spike warnings at the top of the screen.",
+            icon: WIFI_ICON,
+            type: "toggle",
+            status: true
         }]
     }, {
         label: "Auto Break",
