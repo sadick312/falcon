@@ -7,6 +7,7 @@ import PotentialObjectManager from "@core/logic/PotentialObjectManager";
 import ProjectileManager from "@core/logic/ProjectileManager";
 import TextManager from "@core/logic/TextManager";
 import CombatController from "@core/mod/combat/core/CombatController";
+import HatSystem from "@core/mod/defense/defense-modules/HatSystem";
 import ModManager from "@core/ModManager";
 import PlayerUpdateEvent from "@core/socket/events/core/PlayerUpdateEvent";
 import Socket from "@core/socket/Socket";
@@ -34,6 +35,7 @@ function resetGameState() {
     PlayerUpdateEvent.lastReceive = 0;
     PacketRecorder.clearSession();
     ModManager.resetSession();
+    HatSystem.reset();
     CombatController.attackState.confirm = false;
     CombatController.attackState.status = false;
 

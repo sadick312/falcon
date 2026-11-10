@@ -14,6 +14,7 @@ import PotentialObjectManager from "@core/logic/PotentialObjectManager";
 import ProjectileManager from "@core/logic/ProjectileManager";
 import TextManager from "@core/logic/TextManager";
 import AttackManager from "@core/mod/combat/core/AttackManager";
+import HatSystem from "@core/mod/defense/defense-modules/HatSystem";
 import CombatController from "@core/mod/combat/core/CombatController";
 import PlacementSystem from "@core/mod/combat/core/PlacementSystem";
 import MovementManager from "@core/mod/defense/defense-modules/MovementManager";
@@ -289,6 +290,7 @@ export default class SocketListener {
                     MovementManager.onSpawn();
                     Client.isAlive = true;
                     AttackManager.resetModules();
+                    HatSystem.reset();
                     Client.upgradesObtained.clear();
                     Client.lastAteTick = -Infinity;
                     Client.mySID = tmpPlayer.sid;

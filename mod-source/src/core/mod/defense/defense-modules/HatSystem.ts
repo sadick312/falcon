@@ -28,6 +28,16 @@ export default class HatSystem {
     static sentHatPacket = false;
     private static stopMoveDuration = 0;
 
+    /**
+     * Forgets the counts that belong to one life: a leftover bull count would put the bull helmet on after
+     * respawning with no shame at all, and a leftover standing-still count would skip the one tick we keep our hat.
+     * Called when we spawn and when a new connection starts.
+     */
+    static reset() {
+        this.needTick = 0;
+        this.stopMoveDuration = 0;
+    }
+
     static allowHatSwitch() {
         return DefenseSystem.skinIndex === STORE_HAT_MAP.IGNORE;
     }

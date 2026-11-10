@@ -175,7 +175,7 @@ describe("Hat System bull helmet cycle", () => {
 });
 
 describe("Hat System state after death and reconnecting", () => {
-    it.fails("weak spot 4: respawning clears the leftover bull helmet count and the standing-still count", async () => {
+    it("respawning clears the leftover bull helmet count and the standing-still count", async () => {
         const g = await setup();
         g.HatSystem.needTick = 3;
         g.HatSystem.stopMoveDuration = 5;
@@ -184,7 +184,7 @@ describe("Hat System state after death and reconnecting", () => {
         expect(g.HatSystem.stopMoveDuration).toBe(0);
     });
 
-    it.fails("weak spot 4: reconnecting clears them too", async () => {
+    it("reconnecting clears them too", async () => {
         const g = await setup();
         g.HatSystem.needTick = 3;
         g.HatSystem.stopMoveDuration = 5;
