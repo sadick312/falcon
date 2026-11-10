@@ -229,6 +229,9 @@ export default class HatSystem {
 
         if (canUseSpikeGear) return this.hatBy("8 anti-bull", STORE_HAT_MAP.SPIKE_GEAR);
 
+        // Classic Hat Switching (off by default): rules 9-13 work like a classic MooMoo hat changer instead.
+        if (Menu.getValue("classicHatSwitching")) return this.classicHat(nearestEnemy);
+
         // 1.8.2 slows players in water when |y - MAP_SIZE / 2| <= riverWidth / 2 (724 / 2), but not on a platform.
         if (isInWater(player.real_position.y, player.zIndex)) {
             return this.hatBy("9 in the river", STORE_HAT_MAP.FLIPPER_HAT);
@@ -254,6 +257,32 @@ export default class HatSystem {
             return this.hatBy("13 just stopped (keep hat)", STORE_HAT_MAP.IGNORE);
 
         return this.hatBy("13 standing still", STORE_HAT_MAP.SOLDIER_HELMET);
+    }
+
+    /** Classic Hat Switching: soldier helmet whenever an enemy is this close, whatever it holds. */
+    private static readonly CLASSIC_ENEMY_DIST_SQ = 300 ** 2;
+
+    /**
+     * Classic Hat Switching, in place of rules 9-13 (the rules above, from defense to anti-bull, still come first):
+     * soldier helmet with an enemy within 300, else flipper hat in the river, winter cap in the snow, booster hat while
+     * moving, and soldier helmet when standing still (straight away, without keeping the hat for a tick).
+     */
+    private static classicHat(nearestEnemy: Player | null): STORE_HAT_ID {
+        const player = Client.player;
+
+        if (nearestEnemy && getDistSq(player.real_position, nearestEnemy.real_position) <= this.CLASSIC_ENEMY_DIST_SQ)
+            return this.hatBy("classic: enemy near", STORE_HAT_MAP.SOLDIER_HELMET);
+
+        if (isInWater(player.real_position.y, player.zIndex))
+            return this.hatBy("classic: river", STORE_HAT_MAP.FLIPPER_HAT);
+
+        if (player.real_position.y <= ScriptConfig.SNOW_BIOME_TOP)
+            return this.hatBy("classic: snow", STORE_HAT_MAP.WINTER_CAP);
+
+        if (typeof Client.lastMoveDir === "number")
+            return this.hatBy("classic: moving", STORE_HAT_MAP.BOOSTER_HAT);
+
+        return this.hatBy("classic: standing still", STORE_HAT_MAP.SOLDIER_HELMET);
     }
 
     private static readonly CLOSE_DISTANCE_SQ = 350 * 350;

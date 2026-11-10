@@ -48,6 +48,13 @@ export const defenseSettings: IMenuItem[] = [{
         type: "toggle",
         status: true
     }, {
+        label: "Classic Hat Switching",
+        id: "classicHatSwitching",
+        description: "Everyday hats like a classic MooMoo hat changer: Soldier Helmet with an enemy within 300, else Flipper Hat in the river, Winter Cap in the snow, Booster Hat while moving, Soldier Helmet when still. Combos, defense, bull ticks, EMP and breaking hats work as before.",
+        icon: SHIELD_ICON,
+        type: "toggle",
+        status: false
+    }, {
         label: "Blood Wings Optimizations",
         id: "bloodWingsOptimizations",
         description: "While hurt, wears Blood Wings for melee hits on enemies (heals 20% of the damage, without shame). At 4+ shame, Auto Heal lets such a hit heal instead of eating.",
