@@ -1,3 +1,4 @@
+import predictLinear from "@utils/geometry/predictLinear";
 import Player from "@constants/Player";
 import PingTracker from "@core/mod/utils/PingTracker";
 import PlayerUpdateEvent from "@core/socket/events/core/PlayerUpdateEvent";
@@ -62,12 +63,6 @@ export default class Latency {
      * current velocity (measured over the last server tick). Capped to avoid wild guesses.
      */
     static predict(player: Player, ms: number, out: Point): Point {
-        const real = player.real_position;
-        const last = player.last_position;
-        const ticks = Math.min(ms, 600) / this.TICK;
-
-        out.x = real.x + (real.x - last.x) * ticks;
-        out.y = real.y + (real.y - last.y) * ticks;
-        return out;
+        return predictLinear(player.real_position, player.last_position, ms, this.TICK, out);
     }
 }
