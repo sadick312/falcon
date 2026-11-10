@@ -37,12 +37,12 @@ interface ClosableSocket {
     close(code?: number, reason?: string): void;
 }
 
-export interface VanillaGuardOptions {
+interface VanillaGuardOptions {
     /** Sockets Falcon owns. Never closed, even if they somehow end up in one of the slots. */
     isOwnSocket?: (socket: unknown) => boolean;
 }
 
-export interface VanillaGuardResult {
+interface VanillaGuardResult {
     /** Vanilla sockets that were open or connecting and got closed. */
     closedSockets: number;
     /** The game's draw loop function was present (so the game had run) and is now stopped. */
