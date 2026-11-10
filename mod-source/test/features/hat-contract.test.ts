@@ -313,6 +313,80 @@ describe("Hat System classic contract: hat", () => {
             expect(g.hat()).toBe(SOLDIER);
         });
 
+        it("against a polearm still reloading: soldier anyway when trapped, spikes threaten, a ranged insta threatens, another kind of damage is coming, or several enemies are near", async () => {
+            const g = await setup();
+            const polearmReloading = () => {
+                g.neutral();
+                g.enemyAt(150, POLEARM);
+                g.enemy.reloads[POLEARM] = 0;
+            };
+
+            polearmReloading();
+            expect(g.hat()).toBe(BOOSTER);
+
+            polearmReloading();
+            (g.player as unknown as { trap: unknown }).trap = { active: true, health: 500 };
+            expect(g.hat()).toBe(SOLDIER);
+
+            polearmReloading();
+            g.DefenseSystem.state.spikeThreats = 1;
+            expect(g.hat()).toBe(SOLDIER);
+
+            // While moving: rule 5 (EMP) only applies while standing still.
+            polearmReloading();
+            g.tickState.enemyData.rangedInstaThreats = 1;
+            expect(g.hat()).toBe(SOLDIER);
+
+            polearmReloading();
+            g.DefenseSystem.state.sources.push("secondaryDamage" as never);
+            expect(g.hat()).toBe(SOLDIER);
+
+            polearmReloading();
+            g.DefenseSystem.state.sources.push("primaryDamage" as never);
+            expect(g.hat()).toBe(BOOSTER);
+
+            polearmReloading();
+            g.tickState.enemyData.nearby.push(g.enemy);
+            expect(g.hat()).toBe(SOLDIER);
+        });
+
+        it("against daggers when we're trapped, even from beyond dagger range", async () => {
+            const g = await setup();
+            g.enemyAt(250, DAGGERS);
+            (g.player as unknown as { trap: unknown }).trap = { active: true, health: 500 };
+            expect(g.hat()).toBe(SOLDIER);
+        });
+
+        it("against a trapped dagger enemy only when one reloaded hit breaks its trap (great hammer counts too)", async () => {
+            const g = await setup();
+            const trappedDaggers = (trapHealth: number, secondary = 15) => {
+                g.neutral();
+                g.enemyAt(100, DAGGERS);
+                g.enemy.weaponData.secondary = secondary;
+                g.enemy.reloads[DAGGERS] = 1;
+                g.enemy.reloads[10] = 1;
+                (g.enemy as unknown as { trap: unknown }).trap = { active: true, health: trapHealth };
+            };
+
+            // Stuck: the daggers need more than one hit, so no soldier for its dagger threat.
+            trappedDaggers(5000);
+            expect(g.hat()).toBe(BOOSTER);
+
+            // One dagger hit breaks it: the enemy can get out and reach us.
+            trappedDaggers(10);
+            expect(g.hat()).toBe(SOLDIER);
+
+            // Not with that one hit still reloading.
+            trappedDaggers(10);
+            g.enemy.reloads[DAGGERS] = 0.5;
+            expect(g.hat()).toBe(BOOSTER);
+
+            // A great hammer that breaks it in one reloaded hit counts too (10 x 3.3 tank gear x 7.5 = 247.5 a hit).
+            trappedDaggers(200, 10);
+            g.enemy.reloads[DAGGERS] = 0.5;
+            expect(g.hat()).toBe(SOLDIER);
+        });
+
         it("against daggers from further away (dagger range x1.3), when they can reach us", async () => {
             const g = await setup();
             g.enemyAt(250, DAGGERS);
@@ -475,6 +549,35 @@ describe("Hat System classic contract: accessory", () => {
     it("7. monkey tail otherwise", async () => {
         const g = await setup();
         expect(g.acc()).toBe(MONKEY_TAIL);
+    });
+});
+
+describe("WingsUtils.willHitPlayer (when Blood Wings would heal)", () => {
+    /** We swing `weapon` at the nearest enemy 100 to our right, reloaded unless `reload` says otherwise. */
+    async function swingAt(weapon: number, reload = 1, enemyDist = 100) {
+        const g = await setup();
+        g.enemyAt(enemyDist, SWORD);
+        g.tickState.enemyData.angle = 0;
+        (g.AttackManager as unknown as { _currentAttackAction: unknown })._currentAttackAction =
+            { skinData: [0, false], noAttack: false, wpnId: weapon, aimType: "nearest" };
+        g.player.reloads[weapon] = reload;
+        return g.WingsUtils.willHitPlayer();
+    }
+
+    it("is true for a reloaded melee swing that reaches an enemy in the arc", async () => {
+        expect(await swingAt(POLEARM)).toBe(true);
+    });
+
+    it("never counts a projectile weapon (1.8.2 heals only on melee hits)", async () => {
+        expect(await swingAt(15)).toBe(false);
+    });
+
+    it("not while the weapon is still reloading", async () => {
+        expect(await swingAt(POLEARM, 0.5)).toBe(false);
+    });
+
+    it("not when the enemy is out of reach", async () => {
+        expect(await swingAt(POLEARM, 1, 600)).toBe(false);
     });
 });
 
