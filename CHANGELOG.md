@@ -2,6 +2,71 @@
 
 What changed in Falcon, newest first. Each entry names the commit(s) for the details.
 
+## Unreleased (branch review/stability, Parts 1-3)
+
+Everything after the "groups A-D" entry below. Replay fingerprints (sent packets and game state) are unchanged
+by every commit here except where an entry says otherwise.
+
+### Added
+- **Musket Insta: "Katana + musket"** sub-toggle (off by default): the combo also runs with the katana as the
+  first hit, with the katana's own damage (40) and reach (118). (1dca09e)
+- Tests for the Hat System: one per rule of the classic hat/accessory priority table plus overlaps, the store
+  packet timing, the bull helmet cycle and combos, and its callers (Combat Controller, One Tick, health updates).
+  (35f88c4, 4a52a8d, 923d5ac)
+- Property tests (fast-check, ~300 random inputs each) for the packet encoder, masks, signatures, move de-dup and
+  the chat filter. (5ab99d2)
+- Physics tests (river current, swimming, knockback, map edge) and an Angle Finder test at the map corner.
+  (6000db6, 64e9796)
+- The replay test also fingerprints the whole game state after every tick, not only sent packets. (6e918dc)
+- Benchmarks: per-packet code, PacketBatcher, the Pathfinder, an opt-in 10-minute soak test with heap snapshots
+  (memory stays flat), and per-step drawing times in the development profiler. Results in BENCHMARKS.md.
+  (af246d5, b800597, e9788f8, 788fc66, 019ae50, 3f918fa, ecfcee5, 5a7d706)
+- `mod-source/bench/analysis/lag-spike-sim.mjs`: how our own player and the camera are drawn through lag spikes.
+  (9c0ecae)
+
+### Changed
+- Spike grading measures our own next step at snow and water speed, not always plain-ground speed. (97e2a14)
+- Code structure: about a dozen import cycles are gone (renderer, socket handlers, menu drawers, attack modules,
+  Client and the UI, PacketReplayer, Player and the physics), the per-tick state lives in `core/TickState.ts`,
+  and the attack modules are created on first use. Nothing a player sees changes. (3d7927f, 0c98f7d, 8229d54,
+  954e1b1, 388781e, b25dbf6, 105cc8a, 59bca7c, 04bce39, f0cdf55, e2db1b8, db528d8, 15a23d0)
+- A packet added without a handler (or a handler dropped by mistake) is now a compile error. (0fba5d0)
+- The player radius, bull damage and river width have one home in `constants/world.ts`. (2c1f1cc)
+- TypeScript's `noUncheckedIndexedAccess` is on for the whole mod (1,180 places fixed): a missing list entry
+  can no longer slip through as `undefined` unnoticed. (5393648, 2116a23, bdacc88, 28daa07, 13767db, 35905d2,
+  ba049e6, f5e4e8a, ba0d2f6)
+- Unused exports and a dead profiler helper removed. (9d1cf56)
+- README: which branch to download, and the Quick Inject file size.
+
+### Fixed
+- The katana-spike check (Auto Breaker) ignored buildings in the way: the blocked angles were worked out but
+  never used. (2726e06, 5ee645c)
+- The Hat System's "bull ticks owed" and "standing still" counters were never reset, so after a respawn or
+  reconnect the bull helmet could go on with no shame. (e5d1836)
+
+### Performance (Part 3, Group A)
+- Angle Finder: an enemy's second call (spots that touch us) reuses the first call's pass over the nearby
+  objects (80b487a), and is skipped when the enemy is too far for any spot to touch us: enemy placement
+  prediction 13-19% faster. The angle trace in the replay test was re-recorded because fewer calls are traced;
+  packets and state are unchanged. (ad5ada0)
+- Grader: whether each nearby spike or trap counts for each enemy is worked out once per call instead of once
+  per angle, and the per-enemy Maps are arrays: grading 7-17% faster. (0add1db)
+- Distance and direction math written out in the Angle Finder's and Grader's hot loops: 43% fewer allocations
+  per tick (106 -> 60 KB in the busy replay). (172c5ca)
+
+### Measured, not changed (Part 3)
+- Pathfinder worker: a request costs 2-3 us of main-thread time and already transfers its grid both ways, and
+  requests are rare (one per Auto Push route). Incremental grid updates would cost more than they save. Its heap
+  sorts a new node from the wrong position, but on 561 test maps every path was exactly as short as with the
+  fix, so it was left for a separate decision.
+- PacketBatcher's 0.5 ms wait: ~0.6% of one core. In Chrome, `setTimeout` waits ~5 ms instead; only
+  `scheduler.postTask` matches the 0.5 ms, and it isn't in every browser.
+- On-screen smoothing (1.7x extrapolation, 170 ms slide): during a lag spike our player stands still for
+  150 ms (3 updates stuck) or 483 ms (6), and a player who turns during the spike is drawn up to 67-89 units past
+  where they are. A higher cap shortens the freeze but overshoots more; a lower one does the opposite.
+- Menu: the select, slider and number controls and the config screen were already tested (86-100% of lines),
+  and the setting-id test catches a mistyped `Menu.getValue` name (checked by planting one).
+
 ## Unreleased (branch review/stability, groups A-D)
 
 ### Added
