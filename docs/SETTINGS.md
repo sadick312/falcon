@@ -57,6 +57,7 @@ The **Favorites** tab lists the settings you starred; **Credits** has no setting
     - **Primary Limit** (`grindPrimaryLimit`, slider 0–3, default: 2) — Set the limit of primary grinding.
     - **Secondary Limit** (`grindSecondaryLimit`, slider 0–3, default: 1) — Set the limit of secondary grinding.
   - **Auto Buy** (`autoBuy`, toggle, default: on) — Automatically purchases hats and accessories.
+    - **Fight-First Order** (`autoBuy:fightFirst`, toggle, default: off) — Buys fight hats first (Monkey Tail, Soldier, Bull, Booster, EMP...) and picks up cheaper items while saving for an expensive one. Also buys Angel Wings and Blood Wings. Off: the original order, one item at a time.
   - **Auto Upgrade** (`autoUpgrade`, toggle, default: on) — Automatically upgrades weapons and items.
     - **7th Slot** (`7thSlot`, select, default: Teleport) — Set what the Auto Upgrader picks for the 7th slot. Options: Teleport / Turret / Healing Pad / Blocker / Platform.
 - **Packet Management** (group) — Customize modules to modify the client's method for managing packet usage.
