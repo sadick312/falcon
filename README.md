@@ -28,7 +28,13 @@ Enter).
    node -v
    ```
    It should print a version like `v24.x.x`.
-2. **Get the code.** Either download the repository as a ZIP from GitHub and unzip it, or clone it with Git.
+2. **Get the code.** The newest work is on the branch **review/stability**, not the default one.
+   - **ZIP:** on the repository's GitHub page, click the branch button (it says `main`), pick
+     `review/stability`, then click **Code** > **Download ZIP**. Right-click the ZIP > **Extract All**.
+   - **Or with Git** (put your repository's address in place of `<repository URL>`):
+     ```bash
+     git clone -b review/stability <repository URL> falcon
+     ```
 3. **Go to the folder** (change the path to wherever you put it):
    ```bash
    cd C:\Users\YourName\falcon
@@ -66,7 +72,7 @@ Use this if you don't want to install the extension. It only works on moomodding
    ```bash
    npm run inject:build
    ```
-   It writes `mod-source\dist\falcon-quick-inject.js` (about 660 KB).
+   It writes `mod-source\dist\falcon-quick-inject.js` (about 670 KB).
 2. **Copy all of it.** Open the file in Notepad (right-click > Open with > Notepad), press **Ctrl+A** to select
    everything, then **Ctrl+C** to copy it.
 3. **Paste it into Quick Inject.** On moomodding.io, open the **Quick Inject** box, choose
