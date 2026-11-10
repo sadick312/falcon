@@ -1,3 +1,4 @@
+import Latency from "@core/mod/utils/Latency";
 import AntiBuller from "@combat-modules/AntiBuller";
 import AppleInstakiller from "@combat-modules/AppleInstakiller";
 import AutoAttacker from "@combat-modules/AutoAttacker";
@@ -173,7 +174,12 @@ export default class AttackManager {
             modules[i].update();
         }
 
-        for (let i = 0; i < modulesLength; i++) {
+        // During a lag spike our view of the fight is stale: don't start new combos
+        // (a combo already in progress still finishes below).
+        const lagging = Latency.isLagging();
+        if (lagging) ModManager.activityList.push("lagSpikeHold");
+
+        for (let i = 0; i < modulesLength && !lagging; i++) {
             modules[i].run();
         }
 

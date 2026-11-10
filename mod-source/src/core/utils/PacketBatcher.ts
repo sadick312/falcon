@@ -46,6 +46,12 @@ export default class PacketBatcher {
         this.buffer.sort((a, b) => this.getPacketPriority(b.type) - this.getPacketPriority(a.type));
         this.realBatchWindow = now - this.lastPacketCollected;
 
+        // After a lag spike several player updates can arrive together. Count them so only the
+        // newest one runs the mod brain (older ones still update positions/health).
+        for (let i = 0, len = this.buffer.length; i < len; i++) {
+            if (this.buffer[i].type === PacketMap.SERVER_TO_CLIENT.UPDATE_PLAYERS) PlayerUpdateEvent.queuedUpdates++;
+        }
+
         for (let i = 0, len = this.buffer.length; i < len; i++) {
             const packet = this.buffer[i];
 

@@ -24,6 +24,10 @@ type UpdatePlayerPacket = typeof PacketMap.SERVER_TO_CLIENT.UPDATE_PLAYERS;
 export default class PlayerUpdateEvent extends MessageHandler<UpdatePlayerPacket> {
     private tmpSidSet = new Set();
     static lastReceive = 0;
+    /** Player updates queued in the current batch that haven't been processed yet. */
+    static queuedUpdates = 0;
+    /** How many stale updates skipped the brain because a newer one was in the same batch. */
+    static collapsedUpdates = 0;
 
     private preTick() {
         Client.buildingsHit = [];
@@ -254,6 +258,16 @@ export default class PlayerUpdateEvent extends MessageHandler<UpdatePlayerPacket
         this.preTick();
         this.onTick(positions, attributes);
         this.postTick(hidden);
+
+        // Lag spike burst: a newer update is right behind this one, so don't act on stale state
+        // (acting on every queued update used to fire heals/hats/attacks several times at once).
+        const isNewestInBatch = --PlayerUpdateEvent.queuedUpdates <= 0;
+        if (PlayerUpdateEvent.queuedUpdates < 0) PlayerUpdateEvent.queuedUpdates = 0;
+        if (!isNewestInBatch && Client.mode !== "replay") {
+            PlayerUpdateEvent.collapsedUpdates++;
+            for (const e of ModManager.enemyData.all) e.damages.length = 0;
+            return;
+        }
 
         // Don't run automation (heals, hats, placing, attacking) while dead - it only wastes packets.
         // Replays have no death/spawn packets for the viewer, so they always run.
