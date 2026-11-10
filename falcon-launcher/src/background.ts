@@ -4,7 +4,7 @@ import { type LoadStatus, STATUS_REQUEST, type StatusReply } from "./status";
 (function () {
     // Game pages Falcon replaces. Keep in sync with content_scripts in manifest.json and the
     // profiles in mod-source/src/utils/constants/Endpoints.ts.
-    const GAME_HOSTS = ["sandbox.moomoo.io", "sandbox.moomodding.io"];
+    const GAME_HOSTS = ["moomoo.io", "www.moomoo.io", "sandbox.moomoo.io", "sandbox.moomodding.io"];
 
     function isGamePage(url: string) {
         try {

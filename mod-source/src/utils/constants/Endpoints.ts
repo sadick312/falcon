@@ -1,7 +1,9 @@
 /**
  * Single source of truth for every network endpoint Falcon talks to.
  *
- * Falcon runs on two sites. The profile is picked from location.hostname at startup:
+ * Falcon runs on three sites. The profile is picked from location.hostname at startup:
+ * - "moomoo-official": moomoo.io / www.moomoo.io (v1.9.0). Same client and handshake as sandbox.moomoo.io,
+ *                      but its own API host (api-prod2) and game servers.
  * - "moomoo-sandbox": sandbox.moomoo.io (v1.9.0). Captcha + /join ticket, mixKey-encrypted packets.
  * - "moomodding":     sandbox.moomodding.io (v1.8.2). Fixed token the site itself sends, plain msgpack.
  *
@@ -11,7 +13,7 @@
 import { GAME_V182, GameVersion } from "@constants/gameVersion";
 import readJson from "@utils/storage/readJson";
 
-export type HostMode = "moomoo-sandbox" | "moomodding";
+export type HostMode = "moomoo-official" | "moomoo-sandbox" | "moomodding";
 
 /**
  * "ticket": Turnstile captcha, POST /join for a ticket, protocol module + mixKey encryption.
@@ -51,7 +53,33 @@ interface HostProfile {
     defaults: EndpointConfig;
 }
 
+/**
+ * `v` the official client sends with its server list request (`/servers?v=...` in its index-*.js). The API answers
+ * an older value with an empty list, so update this when the game updates.
+ */
+const MOOMOO_SERVER_LIST_VERSION = "1.31";
+
 const PROFILES: Record<HostMode, HostProfile> = {
+    // The official client picks `https://api-${"prod" | "sandbox"}2.moomoo.io` from the page's hostname.
+    "moomoo-official": {
+        mode: "moomoo-official",
+        gameVersion: "1.9.0",
+        pageHosts: ["moomoo.io", "www.moomoo.io"],
+        trustedDomain: "moomoo.io",
+        handshake: "ticket",
+        serverListFormat: "moomoo",
+        defaults: {
+            apiOrigin: "https://api-prod2.moomoo.io",
+            gameOrigin: "https://moomoo.io",
+            serverListPath: "/servers",
+            serverListVersion: MOOMOO_SERVER_LIST_VERSION,
+            joinPath: "/join",
+            gameServerDomain: "moomoo.io",
+            protocolUrl: "",
+            turnstileSiteKey: "0x4AAAAAAAMYHI96GFiJzMmp",
+            staticToken: ""
+        }
+    },
     "moomoo-sandbox": {
         mode: "moomoo-sandbox",
         gameVersion: "1.9.0",
@@ -63,7 +91,7 @@ const PROFILES: Record<HostMode, HostProfile> = {
             apiOrigin: "https://api-sandbox2.moomoo.io",
             gameOrigin: "https://sandbox.moomoo.io",
             serverListPath: "/servers",
-            serverListVersion: "1.28",
+            serverListVersion: MOOMOO_SERVER_LIST_VERSION,
             joinPath: "/join",
             gameServerDomain: "moomoo.io",
             protocolUrl: "",

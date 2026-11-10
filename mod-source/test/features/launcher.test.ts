@@ -35,16 +35,16 @@ describe("Page loader", () => {
 });
 
 describe("Manifest", () => {
-    it("only runs on the two game sites, and the worker uses the same list", async () => {
+    it("only runs on the game sites, and the worker uses the same list", async () => {
         const fs = await import("fs");
         const path = await import("path");
         const root = path.join(import.meta.dirname, "../../../falcon-launcher");
         const manifest = JSON.parse(fs.readFileSync(path.join(root, "manifest.json"), "utf8"));
-        const sites = ["https://sandbox.moomoo.io/*", "https://sandbox.moomodding.io/*"];
+        const sites = ["https://moomoo.io/*", "https://www.moomoo.io/*", "https://sandbox.moomoo.io/*", "https://sandbox.moomodding.io/*"];
         expect(manifest.host_permissions).toEqual(sites);
         expect(manifest.content_scripts[0].matches).toEqual(sites);
         const worker = fs.readFileSync(path.join(root, "src/background.ts"), "utf8");
-        expect(worker).toContain(`["sandbox.moomoo.io", "sandbox.moomodding.io"]`);
+        expect(worker).toContain(`["moomoo.io", "www.moomoo.io", "sandbox.moomoo.io", "sandbox.moomodding.io"]`);
     });
 });
 

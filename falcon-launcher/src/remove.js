@@ -1,4 +1,4 @@
-// Cloudflare Turnstile, which Falcon itself adds on sandbox.moomoo.io for the captcha; removing it could stop the
+// Cloudflare Turnstile, which Falcon itself adds on moomoo.io and sandbox.moomoo.io for the captcha; removing it could stop the
 // captcha from loading.
 const KEEP_SCRIPT_HOST = "challenges.cloudflare.com";
 

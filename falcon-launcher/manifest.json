@@ -14,6 +14,8 @@
         "declarativeNetRequest"
     ],
     "host_permissions": [
+        "https://moomoo.io/*",
+        "https://www.moomoo.io/*",
         "https://sandbox.moomoo.io/*",
         "https://sandbox.moomodding.io/*"
     ],
@@ -23,6 +25,8 @@
                 "src/remove.js"
             ],
             "matches": [
+                "https://moomoo.io/*",
+                "https://www.moomoo.io/*",
                 "https://sandbox.moomoo.io/*",
                 "https://sandbox.moomodding.io/*"
             ],

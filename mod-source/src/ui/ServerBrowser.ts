@@ -13,11 +13,12 @@ const serverBrowser = getElem<"div">("server-browser");
 const serverBrowserLoadingText = getElem<"div">("server-browser-loading-text");
 const cancelServerBrowser = getElem<"button">("cancel-server-browser-btn");
 
-/** Entry from api-sandbox2.moomoo.io/servers. */
+/** Entry from api-sandbox2.moomoo.io/servers or api-prod2.moomoo.io/servers. */
 interface MooMooPublicServer {
     key: string;
     name: string;
-    playerCapacity: 40;
+    /** 40 on the sandbox; 20 or 80 on moomoo.io. */
+    playerCapacity: number;
     playerCount: number;
     regionName: string;
     auth: boolean;
@@ -101,7 +102,7 @@ export default class ServerBrowser {
             name: server.name,
             label: `${server.regionName} ${server.name}`,
             playerCount: server.playerCount,
-            capacity: 40,
+            capacity: typeof server.playerCapacity === "number" ? server.playerCapacity : 40,
             host: Endpoints.gameHost(server.key, server.region)
         };
     }
@@ -122,7 +123,11 @@ export default class ServerBrowser {
             throw new NetworkError("server-list", "Server list entries have an unexpected shape. The API may have changed.");
         }
 
-        return servers.map((entry) => this.normalize(entry));
+        // `auth` servers (moomoo.io's member servers) only let in players signed in to a FRVR account, which
+        // Falcon has no way to do, so joining one would always fail.
+        return servers
+            .filter((entry) => (entry as Partial<MooMooPublicServer>).auth !== true)
+            .map((entry) => this.normalize(entry));
     }
 
     /** Cached for SERVER_LIST_TTL_MS; concurrent callers share one request. Throws NetworkError on failure. */
