@@ -1,6 +1,6 @@
 import Player from "@entities/Player";
 import Menu from "@menu/Menu";
-import { STORE_HAT_MAP } from "@constants/store";
+import { STORE_ACCESSORY_MAP, STORE_HAT_MAP } from "@constants/store";
 import Client from "@core/Client";
 import PlayerManager from "@core/logic/players/PlayerManager";
 import HatSystem from "@core/mod/defense/defense-modules/HatSystem";
@@ -43,32 +43,18 @@ export default class HealthUpdateEvent extends MessageHandler<HealthUpdatePacket
     private onDamage(player: Player, sid: number, delta: number) {
         const tick = tickState.tick;
 
-        if (player.skinIndex === STORE_HAT_MAP.BULL_HELMET) {
-            if (player.tailIndex === 13) {
-                if (delta === -2) {
-                    player.bullTick = tick - 1;
+        // The bull helmet drains 5 health once a second (2 with Angel Wings' +3 regen on). Any 5 damage counts as that
+        // drain, whatever hat the player seems to wear, on purpose: the bull helmet usually goes on just before the
+        // drain, and the server reports the drain before the player update that shows the helmet. Requiring the
+        // helmet would miss our own drain (keeping the helmet on up to 9 more ticks) and lose enemies' bull timing.
+        // Nothing else in 1.8.2 deals exactly 5. The 2 with Angel Wings is too common a number to count without the
+        // helmet visibly on.
+        const isBullDrain = delta === -5 ||
+            (delta === -2 && player.skinIndex === STORE_HAT_MAP.BULL_HELMET && player.tailIndex === STORE_ACCESSORY_MAP.ANGEL_WINGS);
 
-                    if (sid === Client.mySID) {
-                        HatSystem.needTick = 0;
-                    }
-                }
-            } else {
-                if (delta === -5) {
-                    player.bullTick = tick - 1;
-
-                    if (sid === Client.mySID) {
-                        HatSystem.needTick = 0;
-                    }
-                }
-            }
-        }
-
-        if (delta === -5) {
+        if (isBullDrain) {
             player.bullTick = tick - 1;
-
-            if (sid === Client.mySID) {
-                HatSystem.needTick = 0;
-            }
+            if (sid === Client.mySID) HatSystem.needTick = 0;
         }
 
         const d = Math.abs(delta);
