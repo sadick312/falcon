@@ -83,6 +83,8 @@ export interface ModApi {
     ObjectManager: typeof import("@core/logic/ObjectManager").default;
     ProjectileManager: typeof import("@core/logic/ProjectileManager").default;
     ModManager: typeof import("@core/ModManager").default;
+    AttackManager: typeof import("@core/mod/combat/core/AttackManager").default;
+    CombatController: typeof import("@core/mod/combat/core/CombatController").default;
     ais: typeof import("@entities/Ai").ais;
 }
 
@@ -104,8 +106,10 @@ async function loadMod(mode: "modules" | "bundle"): Promise<ModApi> {
     const { default: ObjectManager } = await import("@core/logic/ObjectManager");
     const { default: ProjectileManager } = await import("@core/logic/ProjectileManager");
     const { default: ModManager } = await import("@core/ModManager");
+    const { default: AttackManager } = await import("@core/mod/combat/core/AttackManager");
+    const { default: CombatController } = await import("@core/mod/combat/core/CombatController");
     const { ais } = await import("@entities/Ai");
-    return { profiler, Menu, Client, AngleFinder, PlayerManager, ObjectManager, ProjectileManager, ModManager, ais };
+    return { profiler, Menu, Client, AngleFinder, PlayerManager, ObjectManager, ProjectileManager, ModManager, AttackManager, CombatController, ais };
 }
 
 export interface ReplayResult {

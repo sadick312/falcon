@@ -11,4 +11,6 @@ export { default as PlayerManager } from "@core/logic/players/PlayerManager";
 export { default as ObjectManager } from "@core/logic/ObjectManager";
 export { default as ProjectileManager } from "@core/logic/ProjectileManager";
 export { default as ModManager } from "@core/ModManager";
+export { default as AttackManager } from "@core/mod/combat/core/AttackManager";
+export { default as CombatController } from "@core/mod/combat/core/CombatController";
 export { ais } from "@entities/Ai";
