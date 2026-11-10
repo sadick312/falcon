@@ -32,18 +32,19 @@ export default function renderGrid(xOffset: number, yOffset: number) {
     } else {
         const gridSize = RenderingConfig.maxScreenHeight / 14;
 
-        for (let x = -CameraManager.camX; x < RenderingConfig.maxScreenWidth; x += gridSize) {
-            if (x > 0) {
-                mainContext.moveTo(x, 0);
-                mainContext.lineTo(x, RenderingConfig.maxScreenHeight);
-            }
+        // Start at the first visible line instead of looping up from -camX (up to ~190 wasted
+        // iterations per axis per frame). Same lines as before: x = -camX + k * gridSize, x > 0.
+        const firstX = ((-CameraManager.camX % gridSize) + gridSize) % gridSize || gridSize;
+        const firstY = ((-CameraManager.camY % gridSize) + gridSize) % gridSize || gridSize;
+
+        for (let x = firstX; x < RenderingConfig.maxScreenWidth; x += gridSize) {
+            mainContext.moveTo(x, 0);
+            mainContext.lineTo(x, RenderingConfig.maxScreenHeight);
         }
 
-        for (let y = -CameraManager.camY; y < RenderingConfig.maxScreenHeight; y += gridSize) {
-            if (y > 0) {
-                mainContext.moveTo(0, y);
-                mainContext.lineTo(RenderingConfig.maxScreenWidth, y);
-            }
+        for (let y = firstY; y < RenderingConfig.maxScreenHeight; y += gridSize) {
+            mainContext.moveTo(0, y);
+            mainContext.lineTo(RenderingConfig.maxScreenWidth, y);
         }
     }
 
