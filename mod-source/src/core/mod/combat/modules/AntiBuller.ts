@@ -69,7 +69,12 @@ export default class AntiBuller extends CombatModule {
     protected execute() {
         const player = Client.player;
 
-        if (player.shameCount >= 4) return;
+        // At 4+ shame Anti Bull stood down unless "Keep On at High Shame" is on. It used to return with `consider`
+        // still up from an earlier tick, so the Hat System could keep putting on Spike Gear for an old decision.
+        if (player.shameCount >= 4 && !Menu.getValue("antiBullHighShame")) {
+            this.consider = false;
+            return;
+        }
         if (!Menu.getValue("antiBull")) {
             this.consider = false;
             return;

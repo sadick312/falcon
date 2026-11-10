@@ -13,7 +13,7 @@ The **Favorites** tab lists the settings you starred; **Credits** has no setting
 - **Combat Modules** (group) — General purpose combat modules grouped up to clean up the menu interface.
   - **Velocity Hits** (`velocityHits`, toggle, default: on) — Automatically strikes enemies if they will run into spikes.
   - **Knockback Hits** (`attackFactoringKB:hits`, toggle, default: on) — Automatically strikes enemies factoring knocking potential.
-  - **Accurate Enemy Shame** (`accurateEnemyShame`, toggle, default: off) — Counts an enemy's heal toward their shame only when it looks like food (20+ health, or 16+ to full health). Off: every heal counts, including healing pads and regen hats/accessories, which push the count wrong. Shame Grinder, Shame Strike, One Tick and Apple Insta read this count.
+  - **Accurate Enemy Shame** (`accurateEnemyShame`, toggle, default: on) — Counts an enemy's heal toward their shame only when it looks like food (20+ health, or 16+ to full health). Off: every heal counts, including healing pads and regen hats/accessories, which push the count wrong. Shame Grinder, Shame Strike, One Tick and Apple Insta read this count.
   - **Trust Seen Weapons** (`trustSeenWeapons`, toggle, default: off) — Keeps an enemy's hunting bow or crossbow (and its reload) once seen, instead of assuming a loaded musket whenever they hold their primary. Guesses a katana, not a polearm, for a short sword. Off: the old worst-case guesses.
   - **Knockback Instakills** (`attackFactoringKB:insta`, toggle, default: on) — Automatically instakills enemies factoring knocking potential.
     - **Allow While Trapped** (`attackFactoringKB:insta:allowInTrap`, toggle, default: off) — Lets these instakills run while you are trapped, as long as Auto Breaker has no spikes to break around you.
@@ -52,6 +52,7 @@ The **Favorites** tab lists the settings you starred; **Credits** has no setting
   - **Render Pathfinding Line** (`renderAutoPushingPathfindingLine`, toggle, default: on) — Draws the path Auto Push is following.
 - **Anti Bull** (`antiBull`, toggle, default: off) — Counters bullspamming by using Spike Gear and CX Wings. This toggle completely overrides Shadow Wings.
   - **Force Spike Gear** (`forceAntiBull`, toggle, default: on) — Force equips Spike Gear in situations where enemies cannot do non-soldier vulnerable counter attacks (e.g. spikeTick).
+  - **Keep On at High Shame** (`antiBullHighShame`, toggle, default: on) — Keeps Anti Bull working when your shame is 4 or more, which is when bull spam hurts most. A due bull tick still comes first. Off: Anti Bull stands down from 4 shame, as before.
 
 ## Utility
 
@@ -86,7 +87,7 @@ The **Favorites** tab lists the settings you starred; **Credits** has no setting
     - **Exact Threat Reload** (`exactThreatReload`, toggle, default: off) — Counts an enemy weapon's damage for the next tick only when it is fully reloaded now, which is exactly when its hit can land next tick. Off: counts it from 90% reloaded, which sometimes counts a slow weapon a tick early (extra heals and soldier helmets for nothing). On a laggy server a fast weapon can very rarely be a tick sooner than counted.
   - **Hat Switching** (`defensiveHatSwitching`, toggle, default: on) — Allows the action of hat switching to mitigate potential damages.
   - **Classic Hat Switching** (`classicHatSwitching`, toggle, default: off) — Everyday hats like a classic MooMoo hat changer: Soldier Helmet with an enemy within 300, else Flipper Hat in the river, Winter Cap in the snow, Booster Hat while moving, Soldier Helmet when still. Combos, defense, bull ticks, EMP and breaking hats work as before.
-  - **Blood Wings Optimizations** (`bloodWingsOptimizations`, toggle, default: off) — Uses blood wings for defensive purposes (e.g. no-soldier antionetick, no-shame antishamegrind, etc).
+  - **Blood Wings Optimizations** (`bloodWingsOptimizations`, toggle, default: off) — While hurt, wears Blood Wings for melee hits on enemies (heals 20% of the damage, without shame). At 4+ shame, Auto Heal lets such a hit heal instead of eating.
   - **Angel Wings Regen** (`angelWingsRegen`, toggle, default: off) — While hurt and no enemy is close, wears Angel Wings (3 health a second, without shame) instead of Monkey Tail.
 - **Safe Walk** (`safeWalk`, toggle, default: on) — Prevents walking into dangerous or annoying buildings.
   - **Ignore My Teleports** (`safeWalkIgnoreMyTps`, toggle, default: on) — Safe walk doesn't stop you from walking into your own teleports.

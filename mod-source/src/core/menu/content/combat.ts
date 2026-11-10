@@ -30,7 +30,7 @@ export const combatSettings: IMenuItem[] = [{
         id: "accurateEnemyShame",
         description: "Counts an enemy's heal toward their shame only when it looks like food (20+ health, or 16+ to full health). Off: every heal counts, including healing pads and regen hats/accessories, which push the count wrong. Shame Grinder, Shame Strike, One Tick and Apple Insta read this count.",
         type: "toggle",
-        status: false
+        status: true
     }, {
         label: "Trust Seen Weapons",
         id: "trustSeenWeapons",
@@ -332,6 +332,12 @@ export const combatSettings: IMenuItem[] = [{
         id: "forceAntiBull",
         type: "toggle",
         description: "Force equips Spike Gear in situations where enemies cannot do non-soldier vulnerable counter attacks (e.g. spikeTick).",
+        status: true
+    }, {
+        label: "Keep On at High Shame",
+        id: "antiBullHighShame",
+        type: "toggle",
+        description: "Keeps Anti Bull working when your shame is 4 or more, which is when bull spam hurts most. A due bull tick still comes first. Off: Anti Bull stands down from 4 shame, as before.",
         status: true
     }],
     status: false
