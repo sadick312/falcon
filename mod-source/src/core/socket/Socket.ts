@@ -61,6 +61,8 @@ export default class Socket extends NativeWebSocket {
 
         this.socketProtocol = socketProtocol;
         this.binaryType = "arraybuffer";
+        // Marks Falcon's socket so the Quick Inject hook-mode guard never closes it.
+        (this as any).__falcon = true;
         // Local dev server: no item limits, all upgrades allowed.
         this.isPrivateServer = url.includes("localhost");
         // Plain unencrypted msgpack: local dev servers and 1.8.2 hosts.

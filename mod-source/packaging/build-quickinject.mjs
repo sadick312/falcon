@@ -42,10 +42,31 @@ ${bundle}
         }
     }
 
+    // In "hook" mode the normal game has already connected. Servers allow few connections per IP
+    // ("IP limit reached"), so close the normal game's socket the next time it sends (it pings
+    // every 2.5s). Falcon's own sockets are marked with __falcon and are never touched.
+    function closeVanillaSocket() {
+        var proto = WebSocket.prototype;
+        var originalSend = proto.send;
+        var restore = function () { if (proto.send === patchedSend) proto.send = originalSend; };
+        var patchedSend = function (data) {
+            if (!this.__falcon) {
+                console.log("[Falcon] Closed the normal game's connection (hook mode).");
+                try { this.close(); } catch (e) { }
+                restore();
+                return;
+            }
+            return originalSend.call(this, data);
+        };
+        proto.send = patchedSend;
+        setTimeout(restore, 15000);
+    }
+
     function boot() {
-        if (window.MooModLoader && !window.MooModLoader.bundleBlocked && document.getElementById("gameCanvas")) {
-            console.warn("[Falcon] The normal game is also running. For best performance choose the " +
-                "'bundle replacement' (or 'HTML replacement') mode in Quick Inject.");
+        if (document.getElementById("gameCanvas")) {
+            console.warn("[Falcon] The normal game is also running (hook mode). It will be disconnected, but for " +
+                "best performance choose 'bundle replacement' or 'HTML replacement' in Quick Inject.");
+            closeVanillaSocket();
         }
 
         window.oldHTML = document.documentElement.innerHTML;
