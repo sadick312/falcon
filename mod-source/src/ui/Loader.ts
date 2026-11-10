@@ -8,7 +8,7 @@ import RenderingConfig from "@rendering/RenderingConfig";
 import AllTemporaryObjects from "@ui/data/AllTemporaryObjects";
 import DisclaimerDisplay from "@ui/DisclaimerDisplay";
 import Hook from "@ui/Hook";
-import ServerBrowser from "@ui/ServerBrowser";
+import ServerBrowser, { parseRecentServer } from "@ui/ServerBrowser";
 import getElem from "@utils/dom/getElem";
 import Menu from "../core/menu/Menu";
 import RendererSystem from "../rendering/RendererSystem";
@@ -80,7 +80,7 @@ function hookMainMenuBtns() {
 
     largestRecentMultiplayerBtn.onclick = async () => {
         const serverKey = localStorage.getItem("falcon-recent-server")!;
-        const [_, region] = serverKey.split(":");
+        const [_, region] = parseRecentServer(serverKey);
         loadingCirclePage.style.display = "flex";
 
         const mostActiveServer = await ServerBrowser.getHighest(region);
@@ -98,7 +98,7 @@ function hookMainMenuBtns() {
         loadingCirclePage.style.display = "flex";
 
         if (await ServerBrowser.doesExist(serverKey)) {
-            const [key, region, name] = serverKey.split(":");
+            const [key, region, name] = parseRecentServer(serverKey);
             Client.connect(key, region, name);
         } else {
             loadingCirclePage.style.display = "none";

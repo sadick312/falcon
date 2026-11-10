@@ -1,4 +1,5 @@
 import Client from "@core/Client";
+import Protocol from "@core/socket/Protocol";
 import { mainMenu } from "@ui/Loader";
 import getElem from "@utils/dom/getElem";
 
@@ -16,18 +17,45 @@ interface MooMooPublicServer {
     playerCount: number;
     regionName: string;
     auth: boolean;
-    region: "eu" | "sea" | "na";
+    region: string;
     version: string;
+    /** Full websocket URL (only set for 1.8.2 hosts, which don't use *.moomoo.io addresses). */
+    wsUrl?: string;
 }
 
-const regionDescriptions = {
+const regionDescriptions: Record<string, string[]> = {
     eu: ["frank", "skibidi", "most active server somehow"],
     na: ["we eat shit", "miami tryhards", "wtf", "A server located in usa miami florida, home to the world's most zero-latency humans alive."],
     sea: ["no one plays here"]
 };
 
+// Stored as "key|region|name". Older saves used ":" which breaks for keys like "1:1".
+export function saveRecentServer(key: string, region: string, name: string) {
+    localStorage.setItem("falcon-recent-server", `${key}|${region}|${name}`);
+}
+
+export function parseRecentServer(value: string): [string, string, string] {
+    const parts = value.includes("|") ? value.split("|") : value.split(":");
+    return [parts[0], parts[1], parts[2]];
+}
+
 export default class ServerBrowser {
-    private static async getData() {
+    private static async getData(): Promise<MooMooPublicServer[]> {
+        if (Protocol.isLegacy) {
+            const servers = await Protocol.getLegacyServers();
+            return servers.filter(s => !s.isPrivate).map(s => ({
+                key: s.key,
+                name: s.name,
+                playerCapacity: 40,
+                playerCount: s.playerCount,
+                regionName: s.display_name,
+                auth: false,
+                region: s.region,
+                version: "1.8.2",
+                wsUrl: Protocol.getLegacyWsUrl(s)
+            }) as MooMooPublicServer);
+        }
+
         const res = await fetch("https://api-sandbox2.moomoo.io/servers?v=1.28");
         if (!res.ok) return [];
 
@@ -51,10 +79,10 @@ export default class ServerBrowser {
 
         const regionName = document.createElement("div");
         regionName.style = `color: var(--generic-white); font-size: 19px;`;
-        regionName.innerText = `${serverData.regionName} ${serverData.name}`;
+        regionName.innerText = serverData.wsUrl ? serverData.regionName : `${serverData.regionName} ${serverData.name}`;
 
         const regionDescription = document.createElement("div");
-        const descriptions = regionDescriptions[serverData.region];
+        const descriptions = regionDescriptions[serverData.region] ?? [serverData.version ?? ""];
         regionDescription.style = `text-align: left; max-width: 500px; color: var(--generic-white-2); font-size: 12px;`;
         regionDescription.innerText = descriptions[Math.floor(descriptions.length * Math.random())];
 
@@ -114,8 +142,13 @@ export default class ServerBrowser {
         return filtered.sort((a, b) => b.playerCount - a.playerCount)[0];
     }
 
+    static async find(key: string, region: string) {
+        const data = await this.getData();
+        return data.find(e => e.key === key && e.region === region);
+    }
+
     static async doesExist(serverKey: string) {
-        const [key, region] = serverKey.split(":");
+        const [key, region] = parseRecentServer(serverKey);
         const data = await this.getData();
         return data.some(e => e.key === key && e.region === region);
     }

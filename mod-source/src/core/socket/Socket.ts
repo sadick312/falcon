@@ -1,6 +1,8 @@
 import { deathText } from "@core/Client";
 import GameEventTracker from "@core/mod/utils/GameEventTracker";
 import CustomEncoder from "@core/socket/CustomEncoder";
+import LegacyAdapter from "@core/socket/LegacyAdapter";
+import Protocol from "@core/socket/Protocol";
 import PlayerUpdateEvent from "@core/socket/events/core/PlayerUpdateEvent";
 import SocketListener from "@core/socket/SocketListener";
 import { MooMooProtocol } from "@core/utils/CaptchaManager";
@@ -26,26 +28,41 @@ export type SendMsgSignature = <K extends keyof MOOMOO_CLIENT_TO_SERVER_MAP>(
 
 const disconnectedPage = getElem("disconnected-page");
 const disconnectedReason = getElem("disconnected-reason");
+const reconnectBtn = document.getElementById("reconnect-btn");
+
+// A full reload is the most reliable reconnect: every manager starts from a clean state,
+// and Quick Inject re-runs the client automatically on reload.
+if (reconnectBtn) reconnectBtn.onclick = () => {
+    window.onbeforeunload = null;
+    location.reload();
+};
 export const respawnMainCard = getElem("respawn-page-main-card");
 
 export type MixKeyFunc = (key: Uint8Array, offset: number) => Uint8Array;
 
-export default class Socket extends WebSocket {
+// Some hosts (moomodding) replace window.WebSocket with a wrapper *function* that returns a plain
+// socket. Extending that wrapper would lose all of Socket's methods, so extend the real class.
+// The wrapper keeps the native prototype, so prototype-level hooks (e.g. account auth) still apply.
+const NativeWebSocket = WebSocket.prototype.constructor as typeof WebSocket;
+
+export default class Socket extends NativeWebSocket {
     private handlers: {
         [K in EventKey]?: EventCallback<K>
     } = {};
 
     private manager = new PacketManager();
-    private socketProtocol: MooMooProtocol;
+    private socketProtocol?: MooMooProtocol;
 
     isPrivateServer = false;
 
-    constructor(url: string, socketProtocol: MooMooProtocol) {
+    constructor(url: string, socketProtocol?: MooMooProtocol) {
         super(url);
 
         this.socketProtocol = socketProtocol;
         this.binaryType = "arraybuffer";
-        this.isPrivateServer = url.includes("localhost");
+        // "private" = plain unencrypted msgpack (localhost dev servers and 1.8.2 hosts)
+        this.isPrivateServer = url.includes("localhost") || Protocol.isLegacy;
+        LegacyAdapter.reset();
 
         this.onopen = (ev) => this.onOpen(ev);
         this.onmessage = (ev) => this.onMessage(ev);
@@ -97,9 +114,18 @@ export default class Socket extends WebSocket {
         const parsed = decode(bytes) as any[];
 
         if (parsed[0] === "io-init") {
+            // 1.8.2 only sends [socketId]; encryption setup only exists on 1.9.x.
+            if (this.isPrivateServer || !this.socketProtocol) return;
+
             const [id, seed, salt] = parsed[1] as MOOMOO_SERVER_TO_CLIENT_MAP["io-init"];
             this.manager.init(id, seed, salt, this.socketProtocol);
             return;
+        }
+
+        if (Protocol.isLegacy) {
+            // Reshape 1.8.2 layouts into the ones Falcon's handlers expect.
+            if (parsed[0] === PacketMap.SERVER_TO_CLIENT.UPDATE_PLAYERS) parsed[1] = LegacyAdapter.players(parsed[1][0]);
+            else if (parsed[0] === PacketMap.SERVER_TO_CLIENT.LOAD_AI) parsed[1] = LegacyAdapter.ais(parsed[1][0]);
         }
 
         if (this.manager.tables && typeof parsed[0] === "number") {

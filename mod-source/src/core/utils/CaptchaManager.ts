@@ -73,6 +73,12 @@ export default class CaptchaManager {
         SocketListener.hookEvents(Client.socket);
     }
 
+    /** 1.8.2 hosts: no captcha, no join API, no protocol module - just open the socket. */
+    static connectDirect(wsUrl: string) {
+        Client.socket = new Socket(wsUrl);
+        SocketListener.hookEvents(Client.socket);
+    }
+
     static reset() {
         if (!this.widgetId) return;
 

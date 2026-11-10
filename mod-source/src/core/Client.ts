@@ -3,6 +3,7 @@ import Player from "@constants/Player";
 import PlayerManager from "@core/logic/players/PlayerManager";
 import { PlayerSimulationState } from "@core/mod/simulation/SimulationStates";
 import FakeSocket from "@core/socket/FakeSocket";
+import Protocol from "@core/socket/Protocol";
 import Socket from "@core/socket/Socket";
 import SocketListener from "@core/socket/SocketListener";
 import CaptchaManager from "@core/utils/CaptchaManager";
@@ -12,7 +13,7 @@ import { PlacementType } from "@placing/utils/Placer";
 import TaskScheduler from "@services/event-timer/TaskScheduler";
 import { resetScreenSize } from "@ui/Hook";
 import { loadingCirclePage, mainMenu, respawnPage } from "@ui/Loader";
-import ServerBrowser, { serverBrowserPage } from "@ui/ServerBrowser";
+import ServerBrowser, { saveRecentServer, serverBrowserPage } from "@ui/ServerBrowser";
 import ScriptConfig from "@utils/config/ScriptConfig";
 import getElem from "@utils/dom/getElem";
 
@@ -79,7 +80,29 @@ export default class Client {
             return;
         }
 
-        const selection = ServerBrowser.selectedOption;
+        let selection = ServerBrowser.selectedOption;
+
+        // "Recent server" buttons pass key/region; on 1.8.2 hosts we need the full server entry for its URL.
+        if (Protocol.isLegacy && key && region && selection?.key !== key) {
+            selection = ServerBrowser.selectedOption = await ServerBrowser.find(key, region);
+        }
+
+        if (Protocol.isLegacy) {
+            if (!selection?.wsUrl) {
+                alert("No server selected or server list unavailable. Please pick a server again.");
+                mainMenu.style.display = "flex";
+                respawnPage.style.display = "none";
+                return;
+            }
+
+            saveRecentServer(selection.key, selection.region, selection.name);
+            gameInformationMetadata.innerText = `server: ${selection.regionName} | 1.8.2`;
+            PacketTracker.init();
+            TaskScheduler.init();
+            CaptchaManager.connectDirect(selection.wsUrl);
+            return;
+        }
+
         const wsAddress = key && region ?
             `${key}.${region}.moomoo.io` :
             typeof selection === "undefined" ?
@@ -87,7 +110,7 @@ export default class Client {
                 `${selection.key}.${selection.region}.moomoo.io`;
 
         if (selection?.region) {
-            localStorage.setItem("falcon-recent-server", `${selection.key}:${selection.region}:${selection.name}`);
+            saveRecentServer(selection.key, selection.region, selection.name);
         }
 
         gameInformationMetadata.innerText = `region: ${region ?? selection?.region ?? "local"} | NAME: ${name ?? selection?.name ?? "n/a"}`;
