@@ -1,3 +1,4 @@
+import Keybinds from "@core/Keybinds";
 import items, { WEAPON_ID_MAP } from "@constants/items";
 import { STORE_ACCESSORY_ID, STORE_ACCESSORY_MAP, STORE_HAT_ID, STORE_HAT_MAP } from "@constants/store";
 import Client from "@core/Client";
@@ -140,7 +141,7 @@ export default class CombatController {
 
             if (this.tankSpam) {
                 this.currentMode = "tankspam";
-                const bestId = Input.keys["ShiftLeft"] ? player.weapons[0] : this.bestWeaponForBreak();
+                const bestId = Keybinds.isHeld("override", Input.keys) ? player.weapons[0] : this.bestWeaponForBreak();
                 this.selectWeapon(bestId, true);
                 activityList.push("tankSpam");
 
@@ -157,7 +158,7 @@ export default class CombatController {
                 return;
             }
 
-            if (Input.keys["Space"]) {
+            if (Keybinds.isHeld("bullSpam", Input.keys)) {
                 this.currentMode = "bullspam";
                 activityList.push("bullSpam");
                 const id = player.weapons[0];

@@ -1,3 +1,4 @@
+import Keybinds from "@core/Keybinds";
 import GameObject from "@constants/GameObject";
 import items, { LIST_ID_MAP, WEAPON_ID_MAP } from "@constants/items";
 import Player from "@constants/Player";
@@ -312,7 +313,7 @@ export default class AutoBreaker {
 
         this.setTarget(player.trap.x, player.trap.y, LIST_ID_MAP.PIT_TRAP, 50, player.trap.health);
 
-        if (!Input.keys["ShiftLeft"]) {
+        if (!Keybinds.isHeld("override", Input.keys)) {
             this.processSpikes(player, player.trap, originalBestId, canEnemyReplaceTrap);
             if (!this.allSpikesBuffer.length) this.processKatanaSpikes(player, player.trap);
 

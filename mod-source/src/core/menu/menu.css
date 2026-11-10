@@ -494,3 +494,29 @@ input[type=number] {
     -moz-appearance: textfield;
     appearance: textfield;
 }
+/* Keybinds tab */
+.keybindCategory {
+    color: var(--theme-primary);
+    font-size: 15px;
+    margin: 14px 4px 6px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.keybindButton {
+    min-width: 110px;
+    padding: 6px 10px;
+    margin-left: 10px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: var(--generic-white);
+    text-align: center;
+    cursor: pointer;
+    white-space: nowrap;
+    pointer-events: all;
+}
+
+.keybindButton:hover { background: rgba(255, 255, 255, 0.16); }
+.keybindCapturing { border-color: var(--theme-primary); color: var(--theme-primary); }
+.keybindConflict { border-color: #e05555; color: #ff8a8a; }

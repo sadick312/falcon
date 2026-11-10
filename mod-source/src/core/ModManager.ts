@@ -1,3 +1,4 @@
+import Keybinds from "@core/Keybinds";
 import Latency from "@core/mod/utils/Latency";
 import CombatUtils from "@combat-utils/CombatUtils";
 import GameObject from "@constants/GameObject";
@@ -391,7 +392,7 @@ export default class ModManager {
     }
 
     private static postTick() {
-        if (Input.keys["ShiftLeft"])
+        if (Keybinds.isHeld("override", Input.keys))
             this.activityList.push("overrideOn");
 
         Client.player.hadProjDamages = Client.player.projDamages.length !== 0;
@@ -414,7 +415,7 @@ export default class ModManager {
     }
 
     private static autoPlayMovement() {
-        if (Input.keys["ShiftLeft"]) return;
+        if (Keybinds.isHeld("override", Input.keys)) return;
         if (!Menu.getValue("autoPlay")) return;
 
         const followTo = parseInt(Menu.getValue("followTo"));

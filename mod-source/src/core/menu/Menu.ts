@@ -1,3 +1,5 @@
+import drawKeybinds from "./utils/drawKeybinds";
+import Keybinds from "@core/Keybinds";
 import readStoredJSON from "@utils/storage/readStoredJSON";
 import drawNumberInput from "@menu/utils/drawNumberInput";
 import getElem from "@utils/dom/getElem";
@@ -26,7 +28,7 @@ export interface IMenuItem {
     label: string;
     description?: string;
     id: string;
-    type: "toggle" | "select" | "number" | "slider" | "paragraph" | "group" | "chat-log" | "saved-configs" | "config-ui";
+    type: "toggle" | "select" | "number" | "slider" | "paragraph" | "group" | "chat-log" | "saved-configs" | "config-ui" | "keybinds";
     settings?: IMenuItem[];
     icon?: string;
     options?: IMenuOptions[];
@@ -50,6 +52,7 @@ interface IMenuContent {
     visual: IMenuItem[];
     console: IMenuItem[];
     configs: IMenuItem[];
+    keybinds: IMenuItem[];
     experimentals: IMenuItem[];
     credits: IMenuItem[];
 }
@@ -151,6 +154,12 @@ const CONSOLE_ICON = `
 </svg>
 `;
 
+const KEYBOARD_ICON = `
+<svg viewBox="0 0 24 24" width="20" height="20">
+    <path fill="REPLACE_WITH_COLOR" d="M20 5H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 2H5v-2h2v2zm0-3H5V8h2v2zm9 7H8v-2h8v2zm0-4h-2v-2h2v2zm0-3h-2V8h2v2zm3 3h-2v-2h2v2zm0-3h-2V8h2v2z"/>
+</svg>
+`;
+
 const menuTabs: IMenuTab[] = [{
     label: "Favorites",
     icon: `
@@ -185,6 +194,9 @@ const menuTabs: IMenuTab[] = [{
 }, {
     label: "Configs",
     icon: GEAR_ICON
+}, {
+    label: "Keybinds",
+    icon: KEYBOARD_ICON
 }, {
     label: "Experimentals",
     icon: `
@@ -1103,6 +1115,11 @@ export const menuContent: IMenuContent = {
         type: "saved-configs",
         id: ""
     }],
+    keybinds: [{
+        label: "",
+        id: "",
+        type: "keybinds"
+    }],
     experimentals: [{
         label: "",
         id: "",
@@ -1332,7 +1349,8 @@ export default class Menu {
         };
 
         document.addEventListener("keydown", (event) => {
-            if (event.key === "Escape") {
+            // While a keybind is being captured, Esc only cancels the capture.
+            if (event.key === "Escape" && !Keybinds.isCapturing) {
                 menuElement.style.display =
                     menuElement.style.display === "none" ? "block" : "none";
                 if (this.selectedTab === 5) drawChatLog();
@@ -1424,6 +1442,7 @@ export default class Menu {
                 else if (item.type === "chat-log") drawChatLog();
                 else if (item.type === "config-ui") drawConfigUI();
                 else if (item.type === "saved-configs") drawSavedConfigs();
+                else if (item.type === "keybinds") drawKeybinds();
             }
         } else {
             const noItemsElem = document.createElement("div");

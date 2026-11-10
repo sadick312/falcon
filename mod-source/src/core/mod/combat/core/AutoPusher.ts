@@ -1,3 +1,4 @@
+import Keybinds from "@core/Keybinds";
 import GameObject from "@constants/GameObject";
 import Player from "@constants/Player";
 import Client from "@core/Client";
@@ -54,7 +55,7 @@ export default class AutoPusher {
 
         if (!Menu.getValue("autoPush")) return null;
         if (!nearestEnemy || !nearestEnemy.trap) return null;
-        if (Input.keys["ShiftLeft"]) return null;
+        if (Keybinds.isHeld("override", Input.keys)) return null;
 
         const playerPos = Client.player.real_position;
         const enemyPos = nearestEnemy.real_position;

@@ -1,3 +1,4 @@
+import Keybinds from "@core/Keybinds";
 import Protocol from "@core/socket/Protocol";
 import GameObject from "@constants/GameObject";
 import items, { LIST_ID_MAP } from "@constants/items";
@@ -46,7 +47,7 @@ export default class PlacementSystem {
 
         const activityList = ModManager.activityList;
 
-        if (keys["KeyK"] && player.items.includes(20)) {
+        if (Keybinds.isHeld("placeSpawnPads", keys) && player.items.includes(20)) {
             const totalAllowedActions = PacketTracker.request("PLACE", 4);
             const len = Math.min(4, totalAllowedActions);
 
@@ -60,24 +61,24 @@ export default class PlacementSystem {
         const totalAllowedActions = PacketTracker.request("PLACE", 1);
         if (totalAllowedActions <= 0) return;
 
-        if (keys["KeyH"]) {
+        if (Keybinds.isHeld("place7th", keys)) {
             this.checkPlace(PlacerUtils.placeSevenSlot(player), angle);
             this.totalPlacements++;
             activityList.push("macroKeyH");
         }
 
-        if (keys["KeyQ"]) {
+        if (Keybinds.isHeld("eat", keys)) {
             this.place(player.items[0], ModManager.getAttackDir());
             activityList.push("macroKeyQ");
         }
 
-        if (keys["KeyF"]) {
+        if (Keybinds.isHeld("placeTrap", keys)) {
             this.checkPlace(player.items[4], angle);
             this.totalPlacements++;
             activityList.push("macroKeyF");
         }
 
-        if (keys["KeyV"]) {
+        if (Keybinds.isHeld("placeSpike", keys)) {
             this.checkPlace(player.items[2], angle);
             this.totalPlacements++;
             activityList.push("macroKeyV");

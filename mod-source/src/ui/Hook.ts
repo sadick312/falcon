@@ -1,3 +1,4 @@
+import Keybinds from "@core/Keybinds";
 import Client from "@core/Client";
 import updateClanMenu, { allianceHolder } from "@core/events/updateClanMenu";
 import TextManager from "@core/logic/TextManager";
@@ -96,7 +97,8 @@ function toggleChat() {
 }
 
 gameCanvas.addEventListener("mouseup", (event) => {
-    if (event.button === 0) {
+    // Mouse buttons can be bound to "press" actions too (default: left click toggles attacking).
+    if (Keybinds.matchesMouse(event, "tankSpam")) {
         CombatController.tankSpam = !CombatController.tankSpam;
     }
 });
@@ -151,7 +153,9 @@ document.addEventListener("keydown", (event) => {
     inWindow = true;
     if (!Client.player) return;
 
-    if (event.code === "Enter") {
+    if (Keybinds.isCapturing) return; // the menu is waiting for a new keybind
+
+    if (Keybinds.matches(event, "chat")) {
         toggleChat();
     } else if (isKeyboardActive()) {
         Input.keys[event.code] = true;
@@ -160,57 +164,74 @@ document.addEventListener("keydown", (event) => {
 
         if (moveKeys[event.keyCode]) {
             sendMoveDir();
+        } else if (/Digit[0-9]/.test(event.code) && !event.shiftKey) {
+            selectHotbarSlot(parseInt(event.code.split("Digit")[1]) - 1);
         } else {
-            if (event.code === "KeyR") {
-                AttackManager.autoInstaToggle = !AttackManager.autoInstaToggle;
-            } else if (event.code === "Equal") {
-                resetScreenSize();
-            } else if (event.code === "KeyE") {
-                Client.socket.sendMsg(
-                    PacketMap.CLIENT_TO_SERVER.AUTO_GATHER,
-                    1
-                );
-            } else if (event.shiftKey && event.code === "KeyZ") {
-                SpriteCache.reset();
-                SpriteCache.renderIcons();
-            } else if (event.code === "KeyT" && Menu.getValue("dynamicOneTick")) {
-                AttackManager.oneTicker.tapMode = !AttackManager.oneTicker.tapMode;
-                TextManager.add(
-                    Client.player.render_position.x,
-                    Client.player.render_position.y,
-                    AttackManager.oneTicker.tapMode ? "Active" : "Passive",
-                    0
-                );
-            } else if (event.code === "KeyZ") {
-                AutoMiller.data.status = !AutoMiller.data.status;
-            } else if (/Digit[0-9]/.test(event.code)) {
-                const player = Client.player;
-                const id = parseInt(event.code.split("Digit")[1]) - 1;
-
-                if (typeof player.weapons[id] === "number") {
-                    Client.weaponIndex = AutoGrinder.weaponIndex = player.weapons[id];
-                    Client.socket.sendMsg(
-                        PacketMap.CLIENT_TO_SERVER.SELECT_TO_BUILD,
-                        player.weapons[id],
-                        true
-                    );
-                } else if (typeof player.items[id - player.weapons.length] === "number") {
-                    Client.socket.sendMsg(
-                        PacketMap.CLIENT_TO_SERVER.SELECT_TO_BUILD,
-                        player.items[id - player.weapons.length],
-                        false
-                    );
-                }
-            } else if (event.code === "Space") {
-                PacketReplayer.isPaused = !PacketReplayer.isPaused;
-
-                const pauseMaterialIcon = pauseIcon.querySelector(".material-symbols-outlined");
-                if (pauseMaterialIcon)
-                    pauseMaterialIcon.innerHTML = PacketReplayer.isPaused ? "play_arrow" : "pause";
-            }
+            runPressActions(event);
         }
     }
 });
+
+/** Hotbar slots 1-9 (fixed, like the normal game). */
+function selectHotbarSlot(id: number) {
+    const player = Client.player;
+
+    if (typeof player.weapons[id] === "number") {
+        Client.weaponIndex = AutoGrinder.weaponIndex = player.weapons[id];
+        Client.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.SELECT_TO_BUILD, player.weapons[id], true);
+    } else if (typeof player.items[id - player.weapons.length] === "number") {
+        Client.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.SELECT_TO_BUILD, player.items[id - player.weapons.length], false);
+    }
+}
+
+/** One-shot actions from the keybind registry (rebindable in Menu > Keybinds). */
+function runPressActions(event: KeyboardEvent) {
+    // Shift+ bindings first so "Shift+Z" (reload sprites) wins over plain "Z" (auto mill).
+    if (Keybinds.matches(event, "reloadSprites") && Keybinds.get("reloadSprites").startsWith("Shift+")) {
+        SpriteCache.reset();
+        SpriteCache.renderIcons();
+        return;
+    }
+
+    if (Keybinds.matches(event, "autoInsta")) {
+        AttackManager.autoInstaToggle = !AttackManager.autoInstaToggle;
+    }
+
+    if (Keybinds.matches(event, "resetZoom")) {
+        resetScreenSize();
+    }
+
+    if (Keybinds.matches(event, "autoGather")) {
+        Client.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.AUTO_GATHER, 1);
+    }
+
+    if (Keybinds.matches(event, "reloadSprites")) {
+        SpriteCache.reset();
+        SpriteCache.renderIcons();
+    }
+
+    if (Keybinds.matches(event, "oneTickMode") && Menu.getValue("dynamicOneTick")) {
+        AttackManager.oneTicker.tapMode = !AttackManager.oneTicker.tapMode;
+        TextManager.add(
+            Client.player.render_position.x,
+            Client.player.render_position.y,
+            AttackManager.oneTicker.tapMode ? "Active" : "Passive",
+            0
+        );
+    }
+
+    if (Keybinds.matches(event, "autoMill")) {
+        AutoMiller.data.status = !AutoMiller.data.status;
+    }
+
+    if (Keybinds.matches(event, "replayPause")) {
+        PacketReplayer.isPaused = !PacketReplayer.isPaused;
+
+        const pauseMaterialIcon = pauseIcon.querySelector(".material-symbols-outlined");
+        if (pauseMaterialIcon)
+            pauseMaterialIcon.innerHTML = PacketReplayer.isPaused ? "play_arrow" : "pause";
+    }
+}
 
 document.addEventListener("keyup", (event) => {
     Input.keys[event.code] = false;

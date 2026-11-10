@@ -1,3 +1,4 @@
+import Keybinds from "@core/Keybinds";
 import items from "@constants/items";
 import Player from "@constants/Player";
 import { accessoryMap, hatMap, STORE_HAT_MAP } from "@constants/store";
@@ -137,7 +138,7 @@ export default class MovementManager {
         try {
             if (typeof moveDir !== "number") return;
             if (!Menu.getValue("safeWalk")) return;
-            if (Input.keys["ShiftLeft"]) return;
+            if (Keybinds.isHeld("override", Input.keys)) return;
 
             const activityList = ModManager.activityList;
             const isBlocked = this.checkAngleCollision(moveDir);
