@@ -193,7 +193,7 @@ export default function renderNames() {
                 );
                 mainContext.fill();
 
-                mainContext.fillStyle = (entity == Client.player || (teamName && teamName == Client.player.team)) ? "#8ecc51" : "#cc5151";
+                mainContext.fillStyle = (entity == Client.player || (teamName && teamName == Client.player?.team)) ? "#8ecc51" : "#cc5151";
                 mainContext.roundRect(
                     entity.render_position.x - xOffset - tmpWidth,
                     (entity.render_position.y - yOffset + entity.scale) + RendererUtils.nameY + RendererUtils.healthBarPad,

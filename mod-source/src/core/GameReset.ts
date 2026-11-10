@@ -8,6 +8,7 @@ import TextManager from "@core/logic/TextManager";
 import AttackManager from "@core/mod/combat/core/AttackManager";
 import CombatController from "@core/mod/combat/core/CombatController";
 import LegacyAdapter from "@core/socket/LegacyAdapter";
+import ModManager from "@core/ModManager";
 import Socket from "@core/socket/Socket";
 
 /**
@@ -38,6 +39,9 @@ export default function resetGameState() {
     PotentialObjectManager.onRenderObjects.length = 0;
     TextManager.texts.clear();
     LegacyAdapter.reset();
+    ModManager.enemyData.nearest = null;
+    ModManager.enemyData.nearby.length = 0;
+    ModManager.enemyData.all.length = 0;
 
     Client.isAlive = false;
     Client.mySID = -1;

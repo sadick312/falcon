@@ -20,7 +20,8 @@ export default function renderBuildingHealth() {
 
     const alwaysShow = Menu.getValue("buildingHealthAlwaysShow");
     const healthBarWidth = RendererUtils.healthBarWidth * 1.25;
-    const player = Client.player;
+    // Before spawning / after a reconnect there's no player yet: measure from the camera instead.
+    const center = Client.player ? Client.player.render_position : { x: CameraManager.camX, y: CameraManager.camY };
 
     renderableGameObjects.length = 0;
     ObjectManager.getObjects(CameraManager.camX, CameraManager.camY, renderableGameObjects);
@@ -31,7 +32,7 @@ export default function renderBuildingHealth() {
 
         const isDamaged = gameObject.health != gameObject.maxHealth;
 
-        if (gameObject.active && gameObject.hasHealth && (alwaysShow || isDamaged) && withinDist(gameObject, player.render_position, 400)) {
+        if (gameObject.active && gameObject.hasHealth && (alwaysShow || isDamaged) && withinDist(gameObject, center, 400)) {
             mainContext.fillStyle = RendererUtils.darkOutlineColor;
             mainContext.roundRect(
                 gameObject.x + gameObject.xWiggle - xOffset - healthBarWidth / 2 - RendererUtils.healthBarPad,

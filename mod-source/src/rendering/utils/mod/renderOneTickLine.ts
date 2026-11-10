@@ -11,6 +11,7 @@ export default function renderOneTickLine(xOffset: number, yOffset: number) {
     const player = Client.player;
     const nearestEnemy = ModManager.enemyData.nearest;
 
+    if (!player) return;
     if (!Menu.getValue("dynamicOneTick")) return;
     if (!nearestEnemy) return;
     if (player.health <= 0) return;
