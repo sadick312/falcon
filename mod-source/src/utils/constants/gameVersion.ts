@@ -20,6 +20,14 @@ export const GAME_V182 = {
      */
     pageBasePath: "/1.8.2/",
 
+    /**
+     * The site's current page (since early Nov 2026) has neither marker: `<base href="/">` and the game in
+     * `/assets/bundle.js` ("MooModding.io - Deobfuscated Readable Client Bundle"). Checked on 10 Nov 2026: it speaks
+     * this same 1.8.2 protocol (same 17 sent and 36 received packet letters, 13 values per player, 7 per animal,
+     * plain msgpack) and has the same items, hats and timings, so that page counts as 1.8.2.
+     */
+    pageScript: "/assets/bundle.js",
+
     /** `?token=` on the game socket. The site's hackfix.js answers its Turnstile stub with this; the server expects it. */
     socketToken: "cf:cf_token_moomodding",
 

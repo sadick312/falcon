@@ -15,6 +15,21 @@ describe("readGameVersion", () => {
         expect(readGameVersion(`<script>fields.app_version = '1.8.4';</script>`)).toBe("1.8.4");
     });
 
+    it("recognises the site's current page by its /assets/bundle.js script (checked to be 1.8.2)", () => {
+        // As served by sandbox.moomodding.io on 10 Nov 2026 (/1.8.2/ redirects here).
+        const current = `<head><base href="/"></head><body><script src="/assets/bundle.js?v=1794217302"></script></body>`;
+        expect(readGameVersion(current)).toBe("1.8.2");
+        expect(readGameVersion(`<script src="/assets/bundle.js"></script>`)).toBe("1.8.2");
+        // Other bundles, or the name only in text, don't count.
+        expect(readGameVersion(`<script src="/assets/bundle.jsx"></script>`)).toBeNull();
+        expect(readGameVersion(`<script src="/js/other/assets/bundle.js"></script>`)).toBeNull();
+        expect(readGameVersion(`<p>/assets/bundle.js</p>`)).toBeNull();
+    });
+
+    it("prefers an explicit version over the bundle script", () => {
+        expect(readGameVersion(`<base href="/1.9.0/"><script src="/assets/bundle.js"></script>`)).toBe("1.9.0");
+    });
+
     it("returns null for a page without either marker", () => {
         expect(readGameVersion("<html><body>Loading...</body></html>")).toBeNull();
         expect(readGameVersion(`<base href="/assets/">`)).toBeNull();

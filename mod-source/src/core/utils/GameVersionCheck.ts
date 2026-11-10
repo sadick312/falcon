@@ -1,13 +1,21 @@
 import Endpoints, { HostMode } from "@constants/Endpoints";
 import { GAME_V182, SUPPORTED_GAME_VERSION } from "@constants/gameVersion";
 
-/** The game version the original page was built for, from its `<base href="/x.y.z/">` or `app_version = 'x.y.z'`. */
+/** `<script src="/assets/bundle.js?v=...">`: the site's current page (see GAME_V182.pageScript). */
+const CURRENT_PAGE_SCRIPT = new RegExp(`<script[^>]+src=["']${GAME_V182.pageScript.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")}(\\?[^"']*)?["']`, "i");
+
+/**
+ * The game version the original page was built for, from its `<base href="/x.y.z/">` or `app_version = 'x.y.z'`.
+ * The site's current page has neither; it loads /assets/bundle.js, which was checked to be 1.8.2.
+ */
 export function readGameVersion(pageHtml: string): string | null {
     const fromBase = pageHtml.match(/<base\s+href=["']\/(\d+\.\d+\.\d+)\/["']/i);
     if (fromBase?.[1]) return fromBase[1];
 
     const fromScript = pageHtml.match(/app_version\s*=\s*["'](\d+\.\d+\.\d+)["']/);
-    return fromScript?.[1] ?? null;
+    if (fromScript?.[1]) return fromScript[1];
+
+    return CURRENT_PAGE_SCRIPT.test(pageHtml) ? GAME_V182.version : null;
 }
 
 /**
