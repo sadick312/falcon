@@ -1,3 +1,4 @@
+import PlayerManager from "@core/logic/players/PlayerManager";
 import PlayerUpdateEvent from "@core/socket/events/core/PlayerUpdateEvent";
 import Latency from "@core/mod/utils/Latency";
 import Client from "@core/Client";
@@ -31,5 +32,25 @@ export default function installDebugApi() {
         get activity() { return [...ModManager.brainState.activityList]; }, // last completed tick
         get brain() { return ModManager.brainState; },
         get collapsedUpdates() { return PlayerUpdateEvent.collapsedUpdates; },
+        /** What Falcon believes player `sid` carries (primary/secondary, confirmed or assumed) and reload state. */
+        weaponData(sid: number) {
+            const p = PlayerManager.get(sid);
+            if (!p) return null;
+            const w = p.weaponData;
+            return {
+                primary: w.primary, primaryConfirmed: w.primaryConfirmed, primaryVariant: w.primaryVariant,
+                secondary: w.secondary, secondaryConfirmed: w.secondaryConfirmed,
+                reloadPrimary: p.getReload(0), reloadSecondary: p.getReload(1), holding: p.weaponIndex, hat: p.skinIndex
+            };
+        },
+        /** Where Falcon thinks player `sid` is now and will be after `ms`, plus the musket lead it would use. */
+        predict(sid: number, ms?: number) {
+            const target = PlayerManager.get(sid);
+            const me = Client.player;
+            if (!target || !me) return null;
+            const lead = ms ?? Latency.getActionLeadMs();
+            const out = Latency.predict(target, lead, { x: 0, y: 0 });
+            return { now: { ...target.real_position }, predicted: out, lead, aim: ModManager.getPredictedAimAngle(15) };
+        },
     };
 }
