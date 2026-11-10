@@ -4,7 +4,7 @@ import PlayerManager from "@core/logic/players/PlayerManager";
 import { PlayerSimulationState } from "@core/mod/simulation/SimulationStates";
 import FakeSocket from "@core/socket/FakeSocket";
 import Protocol from "@core/socket/Protocol";
-import Socket from "@core/socket/Socket";
+import Socket, { respawnMainCard } from "@core/socket/Socket";
 import SocketListener from "@core/socket/SocketListener";
 import CaptchaManager from "@core/utils/CaptchaManager";
 import PacketTracker from "@core/utils/PacketTracker";
@@ -70,6 +70,9 @@ export default class Client {
     static upgradesObtained = new Set<number>();
 
     static async connect(key?: string, region?: string, name?: string) {
+        // Restore the join card in case we're coming from the disconnect/death screen.
+        respawnMainCard.style.display = "flex";
+        deathText.style.display = "none";
         loadingCirclePage.style.display = "none";
         serverBrowserPage.style.display = "none";
         respawnPage.style.display = "flex";

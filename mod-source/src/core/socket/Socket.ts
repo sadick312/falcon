@@ -68,6 +68,8 @@ export default class Socket extends NativeWebSocket {
     }
 
     private onClose(ev: CloseEvent) {
+        // Can't join on a closed socket; re-enabled when the next socket opens.
+        enterGameBtn.classList.add("disabled");
         respawnPage.style.display = "flex";
         disconnectedPage.style.display = "flex";
         respawnMainCard.style.display = "none";
