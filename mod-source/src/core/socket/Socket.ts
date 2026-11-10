@@ -54,14 +54,17 @@ export default class Socket extends NativeWebSocket {
     private socketProtocol?: MooMooProtocol;
 
     isPrivateServer = false;
+    usePlainPackets = false;
 
     constructor(url: string, socketProtocol?: MooMooProtocol) {
         super(url);
 
         this.socketProtocol = socketProtocol;
         this.binaryType = "arraybuffer";
-        // "private" = plain unencrypted msgpack (localhost dev servers and 1.8.2 hosts)
-        this.isPrivateServer = url.includes("localhost") || Protocol.isLegacy;
+        // Local dev server: no item limits, all upgrades allowed.
+        this.isPrivateServer = url.includes("localhost");
+        // Plain unencrypted msgpack: local dev servers and 1.8.2 hosts.
+        this.usePlainPackets = this.isPrivateServer || Protocol.isLegacy;
         LegacyAdapter.reset();
 
         this.onopen = (ev) => this.onOpen(ev);
@@ -115,7 +118,7 @@ export default class Socket extends NativeWebSocket {
 
         if (parsed[0] === "io-init") {
             // 1.8.2 only sends [socketId]; encryption setup only exists on 1.9.x.
-            if (this.isPrivateServer || !this.socketProtocol) return;
+            if (this.usePlainPackets || !this.socketProtocol) return;
 
             const [id, seed, salt] = parsed[1] as MOOMOO_SERVER_TO_CLIENT_MAP["io-init"];
             this.manager.init(id, seed, salt, this.socketProtocol);
@@ -182,7 +185,7 @@ export default class Socket extends NativeWebSocket {
     }
 
     private sendActualMsg(type: any) {
-        if (this.isPrivateServer) {
+        if (this.usePlainPackets) {
             const binary = CustomEncoder.encode(type, type, this.DATA_BUFFER);
             PacketTracker.add();
             this.send(binary);

@@ -36,7 +36,8 @@ export default function updateUpgrades(points: number, age: number) {
         for (let i = 0; i < items.list.length; i++) {
             const item = items.list[i];
 
-            if (item.age == age) {
+            // Same rule as the game: an item needing a previous one ("pre") is only offered if owned.
+            if (item.age == age && (item.pre === undefined || Client.player.items.indexOf(item.pre) >= 0)) {
                 const tmpId = i + items.weapons.length;
                 const elem = document.createElement("div");
                 elem.id = `upgrade-item-${tmpId}`;
