@@ -25,7 +25,8 @@ import ScriptConfig from "@utils/config/ScriptConfig";
 import getDistSq from "@utils/geometry/getDistSq";
 import getMagSq from "@utils/geometry/getMagSq";
 import withinDist from "@utils/geometry/withinDist";
-import { PLAYER_SCALE, BULL_DAMAGE_MULT } from "@constants/world";
+import { PLAYER_SCALE, BULL_DAMAGE_MULT, NATURAL_OBJECT_OWNER } from "@constants/world";
+import { bestBreakAim, BreakAimObject } from "@core/mod/defense/utils/BreakAim";
 import { SOLDIER_DAMAGE_TAKEN } from "@constants/hatNumbers";
 
 export interface AutoBreakerInternal {
@@ -344,6 +345,31 @@ export default class AutoBreaker {
         this.twoHitRequireTank = twoHitRequireTank;
     }
 
+    private static breakAimObjects: BreakAimObject[] = [];
+
+    /**
+     * "Break Traps From Any Angle": the swing hits every object in reach within ~69 deg of the aim, so turn the aim to
+     * hit as many enemy spikes and traps at once as possible, while still hitting everything the usual aim hits.
+     * Only while trapped (the one place aiming in any direction is allowed).
+     */
+    private static anyAngleAim(player: Player, weaponId: number) {
+        const objects = this.breakAimObjects;
+        objects.length = 0;
+        for (const gameObject of ObjectManager.pool.closeObjects) {
+            if (!gameObject) continue;
+            const natural = gameObject.ownerSID === NATURAL_OBJECT_OWNER || gameObject.ownerSID === undefined;
+            const friendly = !natural && Boolean(Client.isFriendly(gameObject.ownerSID ?? -1));
+            objects.push({
+                x: gameObject.x,
+                y: gameObject.y,
+                scale: gameObject.scale,
+                danger: !natural && !friendly && (gameObject.dmg > 0 || gameObject.trap),
+                friendly
+            });
+        }
+        return bestBreakAim(player.real_position, this.aimAngle, getWeapon(weaponId).range, objects);
+    }
+
     static main() {
         const player = Client.player;
 
@@ -361,6 +387,7 @@ export default class AutoBreaker {
 
         if (bestWpnReload === 1) {
             this.aimAngle = getDir(this.targetObject, player.real_position);
+            if (Menu.getValue("trapBreakAnyAngle")) this.aimAngle = this.anyAngleAim(player, id);
 
             if (!HatSystem.allowHatSwitch()) {
                 CombatController.skinIndex = STORE_HAT_MAP.SOLDIER_HELMET;

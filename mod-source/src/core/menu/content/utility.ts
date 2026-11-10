@@ -169,6 +169,13 @@ export const utilitySettings: IMenuItem[] = [{
         </svg>
         `,
     type: "toggle",
+    settings: [{
+        label: "Break Traps From Any Angle",
+        id: "trapBreakAnyAngle",
+        description: "While trapped, turns the swing to hit as many enemy spikes and traps at once as possible (a swing hits everything in reach within about 69 degrees of the aim), while still hitting every enemy spike and trap the usual aim hits. Avoids hitting your own buildings when it can. Only while trapped.",
+        type: "toggle",
+        status: false
+    }],
     status: true
 }, {
     id: "autoRespawn",
