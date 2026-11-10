@@ -39,6 +39,7 @@ import ScriptConfig from "@utils/config/ScriptConfig";
 import { createDefaultBrainState, ModBrainState, nextTick, tickState } from "@core/TickState";
 import getElem from "@utils/dom/getElem";
 import getDist from "@utils/geometry/getDist";
+import reloadedByNextTick from "@utils/math/reloadedByNextTick";
 
 type TickTask = () => void;
 
@@ -134,8 +135,8 @@ export default class ModManager {
             // The reload time recorded at the last swing (Samurai Armor shortens it, P25), else the weapon's speed.
             const primaryReloadTime = player.reloadTimes[primary.id] ?? primaryWpn.speed;
             const secondaryReloadTime = player.reloadTimes[secondary.id] ?? secondaryWpn.speed;
-            const primaryWillBeReloaded = primary.reload + ScriptConfig.SERVER_UPDATE_SPEED / primaryReloadTime >= 1;
-            const secondaryWillBeReloaded = secondary.reload + ScriptConfig.SERVER_UPDATE_SPEED / secondaryReloadTime >= 1;
+            const primaryWillBeReloaded = reloadedByNextTick(primary.reload, primaryReloadTime);
+            const secondaryWillBeReloaded = reloadedByNextTick(secondary.reload, secondaryReloadTime);
             const isGreatHammer = secondary.id === WEAPON_ID_MAP.GREAT_HAMMER;
 
             primaryRange[j] = primaryWpn.range;
