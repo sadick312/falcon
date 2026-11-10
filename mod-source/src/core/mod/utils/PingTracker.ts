@@ -14,6 +14,14 @@ export default class PingTracker {
         this.head = (this.head + 1) % this.pingHistory.length;
     }
 
+    /** Lowest round-trip time among recent samples (used where underestimating ping is the risk). */
+    static getMinPing() {
+        if (this.count === 0) return this.instantaneousPing;
+        let min = Infinity;
+        for (let i = 0; i < this.count; i++) min = Math.min(min, this.pingHistory[i]);
+        return min;
+    }
+
     static getCurrentPing() {
         return this.instantaneousPing;
     }

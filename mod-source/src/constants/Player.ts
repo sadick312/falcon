@@ -238,6 +238,8 @@ export default class Player implements Entity {
     trap?: GameObject;
     wasTrapped = false;
     hitTime = 0;
+    /** performance.now() when we received this player's last damage packet (0 = none since last eat). */
+    hitTimeMs = 0;
     ticksNotNearby = 0;
     ignoreDamageConsideration = false;
 
@@ -339,6 +341,7 @@ export default class Player implements Entity {
         }
 
         this.hitTime = 0;
+        this.hitTimeMs = 0;
         this.trap = undefined;
         this.wasTrapped = false;
 
