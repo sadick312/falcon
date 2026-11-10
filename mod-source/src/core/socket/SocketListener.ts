@@ -10,6 +10,7 @@ import PlayerManager from "@core/logic/players/PlayerManager";
 import PotentialObjectManager from "@core/logic/PotentialObjectManager";
 import ProjectileManager from "@core/logic/ProjectileManager";
 import TextManager from "@core/logic/TextManager";
+import AttackManager from "@core/mod/combat/core/AttackManager";
 import CombatController from "@core/mod/combat/core/CombatController";
 import PlacementSystem from "@core/mod/combat/core/PlacementSystem";
 import AutoBuyer from "@core/mod/utils/AutoBuyer";
@@ -449,6 +450,8 @@ export default class SocketListener {
         this.socket.on(PacketMap.SERVER_TO_CLIENT.KILL_PLAYER, () => {
             Client.isAlive = false;
             Client.upgradesObtained.clear();
+            // Drop any half-finished combo so it can't resume after respawning.
+            AttackManager.stopAttackAction();
             CombatController.attackState.confirm = false;
             CombatController.attackState.status = false;
 

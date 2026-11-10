@@ -23,8 +23,10 @@ export default function installDebugApi() {
         get shameCount() { return Client.player?.shameCount ?? null; },
         get hat() { return Client.player?.skinIndex ?? null; },
         get weapon() { return Client.player?.weaponIndex ?? null; },
+        get weapons() { return Client.player ? [...Client.player.weapons] : null; },
+        get items() { return Client.player ? [...Client.player.items] : null; },
         get ping() { return { avg: PingTracker.getAveragePing(), min: PingTracker.getMinPing() }; },
-        get activity() { return [...ModManager.activityList]; },
+        get activity() { return [...ModManager.brainState.activityList]; }, // last completed tick
         get brain() { return ModManager.brainState; },
     };
 }
