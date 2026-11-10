@@ -1,3 +1,4 @@
+import PlayerUpdateEvent from "@core/socket/events/core/PlayerUpdateEvent";
 import Latency from "@core/mod/utils/Latency";
 import Client from "@core/Client";
 import PingTracker from "@core/mod/utils/PingTracker";
@@ -29,5 +30,6 @@ export default function installDebugApi() {
         get ping() { return { median: PingTracker.getMedianPing(), min: PingTracker.getMinPing(), jitter: PingTracker.getJitter(), rtt: Latency.getRtt(), lead: Latency.getActionLeadMs(), lagging: Latency.isLagging() }; },
         get activity() { return [...ModManager.brainState.activityList]; }, // last completed tick
         get brain() { return ModManager.brainState; },
+        get collapsedUpdates() { return PlayerUpdateEvent.collapsedUpdates; },
     };
 }

@@ -24,6 +24,8 @@ type UpdatePlayerPacket = typeof PacketMap.SERVER_TO_CLIENT.UPDATE_PLAYERS;
 export default class PlayerUpdateEvent extends MessageHandler<UpdatePlayerPacket> {
     private tmpSidSet = new Set();
     static lastReceive = 0;
+    /** Time of the last *real* player update from the server (the lag watchdog never touches this). */
+    static lastRealReceive = 0;
     /** Player updates queued in the current batch that haven't been processed yet. */
     static queuedUpdates = 0;
     /** How many stale updates skipped the brain because a newer one was in the same batch. */

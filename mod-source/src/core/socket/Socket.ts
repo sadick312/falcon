@@ -139,7 +139,7 @@ export default class Socket extends NativeWebSocket {
         }
 
         if (parsed[0] === PacketMap.SERVER_TO_CLIENT.UPDATE_PLAYERS) {
-            PlayerUpdateEvent.lastReceive = performance.now();
+            PlayerUpdateEvent.lastReceive = PlayerUpdateEvent.lastRealReceive = performance.now();
         }
 
         if (GameEventTracker.TRACKABLE_PACKETS.has(parsed[0])) {

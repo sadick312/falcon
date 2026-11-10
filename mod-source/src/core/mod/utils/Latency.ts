@@ -51,8 +51,9 @@ export default class Latency {
      * While lagging, features shouldn't start new combos from stale data.
      */
     static isLagging(now: number = performance.now()) {
-        const sinceUpdate = now - PlayerUpdateEvent.lastReceive;
-        if (PlayerUpdateEvent.lastReceive > 0 && sinceUpdate > this.TICK * 3) return true;
+        // lastRealReceive, not lastReceive: the batcher's watchdog fakes updates during stalls.
+        const sinceUpdate = now - PlayerUpdateEvent.lastRealReceive;
+        if (PlayerUpdateEvent.lastRealReceive > 0 && sinceUpdate > this.TICK * 3) return true;
         return PingTracker.getOldestOutstandingAge(now) > Math.max(1000, this.getRtt() * 3);
     }
 
