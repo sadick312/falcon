@@ -246,7 +246,7 @@ describe("the artificial ping setting", () => {
 });
 
 describe("TaskScheduler (runs the artificial ping's delays)", () => {
-    it("runs a task after its delay, not before, within a few ms", async () => {
+    it("runs a task after its delay, never before, and without a long wait", async () => {
         vi.useRealTimers();
         vi.resetModules();
         const { default: TaskScheduler } = await import("@services/event-timer/TaskScheduler");
@@ -257,7 +257,10 @@ describe("TaskScheduler (runs the artificial ping's delays)", () => {
         const waited = ranAt - start;
 
         expect(waited).toBeGreaterThanOrEqual(29.5);
-        expect(waited).toBeLessThan(50);
+        // Real time, so a busy PC (other test runs, a build) adds delay: it measured ~105 ms under load against the
+        // old 50 ms limit. 250 ms still catches what matters: a task that never runs, or one left to a slow
+        // fallback such as the browser's 1-second timer in background tabs.
+        expect(waited).toBeLessThan(250);
     });
 
     it("keeps going after a task throws", async () => {
