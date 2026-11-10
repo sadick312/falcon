@@ -125,6 +125,17 @@ export default class HatSystem {
         return true;
     }
 
+    /**
+     * The single place that decides our hat each tick, so features can't fight over it.
+     * Priority (first match wins):
+     *   1. Defense (anti-insta Soldier / EMP chosen by DefenseSystem + AutoHealer)
+     *   2. Current attack combo (insta / one-tick hats)
+     *   3. One-tick tap mode
+     *   4. Combat controller (auto-break, tank/bull spam), with turret/ranged threat overrides
+     *   5. Threat hats (EMP vs loaded turrets / ranged instas), bull tick, Spike Gear
+     *   6. Movement hats (Flipper in river, defensive gear near enemies, Winter Cap, Booster)
+     * main() then sends at most one hat packet and one accessory packet per tick.
+     */
     private static fetchBestHat(): STORE_HAT_ID {
         const player = Client.player;
         const currentKillAction = AttackManager.currentAttackAction;
