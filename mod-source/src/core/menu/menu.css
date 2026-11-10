@@ -264,6 +264,9 @@
     border-radius: 16px;
     background-color: var(--text-primary);
     transition: all .6s;
+    /* Windows high-contrast mode repaints backgrounds with system colours, which made the switch and its knob
+       the same colour; keep our own so the switch stays visible. */
+    forced-color-adjust: none;
 }
 
 .menuItemToggleCircle {
@@ -273,6 +276,7 @@
     border-radius: 100%;
     background-color: var(--generic-white);
     transform: translateX(0);
+    forced-color-adjust: none;
 }
 
 .menuItemToggleCircle.active {
