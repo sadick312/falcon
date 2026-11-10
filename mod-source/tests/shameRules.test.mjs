@@ -5,16 +5,14 @@ import assert from "node:assert/strict";
 import { loadTs } from "./loadTs.mjs";
 
 const { default: ShameRules } = await loadTs("src/core/mod/defense/utils/ShameRules.ts");
-const { default: PingTracker } = await loadTs("src/core/mod/utils/PingTracker.ts");
 
 test("msUntilSafeEat: waits only as long as ping requires", () => {
-    // Note: loadTs bundles each file separately, so ShameRules has its own PingTracker copy.
-    // Default ping before any sample is 50 ms.
     const now = 10_000;
-    assert.equal(ShameRules.msUntilSafeEat({ hitTimeMs: 0 }, now), 0, "no hit -> eat now");
-    assert.equal(ShameRules.msUntilSafeEat({ hitTimeMs: now }, now), 120 + 15 - 50);
-    assert.equal(ShameRules.msUntilSafeEat({ hitTimeMs: now - 200 }, now), 0, "long ago -> eat now");
-    assert.ok(PingTracker.getMinPing() > 0);
+    assert.equal(ShameRules.msUntilSafeEat({ hitTimeMs: 0 }, 50, now), 0, "no hit -> eat now");
+    assert.equal(ShameRules.msUntilSafeEat({ hitTimeMs: now }, 50, now), 120 + 15 - 50, "50 ms ping -> wait 85 ms");
+    assert.equal(ShameRules.msUntilSafeEat({ hitTimeMs: now }, 105, now), 30, "105 ms ping (measured case) -> wait 30 ms");
+    assert.equal(ShameRules.msUntilSafeEat({ hitTimeMs: now }, 200, now), 0, "200 ms ping -> eat immediately");
+    assert.equal(ShameRules.msUntilSafeEat({ hitTimeMs: now - 200 }, 50, now), 0, "hit long ago -> eat now");
 });
 
 test("isFoodHeal: food yes, regen no", () => {

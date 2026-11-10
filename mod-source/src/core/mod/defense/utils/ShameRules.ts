@@ -1,5 +1,4 @@
 import Player from "@constants/Player";
-import Latency from "@core/mod/utils/Latency";
 
 /**
  * 1.8.2 "shame" rule, measured live on sandbox.moomodding.io:
@@ -27,15 +26,17 @@ export default class ShameRules {
     }
 
     /** Did the server count this eat as "too soon after a hit"? (both packet times are receive times) */
-    static wasShameEat(player: Player, now: number) {
+    static wasShameEat(player: Pick<Player, "hitTimeMs">, now: number) {
         return player.hitTimeMs > 0 && now - player.hitTimeMs <= this.WINDOW_MS;
     }
 
-    /** Milliseconds to wait before eating so it won't add shame. 0 = safe now. */
-    static msUntilSafeEat(player: Player, now: number = performance.now()) {
+    /**
+     * Milliseconds to wait before eating so it won't add shame. 0 = safe now.
+     * Pass the lowest plausible RTT (riskiest case: the server sees our eat sooner).
+     */
+    static msUntilSafeEat(player: Pick<Player, "hitTimeMs">, lowRtt: number, now: number = performance.now()) {
         if (!player.hitTimeMs) return 0;
-        // Lowest recent RTT is the riskiest case (server sees our eat sooner).
-        const rtt = Latency.getLowRtt();
+        const rtt = lowRtt;
         return Math.max(0, this.WINDOW_MS + this.SAFETY_MS - (now - player.hitTimeMs) - rtt);
     }
 }

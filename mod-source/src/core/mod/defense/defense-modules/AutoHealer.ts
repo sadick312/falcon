@@ -76,7 +76,7 @@ export default class AutoHealer {
      * heal for the exact moment it becomes safe instead of waiting whole server ticks.
      */
     private static healIfNoShame() {
-        const wait = ShameRules.msUntilSafeEat(Client.player);
+        const wait = ShameRules.msUntilSafeEat(Client.player, Latency.getLowRtt());
 
         if (wait <= 0) {
             this.heal();
@@ -93,7 +93,7 @@ export default class AutoHealer {
 
             if (!Client.isAlive || !player || player.clowned || !Menu.getValue("autoHeal")) return;
             // A newer hit arrived meanwhile: the next server tick will reschedule.
-            if (ShameRules.msUntilSafeEat(player) > 0) return;
+            if (ShameRules.msUntilSafeEat(player, Latency.getLowRtt()) > 0) return;
 
             const allowed = PacketTracker.request("FOOD", PacketTracker.TOTAL_FOOD);
             const times = this.sendHeal(allowed);
