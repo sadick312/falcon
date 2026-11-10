@@ -1,3 +1,4 @@
+import installDebugApi from "@core/DebugApi";
 import items from "@constants/items";
 import Client from "@core/Client";
 import ObjectManager from "@core/logic/ObjectManager";
@@ -286,6 +287,7 @@ export default class Loader {
         DisclaimerDisplay.show();
 
         Hook();
+        installDebugApi();
 
         const moo_skin = localStorage.getItem("moo_skin");
         if (typeof moo_skin === "string" && !isNaN(parseInt(moo_skin))) {
