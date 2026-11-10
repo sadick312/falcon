@@ -1,3 +1,4 @@
+import TurretManager from "@core/mod/defense/modules/TurretManager";
 import GameObject from "@constants/GameObject";
 import { LIST_ID_MAP } from "@constants/items";
 import RenderingConfig from "@rendering/RenderingConfig";
@@ -163,7 +164,7 @@ export default function renderGameObjects(delta: number, layer: number) {
                 mainContext.save();
                 mainContext.strokeStyle = getAllyColor;
                 mainContext.beginPath();
-                mainContext.arc(0, 0, gameObject.scale, 0, Math.PI * 2 * (gameObject.reload / 20));
+                mainContext.arc(0, 0, gameObject.scale, 0, Math.PI * 2 * Math.min(1, gameObject.reload / TurretManager.RELOAD_TICKS));
                 mainContext.stroke();
                 mainContext.restore();
             }

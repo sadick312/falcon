@@ -52,7 +52,8 @@ export default class GameObject implements Entity {
     hasHealth: boolean;
 
     ownerSID: number | undefined;
-    reload = 1;
+    /** Server ticks since this turret's last observed shot. Unknown history = assume loaded. */
+    reload = 1000;
 
     isGameObject: true = true;
 
