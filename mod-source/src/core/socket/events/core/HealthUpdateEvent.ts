@@ -17,8 +17,8 @@ type HealthUpdatePacket = typeof PacketMap.SERVER_TO_CLIENT.UPDATE_HEALTH;
 export default class HealthUpdateEvent extends MessageHandler<HealthUpdatePacket> {
     /**
      * Whether a heal of ours can be food we ate: 1.8.2 changes shame only when food is eaten, not on regen, healing
-     * accessories or healing pads. The heal reaches us a tick after we eat, plus our ping. Enemies' heals all count,
-     * since we can't tell what they ate.
+     * accessories or healing pads. The heal reaches us a tick after we eat, plus our ping. For enemies see
+     * healCountsAsFood.
      */
     private static ateRecently() {
         // With "Jitter-Safe Timing", room for a heal that comes back late because the ping jumped (twice the jitter).
@@ -27,8 +27,25 @@ export default class HealthUpdateEvent extends MessageHandler<HealthUpdatePacket
         return tickState.tick - Client.lastAteTick <= 2 + ticksOfPing;
     }
 
-    private onHeal(player: Player, delta: number) {
-        if (player.hitTime && (player.sid !== Client.mySID || HealthUpdateEvent.ateRecently())) {
+    /**
+     * Whether an enemy's heal looks like food. Food heals 20 (apple), 30 (cheese) or 40 (cookie), less only when it
+     * hits full health. The rest heals less: healing pad 15, hat and accessory regen 1-6 (Angel Wings 3, Apple
+     * Basket 1), cheese's slow part 10. Dark Knight's lifesteal can look like food; it can't be told apart.
+     */
+    static looksLikeFood(delta: number, health: number, maxHealth: number) {
+        return delta >= 20 || (delta > 15 && health >= maxHealth);
+    }
+
+    /** Whether this heal changes shame: ours only if we just ate; an enemy's always, or with "Accurate Enemy Shame" only if it looks like food. */
+    private healCountsAsFood(player: Player, delta: number, health: number) {
+        if (player.sid === Client.mySID) return HealthUpdateEvent.ateRecently();
+        if (!Menu.getValue("accurateEnemyShame")) return true;
+        return HealthUpdateEvent.looksLikeFood(delta, health, player.maxHealth);
+    }
+
+    private onHeal(player: Player, delta: number, health: number) {
+        // A heal that isn't food leaves shame alone and keeps the hit time: in 1.8.2 only eating clears it.
+        if (player.hitTime && this.healCountsAsFood(player, delta, health)) {
             const timeSinceHit = tickState.tick - player.hitTime;
             player.hitTime = 0;
 
@@ -72,7 +89,7 @@ export default class HealthUpdateEvent extends MessageHandler<HealthUpdatePacket
 
         const delta = health - player.health;
 
-        if (delta >= 0) this.onHeal(player, delta);
+        if (delta >= 0) this.onHeal(player, delta, health);
         else this.onDamage(player, sid, delta);
 
         player.health = health;

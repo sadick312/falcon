@@ -26,6 +26,12 @@ export const combatSettings: IMenuItem[] = [{
         type: "toggle",
         status: true
     }, {
+        label: "Accurate Enemy Shame",
+        id: "accurateEnemyShame",
+        description: "Counts an enemy's heal toward their shame only when it looks like food (20+ health, or 16+ to full health). Off: every heal counts, including healing pads and regen hats/accessories, which push the count wrong. Shame Grinder, Shame Strike, One Tick and Apple Insta read this count.",
+        type: "toggle",
+        status: false
+    }, {
         label: "Trust Seen Weapons",
         id: "trustSeenWeapons",
         description: "Keeps an enemy's hunting bow or crossbow (and its reload) once seen, instead of assuming a loaded musket whenever they hold their primary. Guesses a katana, not a polearm, for a short sword. Off: the old worst-case guesses.",

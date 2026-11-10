@@ -26,6 +26,13 @@ export const defenseSettings: IMenuItem[] = [{
         description: "Responds to dangers by auto healing.",
         icon: HEALING_ICON,
         type: "toggle",
+        settings: [{
+            label: "Shame-Safe Healing",
+            id: "shameSafeHealing",
+            description: "At 7 shame, doesn't eat within 120 ms of a hit: in 1.8.2 that food would reach 8 shame, lock eating for 30 s and not even heal. It waits for the next tick instead, when eating lowers shame.",
+            type: "toggle",
+            status: false
+        }],
         status: true
     }, {
         label: "Hat Switching",

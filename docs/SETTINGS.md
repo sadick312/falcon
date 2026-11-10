@@ -13,6 +13,7 @@ The **Favorites** tab lists the settings you starred; **Credits** has no setting
 - **Combat Modules** (group) — General purpose combat modules grouped up to clean up the menu interface.
   - **Velocity Hits** (`velocityHits`, toggle, default: on) — Automatically strikes enemies if they will run into spikes.
   - **Knockback Hits** (`attackFactoringKB:hits`, toggle, default: on) — Automatically strikes enemies factoring knocking potential.
+  - **Accurate Enemy Shame** (`accurateEnemyShame`, toggle, default: off) — Counts an enemy's heal toward their shame only when it looks like food (20+ health, or 16+ to full health). Off: every heal counts, including healing pads and regen hats/accessories, which push the count wrong. Shame Grinder, Shame Strike, One Tick and Apple Insta read this count.
   - **Trust Seen Weapons** (`trustSeenWeapons`, toggle, default: off) — Keeps an enemy's hunting bow or crossbow (and its reload) once seen, instead of assuming a loaded musket whenever they hold their primary. Guesses a katana, not a polearm, for a short sword. Off: the old worst-case guesses.
   - **Knockback Instakills** (`attackFactoringKB:insta`, toggle, default: on) — Automatically instakills enemies factoring knocking potential.
     - **Allow While Trapped** (`attackFactoringKB:insta:allowInTrap`, toggle, default: off) — Lets these instakills run while you are trapped, as long as Auto Breaker has no spikes to break around you.
@@ -78,6 +79,7 @@ The **Favorites** tab lists the settings you starred; **Credits** has no setting
 - **Defense System** (group) — Manage the mod's main defensive system.
   - **Pattern Recognition** (`usePatternRec`, toggle, default: on) — Adapts defensive calculations based on common enemy attack patterns.
   - **Auto Healing** (`autoHeal`, toggle, default: on) — Responds to dangers by auto healing.
+    - **Shame-Safe Healing** (`shameSafeHealing`, toggle, default: off) — At 7 shame, doesn't eat within 120 ms of a hit: in 1.8.2 that food would reach 8 shame, lock eating for 30 s and not even heal. It waits for the next tick instead, when eating lowers shame.
   - **Hat Switching** (`defensiveHatSwitching`, toggle, default: on) — Allows the action of hat switching to mitigate potential damages.
   - **Blood Wings Optimizations** (`bloodWingsOptimizations`, toggle, default: off) — Uses blood wings for defensive purposes (e.g. no-soldier antionetick, no-shame antishamegrind, etc).
   - **Angel Wings Regen** (`angelWingsRegen`, toggle, default: off) — While hurt and no enemy is close, wears Angel Wings (3 health a second, without shame) instead of Monkey Tail.

@@ -19,12 +19,27 @@ export interface AutoHealerInternal {
 }
 
 export default class AutoHealer {
+    /**
+     * 1.8.2: the first food within 120 ms of a hit adds a shame; reaching 8 locks eating for 30 s, and the server
+     * locks it before using that food, so it doesn't heal either. A hit we saw this tick or last (tick - hitTime <= 1)
+     * is within those 120 ms when our food reaches the server.
+     */
+    static wouldShameLock(player: { shameCount: number; hitTime: number }) {
+        return player.shameCount >= 7 && player.hitTime > 0 && tickState.tick - player.hitTime <= 1;
+    }
+
     /** From this shame count on, a coming Blood Wings hit replaces eating (8 locks healing for 30 s in 1.8.2). */
     static readonly BLOOD_WINGS_SHAME = 4;
 
     static heal() {
         if (DefenseSystem.alreadyHealed || !Menu.getValue("autoHeal"))
             return;
+
+        // Shame-Safe Healing: eating now would lock eating for 30 s without healing; the next tick it works.
+        if (Menu.getValue("shameSafeHealing") && this.wouldShameLock(Client.player)) {
+            tickState.activityList.push("shameSafeWait");
+            return;
+        }
 
         const player = Client.player;
         const remainingHealth = player.maxHealth - player.health;
