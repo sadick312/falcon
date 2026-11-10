@@ -4,6 +4,7 @@ import { hatMap } from "@constants/store";
 import Player from "@entities/Player";
 import Client from "@core/Client";
 import { nextTick, tickState } from "@core/TickState";
+import Menu from "@menu/Menu";
 import ScriptConfig from "@utils/config/ScriptConfig";
 
 export interface WeaponFetchData {
@@ -24,7 +25,11 @@ export default class PlayerCombatManager {
         weaponData.primary = id;
         weaponData.primaryConfirmed = true;
 
-        const isNotPermanentRange = weaponData.secondary === WEAPON_ID_MAP.HUNTING_BOW || weaponData.secondary === WEAPON_ID_MAP.CROSSBOW;
+        // A seen bow or crossbow could still be upgraded to a musket, so by default it is replaced by a loaded musket
+        // whenever the primary is held: worst case, but it forgets the real weapon and its reload (a crossbow that just
+        // fired looks like a musket ready to insta). "Trust Seen Weapons" keeps it until a different one is seen.
+        const isNotPermanentRange = !Menu.getValue("trustSeenWeapons") &&
+            (weaponData.secondary === WEAPON_ID_MAP.HUNTING_BOW || weaponData.secondary === WEAPON_ID_MAP.CROSSBOW);
 
         if (!weaponData.secondaryConfirmed || isNotPermanentRange || id === WEAPON_ID_MAP.TOOL_HAMMER) {
             weaponData.lastTickSinceSecondaryReloaded = tick;
@@ -57,9 +62,17 @@ export default class PlayerCombatManager {
         const isPermanentRange = id === WEAPON_ID_MAP.MUSKET || id === WEAPON_ID_MAP.REPEATER_CROSSBOW;
         const isPermanentSecondary = id === WEAPON_ID_MAP.GREAT_HAMMER || id === WEAPON_ID_MAP.WOODEN_SHIELD;
 
-        if (!weaponData.primaryConfirmed || weaponData.primary === WEAPON_ID_MAP.TOOL_HAMMER || (weaponData.primary === WEAPON_ID_MAP.SHORT_SWORD && !(isPermanentRange || isPermanentSecondary))) {
-            player.reloads[WEAPON_ID_MAP.POLEARM] = 1;
-            weaponData.primary = WEAPON_ID_MAP.POLEARM;
+        const trustSeen = Menu.getValue("trustSeenWeapons") === true;
+        // An unconfirmed katana only comes from the short-sword guess below; keep it instead of re-guessing a polearm.
+        const keptKatanaGuess = trustSeen && !weaponData.primaryConfirmed && weaponData.primary === WEAPON_ID_MAP.KATANA;
+
+        if (!keptKatanaGuess && (!weaponData.primaryConfirmed || weaponData.primary === WEAPON_ID_MAP.TOOL_HAMMER || (weaponData.primary === WEAPON_ID_MAP.SHORT_SWORD && !(isPermanentRange || isPermanentSecondary)))) {
+            // A seen short sword can only become a katana (its upgrade); the default guess is a polearm.
+            const guess = weaponData.primary === WEAPON_ID_MAP.SHORT_SWORD && weaponData.primaryConfirmed && trustSeen
+                ? WEAPON_ID_MAP.KATANA
+                : WEAPON_ID_MAP.POLEARM;
+            player.reloads[guess] = 1;
+            weaponData.primary = guess;
             weaponData.primaryConfirmed = false;
             weaponData.primaryVariant = WEAPON_VARIANT_MAP.DIAMOND;
             weaponData.lastTickSincePrimaryReloaded = tick;

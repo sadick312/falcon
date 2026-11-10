@@ -26,6 +26,12 @@ export const combatSettings: IMenuItem[] = [{
         type: "toggle",
         status: true
     }, {
+        label: "Trust Seen Weapons",
+        id: "trustSeenWeapons",
+        description: "Keeps an enemy's hunting bow or crossbow (and its reload) once seen, instead of assuming a loaded musket whenever they hold their primary. Guesses a katana, not a polearm, for a short sword. Off: the old worst-case guesses.",
+        type: "toggle",
+        status: false
+    }, {
         label: "Knockback Instakills",
         id: "attackFactoringKB:insta",
         description: "Automatically instakills enemies factoring knocking potential.",

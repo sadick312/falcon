@@ -13,6 +13,7 @@ The **Favorites** tab lists the settings you starred; **Credits** has no setting
 - **Combat Modules** (group) — General purpose combat modules grouped up to clean up the menu interface.
   - **Velocity Hits** (`velocityHits`, toggle, default: on) — Automatically strikes enemies if they will run into spikes.
   - **Knockback Hits** (`attackFactoringKB:hits`, toggle, default: on) — Automatically strikes enemies factoring knocking potential.
+  - **Trust Seen Weapons** (`trustSeenWeapons`, toggle, default: off) — Keeps an enemy's hunting bow or crossbow (and its reload) once seen, instead of assuming a loaded musket whenever they hold their primary. Guesses a katana, not a polearm, for a short sword. Off: the old worst-case guesses.
   - **Knockback Instakills** (`attackFactoringKB:insta`, toggle, default: on) — Automatically instakills enemies factoring knocking potential.
     - **Allow While Trapped** (`attackFactoringKB:insta:allowInTrap`, toggle, default: off) — Lets these instakills run while you are trapped, as long as Auto Breaker has no spikes to break around you.
   - **Musket Insta** (`musketInsta`, toggle, default: off) — With polearm + musket: bull helmet + polearm, then turret gear + musket, when the damage kills the nearest enemy at its current health (assuming soldier helmet for the second hit).
