@@ -308,3 +308,79 @@ describe("quick-connect lookups", () => {
         expect(other.ServerBrowser.getRecent()).toBeNull();
     });
 });
+
+describe("pings in detail", () => {
+    /** /ping answers after `delayFor(host, callNumber)` ms, or fails when that is null. */
+    function stubPings(delayFor: (host: string, call: number) => number | null) {
+        const perHost = new Map<string, number>();
+        vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+            const url = String(input);
+            if (!url.endsWith("/ping")) return new Response(JSON.stringify(MOOMODDING_LIST), { status: 200 });
+            const host = new URL(url).hostname;
+            const call = (perHost.get(host) ?? 0) + 1;
+            perHost.set(host, call);
+            const delay = delayFor(host, call);
+            if (delay === null) throw new TypeError("Failed to fetch");
+            await new Promise(resolve => setTimeout(resolve, delay));
+            return new Response("", { status: 200 });
+        }));
+    }
+
+    it("colours a ping green up to 80 ms, yellow up to 150 ms and red above", async () => {
+        const delays: Record<string, number> = { "s1.moomodding.io": 5, "s2.moomodding.io": 110, "singaporemoomoddingserver.onrender.com": 220 };
+        stubPings(host => delays[host] ?? 0);
+        const { ServerBrowser } = await load("moomodding");
+        ServerBrowser.start();
+        // Busiest first: Miami (s2), Frankfurt (s1), Singapore.
+        await vi.waitFor(() => expect(byId("server-ping-2").innerText).toMatch(/^\d+ ms$/), { timeout: 3_000 });
+
+        expect(byId("server-ping-1").style.color).toBe("rgb(123, 216, 143)");
+        expect(byId("server-ping-0").style.color).toBe("rgb(230, 200, 110)");
+        expect(byId("server-ping-2").style.color).toBe("rgb(255, 107, 107)");
+    });
+
+    it("ignores the first request (DNS/TLS) and uses the faster of the next two, or the one that answered", async () => {
+        // First request slow, then one of the two later ones fails: the other one is the ping.
+        stubPings((_host, call) => call === 1 ? 300 : call === 2 ? null : 5);
+        const { ServerBrowser } = await load("moomodding");
+        ServerBrowser.start();
+        await vi.waitFor(() => expect(byId("server-ping-0").innerText).toMatch(/^\d+ ms$/), { timeout: 3_000 });
+        expect(parseInt(byId("server-ping-0").innerText)).toBeLessThan(80);
+    });
+
+    it("gives up on a host that doesn't answer within 3 s", async () => {
+        const realSetTimeout = globalThis.setTimeout;
+        // Fire the 3 s ping timeout at once instead of waiting for it.
+        vi.spyOn(globalThis, "setTimeout").mockImplementation(((cb: () => void, ms?: number) =>
+            realSetTimeout(cb, ms === 3_000 ? 0 : ms)) as typeof setTimeout);
+        vi.stubGlobal("fetch", vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+            if (!String(input).endsWith("/ping")) return Promise.resolve(new Response(JSON.stringify(MOOMODDING_LIST), { status: 200 }));
+            // A host that never answers: only the abort ends the request.
+            return new Promise((_resolve, reject) => init?.signal?.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError"))));
+        }));
+        const { ServerBrowser } = await load("moomodding");
+        ServerBrowser.start();
+        await vi.waitFor(() => expect(byId("server-ping-0").innerText).toBe("? ms"));
+    });
+
+    it("doesn't let pings from a list that was refreshed away overwrite the new list's", async () => {
+        let release!: () => void;
+        const gate = new Promise<void>(resolve => { release = resolve; });
+        vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+            if (!String(input).endsWith("/ping")) return new Response(JSON.stringify(MOOMODDING_LIST), { status: 200 });
+            await gate;
+            return new Response("", { status: 200 });
+        }));
+        const { ServerBrowser } = await load("moomodding");
+        ServerBrowser.start();
+        await vi.waitFor(() => expect(options()).toHaveLength(3));
+
+        stubFetch({ list: MOOMODDING_LIST, pingFails: true });
+        byId("refresh-server-browser-btn").click();
+        await vi.waitFor(() => expect(byId("server-ping-0").innerText).toBe("? ms"));
+
+        release(); // the old list's pings answer now
+        await new Promise(resolve => setTimeout(resolve, 20));
+        expect(byId("server-ping-0").innerText).toBe("? ms");
+    });
+});

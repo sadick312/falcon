@@ -251,4 +251,40 @@ describe("the Reconnect button", () => {
         first.onclose!(new CloseEvent("close", { code: 1006 }));
         expect(document.getElementById("disconnected-page")!.style.display).toBe("none");
     });
+
+    it("connects to the local dev server when no server was picked, and reconnects there too", async () => {
+        created.length = 0;
+        vi.resetModules();
+        vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval"] });
+        vi.spyOn(console, "log").mockImplementation(() => { });
+        globalThis.WebSocket = FakeNativeWebSocket as unknown as typeof WebSocket;
+        localStorage.setItem("falcon-host-mode", "moomodding");
+        await import("@core/socket/SocketListener");
+        const { default: Client } = await import("@core/Client");
+        Client.mode = "normal";
+        await import("@core/Connection");
+
+        await Client.connect();
+        expect(created).toHaveLength(1);
+        expect(created[0].url).toContain("localhost:1234");
+        expect(document.getElementById("game-information-metadata")!.innerText).toBe("region: local | NAME: n/a");
+        expect(Client.lastServer).toBeUndefined();
+
+        Client.reconnect();
+        expect(created).toHaveLength(2);
+        expect(created[1].url).toBe(created[0].url);
+    });
+
+    it("reloads the page instead in a replay, which has no server to connect to", async () => {
+        const { Client } = await disconnectedFromServer();
+        Client.mode = "replay";
+        const connect = vi.spyOn(Client, "connect");
+        // jsdom can't reload; it reports "not implemented" on the console instead of navigating.
+        vi.spyOn(console, "error").mockImplementation(() => { });
+
+        Client.reconnect();
+
+        expect(connect).not.toHaveBeenCalled();
+        expect(created).toHaveLength(1);
+    });
 });

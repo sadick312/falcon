@@ -260,3 +260,30 @@ describe("main menu buttons", () => {
         expect(open).toHaveBeenCalledWith("https://discord.gg/4KUJm7jNys", "_blank");
     });
 });
+
+describe("hotbar icons", () => {
+    it("draws a weapon's icon into its slot once the weapon image has loaded", async () => {
+        const { Loader, items } = await startLoader();
+        const weapon = items.weapons[0]!;
+        const sprite = (Loader as unknown as { toolSprites: Record<string, HTMLImageElement & { isLoaded?: boolean }> }).toolSprites[weapon.src]!;
+        const slot = byId(`action-bar-item-0`);
+
+        expect(sprite.src).toContain(`/img/weapons/${weapon.src}.png`);
+        expect(sprite.isLoaded).toBeFalsy();
+        const before = slot.style.backgroundImage;
+
+        sprite.width = 120;
+        sprite.height = 60;
+        sprite.onload!(new Event("load"));
+
+        expect(sprite.isLoaded).toBe(true);
+        expect(slot.style.backgroundImage).toMatch(/^url\(/);
+        expect(slot.style.backgroundImage).not.toBe(before);
+    });
+
+    it("draws building icons straight away, without waiting for an image", async () => {
+        const { items } = await startLoader();
+        const firstItemSlot = byId(`action-bar-item-${items.weapons.length}`);
+        expect(firstItemSlot.style.backgroundImage).toMatch(/^url\(/);
+    });
+});
