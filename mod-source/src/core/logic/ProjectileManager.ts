@@ -1,5 +1,6 @@
 import EntityHandler from "@constants/EntityHandler";
 import items, { WEAPON_ID_MAP, WEAPON_VARIANT_MAP } from "@constants/items";
+import { hatMap } from "@constants/store";
 import Player from "@constants/Player";
 import Projectile from "@constants/Projectile";
 import SimulationProjectile from "@constants/SimulationProjectile";
@@ -14,6 +15,14 @@ import withinDist from "@utils/geometry/withinDist";
 import inRange from "@utils/math/inRange";
 
 export default class ProjectileManager {
+    /** projectile index -> weapon id (1.8.2 data: bow 0, crossbow 2, repeater 3, musket 5; 1 = turret) */
+    private static readonly PROJECTILE_TO_WEAPON: Record<number, number> = {
+        0: WEAPON_ID_MAP.HUNTING_BOW,
+        2: WEAPON_ID_MAP.CROSSBOW,
+        3: WEAPON_ID_MAP.REPEATER_CROSSBOW,
+        5: WEAPON_ID_MAP.MUSKET
+    };
+
     static simulationProjectiles = new EntityHandler<SimulationProjectile>();
     static projectiles = new EntityHandler<Projectile>();
 
@@ -43,12 +52,16 @@ export default class ProjectileManager {
         let source: Player | null = null;
         let isTurret = false;
 
+        // Identify by projectile index (sent by the server), not speed: speed is multiplied by the
+        // shooter's hat (Marksman Cap x1.3), which used to make every Marksman shot look like a musket.
+        const isTurretProjectile = indx === 1 || (indx === undefined && speed === 1.5);
+
         for (const player of visiblePlayers) {
             const secondary = items.weapons[player.weaponData.secondary];
             const realPosition = player.real_position;
             const nextPosition = player.next_position;
 
-            if (speed === 1.5 && (withinDist(realPosition, turretPosition, 35) || withinDist(nextPosition, turretPosition, 35))) {
+            if (isTurretProjectile && (withinDist(realPosition, turretPosition, 35) || withinDist(nextPosition, turretPosition, 35))) {
                 source = player;
                 isTurret = true;
                 break;
@@ -85,7 +98,8 @@ export default class ProjectileManager {
                 source.reloads[53] = 0;
                 source.weaponData.lastTurretTickHit = tick;
             } else {
-                const weaponID = speed == 1.6 ? 9 : speed == 2.5 ? 12 : speed == 2 ? 13 : 15;
+                const weaponID = ProjectileManager.PROJECTILE_TO_WEAPON[indx] ??
+                    (speed == 1.6 ? 9 : speed == 2.5 ? 12 : speed == 2 ? 13 : 15);
 
                 if (!Client.isFriendly(source.sid)) {
                     const isDiaPolearm = source.weaponData.primary === WEAPON_ID_MAP.POLEARM && source.weaponData.primaryVariant >= WEAPON_VARIANT_MAP.DIAMOND;
@@ -101,13 +115,14 @@ export default class ProjectileManager {
                 }
 
                 source.reloads[weaponID] = 0;
+                source.reloadMult[weaponID] = hatMap.get(source.skinIndex)?.atkSpd ?? 1;
                 source.weaponData.secondary = weaponID;
                 source.weaponData.secondaryConfirmed = true;
                 source.weaponData.lastSecondaryTickHit = tick;
             }
 
             assigned = true;
-        } else if (speed === 1.5) {
+        } else if (isTurretProjectile) {
             const allTurrets = ObjectManager.allTurrets.all;
 
             for (let i = 0, len = allTurrets.length; i < len; i++) {

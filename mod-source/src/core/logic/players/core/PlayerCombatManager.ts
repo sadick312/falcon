@@ -27,15 +27,10 @@ export default class PlayerCombatManager {
             player.reloads[WEAPON_ID_MAP.MUSKET] = 1;
             weaponData.lastTickSinceSecondaryReloaded = tick;
 
-            if (id === WEAPON_ID_MAP.DAGGERS || id === WEAPON_ID_MAP.STICK) {
-                weaponData.secondary = WEAPON_ID_MAP.GREAT_HAMMER;
-                weaponData.secondaryVariant = WEAPON_VARIANT_MAP.GOLD;
-            } else {
-                weaponData.secondary = WEAPON_ID_MAP.MUSKET;
-                weaponData.secondaryVariant = WEAPON_VARIANT_MAP.STONE;
-            }
-
+            // Unknown secondary: assume the worst case (musket, highest single-shot damage) so
+            // defenses stay safe until the real secondary is seen.
             weaponData.secondary = WEAPON_ID_MAP.MUSKET;
+            weaponData.secondaryVariant = WEAPON_VARIANT_MAP.STONE;
             weaponData.secondaryConfirmed = false;
         }
 
@@ -89,7 +84,7 @@ export default class PlayerCombatManager {
 
             player.reloads[weaponIndex] = Math.min(
                 1,
-                player.reloads[weaponIndex] + (delta / wpn.speed)
+                player.reloads[weaponIndex] + (delta / player.getReloadTime(weaponIndex))
             );
 
             if (player.reloads[weaponIndex] === 1 && !wasReloaded) {

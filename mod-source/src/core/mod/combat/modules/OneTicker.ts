@@ -109,7 +109,7 @@ export default class OneTicker extends CombatModule {
         if (!enemy.findHat(STORE_HAT_MAP.TANK_GEAR)) return true;
 
         const wpnIndex = enemy.weaponIndex;
-        const speed = items.weapons[wpnIndex].speed;
+        const speed = enemy.getReloadTime(wpnIndex);
         const wpnReload = enemy.getReload(wpnIndex < 9 ? 0 : 1);
 
         const tickReload = ScriptConfig.SERVER_UPDATE_SPEED / speed;

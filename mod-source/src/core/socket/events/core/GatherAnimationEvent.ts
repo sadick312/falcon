@@ -1,5 +1,5 @@
 import items from "@constants/items";
-import { STORE_HAT_MAP } from "@constants/store";
+import { hatMap, STORE_HAT_MAP } from "@constants/store";
 import Client from "@core/Client";
 import PlayerCombatManager from "@core/logic/players/core/PlayerCombatManager";
 import PlayerManager from "@core/logic/players/PlayerManager";
@@ -22,6 +22,8 @@ export default class GatherAnimationEvent extends MessageHandler<GatherAnimation
         if (player) {
             PlayerCombatManager.update(player, index, undefined, true);
             player.reloads[index] = 0;
+            // 1.8.2 server: reload = weapon speed * atkSpd of the hat worn when attacking.
+            player.reloadMult[index] = hatMap.get(player.skinIndex)?.atkSpd ?? 1;
 
             const wpn = items.weapons[index];
             player.animTime = player.animSpeed = wpn.speed;

@@ -201,8 +201,8 @@ export default class ModManager {
                 const primaryWpn = items.weapons[primary.id];
                 const secondaryWpn = items.weapons[secondary.id];
 
-                const primaryReloadPerTick = ScriptConfig.SERVER_UPDATE_SPEED / primaryWpn.speed;
-                const secondaryReloadPerTick = ScriptConfig.SERVER_UPDATE_SPEED / secondaryWpn.speed;
+                const primaryReloadPerTick = ScriptConfig.SERVER_UPDATE_SPEED / player.getReloadTime(primary.id);
+                const secondaryReloadPerTick = ScriptConfig.SERVER_UPDATE_SPEED / player.getReloadTime(secondary.id);
 
                 const primaryWillBeReloaded = primary.reload + primaryReloadPerTick >= 1;
                 const secondaryWillBeReloaded = secondary.reload + secondaryReloadPerTick >= 1;

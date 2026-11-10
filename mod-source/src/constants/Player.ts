@@ -230,6 +230,8 @@ export default class Player implements Entity {
 
     weaponXP: number[] = [];
     reloads: Record<number, number> = {};
+    /** Reload time multiplier per weapon, from the hat worn when it was last used (Samurai Armor = 0.78). */
+    reloadMult: Record<number, number> = {};
     itemCounts: Record<number, number> = {};
 
     potentialTrap?: GameObject;
@@ -272,6 +274,11 @@ export default class Player implements Entity {
         this.maxHealth = data[7];
         this.scale = data[8];
         this.skinColor = data[9];
+    }
+
+    /** Full reload time in ms for a weapon, matching the 1.8.2 server: speed * hat atkSpd. */
+    getReloadTime(weaponId: number) {
+        return items.weapons[weaponId].speed * (this.reloadMult[weaponId] ?? 1);
     }
 
     getReload(group: 0 | 1 | 2) {
