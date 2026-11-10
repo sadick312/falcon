@@ -32,7 +32,8 @@
         "stats": "node scripts/dev-stats.mjs",
         "stats:report": "node scripts/lib/report.mjs",
         "postinstall": "npm ci --prefix tools/lint --no-workspaces --no-audit --no-fund",
-        "typecheck:indexed": "node scripts/check-indexed-access.mjs"
+        "typecheck:indexed": "node scripts/check-indexed-access.mjs",
+        "check:dead": "npm run mod:build && node scripts/check-dead.mjs"
     },
     "allowScripts": {
         "esbuild@0.27.7": true,
