@@ -69,6 +69,75 @@ describe("Knockback Instakills", () => {
     });
 });
 
+describe("Knockback Instakills: push into our trap (great hammer)", () => {
+    // The combo's simulated knockback is replaced by a fixed outcome: the enemy ends in a trap (and hits no spike, so
+    // only the push-into-trap rule can start it). It goes when that trap is ours, sturdy (more than one gold hammer hit,
+    // 272.25), over 200 from us, has one of our sturdy spikes beside it, and nothing solid stands in the way.
+    interface PushCase {
+        weapons?: number[];
+        trap?: Partial<{ x: number; y: number; ownerSID: number; health: number }>;
+        spikeBesideTrap?: boolean;
+        wallInTheWay?: boolean;
+    }
+
+    /** The queued combo's reason, or null when none was queued. */
+    async function push(c: PushCase = {}) {
+        const { LIST_ID_MAP } = await import("@constants/items");
+        game = await startGame({ enable: ["attackFactoringKB:insta"] });
+        game.spawn({ sid: ME, x: 1000, y: 1000, weaponIndex: 5 });
+        game.spawn({ sid: 2, x: 1100, y: 1000 });
+        game.setLoadout(c.weapons ?? [5, 10], [0, 3, 6, 10]);
+        const objects = [];
+        if (c.spikeBesideTrap !== false) objects.push({ sid: 601, x: 1360, y: 1000, itemId: LIST_ID_MAP.SPIKES, owner: ME });
+        if (c.wallInTheWay) objects.push({ sid: 602, x: 1060, y: 1000, itemId: LIST_ID_MAP.STONE_WALL, owner: ME });
+        game.addObjects(objects);
+
+        const { default: MovementPhysicsSimulator } = await import("@core/mod/simulation/MovementPhysicsSimulator");
+        const { default: AttackManager } = await import("@core/mod/combat/core/AttackManager");
+        const trap = { sid: 600, x: 1300, y: 1000, ownerSID: ME, health: 500, scale: 50, ...c.trap };
+        vi.spyOn(MovementPhysicsSimulator, "simulate").mockImplementation(() => ({
+            spikesHit: 0, gameObjectsHit: new Set<number>(), oneTicked: false, pos: { x: 0, y: 0 }, trapped: true,
+            trap, pitTrapped: false, teleported: false, totalDamage: 0
+        }) as unknown as ReturnType<typeof MovementPhysicsSimulator.simulate>);
+
+        let reason: string | null = null;
+        vi.spyOn(AttackManager, "addAttackQueue").mockImplementation(action => {
+            const r = action.sequence[0].reason;
+            if (r === "pushInstaKill" || r === "autoInstaKill") reason ??= r;
+        });
+        for (let i = 0; i < 3; i++) game.update();
+        return reason;
+    }
+
+    it("goes when everything lines up", async () => {
+        expect(await push()).toBe("pushInstaKill");
+    });
+
+    it("only with a great hammer", async () => {
+        expect(await push({ weapons: [5, 15] })).toBeNull();
+    });
+
+    it("not into the enemy's own trap", async () => {
+        expect(await push({ trap: { ownerSID: 2 } })).toBeNull();
+    });
+
+    it("not into a trap within 200 of us", async () => {
+        expect(await push({ trap: { x: 1150 } })).toBeNull();
+    });
+
+    it("not into a trap one gold hammer hit would break", async () => {
+        expect(await push({ trap: { health: 272 } })).toBeNull();
+    });
+
+    it("not without one of our spikes beside the trap", async () => {
+        expect(await push({ spikeBesideTrap: false })).toBeNull();
+    });
+
+    it("not with a wall between us and the trap", async () => {
+        expect(await push({ wallInTheWay: true })).toBeNull();
+    });
+});
+
 describe("Knockback Instakills damage estimate", () => {
     it("doesn't apply the Monkey Tail cut to a projectile secondary in the reversed combo", async () => {
         const { STORE_ACCESSORY_MAP, STORE_HAT_MAP } = await import("@constants/store");

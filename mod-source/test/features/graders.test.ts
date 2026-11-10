@@ -196,6 +196,99 @@ describe("Spike Grader: more cases (B6)", () => {
     });
 });
 
+describe("Spike Grader: how each simulated outcome changes the grade", () => {
+    // The physics step is replaced by a fixed outcome, so each rule is checked on its own: the grade with the outcome
+    // minus the grade with nothing happening. Us at (1000, 1000) with polearm (an attack primary), enemy 100 right.
+    interface Outcome {
+        teleported?: boolean; pitTrapped?: boolean; oneTicked?: boolean; totalDamage?: number; spikesHit?: number;
+        trapped?: boolean; trap?: { sid: number; x: number; y: number };
+    }
+
+    async function gradeWith(outcome: Outcome, opts: { spikeTick?: boolean; ourSpikeAt?: { x: number; y: number }; weTrapped?: boolean } = {}) {
+        const { LIST_ID_MAP, default: items } = await import("@constants/items");
+        game = await startGame();
+        game.spawn({ sid: ME, x: 1000, y: 1000, weaponIndex: 5 });
+        game.spawn({ sid: 2, x: 1100, y: 1000 });
+        game.setLoadout([5, 10], [0, 3, 6, 10, 15]);
+        if (opts.ourSpikeAt) game.addObjects([{ sid: 901, x: opts.ourSpikeAt.x, y: opts.ourSpikeAt.y, itemId: LIST_ID_MAP.SPIKES, owner: ME }]);
+        game.update();
+        game.update();
+
+        const { default: Angle } = await import("@placing/Angle");
+        const { default: AngleGrader } = await import("@placing/AngleGrader");
+        const { default: ModManager } = await import("@core/ModManager");
+        const { default: MovementPhysicsSimulator } = await import("@core/mod/simulation/MovementPhysicsSimulator");
+        const grader = (AngleGrader as unknown as { spikeGrader: Grader }).spikeGrader;
+        const enemy = ModManager.enemyData.nearest!;
+        if (opts.weTrapped) (game.Client.player as unknown as { trap: unknown }).trap = { active: true, willBreak: false };
+
+        vi.spyOn(MovementPhysicsSimulator, "simulate").mockImplementation(() => ({
+            spikesHit: 0, gameObjectsHit: new Set<number>(), oneTicked: false, pos: { x: 0, y: 0 }, trapped: false,
+            trap: undefined, pitTrapped: false, teleported: false, totalDamage: 0, ...outcome
+        }) as ReturnType<typeof MovementPhysicsSimulator.simulate>);
+
+        const scale = items.list[LIST_ID_MAP.SPIKES].scale;
+        const spot = new Angle(1000 + 35 + scale, 1000, scale, 0, LIST_ID_MAP.SPIKES);
+        spot.spikeTick = !!opts.spikeTick;
+        grader.prepare(spot, [enemy], false);
+        grader.grade(spot, enemy);
+        return spot;
+    }
+
+    async function delta(outcome: Outcome, opts: Parameters<typeof gradeWith>[1] = {}) {
+        const none = (await gradeWith({}, opts)).grade;
+        game!.done();
+        const spot = await gradeWith(outcome, opts);
+        return { delta: spot.grade - none, spot };
+    }
+
+    it("never uses a spot that teleports the enemy", async () => {
+        expect((await gradeWith({ teleported: true })).dontUse).toBe(true);
+    });
+
+    it("+3 and a kill for a pit trap or one-tick; +2.5 more with a spike tick", async () => {
+        const pit = await delta({ pitTrapped: true });
+        expect(pit.delta).toBeCloseTo(3, 5);
+        expect(pit.spot.kill.has(2)).toBe(true);
+        game!.done();
+        expect((await delta({ oneTicked: true })).delta).toBeCloseTo(3, 5);
+        game!.done();
+        expect((await delta({ pitTrapped: true }, { spikeTick: true })).delta).toBeCloseTo(5.5, 5);
+    });
+
+    it("+.25 only for more than 133 damage", async () => {
+        expect((await delta({ totalDamage: 133 })).delta).toBeCloseTo(0, 5);
+        game!.done();
+        expect((await delta({ totalDamage: 134 })).delta).toBeCloseTo(0.25, 5);
+    });
+
+    it("+.5 per extra spike hit; from 3 spikes another +.5, a kill, and +2 with a spike tick", async () => {
+        expect((await delta({ spikesHit: 1 })).delta).toBeCloseTo(0, 5);
+        game!.done();
+        expect((await delta({ spikesHit: 2 })).delta).toBeCloseTo(0.5, 5);
+        game!.done();
+        const three = await delta({ spikesHit: 3 });
+        expect(three.delta).toBeCloseTo(1.5, 5);
+        expect(three.spot.kill.has(2)).toBe(true);
+        game!.done();
+        expect((await delta({ spikesHit: 3 }, { spikeTick: true })).delta).toBeCloseTo(3.5, 5);
+    });
+
+    it("knocking a free enemy into a trap: +1.5, then +.5 while we're free or -1 while we're stuck", async () => {
+        const trap = { sid: 999, x: 5000, y: 5000 };
+        expect((await delta({ trapped: true, trap })).delta).toBeCloseTo(2, 5);
+        game!.done();
+        expect((await delta({ trapped: true, trap }, { weTrapped: true })).delta).toBeCloseTo(0.5, 5);
+    });
+
+    it("+.5 more when one of our sturdy spikes stands next to that trap", async () => {
+        const near = (await gradeWith({ trapped: true, trap: { sid: 999, x: 1210, y: 1000 } }, { ourSpikeAt: { x: 1250, y: 1000 } })).grade;
+        game!.done();
+        const far = (await gradeWith({ trapped: true, trap: { sid: 999, x: 5000, y: 5000 } }, { ourSpikeAt: { x: 1250, y: 1000 } })).grade;
+        expect(near - far).toBeCloseTo(0.5, 5);
+    });
+});
+
 describe("Spike Grader: our own next step in the snow and the water", () => {
     /**
      * We walk right. A spike spot on the circle around us (35 + its size away) is marked down when our next step would

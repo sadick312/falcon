@@ -49,6 +49,49 @@ describe("Packet budget", () => {
         expect(PacketTracker.TOTAL_FOOD).toBe(3);
     });
 
+    it("gives a freed reservation back, and ignores frees that would overdraw it or aren't a positive amount", async () => {
+        // 59 packets this second leave room for 3 placements two ticks ahead (110 - 59 - 14 reserved - 2 x 14 = 9).
+        const PacketTracker = await tracker();
+        for (let i = 0; i < 59; i++) PacketTracker.add();
+        expect(PacketTracker.request("PLACE", 10)).toBe(3);
+
+        // Two of the three food reservations (2 x 3 packets) done: 6 more packets of room, 2 more placements.
+        PacketTracker.free("FOOD", 2);
+        expect(PacketTracker.request("PLACE", 10)).toBe(5);
+
+        // Only 3 food packets are left reserved, so freeing 6 more would overdraw it: ignored.
+        PacketTracker.free("FOOD", 2);
+        expect(PacketTracker.request("PLACE", 10)).toBe(5);
+        PacketTracker.free("FOOD", 0);
+        PacketTracker.free("FOOD", -1);
+        expect(PacketTracker.request("PLACE", 10)).toBe(5);
+
+        // "ALL" frees whatever is left of it.
+        PacketTracker.free("FOOD", "ALL");
+        expect(PacketTracker.request("PLACE", 10)).toBe(6);
+    });
+
+    it("counts, frees and allocates nothing before it's started", async () => {
+        vi.resetModules();
+        const { default: PacketTracker } = await import("@core/utils/PacketTracker");
+        for (let i = 0; i < 10; i++) PacketTracker.add();
+        PacketTracker.free("FOOD", "ALL");
+        PacketTracker.allocate();
+        expect(PacketTracker.getCurrent()).toBe(0);
+        PacketTracker.init();
+        expect(PacketTracker.getCurrent()).toBe(0);
+    });
+
+    it("stops recording at 500 packets in one second, then records again once the oldest is a second old", async () => {
+        vi.useFakeTimers({ toFake: ["performance"] });
+        const PacketTracker = await tracker();
+        for (let i = 0; i < 600; i++) PacketTracker.add();
+        expect(PacketTracker.getCurrent()).toBe(500);
+        vi.advanceTimersByTime(1001);
+        PacketTracker.add();
+        expect(PacketTracker.getCurrent()).toBe(1);
+    });
+
     it("forgets packets older than a second", async () => {
         vi.useFakeTimers({ toFake: ["performance"] });
         const PacketTracker = await tracker();
