@@ -60,48 +60,48 @@ export default class PacketRecorder {
             const packet = log.packetData!;
 
             if (packet.type === PacketMap.SERVER_TO_CLIENT.UPDATE_PLAYERS) {
-                const data = packet.data as any[];
+                // Logged layout is [positions (sid, x, y, dir), attributes, hidden].
+                const positions = (packet.data as any[])[0] as number[];
 
-                for (let j = 0; j < data.length; j += 13) {
-                    const sid = data[j];
-                    const x = data[j + 1];
-                    const y = data[j + 2];
-
+                for (let j = 0; j < positions.length; j += 4) {
+                    const sid = positions[j];
                     const playerId = this.sidToIdMap[sid];
                     const logData = this.permanentData.get(`player_${playerId}`);
                     if (!logData) continue;
 
-                    logData.packetData.data[3] = x;
-                    logData.packetData.data[4] = y;
+                    // ADD_PLAYER data is [playerInit, isYou]; x/y live at playerInit[3]/[4].
+                    const playerInit = logData.packetData.data[0] as any[];
+                    playerInit[3] = positions[j + 1];
+                    playerInit[4] = positions[j + 2];
                 }
             } else if (packet.type === PacketMap.SERVER_TO_CLIENT.KILL_OBJECT) {
                 const gameObjectsMap = this.permanentData.get(PacketMap.SERVER_TO_CLIENT.LOAD_GAME_OBJECT);
-                if (!gameObjectsMap) return;
+                if (!gameObjectsMap) continue;
 
                 const packetData = gameObjectsMap.packetData!;
-                if (packetData.type !== PacketMap.SERVER_TO_CLIENT.LOAD_GAME_OBJECT) return;
+                if (packetData.type !== PacketMap.SERVER_TO_CLIENT.LOAD_GAME_OBJECT) continue;
 
                 const gameObjects = packetData.data[0];
 
-                for (let i = 0; i < gameObjects.length; i += 8) {
-                    if (gameObjects[i] === packet.data[0]) {
-                        gameObjects.splice(i, 8);
+                for (let k = 0; k < gameObjects.length; k += 8) {
+                    if (gameObjects[k] === packet.data[0]) {
+                        gameObjects.splice(k, 8);
                         break;
                     }
                 }
             } else if (packet.type === PacketMap.SERVER_TO_CLIENT.KILL_OBJECTS) {
                 const gameObjectsMap = this.permanentData.get(PacketMap.SERVER_TO_CLIENT.LOAD_GAME_OBJECT);
-                if (!gameObjectsMap) return;
+                if (!gameObjectsMap) continue;
 
                 const packetData = gameObjectsMap.packetData!;
-                if (packetData.type !== PacketMap.SERVER_TO_CLIENT.LOAD_GAME_OBJECT) return;
+                if (packetData.type !== PacketMap.SERVER_TO_CLIENT.LOAD_GAME_OBJECT) continue;
 
                 const gameObjects = packetData.data[0];
 
-                for (let i = 0; i < gameObjects.length; i += 8) {
-                    if (gameObjects[i + 7] === packet.data[0]) {
-                        gameObjects.splice(i, 8);
-                        i -= 8;
+                for (let k = 0; k < gameObjects.length; k += 8) {
+                    if (gameObjects[k + 7] === packet.data[0]) {
+                        gameObjects.splice(k, 8);
+                        k -= 8;
                     }
                 }
             } else if (packet.type === PacketMap.SERVER_TO_CLIENT.ADD_PLAYER) {
