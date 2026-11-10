@@ -2,6 +2,22 @@
 
 What changed in Falcon, newest first. Each entry names the commit(s) for the details.
 
+## Unreleased (branch review/stability, Anti Bull, shame and the original look)
+
+### Changed
+- The menu and the ping line look like the original Falcon again: no settings search box in the menu header, no
+  reset buttons next to changed settings, no keyboard-focus outline, and the ping line is back to
+  `Ping | FPS | BWin` (the stable ping, jitter and tick jitter are still measured, just not shown).
+- **Anti Bull** keeps working at 4+ shame (new sub-option "Keep On at High Shame", on by default) and drops its
+  old Spike Gear decision whenever it stands down. **Accurate Enemy Shame** is on by default, so the Shame
+  Counter, Shame Grind and Shame Strike count only food-sized heals. A config saved before keeps its own
+  choices. (c24f5ad)
+
+### Measured, not changed
+- Why we get shamed so much: in the replays every eat happened in the same tick as a hit (+1 shame), because our
+  predicted next position runs into a spike almost every tick. The predicted speed carries over from the last
+  prediction instead of being reset to our real movement (76 units a tick predicted, about 1 real). Not fixed yet.
+
 ## Unreleased (branch review/stability, defense brief and Part 3)
 
 Every new behaviour is a menu setting that is off (or "Manual") by default, so Falcon plays exactly as before until
