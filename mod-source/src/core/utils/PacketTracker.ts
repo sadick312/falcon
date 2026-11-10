@@ -7,7 +7,6 @@ const PacketAllocationPool = {
     ATTACK: 1,
     FOOD: 3,
     PLACE: 3,
-    // PREPLACE: 4,
     AIM: 1,
     HAT_SWITCH: 1,
     MOVE: 1,
