@@ -5,6 +5,7 @@ import { STORE_HAT_MAP } from "@constants/store";
 import Client from "@core/Client";
 import PlayerCombatManager from "@core/logic/players/core/PlayerCombatManager";
 import { PotentialObject } from "@core/logic/PotentialObjectManager";
+import Menu from "@menu/Menu";
 import { Point } from "@mod-types/index";
 
 export default class BreakerUtils {
@@ -23,6 +24,9 @@ export default class BreakerUtils {
     static hitsUntilBreak(player: Player, id: number, health: number) {
         const damage = this.getObjectDamage(player, id < 9 ? 0 : 1);
         const raw = health / damage;
+        // The game breaks a building once its health is 0 or less, so an exact multiple breaks on that hit. The
+        // classic count below says one hit more there; "Exact Break Hit Count" fixes only that case.
+        if (raw > 0 && Number.isInteger(raw) && Menu.getValue("exactBreakHits")) return raw;
         return (raw + 1) | 0;
     }
 

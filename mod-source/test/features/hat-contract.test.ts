@@ -387,6 +387,19 @@ describe("Hat System classic contract: hat", () => {
             expect(g.hat()).toBe(SOLDIER);
         });
 
+        it("a trap with exactly one great hammer hit of health: classic counts 2 hits (booster), Exact Break Hit Count 1 (soldier)", async () => {
+            for (const exact of [false, true]) {
+                const g = await setup({ settings: { exactBreakHits: exact } });
+                g.enemyAt(100, DAGGERS);
+                g.enemy.weaponData.secondary = 10;
+                g.enemy.reloads[DAGGERS] = 0.5;
+                g.enemy.reloads[10] = 1;
+                (g.enemy as unknown as { trap: unknown }).trap = { active: true, health: 247.5 };
+                expect(g.hat()).toBe(exact ? SOLDIER : BOOSTER);
+                game!.done();
+            }
+        });
+
         it("against daggers from further away (dagger range x1.3), when they can reach us", async () => {
             const g = await setup();
             g.enemyAt(250, DAGGERS);

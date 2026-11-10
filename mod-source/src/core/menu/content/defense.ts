@@ -38,6 +38,12 @@ export const defenseSettings: IMenuItem[] = [{
             description: "Counts an enemy weapon's damage for the next tick only when it is fully reloaded now, which is exactly when its hit can land next tick. Off: counts it from 90% reloaded, which sometimes counts a slow weapon a tick early (extra heals and soldier helmets for nothing). On a laggy server a fast weapon can very rarely be a tick sooner than counted.",
             type: "toggle",
             status: false
+        }, {
+            label: "Exact Break Hit Count",
+            id: "exactBreakHits",
+            description: "Counts how many hits break a trap or spike exactly: one whose health is an exact multiple of a hit's damage breaks on that hit. Off: counts one hit too many in that case (the classic count). Used by the Hat System (can a trapped dagger enemy get out) and Auto Breaker.",
+            type: "toggle",
+            status: false
         }],
         status: true
     }, {
