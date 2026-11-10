@@ -76,7 +76,9 @@ export default class ProjectileManager {
         if (source) {
             const simProj = this.simulationProjectiles.get(sid);
 
-            if (simProj && !simProj.active) {
+            // The server only reuses a projectile id after the old one ended, so always re-init
+            // (checking !active dropped new projectiles when we missed the old one's removal).
+            if (simProj) {
                 simProj.init(indx, x, y, dir, speed, range, layer, source.sid);
             } else {
                 this.simulationProjectiles.add(new SimulationProjectile(sid, indx, x, y, dir, speed, range, layer, source.sid));
@@ -131,7 +133,7 @@ export default class ProjectileManager {
 
                 // turret object always has ownerSID defined (at least it should)
                 const simProj = this.simulationProjectiles.get(sid);
-                if (simProj && !simProj.active) {
+                if (simProj) {
                     simProj.init(indx, x, y, dir, speed, range, layer, gameObject.ownerSID!);
                 } else {
                     this.simulationProjectiles.add(new SimulationProjectile(sid, indx, x, y, dir, speed, range, layer, gameObject.ownerSID!));
@@ -146,7 +148,7 @@ export default class ProjectileManager {
         if (!assigned) {
             const simProj = this.simulationProjectiles.get(sid);
 
-            if (simProj && !simProj.active) {
+            if (simProj) {
                 simProj.init(indx, x, y, dir, speed, range, layer, -1);
             } else {
                 this.simulationProjectiles.add(new SimulationProjectile(sid, indx, x, y, dir, speed, range, layer, -1));
@@ -154,7 +156,7 @@ export default class ProjectileManager {
         }
 
         const hadProj = this.projectiles.get(sid);
-        if (hadProj && !hadProj.active) {
+        if (hadProj) {
             hadProj.init(x, y, dir, range, speed, layer, indx);
         } else {
             const proj = new Projectile(x, y, dir, range, speed, sid, layer, indx);
