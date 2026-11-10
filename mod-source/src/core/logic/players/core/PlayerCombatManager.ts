@@ -21,15 +21,24 @@ export default class PlayerCombatManager {
         weaponData.primary = id;
         weaponData.primaryConfirmed = true;
 
-        const isNotPermanentRange = weaponData.secondary === WEAPON_ID_MAP.HUNTING_BOW || weaponData.secondary === WEAPON_ID_MAP.CROSSBOW;
+        // 1.8.2 gives one upgrade per age. Katana and Great Axe use the age-8 slot, which the
+        // Crossbow also needs (and Repeater/Musket require the Crossbow), so these players can at
+        // most have a Hunting Bow. Assuming a Musket for them overestimated threats.
+        const usesAge8Slot = id === WEAPON_ID_MAP.KATANA || id === WEAPON_ID_MAP.GREAT_AXE;
+        const worstSecondary = usesAge8Slot ? WEAPON_ID_MAP.HUNTING_BOW : WEAPON_ID_MAP.MUSKET;
 
-        if (!weaponData.secondaryConfirmed || isNotPermanentRange || id === WEAPON_ID_MAP.TOOL_HAMMER) {
-            player.reloads[WEAPON_ID_MAP.MUSKET] = 1;
+        // A bow/crossbow can still be upgraded to a better ranged weapon, unless age 8 is taken.
+        const isNotPermanentRange = !usesAge8Slot && (weaponData.secondary === WEAPON_ID_MAP.HUNTING_BOW || weaponData.secondary === WEAPON_ID_MAP.CROSSBOW);
+        const impossibleSecondary = usesAge8Slot && weaponData.secondary !== WEAPON_ID_MAP.HUNTING_BOW &&
+            items.weapons[weaponData.secondary]?.projectile !== undefined;
+
+        if (!weaponData.secondaryConfirmed || isNotPermanentRange || impossibleSecondary || id === WEAPON_ID_MAP.TOOL_HAMMER) {
+            player.reloads[worstSecondary] = 1;
             weaponData.lastTickSinceSecondaryReloaded = tick;
 
-            // Unknown secondary: assume the worst case (musket, highest single-shot damage) so
-            // defenses stay safe until the real secondary is seen.
-            weaponData.secondary = WEAPON_ID_MAP.MUSKET;
+            // Unknown secondary: assume the worst case that is still possible for this primary,
+            // so defenses stay safe until the real secondary is seen.
+            weaponData.secondary = worstSecondary;
             weaponData.secondaryVariant = WEAPON_VARIANT_MAP.STONE;
             weaponData.secondaryConfirmed = false;
         }
