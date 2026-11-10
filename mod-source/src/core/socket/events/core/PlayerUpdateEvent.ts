@@ -248,9 +248,19 @@ export default class PlayerUpdateEvent extends MessageHandler<UpdatePlayerPacket
     }
 
     run(positions: number[], attributes: any[], hidden: any[]) {
+        // Updates can arrive before our first spawn; nothing to do without our own player yet.
+        if (!Client.player) return;
+
         this.preTick();
         this.onTick(positions, attributes);
         this.postTick(hidden);
+
+        // Don't run automation (heals, hats, placing, attacking) while dead - it only wastes packets.
+        // Replays have no death/spawn packets for the viewer, so they always run.
+        if (!Client.isAlive && Client.mode !== "replay") {
+            for (const e of ModManager.enemyData.all) e.damages.length = 0;
+            return;
+        }
 
         // run the mod brain regardless of socket instance but
         // log brainState to debug if changes result in correct response while in replay mode

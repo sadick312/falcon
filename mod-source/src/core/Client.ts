@@ -51,6 +51,8 @@ export default class Client {
     static player: Player;
 
     static mySID: number = -1;
+    /** True between our spawn (ADD_PLAYER isYou) and death (KILL_PLAYER). Automation only runs while alive. */
+    static isAlive = false;
 
     static lastDeath: Point;
     static lastMoveDir: number | null;
