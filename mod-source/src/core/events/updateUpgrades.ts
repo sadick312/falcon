@@ -8,6 +8,55 @@ const upgradeHolder = getElem<"div">("upgrade-holder");
 const upgradeCounter = getElem<"div">("upgrade-counter");
 const tmpUpgradeList: number[] = [];
 
+/**
+ * The Menu value for "leave this age to me", in the age 2 / 6 / 8 / 9 choices ("upgradeAge2" ...): mostly weapons,
+ * which Auto Upgrade used to leave to you.
+ */
+export const MANUAL_PICK = -1;
+
+/** Upgrade ids Auto Upgrade always takes when offered (cookie, pit trap, greater spikes), plus the 7th Slot choice. */
+const PREFERRED = [17, 31, 23];
+
+let fallbackTimer: number | undefined;
+
+export interface AutoUpgradeChoice {
+    /** Send this upgrade now. */
+    now?: number;
+    /** Send this one after the manual-pick wait, if the same upgrade is still waiting. */
+    later?: number;
+}
+
+/**
+ * What Auto Upgrade picks from `offered` (upgrade ids: weapons by id, buildings by weapons.length + item id) at `age`:
+ * the only option; else cookie / pit trap / greater spikes / the 7th Slot choice; else this age's Menu choice. With
+ * "Spend Every Point", a point is never left unspent: a chosen upgrade that isn't offered (its prerequisite is
+ * missing) is replaced by the first offered one, buildings before weapons; and an age left to you is picked the same
+ * way once only buildings are offered, or after the manual-pick wait when weapons are.
+ */
+export function chooseAutoUpgrade(offered: readonly number[], age: number): AutoUpgradeChoice {
+    if (offered.length === 0) return {};
+    if (offered.length === 1) return { now: offered[0] };
+
+    const seventh = parseInt(Menu.getValue("7thSlot"));
+    const preferred = offered.find(id => PREFERRED.includes(id) || id === seventh);
+    if (preferred !== undefined) return { now: preferred };
+
+    const choiceId = age === 2 ? parseInt(Menu.getValue("upgradeAge2")) :
+        age === 6 ? parseInt(Menu.getValue("upgradeAge6")) :
+            age === 8 ? parseInt(Menu.getValue("upgradeAge8")) :
+                age === 9 ? parseInt(Menu.getValue("upgradeAge9")) : MANUAL_PICK;
+    const chosen = isNaN(choiceId) ? MANUAL_PICK : choiceId;
+    if (chosen !== MANUAL_PICK && offered.includes(chosen)) return { now: chosen };
+
+    if (!Menu.getValue("upgradeSpendAll")) return {};
+
+    const firstBuilding = offered.find(id => id >= items.weapons.length);
+    const fallback = firstBuilding ?? offered[0];
+    if (chosen !== MANUAL_PICK) return { now: fallback };
+    if (firstBuilding !== undefined && offered.every(id => id >= items.weapons.length)) return { now: fallback };
+    return { later: fallback };
+}
+
 export default function updateUpgrades(points: number, age: number) {
     Client.player.upgradePoints = points;
     Client.player.upgrAge = age;
@@ -48,22 +97,29 @@ export default function updateUpgrades(points: number, age: number) {
             }
         }
 
-        if (Menu.getValue("autoUpgrade")) {
-            if (tmpList.length === 1) {
-                const only = tmpList[0];
-                if (only !== undefined) {
-                    Client.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.SEND_UPGRADE, only);
-                    return;
-                }
-            } else {
-                const _7thSlot = parseInt(Menu.getValue("7thSlot"));
+        // A new offer (or a pick made by hand) replaces any waiting fallback pick.
+        if (fallbackTimer !== undefined) {
+            clearTimeout(fallbackTimer);
+            fallbackTimer = undefined;
+        }
 
-                for (const id of tmpList) {
-                    if ([17, 31, 23, _7thSlot].includes(id)) {
-                        Client.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.SEND_UPGRADE, id);
-                        return;
-                    }
-                }
+        if (Menu.getValue("autoUpgrade")) {
+            const choice = chooseAutoUpgrade(tmpList, age);
+            if (choice.now !== undefined) {
+                Client.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.SEND_UPGRADE, choice.now);
+                return;
+            }
+
+            const later = choice.later;
+            if (later !== undefined) {
+                const waitSeconds = parseInt(Menu.getValue("upgradeManualWait"));
+                fallbackTimer = window.setTimeout(() => {
+                    fallbackTimer = undefined;
+                    const player = Client.player;
+                    // Only if that upgrade is still waiting: no pick by hand, no new age since.
+                    if (!player || player.upgradePoints <= 0 || player.upgrAge !== age || !Menu.getValue("autoUpgrade")) return;
+                    Client.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.SEND_UPGRADE, later);
+                }, (isNaN(waitSeconds) ? 10 : waitSeconds) * 1e3);
             }
         }
 

@@ -96,6 +96,48 @@ export const utilitySettings: IMenuItem[] = [{
                 value: 34
             }],
             status: 38
+        }, {
+            label: "Age 2 Pick",
+            id: "upgradeAge2",
+            type: "select",
+            description: "Your primary weapon at age 2. Manual: you pick (Auto Upgrade used to leave this age to you).",
+            options: [{ label: "Manual", value: -1 }, { label: "Hand Axe", value: 1 }, { label: "Short Sword", value: 3 }, { label: "Polearm", value: 5 }, { label: "Bat", value: 6 }, { label: "Daggers", value: 7 }, { label: "Stick", value: 8 }],
+            status: -1
+        }, {
+            label: "Age 6 Pick",
+            id: "upgradeAge6",
+            type: "select",
+            description: "Your secondary weapon at age 6. Manual: you pick.",
+            options: [{ label: "Manual", value: -1 }, { label: "Hunting Bow", value: 9 }, { label: "Great Hammer", value: 10 }, { label: "Wooden Shield", value: 11 }, { label: "McGrabby", value: 14 }],
+            status: -1
+        }, {
+            label: "Age 8 Pick",
+            id: "upgradeAge8",
+            type: "select",
+            description: "At age 8 (each needs what it upgrades: great axe the hand axe, katana the short sword, crossbow the hunting bow, power mill the faster windmill). Manual: you pick.",
+            options: [{ label: "Manual", value: -1 }, { label: "Great Axe", value: 2 }, { label: "Katana", value: 4 }, { label: "Crossbow", value: 12 }, { label: "Power Mill", value: 28 }],
+            status: -1
+        }, {
+            label: "Age 9 Pick",
+            id: "upgradeAge9",
+            type: "select",
+            description: "At age 9 (repeater and musket need the crossbow, poison and spinning spikes the greater spikes). Manual: you pick.",
+            options: [{ label: "Manual", value: -1 }, { label: "Repeater Crossbow", value: 13 }, { label: "Musket", value: 15 }, { label: "Poison Spikes", value: 24 }, { label: "Spinning Spikes", value: 25 }, { label: "Spawn Pad", value: 36 }],
+            status: -1
+        }, {
+            label: "Spend Every Point",
+            id: "upgradeSpendAll",
+            type: "toggle",
+            description: "Never leave an upgrade point unspent: when an age's pick isn't offered it takes the first offered upgrade (buildings before weapons); an age set to Manual is picked the same way when only buildings are offered, or after the wait below when weapons are and you haven't picked.",
+            status: false
+        }, {
+            label: "Manual Pick Wait",
+            id: "upgradeManualWait",
+            type: "slider",
+            description: "With Spend Every Point: seconds to wait for your own pick at a Manual age before Auto Upgrade picks.",
+            min: 3,
+            max: 30,
+            status: 10
         }],
         type: "toggle"
     }]
