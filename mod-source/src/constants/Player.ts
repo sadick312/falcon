@@ -35,7 +35,8 @@ function renderPlayerWeapon(ctx: CanvasRenderingContext2D, weapon: Weapon, weapo
     const variant = ScriptConfig.WEAPON_VARIANTS[weaponVariant];
     if (variant) RendererUtils.renderTool(weapon, variant, 35, 0, ctx);
 
-    if (weapon.projectile && !weapon.hideProjectile) {
+    // The hunting bow's arrow is projectile 0: a truthiness check skipped drawing it.
+    if (weapon.projectile !== undefined && !weapon.hideProjectile) {
         renderProjectile(35, 0, getProjectile(weapon.projectile), ctx);
     }
 }

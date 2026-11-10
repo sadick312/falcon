@@ -56,6 +56,10 @@ describe("Knockback Instakills", () => {
         expect((await play({ enemyHat: STORE_HAT_MAP.SPIKE_GEAR })).slice(0, 2)).toEqual([[1, 15, TURRET_GEAR], [2, 5, BULL_HELMET]]);
     });
 
+    it("runs with a hunting bow too (its arrow is projectile 0, which used to read as 'no projectile')", async () => {
+        expect((await play({ weapons: [5, 9] })).slice(0, 2)).toEqual([[1, 5, BULL_HELMET], [2, 9, TURRET_GEAR]]);
+    });
+
     it("does nothing without a spike to push into", async () => {
         expect(await play({ spike: false })).toEqual([]);
     });

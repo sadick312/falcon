@@ -270,7 +270,8 @@ export default class AutoInstakiller extends CombatModule {
         if (!CombatUtils.getCombatDistance(player, nearestEnemy, weaponRange - 1)) return;
 
         const shouldReverseInsta = hasGreatHammer || hasSpikeGear;
-        const hasProjectile = !!getWeapon(secondary.id).projectile;
+        // The hunting bow's arrow is projectile 0, so a truthiness check read it as "no projectile".
+        const hasProjectile = getWeapon(secondary.id).projectile !== undefined;
         if (!hasGreatHammer && !hasProjectile) return;
 
         // Whether our hits land before the enemy moves this tick; unknown on fake ticks, so wait for a real one.
