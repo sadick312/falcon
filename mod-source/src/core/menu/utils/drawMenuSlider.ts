@@ -2,7 +2,6 @@ import type Menu from "@menu/Menu";
 import type { IMenuItem } from "@menu/Menu";
 import drawItemBody from "./drawItemBody";
 import drawItemLabel from "./drawItemLabel";
-import drawResetButton from "./drawResetButton";
 
 export default function drawMenuSlider(item: IMenuItem, contentElement: HTMLElement, menu: typeof Menu) {
     const body = drawItemBody();
@@ -32,7 +31,6 @@ export default function drawMenuSlider(item: IMenuItem, contentElement: HTMLElem
 
     slider.value = item.status as string;
     slider.setAttribute("aria-label", item.label);
-    drawResetButton(item, body, menu);
     body.appendChild(slider);
 
     const sliderDisplay = document.createElement("div");
@@ -45,7 +43,6 @@ export default function drawMenuSlider(item: IMenuItem, contentElement: HTMLElem
         item.status = slider.value;
         sliderDisplay.innerText = item.status as string;
         menu.saveSettings();
-        item.refreshReset?.();
     });
 
     contentElement.appendChild(body);

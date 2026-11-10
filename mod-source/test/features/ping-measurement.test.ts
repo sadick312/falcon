@@ -38,7 +38,8 @@ describe("ping measurement", () => {
         expect(PingTracker.getCurrentPing()).toBe(60);
         expect(PingTracker.getStablePing()).toBe(60);
         expect(PingTracker.getJitter()).toBe(0);
-        expect(display()).toMatch(/^Ping: 60 ms \(stable 60, jitter 0\.0\)/);
+        // The display uses the original Falcon format: ping, FPS and batch window only.
+        expect(display()).toMatch(/^Ping: 60 ms \| FPS: \d+ \| BWin: [\d.]+ ms$/);
     });
 
     it("one spike moves the current ping and the jitter, not the stable ping", async () => {

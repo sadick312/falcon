@@ -2,7 +2,6 @@ import type Menu from "@menu/Menu";
 import type { IMenuItem } from "@menu/Menu";
 import drawItemBody from "./drawItemBody";
 import drawItemLabel from "./drawItemLabel";
-import drawResetButton from "./drawResetButton";
 
 export default function drawMenuSelect(item: IMenuItem, contentElement: HTMLElement, menu: typeof Menu) {
     if (!item.options) return;
@@ -39,13 +38,11 @@ export default function drawMenuSelect(item: IMenuItem, contentElement: HTMLElem
     }
 
     selector.setAttribute("aria-label", item.label);
-    drawResetButton(item, body, menu);
     body.appendChild(selector);
     selector.onchange = (ev) => {
         if (ev.target === selector) {
             item.status = selector.value;
             menu.saveSettings();
-            item.refreshReset?.();
         }
     }
 

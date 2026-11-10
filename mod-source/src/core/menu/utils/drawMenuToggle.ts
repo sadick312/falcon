@@ -3,7 +3,6 @@ import type Menu from "@menu/Menu";
 import type { IMenuItem } from "@menu/Menu";
 import drawItemBody from "./drawItemBody";
 import drawItemLabel from "./drawItemLabel";
-import drawResetButton from "./drawResetButton";
 import { makeKeyboardClickable } from "./keyboard";
 
 export default function drawMenuToggle(item: IMenuItem, contentElement: HTMLElement, isNested: boolean, menu: typeof Menu) {
@@ -29,7 +28,6 @@ export default function drawMenuToggle(item: IMenuItem, contentElement: HTMLElem
     }
 
     drawItemLabel(item, toggle, isInDropdownContent);
-    drawResetButton(item, toggle, menu);
 
     if (item.status) toggle.classList.add("activeMenuItem");
 
@@ -123,7 +121,6 @@ export default function drawMenuToggle(item: IMenuItem, contentElement: HTMLElem
 
     item.update = () => {
         toggle.setAttribute("aria-checked", String(!!item.status));
-        item.refreshReset?.();
         if (item.icon) iconHolderElem.innerHTML = `
             ${item.icon.replace(/REPLACE_WITH_COLOR/g, `var(${item.status ? "--theme-primary" : "--generic-white-2"})`)}
         `;

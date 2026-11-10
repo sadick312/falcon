@@ -54,7 +54,7 @@ Enter).
    4. Falcon's dashboard opens. It should say **Ready**.
 7. **Play.** Open [sandbox.moomoo.io](https://sandbox.moomoo.io) or
    [sandbox.moomodding.io](https://sandbox.moomodding.io/?server=1:1). Falcon replaces the page
-   automatically. Press **Esc** in game to open the menu; use its search box to find a setting.
+   automatically. Press **Esc** in game to open the menu.
 
 ## After you change the code
 

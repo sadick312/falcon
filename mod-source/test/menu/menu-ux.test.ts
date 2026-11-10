@@ -1,4 +1,4 @@
-// Search, reset to default, import/export and keyboard use of the mod menu.
+// The menu's look (as in the original Falcon), import/export and keyboard use.
 import Menu, { menuContent } from "@menu/Menu";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -16,57 +16,17 @@ beforeAll(async () => {
 
 beforeEach(() => {
     for (const [id, status] of Object.entries(initial)) Menu.itemMap[id].status = status;
-    Menu.search("");
+    document.getElementById(`menuTab:${Menu.selectedTab}`)!.click();
 });
 
 const shownLabels = () => [...Menu.contentElement.querySelectorAll(".menuItemLabel")].map((label) => label.textContent?.trim());
 
-describe("settings search", () => {
-    it("finds settings by label or description, case-insensitively, including nested ones", () => {
-        expect(Menu.findSettings("SHAME STRIKE THRESHOLD").map((item) => item.id)).toContain(NESTED_SLIDER);
-        expect(Menu.findSettings("draws player and ai names").map((item) => item.id)).toContain(TOGGLE);
-        expect(Menu.findSettings("   ")).toEqual([]);
-    });
-
-    it("shows the results, and the tab again once the search is cleared", () => {
-        Menu.search("names");
-        expect(Menu.utilsTitle.innerText).toMatch(/^Search: \d+ results?$/);
-        expect(shownLabels()).toContain(Menu.itemMap[TOGGLE].label);
-
-        Menu.search("");
-        expect(Menu.utilsTitle.innerText).toBe("Combat");
-    });
-
-    it("says so when nothing matches", () => {
-        Menu.search("zzzz-no-such-setting");
-        expect(Menu.contentElement.textContent).toContain('No settings match "zzzz-no-such-setting".');
-    });
-});
-
-describe("reset to default", () => {
-    it("puts a changed setting back and hides its button again", () => {
-        Menu.search("draws player and ai names");
-        const button = () => Menu.contentElement.querySelector<HTMLElement>(".menuResetButton")!;
-        expect(button().style.display).toBe("none");
-
-        Menu.contentElement.querySelector<HTMLElement>(".menuToggle .menuToggle")!.click();
-        expect(Menu.getValue(TOGGLE)).toBe(false);
-        expect(button().style.display).toBe("");
-
-        button().click();
-        expect(Menu.getValue(TOGGLE)).toBe(true);
-        expect(button().style.display).toBe("none");
-    });
-
-    it("treats a slider's typed text and its numeric default as the same value", () => {
-        const item = Menu.itemMap[NESTED_SLIDER];
-        item.status = String(Menu.defaults[NESTED_SLIDER]);
-        expect(Menu.isChanged(item)).toBe(false);
-    });
-
-    it("has no reset for settings that are never saved", () => {
-        const neverSaved = Object.values(Menu.itemMap).find((item) => item.neverSave && item.type === "toggle")!;
-        expect(Menu.canReset(neverSaved)).toBe(false);
+describe("original Falcon look", () => {
+    it("has no settings search box and no reset buttons", () => {
+        Menu.renderItems([Menu.itemMap[TOGGLE]!, Menu.itemMap[NESTED_SLIDER]!]);
+        expect(document.querySelector(".menuSearchInput")).toBeNull();
+        expect(Menu.contentElement.querySelector(".menuResetButton")).toBeNull();
+        expect(shownLabels()).toEqual([Menu.itemMap[TOGGLE]!.label, Menu.itemMap[NESTED_SLIDER]!.label]);
     });
 });
 
@@ -97,7 +57,7 @@ describe("import and export", () => {
 
 describe("keyboard", () => {
     it("flips a toggle with Enter without the key reaching the game", () => {
-        Menu.search("draws player and ai names");
+        Menu.renderItems([Menu.itemMap[TOGGLE]!]);
         const toggle = Menu.contentElement.querySelector<HTMLElement>("[role=switch]")!;
         const gameListener = vi.fn();
         document.addEventListener("keydown", gameListener);
