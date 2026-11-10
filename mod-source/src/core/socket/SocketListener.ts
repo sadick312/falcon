@@ -214,7 +214,8 @@ export default class SocketListener {
 
         this.socket.on(PacketMap.SERVER_TO_CLIENT.ADD_ALLIANCE, (data) => {
             Client.alliances.push(data);
-            Client.allianceMap.set(data.sid, new Set([data.owner]));
+            // 1.8.2 may omit "owner"; members are filled in from player updates anyway.
+            Client.allianceMap.set(data.sid, new Set(typeof data.owner === "number" ? [data.owner] : []));
             if (allianceHolder.style.display === "flex") updateClanMenu();
         });
 
@@ -241,7 +242,7 @@ export default class SocketListener {
 
             for (let i = 0, len = teams.length; i < len; i++) {
                 const team = teams[i];
-                Client.allianceMap.set(team.sid, new Set([team.owner]));
+                Client.allianceMap.set(team.sid, new Set(typeof team.owner === "number" ? [team.owner] : []));
             }
 
             if (allianceHolder.style.display === "flex") updateClanMenu();
