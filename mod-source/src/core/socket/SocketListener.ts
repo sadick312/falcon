@@ -100,7 +100,12 @@ export default class SocketListener {
         const buffer = PacketRecorder.compileBinaryLog();
         if (!buffer) return;
 
-        if (!Menu.getValue("improvementLogging") || Menu.getValue("improvementLoggingLCopy") || ScriptConfig.IS_DEVELOPMENT_MODE || manual) {
+        // Manual ("!plog" in chat) always saves a file. On death, only save when the user turned on
+        // Development Analytics -> Download Local Copy (this used to download a file on every death).
+        const analytics = Menu.getValue("improvementLogging");
+        const saveLocalCopy = manual || (analytics && Menu.getValue("improvementLoggingLCopy"));
+
+        if (saveLocalCopy) {
             const blob = new Blob([buffer as any], { type: "application/octet-stream" });
             const url = URL.createObjectURL(blob);
 
@@ -113,10 +118,10 @@ export default class SocketListener {
             link.remove();
 
             URL.revokeObjectURL(url);
-            if (!Menu.getValue("improvementLogging") || ScriptConfig.IS_DEVELOPMENT_MODE || manual) return;
         }
 
-        WebhookSender.send(fileName, buffer as any);
+        // Webhook is a no-op unless a URL is configured in WebhookSender.
+        if (!manual && analytics && !ScriptConfig.IS_DEVELOPMENT_MODE) WebhookSender.send(fileName, buffer as any);
     }
 
     static hookEvents(socket: Socket | FakeSocket) {
