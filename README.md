@@ -93,6 +93,21 @@ Pasting the file a second time on the same page does nothing; reload the page to
 **Disconnected?** Click **Reconnect**. It connects to the same server again without reloading the page, so it
 also works after pasting into the console (a page reload would remove Falcon until you paste it again).
 
+## Recording a fight
+
+1. Right after the moment you care about, type `!plog` in the game chat and press **Enter**. It saves the **last 15
+   seconds**, so do it within 15 seconds of what happened.
+2. Chrome downloads a file like `m_log_2026-11-10_21-04-33.fpl` to your **Downloads** folder (logs saved
+   automatically when you die start with `d_log_`).
+3. Move the `.fpl` files into `mod-source\bench\recordings\real\` (make the folder if it isn't there) and note in a
+   word what happened in each.
+4. To see how Falcon's melee attacks would have landed in it:
+   ```bash
+   npx vitest run --config vitest.bench.config.mts mod-source/bench/aim-report.bench-run.ts
+   ```
+   with `AIM_RECORDINGS=mod-source\bench\recordings\real` set first (in Command Prompt:
+   `set AIM_RECORDINGS=mod-source\bench\recordings\real`).
+
 ## Commands
 
 | Command | What it does |

@@ -2,6 +2,36 @@
 
 What changed in Falcon, newest first. Each entry names the commit(s) for the details.
 
+## Unreleased (branch review/stability, defense brief and Part 3)
+
+Every new behaviour is a menu setting that is off (or "Manual") by default, so Falcon plays exactly as before until
+you turn it on. Replay fingerprints are unchanged by every commit here.
+
+### Added
+- **Shame-Safe Healing** (Defense > Auto Healing): at 7 shame, Auto Heal doesn't eat within 120 ms of a hit (in
+  1.8.2 that food reaches 8 shame, locks eating for 30 s and doesn't heal); it eats the next tick. (2645aa9)
+- **Accurate Enemy Shame** (Combat): an enemy's heal counts toward their shame only when it looks like food (20+,
+  or 16+ to full health), not healing pads or regen. (2645aa9)
+- **Exact Threat Reload** (Defense > Auto Healing): an enemy weapon counts as a threat for the next tick only when
+  fully reloaded, not from 90% (a polearm was counted a tick early). (67d62e4)
+- **Break Traps From Any Angle** (Utility > Auto Break): while trapped, the swing is turned to hit as many enemy
+  spikes and traps at once as possible, never fewer than the usual aim. (ddca101)
+- **EMP-Aware Instas** (Combat): Musket Insta and Knockback Instakills leave out the turret bullet against an EMP
+  Helmet, so they don't fire an insta that can't kill. (e965dfd)
+- **Insta Uses Enemy Health** (Combat > Knockback Instakills): also fires when the two hits reach the enemy's
+  current health (it used to need spikes, a pit trap or 100+ in one tick). (e965dfd)
+- **Auto Upgrade: Age 2 / 6 / 8 / 9 Pick** (default Manual) and **Spend Every Point**: no upgrade point is left
+  unspent (2 were at age 10 in the live test). (ce5dd6b)
+- `bench/angle-finder-calls.bench-run.ts`: Angle Finder calls per tick by who they're for. (b9e61b9)
+
+### Measured, not changed
+- Instas' damage numbers match 1.8.2; coverage of AttackManager, AutoInstakiller and PredictiveMethod was already
+  above 80% of branches.
+- Angle Finder: about 20% of tick CPU, 3.7-7.6 calls per tick; skipping far enemies (~2% of a tick) or reusing last
+  tick's result (0% of calls qualify) wouldn't pay off, and an angle grid would change the results. Unchanged.
+- Pathfinder: already transfers its grid without copying (~1.7 KB per request, rare); PacketBatcher's 0.5 ms wait
+  (0.6% of a core) stays, a timer would add latency.
+
 ## Unreleased (branch review/stability, dead-code cleanup)
 
 Nothing a player does in a fight changes: replay fingerprints are unchanged by every commit here.
