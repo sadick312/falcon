@@ -66,7 +66,7 @@ export const combatSettings: IMenuItem[] = [{
             id: "musketInsta:katana",
             description: "Also runs the combo with katana + musket, using the katana's damage (40) and shorter reach (118).",
             type: "toggle",
-            status: false
+            status: true
         }],
         status: false
     }, {

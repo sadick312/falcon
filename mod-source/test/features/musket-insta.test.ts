@@ -89,4 +89,18 @@ describe("Musket Insta", () => {
         // An enemy already in soldier helmet takes 0.75 of the polearm hit too.
         expect(MusketInstakiller.comboDamage(45, 6)).toBeCloseTo(67.5 * 0.75 + 56.25);
     });
+    it("has 'Katana + musket' on by default (Musket Insta itself still starts off)", async () => {
+        vi.resetModules();
+        const { combatSettings } = await import("@core/menu/content/combat");
+        const find = (node: unknown, id: string): { status?: unknown } | undefined => {
+            if (Array.isArray(node)) return node.map(n => find(n, id)).find(Boolean);
+            if (node && typeof node === "object") {
+                if ((node as { id?: string }).id === id) return node as { status?: unknown };
+                return Object.values(node).map(n => find(n, id)).find(Boolean);
+            }
+            return undefined;
+        };
+        expect(find(combatSettings, "musketInsta:katana")?.status).toBe(true);
+        expect(find(combatSettings, "musketInsta")?.status).toBe(false);
+    });
 });
