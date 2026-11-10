@@ -1,3 +1,4 @@
+import Protocol from "@core/socket/Protocol";
 import GameObject from "@constants/GameObject";
 import items, { LIST_ID_MAP } from "@constants/items";
 import Client, { Marker } from "@core/Client";
@@ -111,9 +112,24 @@ export default class PlacementSystem {
         this.sendMarker(this.bufferAngle, PlacementTypes.NORMAL);
     }
 
+    /** Can we pay for this item? Sandbox servers don't charge, so it's always true there. */
+    static canAfford(id: number) {
+        if (Protocol.isSandbox) return true;
+
+        const player = Client.player as unknown as Record<string, number>;
+        const req = items.list[id].req;
+
+        for (let i = 0; i < req.length; i += 2) {
+            if ((player[req[i] as string] ?? 0) < (req[i + 1] as number)) return false;
+        }
+        return true;
+    }
+
     static place(id: number, angle: number = Input.getAttackDir(), itemCount?: number) {
         const player = Client.player;
         if (!player.items.includes(id)) return 0;
+        // Out of resources: the server would reject it, so don't spend packets on it.
+        if (!this.canAfford(id)) return 0;
 
         const item = items.list[id];
         let count = 0;

@@ -29,6 +29,8 @@ declare global {
 
 export default class Protocol {
     static readonly isLegacy: boolean = !location.hostname.endsWith("moomoo.io");
+    /** Sandbox servers don't charge resources for items (measured on sandbox.moomodding.io). */
+    static readonly isSandbox: boolean = location.hostname.startsWith("sandbox.");
 
     /** Server list that moomodding embeds in its page (falls back to fetching the page). */
     static async getLegacyServers(): Promise<LegacyServer[]> {
