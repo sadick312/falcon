@@ -26,7 +26,8 @@ export interface IPlacePotential {
 function renderPlayerWeapon(ctx: CanvasRenderingContext2D, weapon: Weapon, weaponVariant: number) {
     RendererUtils.renderTool(weapon, ScriptConfig.WEAPON_VARIANTS[weaponVariant], 35, 0, ctx);
 
-    if (weapon.projectile && !weapon.hideProjectile) {
+    // projectile 0 (Hunting Bow arrow) is valid, so compare with undefined like the game does.
+    if (weapon.projectile !== undefined && !weapon.hideProjectile) {
         renderProjectile(35, 0, items.projectiles[weapon.projectile], ctx);
     }
 }

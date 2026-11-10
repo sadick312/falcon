@@ -377,6 +377,8 @@ export default class RendererUtils {
         if (tmpObj && tmpAccessory.isLoaded) {
             mainContext.save();
             mainContext.translate(-20 - (tmpObj.xOff ?? 0), 0);
+            // Same as the game: "spin" accessories (Sawblade) rotate with the player's skin timer.
+            if (tmpObj.spin) mainContext.rotate(owner.skinRot);
             mainContext.drawImage(tmpAccessory, -tmpObj.scale / 2, -tmpObj.scale / 2, tmpObj.scale, tmpObj.scale);
             mainContext.restore();
         }
