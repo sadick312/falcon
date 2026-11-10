@@ -1,3 +1,4 @@
+import readStoredJSON from "@utils/storage/readStoredJSON";
 import Menu, { menuContent } from "../Menu";
 import drawItemBody from "./drawItemBody";
 
@@ -8,7 +9,7 @@ const ICON = `
 `;
 
 export default async function drawSavedConfigs() {
-    const savedConfigs = localStorage.getItem("falcon-configs") ? JSON.parse(localStorage.getItem("falcon-configs")!) : {};
+    const savedConfigs = readStoredJSON<Record<string, any>>("falcon-configs", {});
 
     for (const key in savedConfigs) {
         if (!savedConfigs[key]) continue;

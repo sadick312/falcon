@@ -1,3 +1,4 @@
+import readStoredJSON from "@utils/storage/readStoredJSON";
 import Menu, { menuContent } from "../Menu";
 import drawItemBody from "./drawItemBody";
 
@@ -30,7 +31,7 @@ export default function drawConfigUI() {
                 savedCache[item.id] = item.status;
             }
 
-            const savedConfigs = localStorage.getItem("falcon-configs") ? JSON.parse(localStorage.getItem("falcon-configs")!) : {};
+            const savedConfigs = readStoredJSON<Record<string, any>>("falcon-configs", {});
             savedConfigs[nameInput.value] = savedCache;
             localStorage.setItem("falcon-configs", JSON.stringify(savedConfigs));
             Menu.renderItems(menuContent.configs);

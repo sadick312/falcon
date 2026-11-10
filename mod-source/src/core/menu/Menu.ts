@@ -1,3 +1,4 @@
+import readStoredJSON from "@utils/storage/readStoredJSON";
 import drawNumberInput from "@menu/utils/drawNumberInput";
 import getElem from "@utils/dom/getElem";
 import "./menu.css";
@@ -1066,7 +1067,8 @@ export const menuContent: IMenuContent = {
         description: "Automatically saves setting configurations to local storage.",
         id: "autoSaveSettings",
         type: "toggle",
-        status: false,
+        // On by default so settings survive reloads; turning it off clears saved settings.
+        status: true,
         icon: GEAR_ICON_2
     }, {
         label: "",
@@ -1139,25 +1141,29 @@ export default class Menu {
         this.saveSettings();
     }
 
-    static async loadSettings(customSettings?: string) {
-        const data: Record<string, any> = customSettings || (localStorage.getItem("falcon-settings") ? JSON.parse(localStorage.getItem("falcon-settings")!) : {});
+    static async loadSettings(customSettings?: Record<string, any>) {
+        let data: Record<string, any> = {};
 
-        for (const id in data) {
-            if (typeof this.itemMap[id] !== undefined) {
-                try {
-                    this.itemMap[id].status = data[id];
-                } catch (error) { }
-            }
+        if (customSettings) {
+            data = customSettings;
+        } else {
+            // Damaged saved data must not stop the client from starting.
+            data = readStoredJSON<Record<string, any>>("falcon-settings", {});
         }
 
+        for (const id in data) {
+            // Skip settings that no longer exist in this version.
+            if (this.itemMap[id] === undefined) continue;
+            this.itemMap[id].status = data[id];
+        }
+
+        // Loading a saved config should also become the current saved settings.
+        if (customSettings) this.saveSettings();
         return true;
     }
 
     static loadFavorites() {
-        const favorites = localStorage.getItem("falcon-favorites");
-        if (!favorites) return;
-
-        const allFavorites = JSON.parse(favorites);
+        const allFavorites = readStoredJSON<unknown>("falcon-favorites", []);
         if (!Array.isArray(allFavorites)) return;
 
         for (const id in this.itemMap) {
