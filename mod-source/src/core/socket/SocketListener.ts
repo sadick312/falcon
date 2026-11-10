@@ -124,15 +124,19 @@ export default class SocketListener {
         if (!manual && analytics && !ScriptConfig.IS_DEVELOPMENT_MODE) WebhookSender.send(fileName, buffer as any);
     }
 
+    private static pingInterval: number | null = null;
+
     static hookEvents(socket: Socket | FakeSocket) {
-        if (this.isInitialized) return;
+        // Re-hooking is allowed so reconnects / server changes get handlers on the new socket.
+        if (this.socket === socket) return;
 
         this.isInitialized = true;
         this.socket = socket;
 
         if (socket instanceof Socket) {
             this.pingSocket();
-            setInterval(() => this.pingSocket(), 1e3);
+            // One ping timer for the whole session; it always pings the current socket.
+            if (this.pingInterval === null) this.pingInterval = window.setInterval(() => this.pingSocket(), 1e3);
         }
 
         const playerUpdateEvent = new PlayerUpdateEvent(this.socket);

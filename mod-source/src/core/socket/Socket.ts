@@ -28,14 +28,7 @@ export type SendMsgSignature = <K extends keyof MOOMOO_CLIENT_TO_SERVER_MAP>(
 
 const disconnectedPage = getElem("disconnected-page");
 const disconnectedReason = getElem("disconnected-reason");
-const reconnectBtn = document.getElementById("reconnect-btn");
-
-// A full reload is the most reliable reconnect: every manager starts from a clean state,
-// and Quick Inject re-runs the client automatically on reload.
-if (reconnectBtn) reconnectBtn.onclick = () => {
-    window.onbeforeunload = null;
-    location.reload();
-};
+export const disconnectedPageElem = disconnectedPage;
 export const respawnMainCard = getElem("respawn-page-main-card");
 
 export type MixKeyFunc = (key: Uint8Array, offset: number) => Uint8Array;

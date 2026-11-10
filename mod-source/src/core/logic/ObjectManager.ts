@@ -197,6 +197,7 @@ export default class ObjectManager {
         if (typeof ownerSID !== "number") {
             this.gridMap.clear();
             gameObjects.removeAll();
+            this.allTurrets.removeAll();
             return;
         }
 

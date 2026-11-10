@@ -8,7 +8,9 @@ import RenderingConfig from "@rendering/RenderingConfig";
 import AllTemporaryObjects from "@ui/data/AllTemporaryObjects";
 import DisclaimerDisplay from "@ui/DisclaimerDisplay";
 import Hook from "@ui/Hook";
-import ServerBrowser, { parseRecentServer } from "@ui/ServerBrowser";
+import ServerBrowser, { parseRecentServer, serverBrowserPage } from "@ui/ServerBrowser";
+import resetGameState from "@core/GameReset";
+import { disconnectedPageElem } from "@core/socket/Socket";
 import getElem from "@utils/dom/getElem";
 import Menu from "../core/menu/Menu";
 import RendererSystem from "../rendering/RendererSystem";
@@ -157,6 +159,25 @@ function hookMainMenuBtns() {
     };
 
     quitClientBtn.onclick = () => { };
+
+    // Disconnect screen. No page reload: moomodding drops Quick Inject mods on reload.
+    const reconnectBtn = getElem<"button">("reconnect-btn");
+    const changeServerBtn = getElem<"button">("change-server-btn");
+
+    reconnectBtn.onclick = () => {
+        disconnectedPageElem.style.display = "none";
+        resetGameState();
+        loadingCirclePage.style.display = "flex";
+        Client.connect();
+    };
+
+    changeServerBtn.onclick = () => {
+        disconnectedPageElem.style.display = "none";
+        respawnPage.style.display = "none";
+        resetGameState();
+        serverBrowserPage.style.display = "none";
+        ServerBrowser.start();
+    };
 }
 
 function importTemporaryObjects() {
