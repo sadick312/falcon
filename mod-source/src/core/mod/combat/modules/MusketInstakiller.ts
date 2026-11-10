@@ -53,9 +53,15 @@ export default class MusketInstakiller extends CombatModule {
     }
 
     /** The damage the combo deals to `enemy`: the bull melee hit plus the musket shot and turret bullet. */
-    static comboDamage(meleeDmg: number, enemySkin: number) {
+    static comboDamage(meleeDmg: number, enemySkin: number, empAware = false) {
         const firstMult = enemySkin === STORE_HAT_MAP.SOLDIER_HELMET ? SOLDIER_DAMAGE_TAKEN : 1;
-        return meleeDmg * BULL_DAMAGE_MULT * firstMult + (MUSKET_DMG + TURRET_BULLET_DAMAGE) * SOLDIER_DAMAGE_TAKEN;
+        const first = meleeDmg * BULL_DAMAGE_MULT * firstMult;
+        // "EMP-Aware Instas": in an EMP Helmet the turret bullet does nothing (1.8.2 antiTurret). Worst case for the
+        // second hit is then the musket shot alone (them keeping the EMP Helmet on) or with soldier, whichever is less.
+        if (empAware && enemySkin === STORE_HAT_MAP.EMP_HELMET) {
+            return first + Math.min(MUSKET_DMG, (MUSKET_DMG + TURRET_BULLET_DAMAGE) * SOLDIER_DAMAGE_TAKEN);
+        }
+        return first + (MUSKET_DMG + TURRET_BULLET_DAMAGE) * SOLDIER_DAMAGE_TAKEN;
     }
 
     protected execute() {
@@ -73,7 +79,7 @@ export default class MusketInstakiller extends CombatModule {
 
         if (!CombatUtils.getCombatDistance(player, enemy, getWeapon(melee).range - 1)) return;
         if (!DefenseUtils.isInLineOfSight(enemy, secondary)) return;
-        if (MusketInstakiller.comboDamage(primary.dmg, enemy.skinIndex) < enemy.health) return;
+        if (MusketInstakiller.comboDamage(primary.dmg, enemy.skinIndex, Menu.getValue("empAwareInstas") === true) < enemy.health) return;
 
         const attackAction = this.attackAction;
         attackAction.sequence[0].wpnId = melee;

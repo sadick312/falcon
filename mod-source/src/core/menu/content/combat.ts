@@ -48,6 +48,12 @@ export const combatSettings: IMenuItem[] = [{
             description: "Lets these instakills run while you are trapped, as long as Auto Breaker has no spikes to break around you.",
             type: "toggle",
             status: false
+        }, {
+            label: "Insta Uses Enemy Health",
+            id: "instaUsesEnemyHealth",
+            description: "Also runs the insta when its two hits together (soldier helmet assumed for the second) reach the enemy's current health. Off: only when spikes, a pit trap or 100+ damage in one tick finish them, so a hurt enemy is often left alone. An enemy who heals between the two hits survives.",
+            type: "toggle",
+            status: false
         }],
         status: true
     }, {
@@ -62,6 +68,12 @@ export const combatSettings: IMenuItem[] = [{
             type: "toggle",
             status: false
         }],
+        status: false
+    }, {
+        label: "EMP-Aware Instas",
+        id: "empAwareInstas",
+        description: "Musket Insta and Knockback Instakills leave out the turret bullet when the enemy wears an EMP Helmet (it blocks turret damage), so they don't fire an insta that can't kill. Off: the turret's 25 is always counted.",
+        type: "toggle",
         status: false
     }, {
         label: "Auto Push Strikes",

@@ -127,7 +127,7 @@ export default class AutoInstakiller extends CombatModule {
         }
     }
 
-    private modifySimulationActions(player: Player, isFasterExecution: boolean, shouldReverseInsta: boolean, hasProjectile: boolean, primary: WeaponFetchData, secondary: WeaponFetchData) {
+    private modifySimulationActions(player: Player, isFasterExecution: boolean, shouldReverseInsta: boolean, hasProjectile: boolean, primary: WeaponFetchData, secondary: WeaponFetchData, turretDamage: number) {
         this.resetAllActions();
 
         const actions = this.simulationActions;
@@ -151,7 +151,7 @@ export default class AutoInstakiller extends CombatModule {
             const hammerKbAction = isFasterExecution ? sourceOneKB_1 : sourceOneKB_2;
             const turretKbAction = sourceTwoKB_2;
 
-            turretDmgAction.damage = TURRET_BULLET_DAMAGE;
+            turretDmgAction.damage = turretDamage;
             // A spike-gear target reverses the combo with any secondary; Monkey Tail doesn't cut projectile damage.
             hammerDamageAction.damage = CombatUtils.getMonkeyDamage(secondary.dmg, hasProjectile);
             hammerDamageAction.dontUse = false;
@@ -187,7 +187,7 @@ export default class AutoInstakiller extends CombatModule {
             const turretKbAction = sourceOneKB_3;
             const secondaryKbAction = isFasterExecution ? sourceTwoKB_2 : sourceTwoKB_3;
 
-            turretDmgAction.damage = TURRET_BULLET_DAMAGE;
+            turretDmgAction.damage = turretDamage;
             secondaryDamageAction.damage = CombatUtils.getMonkeyDamage(secondary.dmg, hasProjectile);
             secondaryDamageAction.dontUse = false;
 
@@ -277,13 +277,20 @@ export default class AutoInstakiller extends CombatModule {
         const isFasterExecution = PlayerStateManager.updatesBefore(player.sid, nearestEnemy.sid);
         if (isFasterExecution === null) return;
 
-        this.modifySimulationActions(player, isFasterExecution, shouldReverseInsta, hasProjectile, primary, secondary);
+        // "EMP-Aware Instas": an EMP Helmet makes the turret bullet do nothing in 1.8.2 (antiTurret).
+        const turretDamage = Menu.getValue("empAwareInstas") && nearestEnemy.skinIndex === STORE_HAT_MAP.EMP_HELMET ? 0 : TURRET_BULLET_DAMAGE;
+        this.modifySimulationActions(player, isFasterExecution, shouldReverseInsta, hasProjectile, primary, secondary, turretDamage);
 
         const simActions = AttackManager.autoInstaToggle ? SimulationOptions.get().toggleGatherRawDamage() : undefined;
         const simResult = MovementPhysicsSimulator.simulate(nearestEnemy.getSimulationState(), this.simulationActions, 2, simActions);
         const requiredSpikeHits = primary.dmg <= 25 ? 1 : 0;
         const isATOSOn = simResult.totalDamage > 100 && AttackManager.autoInstaToggle;
-        const normalInsta = isATOSOn || simResult.spikesHit > requiredSpikeHits || simResult.oneTicked || simResult.pitTrapped;
+        // "Insta Uses Enemy Health": the simulation starts every tick at full health, so the two hits never added up and
+        // an already hurt enemy's health was ignored. Its total (soldier helmet assumed for the second hit) against their
+        // health now counts too. Not with the R-key toggle on, whose total is raw damage.
+        const killsAtHealth = Menu.getValue("instaUsesEnemyHealth") === true && !AttackManager.autoInstaToggle &&
+            simResult.totalDamage >= nearestEnemy.health;
+        const normalInsta = isATOSOn || killsAtHealth || simResult.spikesHit > requiredSpikeHits || simResult.oneTicked || simResult.pitTrapped;
         const validPushInsta = hasGreatHammer && this.isTrapPush(player, nearestEnemy, simResult);
         if (!normalInsta && !validPushInsta) return;
 
