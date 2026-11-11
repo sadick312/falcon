@@ -34,6 +34,7 @@ bare `main` would have discarded all finished 1.8.2 work). Never commit to `main
 - Hook-mode detection by window.requestAnimFrame (not #gameCanvas); Insta Now expires after 30 ticks
 - Auto-break pre-tank at high ping: trap break @300ms 2116 -> 1447 ms median (root cause: Soldier/Tank flip, hat late)
 - Anti-insta @~405ms (Miami+200 sim): 16 instas, 0 deaths, no shame, min HP 12
+- Auto Mill verified live: 72 mill packets -> 65 mills placed in 3-wide lanes (also: sandbox accepted 65 mills, normal limit 7)
 - Auto-place angle search skipped with no enemy within 800px: brain 69 -> 41 us/frame idle
 - Resource sprite cached per object: renderGameObjects 131 -> 64 us/frame
 - Packet rate in a real fight (22 hits, 32 heals): median 16/s, max 31/s; no kicks seen anywhere (raw probes ~33/s also fine)
@@ -57,7 +58,7 @@ bare `main` would have discarded all finished 1.8.2 work). Never commit to `main
 ## Feature review tracker (round 1)
 - Ping: measurement ✓, display ✓, prediction ✓, lag spikes ✓, compensation ✓, shame timing ✓, turret lead ✓, safe walk ✓
 - Combat: reload ✓, ranges ✓, insta R ✓ (live), aim lead ✓ (accuracy measured), musket live hits ⏳, one-tick ✗, spike tick ✗, melee/proj sync ✗, auto push ✗
-- Defense: heal ✓, anti-insta ✓, turret ✓, trap break ✓, safe walk ✓, anti-bull ✓ (live), shame spiral ✓, auto place ⏳, replacer ✗, auto mill ✗
+- Defense: heal ✓, anti-insta ✓, turret ✓, trap break ✓, safe walk ✓, anti-bull ✓ (live), shame spiral ✓, auto place ⏳, replacer ✗, auto mill ✓ (live)
 - Other: hats ✓, keybinds ✓, settings ✓, perf ✓ (profiled), debug ✓
 
 ## Decisions
@@ -81,7 +82,7 @@ bare `main` would have discarded all finished 1.8.2 work). Never commit to `main
 
 ## Known issues / couldn't verify
 - Auto Place effectiveness vs an approaching enemy: unverified (harness unreliable); it does place (1 trap landed in victim test)
-- Exact moomodding placement limit (≥22 walls seen); kept sandboxLimit 99/299
+- Exact moomodding placement limit (≥22 walls, ≥65 mills seen); kept sandboxLimit 99/299
 - Whether hats cost gold on moomodding (all hats owned on spawn in sandbox)
 - Turret projectile speed missing in 1.8.2 data; live server sends 1.5 (matches Falcon)
 - One-tick, spike tick, syncs, auto push, anti-bull not verified live (need specific setups/teammate)
