@@ -1,0 +1,126 @@
+﻿
+ RUN  v5.0.5 C:/Users/sarip/falcon-new/falcon-main
+
+sample-base.fpl
+{
+  "ticks": 540,
+  "hatEquips": 138,
+  "accEquips": 1,
+  "lateHat": {
+    "2 attack combo": 1
+  },
+  "lateAcc": {
+    "5 enemy close": 1
+  },
+  "noOpEquips": 0,
+  "flicker": 34,
+  "flickerKinds": {
+    "hat 53->7->53": 1,
+    "hat 53->40->53": 4,
+    "hat 40->53->40": 10,
+    "hat 53->6->53": 3,
+    "hat 40->6->40": 11,
+    "hat 40->7->40": 3,
+    "hat 40->26->40": 2
+  },
+  "conflicts": 15,
+  "conflictKinds": {
+    "defense=6 vs controller:object breaking=40 -> 6": 15
+  },
+  "wrongHatDamage": 0,
+  "totalDamage": 2700,
+  "hatRules": {
+    "2 attack combo": 58,
+    "1 defense forces it": 15,
+    "4e breaking/grinding asks": 465,
+    "4a breaking: soldier needed": 2
+  },
+  "accRules": {
+    "5 enemy close": 540
+  },
+  "hatMain": {
+    "calls": 540,
+    "meanUs": 61.58,
+    "p95Us": 104.4
+  }
+}
+sample-busy.fpl
+{
+  "ticks": 1081,
+  "hatEquips": 153,
+  "accEquips": 1,
+  "lateHat": {
+    "4e breaking/grinding asks": 1
+  },
+  "lateAcc": {
+    "5 enemy close": 1
+  },
+  "noOpEquips": 0,
+  "flicker": 61,
+  "flickerKinds": {
+    "hat 40->22->40": 6,
+    "hat 40->53->40": 12,
+    "hat 53->40->53": 3,
+    "hat 40->6->40": 28,
+    "hat 40->7->40": 11,
+    "hat 7->6->7": 1
+  },
+  "conflicts": 43,
+  "conflictKinds": {
+    "defense=6 vs controller:object breaking=40 -> 6": 37,
+    "defense=22 vs controller:object breaking=40 -> 22": 6
+  },
+  "wrongHatDamage": 0,
+  "totalDamage": 5400,
+  "hatRules": {
+    "4e breaking/grinding asks": 996,
+    "1 defense forces it": 43,
+    "2 attack combo": 42
+  },
+  "accRules": {
+    "5 enemy close": 1081
+  },
+  "hatMain": {
+    "calls": 1081,
+    "meanUs": 31.65,
+    "p95Us": 58.4
+  }
+}
+sample-synthetic.fpl
+{
+  "ticks": 135,
+  "hatEquips": 1,
+  "accEquips": 1,
+  "lateHat": {
+    "4e breaking/grinding asks": 1
+  },
+  "lateAcc": {
+    "5 enemy close": 1,
+    "5 enemy close (hat sent this tick)": 1
+  },
+  "noOpEquips": 0,
+  "flicker": 0,
+  "flickerKinds": {},
+  "conflicts": 0,
+  "conflictKinds": {},
+  "wrongHatDamage": 0,
+  "totalDamage": 675,
+  "hatRules": {
+    "4e breaking/grinding asks": 135
+  },
+  "accRules": {
+    "5 enemy close": 135
+  },
+  "hatMain": {
+    "calls": 135,
+    "meanUs": 39.96,
+    "p95Us": 95.4
+  }
+}
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  16:05:20
+   Duration  11.53s (tests 82%, environment 17%, setup 1%, transform 1%)
+
+

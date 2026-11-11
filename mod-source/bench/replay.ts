@@ -86,6 +86,9 @@ export interface ModApi {
     AttackManager: typeof import("@core/mod/combat/core/AttackManager").default;
     CombatController: typeof import("@core/mod/combat/core/CombatController").default;
     ais: typeof import("@entities/Ai").ais;
+    /** Only in "modules" mode (used by the hat report). */
+    HatSystem?: typeof import("@core/mod/defense/defense-modules/HatSystem").default;
+    DefenseSystem?: typeof import("@core/mod/defense/DefenseSystem").default;
 }
 
 async function loadMod(mode: "modules" | "bundle"): Promise<ModApi> {
@@ -109,7 +112,9 @@ async function loadMod(mode: "modules" | "bundle"): Promise<ModApi> {
     const { default: AttackManager } = await import("@core/mod/combat/core/AttackManager");
     const { default: CombatController } = await import("@core/mod/combat/core/CombatController");
     const { ais } = await import("@entities/Ai");
-    return { profiler, Menu, Client, AngleFinder, PlayerManager, ObjectManager, ProjectileManager, ModManager, AttackManager, CombatController, ais };
+    const { default: HatSystem } = await import("@core/mod/defense/defense-modules/HatSystem");
+    const { default: DefenseSystem } = await import("@core/mod/defense/DefenseSystem");
+    return { profiler, Menu, Client, AngleFinder, PlayerManager, ObjectManager, ProjectileManager, ModManager, AttackManager, CombatController, ais, HatSystem, DefenseSystem };
 }
 
 export interface ReplayResult {
