@@ -49,7 +49,7 @@ bare `main` would have discarded all finished 1.8.2 work). Never commit to `main
 
 ## Next up
 1. (decided: no change) shame margin - msUntilSafeEat already uses MIN measured RTT (worst case for jitter); 15 ms covers tick rounding
-2. Replacer: verify auto-replace of broken traps/spikes live (needs trap-break by bot)
+2. (couldn't verify) Replacer live: 5 harness variants failed (bot gets trapped/pinned by Falcon's Auto Place, or its wall placement is refused next to Falcon); falconDebug.setToggle added for mid-run toggling
 3. Spike Tick / Auto Push: need spikes near a trapped enemy - build a harness (bot traps itself? use Falcon traps)
 4. Target selection: prefer trapped/low-HP enemies for instas when several are near (needs 2 enemies: IP limit 2 - blocked)
 5. Melee/Projectile Sync: needs a Falcon teammate (blocked: IP limit)
@@ -82,11 +82,13 @@ bare `main` would have discarded all finished 1.8.2 work). Never commit to `main
 - Early Tank Gear for tank attack (left click) @~300ms: wall break slower (2670 vs 2338 ms median, 2 runs each) and 1 death -> reverted. Auto-break keeps its own pre-tank (that one helped: 2116 -> 1447 ms). Likely: during tank attack the held early attack fires with the mouse aim before the hat lands; auto-break aims at the trap itself.
 - Musket real-fight count (armed-aware R, strafing bot @~180px): only 2-5 instas per 75 s because the bot sits at the polearm range edge; inconclusive, dropped (aim accuracy measured separately: 82% vs 13% @205ms)
 - Ping-lead "ready on arrival" for tank spam / auto-break / object breaker: no change (trap break 2116 vs 2114 ms @300, 1335 vs 1335 @95) -> reverted
+- Replacer harness: bot breaking its own wall / placing toward Falcon / Falcon breaking it with Auto Place toggled on mid-break -> walls never placed or broken reliably (don't retry these variants)
 - Musket strafe test pressing R every 1.7 s: R is a toggle, so it disarmed half the time; only 1-3 instas/run (inconclusive)
 - Chrome offline mode to drop WS in tests (doesn't close existing sockets) → close via send hook
 - page.screenshot clip on vanilla page (black) → full screenshots + CSS crop
 
 ## Known issues / couldn't verify
+- Replacer live behaviour: no reliable bot harness (see Next up #2); code path unchanged
 - Auto Place effectiveness vs an approaching enemy: unverified (harness unreliable); it does place (1 trap landed in victim test)
 - Exact moomodding placement limit (≥22 walls, ≥65 mills seen); kept sandboxLimit 99/299
 - Whether hats cost gold on moomodding (all hats owned on spawn in sandbox)
