@@ -48,7 +48,7 @@ bare `main` would have discarded all finished 1.8.2 work). Never commit to `main
 - Docs: README Quick Inject section, docs/TEST_CHECKLIST.md (146 lines)
 
 ## Next up
-1. Round 2 (deeper): shame safety margin from measured jitter instead of fixed 15 ms
+1. (decided: no change) shame margin - msUntilSafeEat already uses MIN measured RTT (worst case for jitter); 15 ms covers tick rounding
 2. Replacer: verify auto-replace of broken traps/spikes live (needs trap-break by bot)
 3. Spike Tick / Auto Push: need spikes near a trapped enemy - build a harness (bot traps itself? use Falcon traps)
 4. Target selection: prefer trapped/low-HP enemies for instas when several are near (needs 2 enemies: IP limit 2 - blocked)
@@ -75,6 +75,8 @@ bare `main` would have discarded all finished 1.8.2 work). Never commit to `main
 ## Decisions (cont.)
 - Own shame: count at eat send (+RTT) > count from health packets (misses failed eats at full HP)
 - High-shame emergency: defer to safe heal when HP > 40 (one musket through soldier = 37.5) > always instant (spirals into Shame)
+
+- Shame margin: min-RTT + 15 ms > jitter-scaled margin (min already absorbs downward jitter; more margin = slower heals)
 
 ## Tried, didn't work
 - Early Tank Gear for tank attack (left click) @~300ms: wall break slower (2670 vs 2338 ms median, 2 runs each) and 1 death -> reverted. Auto-break keeps its own pre-tank (that one helped: 2116 -> 1447 ms). Likely: during tank attack the held early attack fires with the mouse aim before the hat lands; auto-break aims at the trap itself.
