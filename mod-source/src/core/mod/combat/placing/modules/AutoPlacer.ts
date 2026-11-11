@@ -1,3 +1,4 @@
+import getDistSq from "@utils/geometry/getDistSq";
 import Latency from "@core/mod/utils/Latency";
 import Player from "@constants/Player";
 import PlacementSystem from "@core/mod/combat/core/PlacementSystem";
@@ -112,7 +113,18 @@ export default class AutoPlacer extends Placer {
         setTimeout(this.executePreplaceBatch, waitMs, arr, count, waitMs);
     }
 
+    private static readonly IDLE_DISTANCE_SQ = 800 * 800;
+
     preStart(player: Player) {
+        // Placements are graded against enemies; with nobody within 800 px there's nothing to plan.
+        // Skipping the angle search here saves its per-tick cost (found as a hotspot while idle).
+        const nearest = ModManager.enemyData.nearest;
+        if (!nearest || getDistSq(nearest.real_position, player.real_position) > AutoPlacer.IDLE_DISTANCE_SQ) {
+            this.cachedBestAnglesCount = 0;
+            this.potentialPreplacements.count = 0;
+            return;
+        }
+
         const now = performance.now();
         const preplacer = !!Menu.getValue("preplacer");
         this.finderOptions.preplace = preplacer;
