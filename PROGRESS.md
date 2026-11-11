@@ -37,7 +37,7 @@ bare `main` would have discarded all finished 1.8.2 work). Never commit to `main
 - Docs: README Quick Inject section, docs/TEST_CHECKLIST.md (146 lines)
 
 ## Next up
-1. Auto-place approach test (running): count Falcon traps that catch an approaching bot
+1. Auto-place: why 4 trap selects sent but the bot saw 0 traps appear (server reject? blocked spot?) - use falconDebug.autoPlace/itemSelects; fix approach harness (bot gets stuck at 60-85 px)
 2. High-ping (~300ms) trap-break + turret EMP redo (bot placement kept failing)
 3. Launcher extension live test; 30-min session memory/FPS
 4. Reload start lag (`tick - lastHit > 1`): verify vs server and with ping
@@ -73,6 +73,7 @@ bare `main` would have discarded all finished 1.8.2 work). Never commit to `main
 - page.screenshot clip on vanilla page (black) → full screenshots + CSS crop
 
 ## Known issues / couldn't verify
+- Auto Place effectiveness vs an approaching enemy: unverified (harness unreliable); it does place (1 trap landed in victim test)
 - Exact moomodding placement limit (≥22 walls seen); kept sandboxLimit 99/299
 - Whether hats cost gold on moomodding (all hats owned on spawn in sandbox)
 - Turret projectile speed missing in 1.8.2 data; live server sends 1.5 (matches Falcon)
