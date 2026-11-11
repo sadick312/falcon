@@ -20,6 +20,9 @@
  * Run: npx vitest run --config vitest.bench.config.mts mod-source/bench/hat-report.bench-run.ts
  *   HAT_RECORDINGS  folder or single .fpl (default mod-source/bench/recordings)
  *   HAT_CONFIRM=0   don't play the server's part (see above)
+ *   HAT_CONFIRM_DELAY=3   the server shows an equip only 3 ticks after it was sent (a ~300 ms ping); default 1
+ *   HAT_SETTINGS=rememberSentEquips   menu toggles to turn on (comma-separated ids)
+ *   HAT_TRACE=1     print each tick's pick, worn items, equips sent and health
  */
 import fs from "fs";
 import path from "path";
@@ -30,6 +33,8 @@ export interface HatResult {
     ticks: number;
     hatEquips: number;
     accEquips: number;
+    /** Equips sent again while an equal one was still on its way to the server. */
+    duplicateEquips: number;
     lateHat: Record<string, number>;
     lateAcc: Record<string, number>;
     noOpEquips: number;
@@ -47,7 +52,7 @@ export interface HatResult {
 const bump = (o: Record<string, number>, k: string) => { o[k] = (o[k] ?? 0) + 1; };
 
 /** Our player's skinIndex / tailIndex as a server would report them: the last equip we sent, from the next tick on. */
-interface Slot { server: number; worn: number; pending: number | null }
+interface Slot { server: number; worn: number; pending: { id: number; tick: number }[] }
 
 function confirmEquips(player: object, hat: Slot, acc: Slot) {
     for (const [key, slot] of [["skinIndex", hat], ["tailIndex", acc]] as const) {
@@ -61,16 +66,23 @@ function confirmEquips(player: object, hat: Slot, acc: Slot) {
     }
 }
 
-export async function hatReport(file: string, confirm = process.env.HAT_CONFIRM !== "0"): Promise<HatResult> {
+export async function hatReport(
+    file: string,
+    confirm = process.env.HAT_CONFIRM !== "0",
+    delay = Math.max(1, Number(process.env.HAT_CONFIRM_DELAY ?? 1)),
+    settings = (process.env.HAT_SETTINGS ?? "").split(",").filter(Boolean)
+): Promise<HatResult> {
     const r: HatResult = {
-        ticks: 0, hatEquips: 0, accEquips: 0, lateHat: {}, lateAcc: {}, noOpEquips: 0, flicker: 0, flickerKinds: {},
+        ticks: 0, hatEquips: 0, accEquips: 0, duplicateEquips: 0, lateHat: {}, lateAcc: {}, noOpEquips: 0, flicker: 0, flickerKinds: {},
         conflicts: 0, conflictKinds: {}, wrongHatDamage: 0, totalDamage: 0, hatRules: {}, accRules: {}, hatMain: null
     };
 
     let wrapped = false;
     const patched = new WeakSet<object>();
-    const hat: Slot = { server: 0, worn: 0, pending: null };
-    const acc: Slot = { server: 0, worn: 0, pending: null };
+    const hat: Slot = { server: 0, worn: 0, pending: [] };
+    const acc: Slot = { server: 0, worn: 0, pending: [] };
+    let currentTick = 0;
+    let settingsApplied = false;
     let sentHat: number | null = null, sentAcc: number | null = null;
     // What was worn on the last two ticks (before their equips): for flicker.
     const hatHistory: number[] = [], accHistory: number[] = [];
@@ -80,7 +92,13 @@ export async function hatReport(file: string, confirm = process.env.HAT_CONFIRM 
 
     const result = await replay(readRecording(file), {
         profile: true,
-        onTick: (_t: number, mod: ModApi) => {
+        onTick: (t: number, mod: ModApi) => {
+            currentTick = t;
+            if (!settingsApplied) {
+                settingsApplied = true;
+                const items = (mod.Menu as unknown as { itemMap: Record<string, { status: unknown }> }).itemMap;
+                for (const id of settings) if (items[id]) items[id].status = true;
+            }
             const { Client, AttackManager, CombatController, HatSystem, DefenseSystem } = mod;
             if (!HatSystem || !DefenseSystem) throw new Error("hat report needs replay mode \"modules\"");
             const me = Client.player;
@@ -93,16 +111,28 @@ export async function hatReport(file: string, confirm = process.env.HAT_CONFIRM 
                     original(type, ...args);
                     if (type !== "c" || args[0] !== false) return;
                     const id = args[1] as number;
-                    if (args[2]) { sentAcc = id; acc.pending = id; } else { sentHat = id; hat.pending = id; }
+                    const slot = args[2] ? acc : hat;
+                    if (slot.pending.some(p => p.id === id)) r.duplicateEquips++;
+                    slot.pending.push({ id, tick: currentTick + 1 }); // sent while handling the tick after the last onTick
+                    if (args[2]) sentAcc = id; else sentHat = id;
                 };
+
+                // Equips sent during this first tick went out before the wrapper above: take them from the brain state.
+                const brain = (mod.ModManager as unknown as { brainState: { hatUsed: number; accUsed: number } }).brainState;
+                if (brain.hatUsed !== -1) { hat.pending.push({ id: brain.hatUsed, tick: t }); sentHat = brain.hatUsed; }
+                if (brain.accUsed !== -1) { acc.pending.push({ id: brain.accUsed, tick: t }); sentAcc = brain.accUsed; }
             }
 
             const readyForNext = () => {
                 if (me && confirm && !patched.has(me)) { patched.add(me); confirmEquips(me, hat, acc); }
                 // This tick's equips have reached the server by the next update (not every update lists us).
+                // With HAT_CONFIRM_DELAY > 1 (a ping over one tick), only that many ticks after it was sent.
                 for (const slot of [hat, acc]) {
-                    if (confirm && slot.pending !== null) slot.worn = slot.pending;
-                    slot.pending = null;
+                    while (slot.pending.length && slot.pending[0]!.tick + delay <= currentTick + 1) {
+                        const p = slot.pending.shift()!;
+                        if (confirm) slot.worn = p.id;
+                    }
+                    if (!confirm) slot.pending.length = 0;
                 }
                 wornHatBefore = me?.skinIndex ?? 0;
                 wornAccBefore = me?.tailIndex ?? 0;
@@ -125,6 +155,7 @@ export async function hatReport(file: string, confirm = process.env.HAT_CONFIRM 
             prevHealth = me.health;
 
             const hatPick = HatSystem.hatPick, accPick = HatSystem.accPick;
+            if (process.env.HAT_TRACE) process.stdout.write(`t${t} pick ${hatPick}/${accPick} worn ${wornHat}/${wornAcc} sent ${sentHat}/${sentAcc} hp ${me.health}\n`);
             bump(r.hatRules, HatSystem.hatRule);
             bump(r.accRules, HatSystem.accRule);
 
@@ -133,7 +164,8 @@ export async function hatReport(file: string, confirm = process.env.HAT_CONFIRM 
                 if (sentHat === wornHat) r.noOpEquips++;
                 const twoAgo = hatHistory[hatHistory.length - 2];
                 if (twoAgo === sentHat && wornHat !== sentHat) { r.flicker++; bump(r.flickerKinds, `hat ${sentHat}->${wornHat}->${sentHat}`); }
-            } else if (hatPick !== -1 && hatPick !== wornHat) {
+            } else if (hatPick !== -1 && hatPick !== wornHat && !hat.pending.some(p => p.id === hatPick)) {
+                // (An equip already on its way isn't late: sending it again wouldn't make it arrive sooner.)
                 bump(r.lateHat, HatSystem.hatRule + (me.skins[hatPick] || hatPick === 0 ? "" : " (not owned)"));
             }
 
@@ -142,7 +174,7 @@ export async function hatReport(file: string, confirm = process.env.HAT_CONFIRM 
                 if (sentAcc === wornAcc) r.noOpEquips++;
                 const twoAgo = accHistory[accHistory.length - 2];
                 if (twoAgo === sentAcc && wornAcc !== sentAcc) { r.flicker++; bump(r.flickerKinds, `acc ${sentAcc}->${wornAcc}->${sentAcc}`); }
-            } else if (accPick !== -1 && accPick !== wornAcc) {
+            } else if (accPick !== -1 && accPick !== wornAcc && !acc.pending.some(p => p.id === accPick)) {
                 bump(r.lateAcc, HatSystem.accRule + (me.tails[accPick] || accPick === 0 ? "" : " (not owned)") + (sentHat !== null ? " (hat sent this tick)" : ""));
             }
 

@@ -1,16 +1,13 @@
-﻿
- RUN  v5.0.5 C:/Users/sarip/falcon-new/falcon-main
-
+﻿Hat report on the current code (HAT_CONFIRM_DELAY=1, no settings). See hat-report.bench-run.ts.
 sample-base.fpl
 {
   "ticks": 540,
-  "hatEquips": 138,
+  "hatEquips": 140,
   "accEquips": 1,
-  "lateHat": {
-    "2 attack combo": 1
-  },
+  "duplicateEquips": 0,
+  "lateHat": {},
   "lateAcc": {
-    "5 enemy close": 1
+    "5 enemy close (hat sent this tick)": 8
   },
   "noOpEquips": 0,
   "flicker": 34,
@@ -40,20 +37,19 @@ sample-base.fpl
   },
   "hatMain": {
     "calls": 540,
-    "meanUs": 61.58,
-    "p95Us": 104.4
+    "meanUs": 10.24,
+    "p95Us": 27.8
   }
 }
 sample-busy.fpl
 {
   "ticks": 1081,
-  "hatEquips": 153,
+  "hatEquips": 155,
   "accEquips": 1,
-  "lateHat": {
-    "4e breaking/grinding asks": 1
-  },
+  "duplicateEquips": 0,
+  "lateHat": {},
   "lateAcc": {
-    "5 enemy close": 1
+    "5 enemy close (hat sent this tick)": 3
   },
   "noOpEquips": 0,
   "flicker": 61,
@@ -82,8 +78,8 @@ sample-busy.fpl
   },
   "hatMain": {
     "calls": 1081,
-    "meanUs": 31.65,
-    "p95Us": 58.4
+    "meanUs": 17.08,
+    "p95Us": 36
   }
 }
 sample-synthetic.fpl
@@ -91,11 +87,9 @@ sample-synthetic.fpl
   "ticks": 135,
   "hatEquips": 1,
   "accEquips": 1,
-  "lateHat": {
-    "4e breaking/grinding asks": 1
-  },
+  "duplicateEquips": 0,
+  "lateHat": {},
   "lateAcc": {
-    "5 enemy close": 1,
     "5 enemy close (hat sent this tick)": 1
   },
   "noOpEquips": 0,
@@ -113,14 +107,9 @@ sample-synthetic.fpl
   },
   "hatMain": {
     "calls": 135,
-    "meanUs": 39.96,
-    "p95Us": 95.4
+    "meanUs": 24.41,
+    "p95Us": 40.9
   }
 }
-
  Test Files  1 passed (1)
       Tests  3 passed (3)
-   Start at  16:05:20
-   Duration  11.53s (tests 82%, environment 17%, setup 1%, transform 1%)
-
-
