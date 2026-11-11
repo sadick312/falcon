@@ -75,6 +75,112 @@ Tip: many combat/anti tests need a second player. A friend in another browser/PC
 | ☐ | Clan menu | Clan button: create / join / leave | Works like the normal game |
 | ☐ | Auto Upgrade | Turn on, spawn | Cookie / Trap / Greater Spikes / 7th slot picked automatically |
 
+## 4b. Katana and Musket
+Set Menu > Utility > Auto Upgrade > **Weapon Build** to get the weapons quickly (sandbox spawns at age 10).
+| ✔ | Test | What to do | What should happen |
+|---|---|---|---|
+| ☐ | Katana: equip | Weapon Build = Katana + Great Hammer, spawn | Hotbar shows Katana (slot 1) and Great Hammer; Debug shows `katana (4)` |
+| ☐ | Katana: swing | Left click (attack toggle) near a tree | Swings about every 0.3 s; Debug reload goes 0% -> 100% |
+| ☐ | Katana: range | Walk slowly toward an enemy/animal while attacking | Hits start at about 118 game units + body size (a bit longer than Short Sword) |
+| ☐ | Katana: damage | Hit a friend without hats | 40 per hit (44 gold, 47.2 diamond/ruby); 60 with Bull Helmet |
+| ☐ | Katana: combos | Hold Space (bull spam) / press R next to an enemy | Bull Helmet + Katana combos fire; no errors |
+| ☐ | Musket: equip | Weapon Build = Polearm + Musket | Hotbar shows Polearm and Musket; Debug shows `musket (15)` when held |
+| ☐ | Musket: shoot | Hold the Musket, click | Bullet flies far (range 1400); you get pushed back a little (recoil) |
+| ☐ | Musket: reload | Shoot, watch Debug "secondary" reload | Reload takes 1.5 s; Falcon won't plan a shot until it's back to 100% |
+| ☐ | Musket: no stone | (non-sandbox servers only) run out of stone | Falcon won't plan Musket shots without 10 stone |
+| ☐ | Musket: close hit | Press R next to a standing enemy | Polearm hit then Musket hit (50, or 37.5 through Soldier Helmet) |
+| ☐ | Musket: far hit | Enemy standing still ~600-1000 units away, shoot with aim | Bullet reaches and hits |
+| ☐ | Musket: moving target | Press R on an enemy running sideways | Musket still hits most of the time (aim leads the target by your ping) |
+| ☐ | Can't have both | Try to take Katana and Musket | Impossible in 1.8.2: Katana and Crossbow are both age 8 and the Musket needs the Crossbow |
+
+## 4c. Enemies using Katana / Musket
+| ✔ | Test | What to do | What should happen |
+|---|---|---|---|
+| ☐ | Detect Katana | Friend equips Katana near you | Debug (`falconDebug.weaponData(id)` in console) shows primary 4 |
+| ☐ | Detect Musket | Friend shoots a Musket | Shown as secondary 15 right after the shot; reload tracked 0 -> 100% over 1.5 s |
+| ☐ | Katana guess | Friend with Katana never shows a secondary | Falcon assumes a Hunting Bow, not a Musket (fewer needless reactions) |
+| ☐ | Anti vs Katana insta | Friend: Bull + Katana, then Bow | You survive (Soldier + heal) |
+| ☐ | Anti vs Musket insta | Friend: Bull + Polearm, then Musket | You survive |
+| ☐ | Samurai Armor | Friend wears Samurai Armor (faster reload) | Falcon still predicts their next hit correctly (reload x0.78) |
+
+## 4d. Every hat and accessory
+Turn **Classic Hats** on (Visual tab). Look at a player (or yourself) wearing each item, standing, moving and attacking.
+Nothing should be stretched, blurry, offset or missing. Turning Classic Hats off should only stop the spinning parts.
+
+| ✔ | Id | Hat | Looks correct when |
+|---|---|---|---|
+| ☐ | 45 | Shame! | Centred on the head, faces where the player aims |
+| ☐ | 51 | Moo Cap | Centred on the head, faces where the player aims |
+| ☐ | 50 | Apple Cap | Centred on the head, faces where the player aims |
+| ☐ | 28 | Moo Head | Centred on the head, faces where the player aims |
+| ☐ | 29 | Pig Head | Centred on the head, faces where the player aims |
+| ☐ | 30 | Fluff Head | Centred on the head, faces where the player aims |
+| ☐ | 36 | Pandou Head | Centred on the head, faces where the player aims |
+| ☐ | 37 | Bear Head | Centred on the head, faces where the player aims |
+| ☐ | 38 | Monkey Head | Centred on the head, faces where the player aims |
+| ☐ | 44 | Polar Head | Centred on the head, faces where the player aims |
+| ☐ | 35 | Fez Hat | Centred on the head, faces where the player aims |
+| ☐ | 42 | Enigma Hat | Centred on the head, faces where the player aims |
+| ☐ | 43 | Blitz Hat | Centred on the head, faces where the player aims |
+| ☐ | 49 | Bob XIII Hat | Centred on the head, faces where the player aims |
+| ☐ | 59 | Megalodon Hat | Centred on the head, faces where the player aims |
+| ☐ | 57 | Pumpkin | Centred on the head, faces where the player aims |
+| ☐ | 8 | Bummle Hat | Centred on the head, faces where the player aims |
+| ☐ | 2 | Straw Hat | Centred on the head, faces where the player aims |
+| ☐ | 15 | Winter Cap | Centred on the head, faces where the player aims |
+| ☐ | 5 | Cowboy Hat | Centred on the head, faces where the player aims |
+| ☐ | 4 | Ranger Hat | Centred on the head, faces where the player aims |
+| ☐ | 18 | Explorer Hat | Centred on the head, faces where the player aims |
+| ☐ | 31 | Flipper Hat | Centred on the head, faces where the player aims |
+| ☐ | 1 | Marksman Cap | Centred on the head, faces where the player aims |
+| ☐ | 10 | Bush Gear | Centred on the head, faces where the player aims |
+| ☐ | 48 | Halo | Centred on the head, faces where the player aims |
+| ☐ | 6 | Soldier Helmet | Centred on the head, faces where the player aims |
+| ☐ | 23 | Anti Venom Gear | Centred on the head, faces where the player aims |
+| ☐ | 13 | Medic Gear | Centred on the head, faces where the player aims |
+| ☐ | 9 | Miners Helmet | Centred on the head, faces where the player aims |
+| ☐ | 32 | Musketeer Hat | Centred on the head, faces where the player aims |
+| ☐ | 7 | Bull Helmet | Centred on the head, faces where the player aims |
+| ☐ | 22 | Emp Helmet | Centred on the head, faces where the player aims |
+| ☐ | 12 | Booster Hat | Centred on the head, faces where the player aims |
+| ☐ | 26 | Barbarian Armor | Centred on the head, faces where the player aims |
+| ☐ | 21 | Plague Mask | Centred on the head, faces where the player aims |
+| ☐ | 46 | Bull Mask | Centred on the head, faces where the player aims |
+| ☐ | 14 | Windmill Hat | Top part spins (stops with Classic Hats off) |
+| ☐ | 11 | Spike Gear | Top part spins (stops with Classic Hats off) |
+| ☐ | 53 | Turret Gear | Top part spins (stops with Classic Hats off) |
+| ☐ | 20 | Samurai Armor | Centred on the head, faces where the player aims |
+| ☐ | 58 | Dark Knight | Centred on the head, faces where the player aims |
+| ☐ | 27 | Scavenger Gear | Centred on the head, faces where the player aims |
+| ☐ | 40 | Tank Gear | Centred on the head, faces where the player aims |
+| ☐ | 52 | Thief Gear | Centred on the head, faces where the player aims |
+| ☐ | 55 | Bloodthirster | Centred on the head, faces where the player aims |
+| ☐ | 56 | Assassin Gear | Wearer is invisible to others (correct) |
+
+| ✔ | Id | Accessory | Looks correct when |
+|---|---|---|---|
+| ☐ | 12 | Snowball | Behind the player, follows rotation |
+| ☐ | 9 | Tree Cape | Behind the player, follows rotation |
+| ☐ | 10 | Stone Cape | Behind the player, follows rotation |
+| ☐ | 3 | Cookie Cape | Behind the player, follows rotation |
+| ☐ | 8 | Cow Cape | Behind the player, follows rotation |
+| ☐ | 11 | Monkey Tail | Behind the player, follows rotation |
+| ☐ | 17 | Apple Basket | Behind the player, follows rotation |
+| ☐ | 6 | Winter Cape | Behind the player, follows rotation |
+| ☐ | 4 | Skull Cape | Behind the player, follows rotation |
+| ☐ | 5 | Dash Cape | Behind the player, follows rotation |
+| ☐ | 2 | Dragon Cape | Behind the player, follows rotation |
+| ☐ | 1 | Super Cape | Behind the player, follows rotation |
+| ☐ | 7 | Troll Cape | Behind the player, follows rotation |
+| ☐ | 14 | Thorns | Behind the player, follows rotation |
+| ☐ | 15 | Blockades | Behind the player, follows rotation |
+| ☐ | 20 | Devils Tail | Behind the player, follows rotation |
+| ☐ | 16 | Sawblade | Behind the player and spins (stops with Classic Hats off) |
+| ☐ | 13 | Angel Wings | Behind the player, follows rotation |
+| ☐ | 19 | Shadow Wings | Behind the player, follows rotation |
+| ☐ | 18 | Blood Wings | Behind the player, follows rotation |
+| ☐ | 21 | Corrupt X Wings | Behind the player, follows rotation |
+
 ## 5. Ping tests (repeat sections 1–3 at each level)
 Use **Utility > Packet Management > Artificial Ping** to add delay on a fast connection.
 | ✔ | Level | Setting | Check |
