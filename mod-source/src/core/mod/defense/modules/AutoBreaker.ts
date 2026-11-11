@@ -1,3 +1,4 @@
+import Latency from "@core/mod/utils/Latency";
 import Keybinds from "@core/Keybinds";
 import GameObject from "@constants/GameObject";
 import items, { LIST_ID_MAP, WEAPON_ID_MAP } from "@constants/items";
@@ -332,6 +333,14 @@ export default class AutoBreaker {
         this.twoHitRequireTank = twoHitRequireTank;
     }
 
+    /** Our held weapon finishes reloading before an attack sent now would reach the server. */
+    private static isNextHitWithinPing(group: 0 | 1, weaponId: number) {
+        const player = Client.player;
+        if (!Latency.isCompensationEnabled() || player.weaponIndex !== weaponId) return false;
+        const lead = Latency.getRtt() + ScriptConfig.SERVER_UPDATE_SPEED;
+        return player.getReload(group) + lead / player.getReloadTime(weaponId) >= 1;
+    }
+
     static main() {
         const player = Client.player;
 
@@ -368,6 +377,15 @@ export default class AutoBreaker {
             CombatController.skinIndex = this.useKatana || id === originalBestId || twoHitRequireTank ? STORE_HAT_MAP.TANK_GEAR : STORE_HAT_MAP.SOLDIER_HELMET;
             CombatController.mustBeSoldier = false;
             CombatController.hitOnce();
+        } else if (this.isNextHitWithinPing(group as 0 | 1, id) && HatSystem.allowHatSwitch() && this.shouldUseTank(true)) {
+            // High ping: Tank Gear and "attack" need ~RTT to reach the server. Put Tank on and hold the
+            // attack before the reload finishes; the server swings the moment it's ready. Without this
+            // hits at ~300 ms ping often landed with Soldier on (4 swings per trap instead of 3).
+            this.aimAngle = getDir(this.targetObject, player.real_position);
+            CombatController.skinIndex = this.useKatana || id === originalBestId || twoHitRequireTank ? STORE_HAT_MAP.TANK_GEAR : STORE_HAT_MAP.SOLDIER_HELMET;
+            CombatController.mustBeSoldier = false;
+            CombatController.hitOnce();
+            ModManager.activityList.push("preTank");
         } else {
             CombatController.mustBeSoldier = false;
             CombatController.skinIndex = STORE_HAT_MAP.SOLDIER_HELMET;
