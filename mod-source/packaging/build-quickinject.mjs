@@ -48,18 +48,25 @@ ${bundle}
     function closeVanillaSocket() {
         var proto = WebSocket.prototype;
         var originalSend = proto.send;
-        var restore = function () { if (proto.send === patchedSend) proto.send = originalSend; };
-        var patchedSend = function (data) {
-            if (!this.__falcon) {
+        var closedOne = false;
+        var deadline = Date.now() + 15000;
+        proto.send = function (data) {
+            if (this.__falcon) return originalSend.call(this, data);
+            // The normal game keeps pinging every 2.5 s after we close it. Its close handler would
+            // null its socket and every later ping would throw "reading 'send'"; instead we keep
+            // its handlers off and drop those sends silently.
+            if (this.__falconClosedVanilla) return;
+            if (!closedOne && Date.now() < deadline) {
+                closedOne = true;
+                this.__falconClosedVanilla = true;
+                this.onclose = null;
+                this.onerror = null;
                 console.log("[Falcon] Closed the normal game's connection (hook mode).");
                 try { this.close(); } catch (e) { }
-                restore();
                 return;
             }
             return originalSend.call(this, data);
         };
-        proto.send = patchedSend;
-        setTimeout(restore, 15000);
     }
 
     function boot() {
@@ -74,8 +81,25 @@ ${bundle}
             window.requestAnimFrame = function () { };
         }
 
+        var hookMode = typeof window.requestAnimFrame === "function";
         window.oldHTML = document.documentElement.innerHTML;
         document.documentElement.innerHTML = FALCON_HTML;
+
+        // The normal game loads its weapon/item icons asynchronously and then writes them to
+        // #actionBarItem<i>. Those elements are gone after the swap above, so late icons threw
+        // "Cannot read properties of null (reading 'style')" (up to 16 errors). Hidden stand-ins
+        // absorb them; nothing is shown.
+        if (hookMode) {
+            var sink = document.createElement("div");
+            sink.style.display = "none";
+            for (var i = 0; i < 64; i++) {
+                if (document.getElementById("actionBarItem" + i)) continue;
+                var stub = document.createElement("div");
+                stub.id = "actionBarItem" + i;
+                sink.appendChild(stub);
+            }
+            document.body.appendChild(sink);
+        }
 
         var style = document.createElement("style");
         style.textContent = FALCON_CSS;
