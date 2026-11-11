@@ -8,6 +8,7 @@ import Latency from "@core/mod/utils/Latency";
 import Client from "@core/Client";
 import PingTracker from "@core/mod/utils/PingTracker";
 import ModManager from "@core/ModManager";
+import Menu from "@menu/Menu";
 
 declare global {
     interface Window {
@@ -16,7 +17,7 @@ declare global {
 }
 
 /**
- * Read-only state for automated tests and troubleshooting. Off unless localStorage
+ * State for automated tests and troubleshooting (read-only, plus setToggle for on/off settings). Off unless localStorage
  * "falcon-debug-api" is "1" (type `localStorage.setItem("falcon-debug-api", "1")` in the console).
  */
 export default function installDebugApi(force = false) {
@@ -47,6 +48,12 @@ export default function installDebugApi(force = false) {
         get packets() { return { sent: DebugStats.sentTotal, received: DebugStats.receivedTotal }; },
         get itemSelects() { return { ...DebugStats.itemSelects }; },
         get collapsedUpdates() { return PlayerUpdateEvent.collapsedUpdates; },
+        /** Turn an on/off menu setting on or off (tests use this to enable a feature mid-run). */
+        setToggle(id: string, on: boolean) {
+            if (typeof Menu.getValue(id) !== "boolean") return false;
+            Menu.setValue(id, on);
+            return Menu.getValue(id) === on;
+        },
         /** What Falcon believes player `sid` carries (primary/secondary, confirmed or assumed) and reload state. */
         weaponData(sid: number) {
             const p = PlayerManager.get(sid);
