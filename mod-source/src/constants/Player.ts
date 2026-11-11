@@ -35,8 +35,9 @@ function renderPlayerWeapon(ctx: CanvasRenderingContext2D, weapon: Weapon, weapo
     const variant = ScriptConfig.WEAPON_VARIANTS[weaponVariant];
     if (variant) RendererUtils.renderTool(weapon, variant, 35, 0, ctx);
 
-    // The hunting bow's arrow is projectile 0: a truthiness check skipped drawing it.
-    if (weapon.projectile !== undefined && !weapon.hideProjectile) {
+    // Drawn like the original Falcon, on purpose: the hunting bow's arrow is projectile 0, so this check skips it and
+    // the bow is drawn without an arrow (the user prefers that look).
+    if (weapon.projectile && !weapon.hideProjectile) {
         renderProjectile(35, 0, getProjectile(weapon.projectile), ctx);
     }
 }
