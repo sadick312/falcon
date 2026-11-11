@@ -1,4 +1,5 @@
-import items, { WEAPON_ID_MAP } from "@constants/items";
+import items from "@constants/items";
+import { wantedWeapon as buildPick } from "@core/events/weaponBuilds";
 import Client from "@core/Client";
 import Menu from "@menu/Menu";
 import PacketMap from "@root/utils/socket/PacketMap";
@@ -21,12 +22,6 @@ function sendUpgrade(id: number, age: number) {
  * age; Katana and Crossbow share age 8, and the Musket needs the Crossbow), checked against the
  * game data. Ages not listed fall back to the item choices below.
  */
-export const WEAPON_BUILDS: Record<string, Record<number, number>> = {
-    polearmMusket: { 2: WEAPON_ID_MAP.POLEARM, 6: WEAPON_ID_MAP.HUNTING_BOW, 8: WEAPON_ID_MAP.CROSSBOW, 9: WEAPON_ID_MAP.MUSKET },
-    katanaHammer: { 2: WEAPON_ID_MAP.SHORT_SWORD, 6: WEAPON_ID_MAP.GREAT_HAMMER, 8: WEAPON_ID_MAP.KATANA },
-    katanaBow: { 2: WEAPON_ID_MAP.SHORT_SWORD, 6: WEAPON_ID_MAP.HUNTING_BOW, 8: WEAPON_ID_MAP.KATANA },
-    polearmHammer: { 2: WEAPON_ID_MAP.POLEARM, 6: WEAPON_ID_MAP.GREAT_HAMMER },
-};
 
 export default function updateUpgrades(points: number, age: number) {
     Client.player.upgradePoints = points;
@@ -75,7 +70,7 @@ export default function updateUpgrades(points: number, age: number) {
         }
 
         if (Menu.getValue("autoUpgrade")) {
-            const wantedWeapon = WEAPON_BUILDS[Menu.getValue("weaponBuild")]?.[age];
+            const wantedWeapon = buildPick(Menu.getValue("weaponBuild"), age);
             if (wantedWeapon !== undefined && tmpList.includes(wantedWeapon)) {
                 sendUpgrade(wantedWeapon, age);
                 return;

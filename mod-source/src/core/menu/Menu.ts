@@ -1,4 +1,5 @@
 import drawKeybinds from "./utils/drawKeybinds";
+import { WEAPON_BUILDS } from "@core/events/weaponBuilds";
 import Keybinds from "@core/Keybinds";
 import readStoredJSON from "@utils/storage/readStoredJSON";
 import drawNumberInput from "@menu/utils/drawNumberInput";
@@ -683,23 +684,11 @@ export const menuContent: IMenuContent = {
                 label: "Weapon Build",
                 id: "weaponBuild",
                 type: "select",
-                description: "Which weapons Auto Upgrade picks. Katana and Musket can't be combined in 1.8.2 (they need the same age-8 upgrade).",
-                options: [{
-                    label: "Manual (pick weapons yourself)",
-                    value: "manual"
-                }, {
-                    label: "Polearm + Musket",
-                    value: "polearmMusket"
-                }, {
-                    label: "Katana + Great Hammer",
-                    value: "katanaHammer"
-                }, {
-                    label: "Katana + Hunting Bow",
-                    value: "katanaBow"
-                }, {
-                    label: "Polearm + Great Hammer",
-                    value: "polearmHammer"
-                }],
+                description: "Which weapons Auto Upgrade picks. Katana/Great Axe and Musket/Repeater can't be combined in 1.8.2: age 8 is Katana/Great Axe OR Crossbow, and the Musket needs the Crossbow.",
+                options: [
+                    { label: "Manual (pick weapons yourself)", value: "manual" },
+                    ...Object.entries(WEAPON_BUILDS).map(([value, build]) => ({ label: build.label, value })),
+                ],
                 status: "manual"
             }, {
                 label: "7th Slot",
