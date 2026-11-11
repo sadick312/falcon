@@ -85,15 +85,14 @@ export default class ProjectileManager {
             }
 
             if (!Client.isFriendly(source.sid) && !isTurret) {
-                source.projFired++;
-
-                if (source.projFired > 1) {
+                // Two shots within 4 server ticks = bow insta. Counted in server ticks (was a
+                // fixed 444 ms setTimeout, which drifted from the server clock during lag).
+                const shots = source.lastShotTicks;
+                shots[0] = shots[1];
+                shots[1] = tick;
+                if (shots[1] - shots[0] < 4) {
                     DefenseSystem.isBeingBowInstaed = true;
                 }
-
-                setTimeout(() => {
-                    source.projFired--;
-                }, ScriptConfig.SERVER_UPDATE_SPEED * 4);
             }
 
             if (isTurret) {

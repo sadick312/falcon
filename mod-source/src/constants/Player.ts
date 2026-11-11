@@ -97,7 +97,8 @@ export default class Player implements Entity {
 
     hadProjDamages = false;
     projDamages: number[] = [];
-    projFired = 0;
+    /** Server ticks of this player's last two shots (bow-insta detection). */
+    lastShotTicks: [number, number] = [-1000, -1000];
     damages: number[] = [];
     bullTick = 0;
 
