@@ -1,3 +1,4 @@
+import MovementManager from "@core/mod/defense/defense-modules/MovementManager";
 import Keybinds from "@core/Keybinds";
 import Client from "@core/Client";
 import updateClanMenu, { allianceHolder } from "@core/events/updateClanMenu";
@@ -72,6 +73,11 @@ Input.init();
 function sendMoveDir() {
     const moveDir = getMoveDir();
     Client.lastMoveDir = moveDir;
+
+    // Send the move right away instead of waiting for the next server tick (up to 111 ms of
+    // input lag). MovementManager still applies Safe Walk / combos / auto-push using the latest
+    // state, and skips the packet if the direction didn't change.
+    if (Client.isAlive && Client.player && Client.mode === "normal") MovementManager.main();
 }
 
 document.addEventListener("contextmenu", (event) => event.preventDefault());
