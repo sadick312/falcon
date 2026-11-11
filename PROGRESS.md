@@ -45,6 +45,7 @@ bare `main` would have discarded all finished 1.8.2 work). Never commit to `main
 - Debug panel shows Auto Place decisions + items sent (DebugStats.autoPlace / itemSelects)
 - Full regression @6a301d7: all-on + all-off join/reconnect/change server 0 errors; hammer 39 hits 0 deaths; insta 10 attempts 0 deaths, never Shamed
 - Boot fix: an import of AutoPlacer in DebugOverlay caused an import cycle ("AutoPlacer is not a constructor" at load) -> overlay reads DebugStats instead
+- Boot smoke test (tests/bundleBoot.test.mjs): runs the whole bundle in a fake browser; fails on import-cycle load errors (verified against the real bug); 18 tests pass; tsc --noEmit clean
 - Docs: README Quick Inject section, docs/TEST_CHECKLIST.md (146 lines)
 
 ## Next up
@@ -55,7 +56,7 @@ bare `main` would have discarded all finished 1.8.2 work). Never commit to `main
 5. Melee/Projectile Sync: needs a Falcon teammate (blocked: IP limit)
 6. postMessage polling in PacketBatcher/TaskScheduler (~1 ms/s): replace busy re-post loop with a single microtask/timeout
 7. (done) Debug overlay placement counters
-8. Code quality: AttackManager/CombatController size; extract shared "ready on arrival" style helpers if reused
+8. Code quality: tsc clean; insta/one-tick damage math is coupled to Client/Menu state - unit tests would need a refactor (not worth the risk now)
 9. Re-run full regression (stage2 all-on/all-off, insta, hammer) after every ~10 commits
 10. Keep Desktop deliverables refreshed at milestones
 
@@ -98,7 +99,7 @@ bare `main` would have discarded all finished 1.8.2 work). Never commit to `main
 ## Codebase notes
 - Build: `npm run quickinject` → mod-source/dist/falcon-quickinject.js; `FALCON_DEBUG_BUILD=1` unminified; `npm run launcher:build` → falcon-launcher/dist
 - Tests: `npm test --workspace=mod-source` (node:test + esbuild loader tests/loadTs.mjs; modules importing Menu/DOM can't be unit tested)
-- Live e2e harness lives in the session scratchpad (puppeteer-core + Chrome, bot.mjs, duel*.mjs) — not in repo
+- Live e2e harness lived in an old session scratchpad that is no longer available - rebuild it outside the repo before more live tests (puppeteer-core + Chrome, msgpack bot, duel scenarios)
 - Protocol switch: core/socket/Protocol.ts; 1.8.2 reshaping: LegacyAdapter.ts
 - Ping: core/mod/utils/Latency.ts + PingTracker.ts; hats: RendererUtils.renderSkin/renderTail; hat arbiter: HatSystem.fetchBestHat
 - IP limit: ~2 connections per IP on moomodding; never run two live tests at once
