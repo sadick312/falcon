@@ -764,6 +764,20 @@ export const menuContent: IMenuContent = {
             }],
             status: true
         }, {
+            label: "Debug Mode",
+            id: "debugMode",
+            description: "Shows a panel with ping, FPS, packets per second, weapon, hat, which feature is in control, and errors. Also enables window.falconDebug in the browser console.",
+            icon: WIFI_ICON,
+            type: "toggle",
+            settings: [{
+                label: "Log Packets to Console",
+                id: "debugLogPackets",
+                description: "Prints sent/received packets in the browser console (F12). Position updates are skipped to avoid flooding.",
+                type: "toggle",
+                status: false
+            }],
+            status: false
+        }, {
             label: "Show Ping Display",
             id: "showPingDisplay",
             description: "Shows ping (median ± jitter), FPS and lag spike warnings at the top of the screen.",

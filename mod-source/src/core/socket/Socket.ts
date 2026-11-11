@@ -1,3 +1,4 @@
+import DebugStats from "@core/DebugStats";
 import { deathText } from "@core/Client";
 import GameEventTracker from "@core/mod/utils/GameEventTracker";
 import CustomEncoder from "@core/socket/CustomEncoder";
@@ -112,6 +113,7 @@ export default class Socket extends NativeWebSocket {
         this.manager.maskIncoming(bytes);
 
         const parsed = decode(bytes) as any[];
+        DebugStats.onReceived(String(parsed[0]), parsed[1]);
 
         if (parsed[0] === "io-init") {
             // 1.8.2 only sends [socketId]; encryption setup only exists on 1.9.x.
@@ -182,6 +184,7 @@ export default class Socket extends NativeWebSocket {
     }
 
     private sendActualMsg(type: any) {
+        DebugStats.onSent(type, this.DATA_BUFFER);
         if (this.usePlainPackets) {
             const binary = CustomEncoder.encode(type, type, this.DATA_BUFFER);
             PacketTracker.add();

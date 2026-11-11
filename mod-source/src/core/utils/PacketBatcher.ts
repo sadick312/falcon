@@ -1,3 +1,4 @@
+import DebugStats from "@core/DebugStats";
 import Client from "@core/Client";
 import PlayerUpdateEvent from "@core/socket/events/core/PlayerUpdateEvent";
 import Socket from "@core/socket/Socket";
@@ -65,6 +66,7 @@ export default class PacketBatcher {
                 this.socket.processPacket(packet.type, packet.data);
             } catch (e) {
                 console.error(e);
+                DebugStats.onError(`packet ${packet.type}: ${(e as Error)?.message ?? e}`);
             }
         }
 

@@ -15,8 +15,9 @@ declare global {
  * Read-only state for automated tests and troubleshooting. Off unless localStorage
  * "falcon-debug-api" is "1" (type `localStorage.setItem("falcon-debug-api", "1")` in the console).
  */
-export default function installDebugApi() {
-    if (localStorage.getItem("falcon-debug-api") !== "1") return;
+export default function installDebugApi(force = false) {
+    if (window.falconDebug) return;
+    if (!force && localStorage.getItem("falcon-debug-api") !== "1") return;
 
     window.falconDebug = {
         get sid() { return Client.mySID; },

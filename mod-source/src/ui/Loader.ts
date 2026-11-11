@@ -1,3 +1,4 @@
+import DebugOverlay from "@ui/DebugOverlay";
 import installDebugApi from "@core/DebugApi";
 import items from "@constants/items";
 import Client from "@core/Client";
@@ -288,6 +289,7 @@ export default class Loader {
 
         Hook();
         installDebugApi();
+        DebugOverlay.init();
 
         const moo_skin = localStorage.getItem("moo_skin");
         if (typeof moo_skin === "string" && !isNaN(parseInt(moo_skin))) {
