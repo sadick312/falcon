@@ -4,7 +4,7 @@ Branch: `auto-improve` (created from `fix/1.8.2-overhaul` tip, which branched of
 bare `main` would have discarded all finished 1.8.2 work). Never commit to `main`.
 
 ## Current task in progress
-- Investigate slow trap break at high ping (2.1 s @300 vs 1.3 s @95): log per-hit damage + Falcon hat at hit time (suspect Soldier/Tank flip so hits land without Tank).
+- Next: apply the same "prepare hat before swing at high ping" idea to Object Breaker / tank spam (check live first).
 
 ## Done (one line each)
 - 1.8.2 protocol (plain msgpack, LegacyAdapter for "a"/"I"), moomodding server list, WebSocket wrapper fix
@@ -32,6 +32,7 @@ bare `main` would have discarded all finished 1.8.2 work). Never commit to `main
 - High-ping (~300ms) verified: turret 0 shots/0 hits; trap break works (2.1 s median vs 1.3 s at ~95ms)
 - Launcher extension verified live (install via CDP with puppeteer-core 24 `installExtension`; Chrome 157 ignores --load-extension)
 - Hook-mode detection by window.requestAnimFrame (not #gameCanvas); Insta Now expires after 30 ticks
+- Auto-break pre-tank at high ping: trap break @300ms 2116 -> 1447 ms median (root cause: Soldier/Tank flip, hat late)
 - 31-min session: 60 FPS, 0 errors, heap 8->11 MB (plateaus after ~10 min), DOM flat
 - Docs: README Quick Inject section, docs/TEST_CHECKLIST.md (146 lines)
 
