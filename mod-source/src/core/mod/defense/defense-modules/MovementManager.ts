@@ -1,3 +1,4 @@
+import Latency from "@core/mod/utils/Latency";
 import Keybinds from "@core/Keybinds";
 import items from "@constants/items";
 import Player from "@constants/Player";
@@ -16,6 +17,7 @@ import lineInCircle from "@utils/geometry/lineInCircle";
 
 export default class MovementManager {
     private static lastMoveDir: number | null = null;
+    private static leadBuffer = { x: 0, y: 0 };
     static sentMovePacket = false;
 
     private static move(moveDir: number | null) {
@@ -102,6 +104,23 @@ export default class MovementManager {
         const realPos = player.real_position;
         const project = this.project(player, moveDir, false, decentGear);
         const finalProjection = this.project(player, moveDir, true, decentGear);
+
+        // Ping: our stop reaches the server ~(lead - 1 tick) later than project() assumes, and we keep
+        // moving meanwhile. Glide: after stopping, speed decays 0.993x per ms, i.e. ~143 ms worth of
+        // current speed, but project() only counts one tick (111 ms). Without both, Safe Walk stopped
+        // right at the spike's edge and still got hit (verified live with a spike placed head-on).
+        const extraLead = Math.max(0, Latency.getActionLeadMs() - ScriptConfig.SERVER_UPDATE_SPEED);
+        const leadPos = Latency.predict(player, extraLead, this.leadBuffer);
+        const momentumX = player.next_position.x - realPos.x;
+        const momentumY = player.next_position.y - realPos.y;
+        const glideExtra = (1 / (1 - 0.993) - ScriptConfig.SERVER_UPDATE_SPEED) / ScriptConfig.SERVER_UPDATE_SPEED;
+        const shiftX = (leadPos.x - realPos.x) + momentumX * glideExtra;
+        const shiftY = (leadPos.y - realPos.y) + momentumY * glideExtra;
+
+        project.x += shiftX;
+        project.y += shiftY;
+        finalProjection.x += shiftX;
+        finalProjection.y += shiftY;
         const shouldIgnoreMyTeleports = Menu.getValue("safeWalkIgnoreMyTps");
         const safeWalkIgnoreAllyBoostPads = Menu.getValue("safeWalkIgnoreAllyBoostPads");
 
