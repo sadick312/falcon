@@ -34,6 +34,7 @@ bare `main` would have discarded all finished 1.8.2 work). Never commit to `main
 - Hook-mode detection by window.requestAnimFrame (not #gameCanvas); Insta Now expires after 30 ticks
 - Auto-break pre-tank at high ping: trap break @300ms 2116 -> 1447 ms median (root cause: Soldier/Tank flip, hat late)
 - Anti-insta @~405ms (Miami+200 sim): 16 instas, 0 deaths, no shame, min HP 12
+- Resource sprite cached per object: renderGameObjects 131 -> 64 us/frame
 - Packet rate in a real fight (22 hits, 32 heals): median 16/s, max 31/s; no kicks seen anywhere (raw probes ~33/s also fine)
 - Katana+Bow R-insta correctly does NOT fire on a full-HP Soldier target (60+25+25=110 x0.75 = 82.5 < 100); Polearm+Musket = 107 through Soldier
 - R-insta verified at ~95/~205/~305 ms: kills 2/1/2 (presses 5/2/9), 0 Falcon deaths
