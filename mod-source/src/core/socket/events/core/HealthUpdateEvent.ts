@@ -16,7 +16,8 @@ type HealthUpdatePacket = typeof PacketMap.SERVER_TO_CLIENT.UPDATE_HEALTH;
 export default class HealthUpdateEvent extends MessageHandler<HealthUpdatePacket> {
     private onHeal(player: Player, delta: number, newHealth: number) {
         // Only eating touches shame on the server; regen (Medic Gear, healing pad, ...) doesn't.
-        if (player.hitTimeMs && ShameRules.isFoodHeal(delta, newHealth, player.maxHealth)) {
+        // Our own shame is counted when we send the eat (ShameRules.onOwnEat), not here.
+        if (player.sid !== Client.mySID && player.hitTimeMs && ShameRules.isFoodHeal(delta, newHealth, player.maxHealth)) {
             const now = performance.now();
 
             if (ShameRules.wasShameEat(player, now)) {

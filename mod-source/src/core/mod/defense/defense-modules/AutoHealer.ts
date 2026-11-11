@@ -101,6 +101,30 @@ export default class AutoHealer {
         }, wait + 1);
     }
 
+    /** At or above this shame count, avoid emergency heals that would add shame (8 = 30 s no eating). */
+    static readonly HIGH_SHAME = 6;
+    /** Below this health we always eat immediately (one more realistic hit could kill). */
+    static readonly HIGH_SHAME_HP_FLOOR = 40;
+
+    /**
+     * Emergency heal. Normally immediate, but at high shame an instant eat right after a hit would
+     * push us toward Shame (live: repeated bull hits -> emergency heals -> Shame -> death). If we can
+     * survive until the shame-free moment (at most ~55 ms away), schedule that instead.
+     */
+    private static emergencyHeal(health: number, response: string) {
+        const player = Client.player;
+        const wait = ShameRules.msUntilSafeEat(player, Latency.getLowRtt());
+
+        if (wait > 0 && player.shameCount >= this.HIGH_SHAME && health > this.HIGH_SHAME_HP_FLOOR) {
+            this.healIfNoShame();
+            ModManager.brainState.healingResponse = `high-shame: ${ModManager.brainState.healingResponse}`;
+            return;
+        }
+
+        this.heal();
+        ModManager.brainState.healingResponse = response;
+    }
+
     static main(ctx: DefenseContext) {
         const player = Client.player;
         ModManager.brainState.healingInternal.currentHealth = player.health;
@@ -124,16 +148,14 @@ export default class AutoHealer {
         if (willDieIfDoNothing && alreadyForcedHat) {
             if (DefenseSystem.skinIndex === STORE_HAT_MAP.SOLDIER_HELMET) {
                 if (health - ctx.totalDamage * .75 <= 0) {
-                    this.heal();
-                    ModManager.brainState.healingResponse = "instant soldier + heal";
+                    this.emergencyHeal(health, "instant soldier + heal");
                     return;
                 } else {
                     ModManager.brainState.healingResponse = "instant soldier + no heal";
                     return;
                 }
             } else {
-                this.heal();
-                ModManager.brainState.healingResponse = "instant random hat + heal";
+                this.emergencyHeal(health, "instant random hat + heal");
                 return;
             }
         }
@@ -146,8 +168,7 @@ export default class AutoHealer {
                 DefenseSystem.skinIndex = STORE_HAT_MAP.SOLDIER_HELMET;
                 ModManager.brainState.healingResponse = "0shame soldier anti";
             } else {
-                this.heal();
-                ModManager.brainState.healingResponse = "instant heal";
+                this.emergencyHeal(health, "instant heal");
                 return;
             }
         }

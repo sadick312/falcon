@@ -31,6 +31,27 @@ export default class ShameRules {
     }
 
     /**
+     * Our own shame, counted when we SEND an eat. The server runs the shame rule for every eat it
+     * receives, even one that fails at full health (the check happens before the food is used), and
+     * a failed eat produces no health packet - so counting from health packets undercounted (live:
+     * Falcon thought 5 when the server applied Shame). The server sees our eat ~RTT after we saw
+     * the hit, so the gap it measures is (now - hit receive time) + RTT.
+     */
+    static onOwnEat(player: Pick<Player, "hitTimeMs" | "hitTime" | "shameCount">, rtt: number, now: number = performance.now()) {
+        if (!player.hitTimeMs) return;
+
+        if (now - player.hitTimeMs + rtt <= this.WINDOW_MS) {
+            player.shameCount++;
+            if (player.shameCount > 7) player.shameCount = 0; // 8th strike: server applies Shame and resets
+        } else {
+            player.shameCount = Math.max(0, player.shameCount - 2);
+        }
+
+        player.hitTime = 0;
+        player.hitTimeMs = 0;
+    }
+
+    /**
      * Milliseconds to wait before eating so it won't add shame. 0 = safe now.
      * Pass the lowest plausible RTT (riskiest case: the server sees our eat sooner).
      */

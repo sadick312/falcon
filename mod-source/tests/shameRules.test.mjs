@@ -29,3 +29,17 @@ test("wasShameEat: 120 ms window on packet receive times", () => {
     assert.equal(ShameRules.wasShameEat({ hitTimeMs: 1000 }, 1121), false);
     assert.equal(ShameRules.wasShameEat({ hitTimeMs: 0 }, 1100), false);
 });
+
+test("onOwnEat: counts at send time with RTT, including eats at full health", () => {
+    const p = { hitTimeMs: 1000, hitTime: 5, shameCount: 0 };
+    ShameRules.onOwnEat(p, 80, 1020);          // 20 ms after hit + 80 RTT = 100 <= 120 -> shame
+    assert.equal(p.shameCount, 1);
+    assert.equal(p.hitTimeMs, 0, "server clears its hit time on every eat");
+    ShameRules.onOwnEat(p, 80, 1030);          // no hit since last eat -> no change
+    assert.equal(p.shameCount, 1);
+    p.hitTimeMs = 2000; ShameRules.onOwnEat(p, 80, 2050); // 130 > 120 -> -2 (floored at 0)
+    assert.equal(p.shameCount, 0);
+    const q = { hitTimeMs: 1, hitTime: 1, shameCount: 7 };
+    ShameRules.onOwnEat(q, 50, 1);             // 8th strike -> server applies Shame and resets the count
+    assert.equal(q.shameCount, 0);
+});

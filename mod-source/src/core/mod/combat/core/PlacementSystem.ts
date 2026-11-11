@@ -1,3 +1,5 @@
+import ShameRules from "@core/mod/defense/utils/ShameRules";
+import Latency from "@core/mod/utils/Latency";
 import Keybinds from "@core/Keybinds";
 import Protocol from "@core/socket/Protocol";
 import GameObject from "@constants/GameObject";
@@ -146,6 +148,7 @@ export default class PlacementSystem {
 
         Client.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.SELECT_TO_BUILD, id, false);
         Client.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.SEND_HIT, 1, angle);
+        if (item.group.id === 0) ShameRules.onOwnEat(player, Latency.getRtt()); // food: server runs the shame rule
         CombatController.selectWeapon();
         return count;
     }
