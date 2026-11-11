@@ -1,8 +1,8 @@
 {
     "manifest_version": 3,
     "name": "Falcon Launcher",
-    "description": "try to take over the world!",
-    "version": "1.0.0",
+    "description": "Loads the Falcon client on sandbox.moomodding.io (bundled, MooMoo 1.8.2) and sandbox.moomoo.io (local backend).",
+    "version": "1.1.0",
     "action": {},
     "background": {
         "service_worker": "src/background.ts",
@@ -16,7 +16,8 @@
     ],
     "host_permissions": [
         "*://sandbox.moomoo.io/*",
-        "http://localhost:8080/*"
+        "http://localhost:8080/*",
+        "*://sandbox.moomodding.io/*"
     ],
     "content_scripts": [
         {

@@ -22,7 +22,8 @@
         "deploy:major": "npm run deploy -- major",
         "deploy:patch": "npm run deploy -- patch",
         "deploy:current": "npm run deploy -- current",
-        "quickinject": "npm run quickinject --workspace=mod-source"
+        "quickinject": "npm run quickinject --workspace=mod-source",
+        "launcher:build": "npm run quickinject && node mod-source/packaging/copy-to-launcher.mjs && npm run ext:build"
     },
     "dependencies": {
         "@msgpack/msgpack": "^3.1.3",

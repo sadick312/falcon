@@ -122,6 +122,59 @@
         });
     });
 
+    // --- sandbox.moomodding.io (MooMoo 1.8.2): load the Falcon build bundled inside this extension ---
+    // No backend or access token needed. The file is copied in by `npm run launcher:build`.
+    let bundledClient: string | null = null;
+
+    async function getBundledClient() {
+        if (bundledClient === null) {
+            const res = await fetch(chrome.runtime.getURL("falcon/falcon-quickinject.js"));
+            if (!res.ok) throw new Error("Bundled Falcon build missing - run `npm run launcher:build`.");
+            bundledClient = await res.text();
+        }
+        return bundledClient;
+    }
+
+    chrome.webNavigation.onCommitted.addListener(async (details) => {
+        if (!details.url.includes("sandbox.moomodding.io")) return;
+        if (details.frameId !== 0) return;
+
+        try {
+            const code = await getBundledClient();
+            await chrome.scripting.executeScript({
+                target: { tabId: details.tabId, frameIds: [details.frameId] },
+                injectImmediately: true,
+                world: "MAIN",
+                func: injectBundledClient,
+                args: [code]
+            });
+        } catch (e) {
+            console.error("[Falcon Launcher]", e);
+        }
+    });
+
+    function injectBundledClient(code: string) {
+        // Block the site's own game bundle before it runs (like Quick Inject's "bundle replacement").
+        const observer = new MutationObserver((mutations) => {
+            for (const mutation of mutations) {
+                mutation.addedNodes.forEach((node) => {
+                    const script = node as HTMLScriptElement;
+                    if (script.tagName === "SCRIPT" && script.src && script.src.includes("/assets/bundle.js")) {
+                        script.type = "javascript/blocked";
+                        script.remove();
+                    }
+                });
+            }
+        });
+        observer.observe(document.documentElement || document, { childList: true, subtree: true });
+        document.addEventListener("DOMContentLoaded", () => observer.disconnect(), { once: true });
+
+        const script = document.createElement("script");
+        script.textContent = code;
+        (document.head || document.documentElement).appendChild(script);
+        script.remove();
+    }
+
     function injectDynamicLoader(htmlContent: string, cssContent: string, jsContent: string) {
         (window as any).oldHTML = document.documentElement.innerHTML;
         document.documentElement.innerHTML = htmlContent;
