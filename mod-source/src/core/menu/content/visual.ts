@@ -50,6 +50,13 @@ export const visualSettings: IMenuItem[] = [{
         status: true
     }]
 }, {
+    label: "Original MooMoo Artwork",
+    id: "originalArtwork",
+    description: "On sandbox.moomodding.io, draws hats, accessories, weapons and arrows with the official MooMoo.io pictures (the look of the original Falcon), not moomodding's redrawn ones. The hotbar keeps the site's pictures. Takes effect after a page reload.",
+    icon: SHAME_HAT_ICON,
+    type: "toggle",
+    status: true
+}, {
     label: "Debugging Visuals",
     id: "",
     type: "group",

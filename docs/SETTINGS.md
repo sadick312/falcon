@@ -112,6 +112,7 @@ The **Favorites** tab lists the settings you starred; **Credits** has no setting
   - **Building Health Bars** (`buildingHealthBar`, toggle, default: on) — Draws health bars on buildings.
     - **Always Show** (`buildingHealthAlwaysShow`, toggle, default: off) — Render health bars regardless if the object has taken damage or not.
   - **Draw Building Overlay** (`buildingOverlay`, toggle, default: on) — Draws indicators that tell if a building is friendly or not.
+- **Original MooMoo Artwork** (`originalArtwork`, toggle, default: on) — On sandbox.moomodding.io, draws hats, accessories, weapons and arrows with the official MooMoo.io pictures (the look of the original Falcon), not moomodding's redrawn ones. The hotbar keeps the site's pictures. Takes effect after a page reload.
 - **Debugging Visuals** (group) — Modules that help with debugging the mod's features.
   - **Render Placement** (`renderPlacements`, toggle, default: on) — Draws ghost objects to where we'll place.
   - **Render Packet Count** (`renderPacketCounter`, toggle, default: on) — Draws a packet counter on top of the player.
