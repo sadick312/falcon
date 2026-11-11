@@ -45,16 +45,16 @@ bare `main` would have discarded all finished 1.8.2 work). Never commit to `main
 - Docs: README Quick Inject section, docs/TEST_CHECKLIST.md (146 lines)
 
 ## Next up
-1. Auto-place: why 4 trap selects sent but the bot saw 0 traps appear (server reject? blocked spot?) - use falconDebug.autoPlace/itemSelects; fix approach harness (bot gets stuck at 60-85 px)
-2. High-ping (~300ms) trap-break + turret EMP redo (bot placement kept failing)
-3. Launcher extension live test; 30-min session memory/FPS
-4. Reload start lag (`tick - lastHit > 1`): verify vs server and with ping
-5. Predicted-damage over-estimate (assumed musket+turret+spike) → too many emergency heals; consider confidence per source
-6. Auto-place: verify trap/spike angles live (bot victim, count traps landing on target)
-7. Target selection: nearest by distance only — consider threat-weighted (health, trapped)
-8. Combo edge cases: target dies / leaves range mid-combo (live)
-9. ProjectileManager projFired 4-tick setTimeout → tick-based
-10. Combo edge cases live: target dies mid-combo / leaves range mid-combo
+1. Round 2 (deeper): shame safety margin from measured jitter instead of fixed 15 ms
+2. Replacer: verify auto-replace of broken traps/spikes live (needs trap-break by bot)
+3. Spike Tick / Auto Push: need spikes near a trapped enemy - build a harness (bot traps itself? use Falcon traps)
+4. Target selection: prefer trapped/low-HP enemies for instas when several are near (needs 2 enemies: IP limit 2 - blocked)
+5. Melee/Projectile Sync: needs a Falcon teammate (blocked: IP limit)
+6. postMessage polling in PacketBatcher/TaskScheduler (~1 ms/s): replace busy re-post loop with a single microtask/timeout
+7. Debug overlay: show placement counters (autoPlace best/allowed, itemSelects)
+8. Code quality: AttackManager/CombatController size; extract shared "ready on arrival" style helpers if reused
+9. Re-run full regression (stage2 all-on/all-off, insta, hammer) after every ~10 commits
+10. Keep Desktop deliverables refreshed at milestones
 
 ## Feature review tracker (round 1)
 - Ping: measurement ✓, display ✓, prediction ✓, lag spikes ✓, compensation ✓, shame timing ✓, turret lead ✓, safe walk ✓
