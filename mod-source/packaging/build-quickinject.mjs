@@ -63,7 +63,9 @@ ${bundle}
     }
 
     function boot() {
-        if (document.getElementById("gameCanvas")) {
+        // window.requestAnimFrame is created only by the site's game script, so it tells us the
+        // normal game really ran (the #gameCanvas element exists in the HTML either way).
+        if (typeof window.requestAnimFrame === "function") {
             console.warn("[Falcon] The normal game is also running (hook mode). It will be disconnected, but for " +
                 "best performance choose 'bundle replacement' or 'HTML replacement' in Quick Inject.");
             closeVanillaSocket();
