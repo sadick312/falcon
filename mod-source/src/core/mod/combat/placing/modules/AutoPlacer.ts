@@ -1,3 +1,4 @@
+import DebugStats from "@core/DebugStats";
 import getDistSq from "@utils/geometry/getDistSq";
 import Latency from "@core/mod/utils/Latency";
 import Player from "@constants/Player";
@@ -43,7 +44,7 @@ export class Preplacement {
 
 export default class AutoPlacer extends Placer {
     /** Last execute(): spots chosen and placements the packet budget allowed (for Debug / tests). */
-    static lastDecision = { best: 0, allowed: 0 };
+    static lastDecision = DebugStats.autoPlace;
 
     private finderOptions: FinderOptions = { grade: true };
     private cachedBestAngles: Angle[] = Array.from({ length: 4 }, () => new Angle(-1, -1, -1, -1, -1));

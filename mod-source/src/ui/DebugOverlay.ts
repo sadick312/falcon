@@ -1,4 +1,3 @@
-import AutoPlacer from "@placing/modules/AutoPlacer";
 import items from "@constants/items";
 import { accessoryMap, hatMap } from "@constants/store";
 import Client from "@core/Client";
@@ -82,7 +81,7 @@ export default class DebugOverlay {
                 `In control: attack=${AttackManager.currentAttackAction?.reason ?? "-"} | combat=${CombatController.currentMode} | forced hat=${DefenseSystem.skinIndex >= 0 ? this.name(DefenseSystem.skinIndex, "hat") : "-"}`,
                 `Heal: ${ModManager.brainState.healingResponse} | predicted dmg ${Math.round(ModManager.brainState.totalDamage)}`,
                 `Activity: ${ModManager.brainState.activityList.slice(0, 6).join(", ") || "-"}`,
-                `Auto Place: ${AutoPlacer.lastDecision.best} spots, ${AutoPlacer.lastDecision.allowed} allowed | items sent: ${Object.entries(DebugStats.itemSelects).map(([id, n]) => `${items.list[+id]?.name ?? id} x${n}`).join(", ") || "-"}`,
+                `Auto Place: ${DebugStats.autoPlace.best} spots, ${DebugStats.autoPlace.allowed} allowed | items sent: ${Object.entries(DebugStats.itemSelects).map(([id, n]) => `${items.list[+id]?.name ?? id} x${n}`).join(", ") || "-"}`,
             );
         } else {
             lines.push(Client.socket ? "Not spawned / dead" : "Not connected");

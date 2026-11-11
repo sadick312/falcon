@@ -16,6 +16,9 @@ export default class DebugStats {
     /** Item selections sent ("z" with isWeapon=false), per item id: shows what Falcon tries to place/eat. */
     static itemSelects: Record<number, number> = {};
 
+    /** Latest Auto Place decision, written by AutoPlacer (kept here so the overlay needs no AutoPlacer import). */
+    static autoPlace = { best: 0, allowed: 0 };
+
     static onSent(type: string, data: unknown[]) {
         this.sentTotal++;
         if (type === "z" && data[1] === false) {
