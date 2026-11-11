@@ -41,6 +41,9 @@ export class Preplacement {
 }
 
 export default class AutoPlacer extends Placer {
+    /** Last execute(): spots chosen and placements the packet budget allowed (for Debug / tests). */
+    static lastDecision = { best: 0, allowed: 0 };
+
     private finderOptions: FinderOptions = { grade: true };
     private cachedBestAngles: Angle[] = Array.from({ length: 4 }, () => new Angle(-1, -1, -1, -1, -1));
     private cachedBestAnglesCount = 0;
@@ -170,6 +173,8 @@ export default class AutoPlacer extends Placer {
         }
 
         const totalActions = PacketTracker.request("PLACE", bestAnglesCount - offset, requirePadding);
+        AutoPlacer.lastDecision.best = bestAnglesCount;
+        AutoPlacer.lastDecision.allowed = totalActions;
         for (let i = 0, len = Math.min(bestAnglesCount, totalActions); i < len; i++) {
             const item = bestAngles[i];
             if (this.shouldSkip(item)) continue;
