@@ -44,6 +44,7 @@ export default function installDebugApi(force = false) {
             return { candidates: c.length, chosen: PlacementSystem.bestAngles.length, top: c.slice(0, 4).map(a => [a.id, Math.round(a.grade * 100) / 100]) };
         },
         get autoPlace() { return { ...AutoPlacer.lastDecision }; },
+        get packets() { return { sent: DebugStats.sentTotal, received: DebugStats.receivedTotal }; },
         get itemSelects() { return { ...DebugStats.itemSelects }; },
         get collapsedUpdates() { return PlayerUpdateEvent.collapsedUpdates; },
         /** What Falcon believes player `sid` carries (primary/secondary, confirmed or assumed) and reload state. */
