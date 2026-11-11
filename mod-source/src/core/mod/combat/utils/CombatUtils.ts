@@ -12,8 +12,9 @@ import ScriptConfig from "@utils/config/ScriptConfig";
 import lineInRect from "@utils/geometry/lineInRect";
 
 export default class CombatUtils {
+    /** Primaries worth fighting with (>= 35 dmg). Great Axe = Short Sword damage (35), so it counts too. */
     static isAttackPrimary(id: number) {
-        return WEAPON_ID_MAP.SHORT_SWORD === id || WEAPON_ID_MAP.KATANA === id || WEAPON_ID_MAP.POLEARM === id;
+        return WEAPON_ID_MAP.SHORT_SWORD === id || WEAPON_ID_MAP.KATANA === id || WEAPON_ID_MAP.POLEARM === id || WEAPON_ID_MAP.GREAT_AXE === id;
     }
 
     static isAntiBullablePrimary(id: number) {
