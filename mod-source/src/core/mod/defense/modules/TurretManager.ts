@@ -24,13 +24,22 @@ export default class TurretManager {
             return;
         }
 
-        const closestAI = ais.all.sort((a, b) => getDistSq(a.real_position, turret) - getDistSq(b.real_position, turret))[0];
-        const closestEnemy = PlayerManager.players.visible.all
-            .filter((e) => !Client.isTeam(e, turret.ownerSID ?? -1) && e.skinIndex !== STORE_HAT_MAP.EMP_HELMET)
-            .sort((a, b) => getDistSq(a.real_position, turret) - getDistSq(b.real_position, turret))[0];
+        // Linear scans: the old code sorted ais.all *in place*, which scrambled the entity list
+        // that EntityHandler.remove() indexes into (wrong animals removed, ghosts left behind).
+        let closestAI: (typeof ais.all)[number] | undefined;
+        let closestAiDistance = Infinity;
+        for (const ai of ais.all) {
+            const d = getDistSq(ai.real_position, turret);
+            if (d < closestAiDistance) { closestAiDistance = d; closestAI = ai; }
+        }
 
-        const closestEnemyDistance = closestEnemy ? getDistSq(closestEnemy.real_position, turret) : Infinity;
-        const closestAiDistance = closestAI ? getDistSq(closestAI.real_position, turret) : Infinity;
+        let closestEnemy: Player | undefined;
+        let closestEnemyDistance = Infinity;
+        for (const e of PlayerManager.players.visible.all) {
+            if (Client.isTeam(e, turret.ownerSID ?? -1) || e.skinIndex === STORE_HAT_MAP.EMP_HELMET) continue;
+            const d = getDistSq(e.real_position, turret);
+            if (d < closestEnemyDistance) { closestEnemyDistance = d; closestEnemy = e; }
+        }
         const closest = !isFinite(closestAiDistance) ? closestEnemy : closestEnemyDistance >= closestAiDistance ? closestEnemy : closestAI;
 
         if (!isFinite(closestEnemyDistance) && !isFinite(closestAiDistance)) return;
