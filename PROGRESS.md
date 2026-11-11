@@ -37,7 +37,7 @@ bare `main` would have discarded all finished 1.8.2 work). Never commit to `main
 - Docs: README Quick Inject section, docs/TEST_CHECKLIST.md (146 lines)
 
 ## Next up
-1. Musket real-fight hit count: redo with R pressed only when not armed (use falconDebug.instaArmed)
+1. Auto-place approach test (running): count Falcon traps that catch an approaching bot
 2. High-ping (~300ms) trap-break + turret EMP redo (bot placement kept failing)
 3. Launcher extension live test; 30-min session memory/FPS
 4. Reload start lag (`tick - lastHit > 1`): verify vs server and with ping
@@ -66,6 +66,7 @@ bare `main` would have discarded all finished 1.8.2 work). Never commit to `main
 - High-shame emergency: defer to safe heal when HP > 40 (one musket through soldier = 37.5) > always instant (spirals into Shame)
 
 ## Tried, didn't work
+- Musket real-fight count (armed-aware R, strafing bot @~180px): only 2-5 instas per 75 s because the bot sits at the polearm range edge; inconclusive, dropped (aim accuracy measured separately: 82% vs 13% @205ms)
 - Ping-lead "ready on arrival" for tank spam / auto-break / object breaker: no change (trap break 2116 vs 2114 ms @300, 1335 vs 1335 @95) -> reverted
 - Musket strafe test pressing R every 1.7 s: R is a toggle, so it disarmed half the time; only 1-3 instas/run (inconclusive)
 - Chrome offline mode to drop WS in tests (doesn't close existing sockets) → close via send hook
