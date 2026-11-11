@@ -34,6 +34,7 @@ bare `main` would have discarded all finished 1.8.2 work). Never commit to `main
 - Hook-mode detection by window.requestAnimFrame (not #gameCanvas); Insta Now expires after 30 ticks
 - Auto-break pre-tank at high ping: trap break @300ms 2116 -> 1447 ms median (root cause: Soldier/Tank flip, hat late)
 - Anti-insta @~405ms (Miami+200 sim): 16 instas, 0 deaths, no shame, min HP 12
+- One Tick: correctly refuses with stone weapons (needs Diamond Polearm/Ruby Katana: 45*1.18*1.5+25=104.7 >= 100); live test needs ~7000 weapon XP (not done)
 - Auto Mill verified live: 72 mill packets -> 65 mills placed in 3-wide lanes (also: sandbox accepted 65 mills, normal limit 7)
 - Auto-place angle search skipped with no enemy within 800px: brain 69 -> 41 us/frame idle
 - Resource sprite cached per object: renderGameObjects 131 -> 64 us/frame
@@ -57,7 +58,7 @@ bare `main` would have discarded all finished 1.8.2 work). Never commit to `main
 
 ## Feature review tracker (round 1)
 - Ping: measurement ✓, display ✓, prediction ✓, lag spikes ✓, compensation ✓, shame timing ✓, turret lead ✓, safe walk ✓
-- Combat: reload ✓, ranges ✓, insta R ✓ (live), aim lead ✓ (accuracy measured), musket live hits ⏳, one-tick ✗, spike tick ✗, melee/proj sync ✗, auto push ✗
+- Combat: reload ✓, ranges ✓, insta R ✓ (live), aim lead ✓ (accuracy measured), musket live hits ⏳, one-tick ✓ (logic; live needs diamond weapon), spike tick ✗, melee/proj sync ✗, auto push ✗
 - Defense: heal ✓, anti-insta ✓, turret ✓, trap break ✓, safe walk ✓, anti-bull ✓ (live), shame spiral ✓, auto place ⏳, replacer ✗, auto mill ✓ (live)
 - Other: hats ✓, keybinds ✓, settings ✓, perf ✓ (profiled), debug ✓
 
