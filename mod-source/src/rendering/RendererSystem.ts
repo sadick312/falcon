@@ -105,6 +105,7 @@ export default class RendererSystem {
                 PacketReplayer.update(delta);
 
             this.updateFPS();
+            RendererUtils.spinHats = Menu.getValue("classicHats") !== false;
 
             const player = Client.player;
             if (player) this.updateDirection(now);

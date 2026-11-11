@@ -347,6 +347,9 @@ export default class RendererUtils {
         mainContext.stroke();
     }
 
+    /** "Classic Hats" menu toggle (read once per frame in RendererSystem, not per hat). */
+    static spinHats = true;
+
     static accessSprites: Record<number, HTMLImageElement> = {};
     static accessPointers: Record<number, Accessory> = {};
 
@@ -378,7 +381,7 @@ export default class RendererUtils {
             mainContext.save();
             mainContext.translate(-20 - (tmpObj.xOff ?? 0), 0);
             // Same as the game: "spin" accessories (Sawblade) rotate with the player's skin timer.
-            if (tmpObj.spin) mainContext.rotate(owner.skinRot);
+            if (tmpObj.spin && this.spinHats) mainContext.rotate(owner.skinRot);
             mainContext.drawImage(tmpAccessory, -tmpObj.scale / 2, -tmpObj.scale / 2, tmpObj.scale, tmpObj.scale);
             mainContext.restore();
         }
@@ -419,7 +422,7 @@ export default class RendererUtils {
 
         if (!parent && tmpObj.topSprite) {
             mainContext.save();
-            mainContext.rotate(owner.skinRot);
+            if (this.spinHats) mainContext.rotate(owner.skinRot);
             this.renderSkin(id, mainContext, owner, tmpObj, true);
             mainContext.restore();
         }

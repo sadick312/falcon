@@ -1115,6 +1115,13 @@ export const menuContent: IMenuContent = {
         type: "toggle",
         icon: NAME_TAG_ICON,
         status: true
+    }, {
+        label: "Classic Hats",
+        id: "classicHats",
+        description: "On: hats and accessories look exactly like the original MooMoo.io game (same sprites, sizes, offsets, layering; Turret Gear, Windmill Hat, Spike Gear and Sawblade spin). Off: same look but spinning parts stay still.",
+        type: "toggle",
+        icon: NAME_TAG_ICON,
+        status: true
     }],
     console: [{
         label: "",
