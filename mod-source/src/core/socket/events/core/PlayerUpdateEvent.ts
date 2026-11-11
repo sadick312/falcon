@@ -283,8 +283,9 @@ export default class PlayerUpdateEvent extends MessageHandler<UpdatePlayerPacket
         // used to fix healing issues and stuff :)
 
         ModManager.main();
-        if (Client.socket instanceof FakeSocket)
-            console.log(ModManager.brainState);
+        // Replays: log the brain each tick only in Debug Mode (it flooded the console otherwise).
+        if (Client.socket instanceof FakeSocket && Menu.getValue("debugMode"))
+            console.debug(ModManager.brainState);
 
         for (const e of ModManager.enemyData.all) e.damages.length = 0;
     }

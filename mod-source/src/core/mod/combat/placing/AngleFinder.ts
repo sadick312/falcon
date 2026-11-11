@@ -104,6 +104,7 @@ export default class AngleFinder {
     static angleBuffer: Angle[] = Array.from({ length: this.HIGHEST_ANGLE_COUNT }, () => new Angle(0, 0, 0, 0, 0));
 
     private static readonly MAX_INTERVALS = 30; // a estimate
+    private static warnedOverflow = false;
     private static tmpBuffer = new Float32Array(AngleFinder.MAX_INTERVALS * 2);
 
     private static data: FinderComputeContext = {
@@ -542,7 +543,10 @@ export default class AngleFinder {
             if (!gameObject || !gameObject.active || gameObject.isGhost) continue;
 
             if (ctx.spike.rawIndex >= AngleFinder.MAX_INTERVALS * 2 || ctx.trap.rawIndex >= AngleFinder.MAX_INTERVALS * 2) {
-                console.log("raw interval has gone beyond 30 (basic fix: should increase the buffer)");
+                if (!AngleFinder.warnedOverflow) {
+                    AngleFinder.warnedOverflow = true;
+                    console.warn("[Falcon] AngleFinder: more than 30 intervals; extra objects ignored (increase MAX_INTERVALS).");
+                }
                 break;
             }
 
