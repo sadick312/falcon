@@ -17,6 +17,7 @@ import PacketMap from "@root/utils/socket/PacketMap";
 import ScriptConfig from "@utils/config/ScriptConfig";
 import getDistSq from "@utils/geometry/getDistSq";
 import { isInWater } from "@constants/world";
+import PingTracker from "@core/mod/utils/PingTracker";
 
 export default class HatSystem {
     /** Soldier helmet against most weapons only when the enemy is this close. */
@@ -36,6 +37,21 @@ export default class HatSystem {
     static reset() {
         this.needTick = 0;
         this.stopMoveDuration = 0;
+        this.pendingHat.id = this.pendingAcc.id = -1;
+    }
+
+    /** Remember Sent Equips: the last equip sent for each slot and its tick, until the server shows it on. */
+    private static readonly pendingHat = { id: -1, tick: 0 };
+    private static readonly pendingAcc = { id: -1, tick: 0 };
+
+    /**
+     * Whether `id` was sent for this slot recently enough that the server's report of it may still be coming: within the
+     * ticks our ping takes (at least one), plus one tick of grace. Only with Remember Sent Equips on.
+     */
+    private static onItsWay(pending: { id: number; tick: number }, id: number) {
+        if (pending.id !== id || !Menu.getValue("rememberSentEquips")) return false;
+        const ticksOfPing = Math.max(1, Math.ceil(PingTracker.getStablePing() / ScriptConfig.SERVER_UPDATE_SPEED));
+        return tickState.tick - pending.tick <= ticksOfPing + 1;
     }
 
     /** Which rule of the classic contract picked this tick's hat and accessory (shown by the Hat Debug overlay). */
@@ -362,8 +378,13 @@ export default class HatSystem {
         const player = Client.player;
         const pool = isAccessory ? player.tails : player.skins;
         const curr = isAccessory ? player.tailIndex : player.skinIndex;
+        const pending = isAccessory ? this.pendingAcc : this.pendingHat;
+        if (curr === pending.id) pending.id = -1; // the server shows it: no longer on its way
 
         if ((id === 0 || pool[id]) && curr !== id) {
+            if (this.onItsWay(pending, id)) return;
+            pending.id = id;
+            pending.tick = tickState.tick;
             this.sentHatPacket = true;
             Client.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.STORE, false, id, isAccessory);
             if (isAccessory) tickState.brainState.accUsed = id;
@@ -377,7 +398,10 @@ export default class HatSystem {
         // The hat we want isn't owned. Keep the current one (it used to come off, even soldier helmet), unless it has a
         // downside worth dropping: bull helmet drains health, tank gear and turret gear slow us.
         if (!isAccessory && !this.HATS_TO_DROP.has(curr)) return;
+        if (this.onItsWay(pending, 0)) return;
 
+        pending.id = 0;
+        pending.tick = tickState.tick;
         this.sentHatPacket = true;
         Client.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.STORE, false, 0, isAccessory);
 

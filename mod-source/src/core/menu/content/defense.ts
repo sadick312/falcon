@@ -61,6 +61,13 @@ export const defenseSettings: IMenuItem[] = [{
         type: "toggle",
         status: false
     }, {
+        label: "Remember Sent Equips",
+        id: "rememberSentEquips",
+        description: "Doesn't send the same hat or accessory again while the last one is still on its way to the server (useful above ~110 ms ping). Saves packets and lets the accessory go out sooner. Which items are worn doesn't change.",
+        icon: SHIELD_ICON,
+        type: "toggle",
+        status: false
+    }, {
         label: "Blood Wings Optimizations",
         id: "bloodWingsOptimizations",
         description: "While hurt, wears Blood Wings for melee hits on enemies (heals 20% of the damage, without shame). At 4+ shame, Auto Heal lets such a hit heal instead of eating.",
