@@ -4,7 +4,7 @@ Branch: `auto-improve` (created from `fix/1.8.2-overhaul` tip, which branched of
 bare `main` would have discarded all finished 1.8.2 work). Never commit to `main`.
 
 ## Current task in progress
-- High-ping (~300ms sim) trap-break + turret EMP redo; then launcher extension live test, 30-min session.
+- 30-min session running (bg). UNCOMMITTED: CombatController.isReadyOnArrival (ping-lead for tank spam / auto-break / object breaker) - needs live trap A/B at ~300ms (baseline: 2.1 s median) before commit.
 
 ## Done (one line each)
 - 1.8.2 protocol (plain msgpack, LegacyAdapter for "a"/"I"), moomodding server list, WebSocket wrapper fix
@@ -29,6 +29,9 @@ bare `main` would have discarded all finished 1.8.2 work). Never commit to `main
 - Own shame counted at eat send (server counts failed eats too); high-shame (>=6, HP>40) defers emergency heals → bull spam: 0 deaths, never Shamed (was Shamed + died)
 - Auto Upgrade weapon builds verified live ([5,15],[4,10],[4,9],[5,10]); upgrade retry if same age re-offered
 - Classic Hats toggle (spin/static)
+- High-ping (~300ms) verified: turret 0 shots/0 hits; trap break works (2.1 s median vs 1.3 s at ~95ms)
+- Launcher extension verified live (install via CDP with puppeteer-core 24 `installExtension`; Chrome 157 ignores --load-extension)
+- Hook-mode detection by window.requestAnimFrame (not #gameCanvas); Insta Now expires after 30 ticks
 - Docs: README Quick Inject section, docs/TEST_CHECKLIST.md (146 lines)
 
 ## Next up
@@ -78,4 +81,5 @@ bare `main` would have discarded all finished 1.8.2 work). Never commit to `main
 - Protocol switch: core/socket/Protocol.ts; 1.8.2 reshaping: LegacyAdapter.ts
 - Ping: core/mod/utils/Latency.ts + PingTracker.ts; hats: RendererUtils.renderSkin/renderTail; hat arbiter: HatSystem.fetchBestHat
 - IP limit: ~2 connections per IP on moomodding; never run two live tests at once
+- Extension tests: scratchpad/e2e-ext (puppeteer-core 24, pipe:true, enableExtensions:true, browser.installExtension)
 - Python edits: use String.fromCharCode(10) for "\n" in JS strings written via heredocs
