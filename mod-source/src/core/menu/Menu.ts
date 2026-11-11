@@ -679,6 +679,28 @@ export const menuContent: IMenuContent = {
             `,
             status: true,
             settings: [{
+                label: "Weapon Build",
+                id: "weaponBuild",
+                type: "select",
+                description: "Which weapons Auto Upgrade picks. Katana and Musket can't be combined in 1.8.2 (they need the same age-8 upgrade).",
+                options: [{
+                    label: "Manual (pick weapons yourself)",
+                    value: "manual"
+                }, {
+                    label: "Polearm + Musket",
+                    value: "polearmMusket"
+                }, {
+                    label: "Katana + Great Hammer",
+                    value: "katanaHammer"
+                }, {
+                    label: "Katana + Hunting Bow",
+                    value: "katanaBow"
+                }, {
+                    label: "Polearm + Great Hammer",
+                    value: "polearmHammer"
+                }],
+                status: "manual"
+            }, {
                 label: "7th Slot",
                 id: "7thSlot",
                 type: "select",
