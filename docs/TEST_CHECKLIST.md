@@ -75,7 +75,7 @@ Tip: many combat/anti tests need a second player. A friend in another browser/PC
 | ☐ | Clan menu | Clan button: create / join / leave | Works like the normal game |
 | ☐ | Auto Upgrade | Turn on, spawn | Cookie / Trap / Greater Spikes / 7th slot picked automatically |
 
-## 4b. Katana and Musket
+## 4b. Katana, Musket, Axe and other builds
 Set Menu > Utility > Auto Upgrade > **Weapon Build** to get the weapons quickly (sandbox spawns at age 10).
 | ✔ | Test | What to do | What should happen |
 |---|---|---|---|
@@ -92,6 +92,12 @@ Set Menu > Utility > Auto Upgrade > **Weapon Build** to get the weapons quickly 
 | ☐ | Musket: far hit | Enemy standing still ~600-1000 units away, shoot with aim | Bullet reaches and hits |
 | ☐ | Musket: moving target | Press R on an enemy running sideways | Musket still hits most of the time (aim leads the target by your ping) |
 | ☐ | Can't have both | Try to take Katana and Musket | Impossible in 1.8.2: Katana and Crossbow are both age 8 and the Musket needs the Crossbow |
+| ☐ | Build: Short Sword + Musket | Weapon Build = Short Sword + Musket, spawn | Hotbar: Short Sword + Musket (closest legal build to Katana + Musket) |
+| ☐ | Build: Hand Axe + Musket | Weapon Build = Hand Axe + Musket, spawn | Hotbar: Hand Axe + Musket |
+| ☐ | Build: Polearm + Repeater | Weapon Build = Polearm + Repeater Crossbow, spawn | Hotbar: Polearm + Repeater Crossbow (fast shots, 0.23 s reload) |
+| ☐ | Build: Great Axe + Hammer | Weapon Build = Great Axe + Great Hammer, spawn | Hotbar: Great Axe + Great Hammer |
+| ☐ | Build: Great Axe + Bow | Weapon Build = Great Axe + Hunting Bow, spawn | Hotbar: Great Axe + Hunting Bow |
+| ☐ | Great Axe combat | Great Axe build, enemy trapped next to spikes / Bull Helmet enemy near you | Spike tick and anti-bull work like with Short Sword (Great Axe counts as an attack weapon) |
 
 ## 4c. Enemies using Katana / Musket
 | ✔ | Test | What to do | What should happen |

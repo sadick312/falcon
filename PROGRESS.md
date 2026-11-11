@@ -46,6 +46,11 @@ bare `main` would have discarded all finished 1.8.2 work). Never commit to `main
 - Full regression @6a301d7: all-on + all-off join/reconnect/change server 0 errors; hammer 39 hits 0 deaths; insta 10 attempts 0 deaths, never Shamed
 - Boot fix: an import of AutoPlacer in DebugOverlay caused an import cycle ("AutoPlacer is not a constructor" at load) -> overlay reads DebugStats instead
 - Boot smoke test (tests/bundleBoot.test.mjs): runs the whole bundle in a fake browser; fails on import-cycle load errors (verified against the real bug); 18 tests pass; tsc --noEmit clean
+- New builds (core/events/weaponBuilds.ts): Short Sword/Hand Axe + Musket, Polearm + Repeater, Great Axe + Hammer/Bow; all 5 verified live (weapons [3,15] [1,15] [5,13] [2,10] [2,9]); test checks every build is legal
+- Great Axe counts as attack primary (spike tick, velocity, apple insta, anti-bull)
+- npm test runs tsc first (caught a TDZ name clash that would have crashed Auto Upgrade at age 8)
+- Hook mode: 0 vanilla console errors (hidden actionBarItem stand-ins; vanilla pings dropped after close) - verified 6 loads + 20 s in game
+- New harness home: C:/Users/sarip/falcon-e2e (bootcheck.mjs, joincheck.mjs; Falcon alone, no bots)
 - Docs: README Quick Inject section, docs/TEST_CHECKLIST.md (146 lines)
 
 ## Next up
