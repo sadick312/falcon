@@ -1,3 +1,4 @@
+import AttackManager from "@core/mod/combat/core/AttackManager";
 import PlayerManager from "@core/logic/players/PlayerManager";
 import PlayerUpdateEvent from "@core/socket/events/core/PlayerUpdateEvent";
 import Latency from "@core/mod/utils/Latency";
@@ -32,6 +33,8 @@ export default function installDebugApi(force = false) {
         get ping() { return { median: PingTracker.getMedianPing(), min: PingTracker.getMinPing(), jitter: PingTracker.getJitter(), rtt: Latency.getRtt(), lead: Latency.getActionLeadMs(), lagging: Latency.isLagging() }; },
         get activity() { return [...ModManager.brainState.activityList]; }, // last completed tick
         get brain() { return ModManager.brainState; },
+        /** True while Insta Now (R) is armed and waiting for a chance to fire. */
+        get instaArmed() { return AttackManager.autoInstaToggle; },
         get collapsedUpdates() { return PlayerUpdateEvent.collapsedUpdates; },
         /** What Falcon believes player `sid` carries (primary/secondary, confirmed or assumed) and reload state. */
         weaponData(sid: number) {

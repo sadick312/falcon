@@ -4,7 +4,7 @@ Branch: `auto-improve` (created from `fix/1.8.2-overhaul` tip, which branched of
 bare `main` would have discarded all finished 1.8.2 work). Never commit to `main`.
 
 ## Current task in progress
-- Live musket hit test (strafe, comp on/off @ Miami) running; then high-ping trap/turret redo, launcher extension live test, 30-min session.
+- Anti-bull live test (bullspam bot, antiBull on/off) running; next: high-ping trap/turret redo, launcher extension live test, 30-min session.
 
 ## Done (one line each)
 - 1.8.2 protocol (plain msgpack, LegacyAdapter for "a"/"I"), moomodding server list, WebSocket wrapper fix
@@ -24,10 +24,11 @@ bare `main` would have discarded all finished 1.8.2 work). Never commit to `main
 - Perf: name/label sprite cache, grid loop start, ais.all in-place sort bug, instant movement (0.2ms input lag)
 - Safe Walk ping + glide aware (0 hits head-on at ~95 and ~205ms)
 - Auto Upgrade weapon builds (Katana / Polearm+Musket), Classic Hats toggle, Falcon Launcher bundles build
+- Bow-insta detection tick-based (no fixed 444 ms timer); all remaining timers are ping-computed or UI-only
 - Docs: README Quick Inject section, docs/TEST_CHECKLIST.md (146 lines)
 
 ## Next up
-1. Finish live musket hit test; tune projectile aim if comp-on isn't clearly better
+1. Musket real-fight hit count: redo with R pressed only when not armed (use falconDebug.instaArmed)
 2. High-ping (~300ms) trap-break + turret EMP redo (bot placement kept failing)
 3. Launcher extension live test; 30-min session memory/FPS
 4. Reload start lag (`tick - lastHit > 1`): verify vs server and with ping
@@ -52,6 +53,7 @@ bare `main` would have discarded all finished 1.8.2 work). Never commit to `main
 - Hat style toggle: spin/static (real difference) > fake "old style" (vanilla already exact)
 
 ## Tried, didn't work
+- Musket strafe test pressing R every 1.7 s: R is a toggle, so it disarmed half the time; only 1-3 instas/run (inconclusive)
 - Chrome offline mode to drop WS in tests (doesn't close existing sockets) → close via send hook
 - page.screenshot clip on vanilla page (black) → full screenshots + CSS crop
 
