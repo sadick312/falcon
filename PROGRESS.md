@@ -4,7 +4,7 @@ Branch: `auto-improve` (created from `fix/1.8.2-overhaul` tip, which branched of
 bare `main` would have discarded all finished 1.8.2 work). Never commit to `main`.
 
 ## Current task in progress
-- 30-min session running (bg). UNCOMMITTED: CombatController.isReadyOnArrival (ping-lead for tank spam / auto-break / object breaker) - needs live trap A/B at ~300ms (baseline: 2.1 s median) before commit.
+- Investigate slow trap break at high ping (2.1 s @300 vs 1.3 s @95): log per-hit damage + Falcon hat at hit time (suspect Soldier/Tank flip so hits land without Tank).
 
 ## Done (one line each)
 - 1.8.2 protocol (plain msgpack, LegacyAdapter for "a"/"I"), moomodding server list, WebSocket wrapper fix
@@ -32,6 +32,7 @@ bare `main` would have discarded all finished 1.8.2 work). Never commit to `main
 - High-ping (~300ms) verified: turret 0 shots/0 hits; trap break works (2.1 s median vs 1.3 s at ~95ms)
 - Launcher extension verified live (install via CDP with puppeteer-core 24 `installExtension`; Chrome 157 ignores --load-extension)
 - Hook-mode detection by window.requestAnimFrame (not #gameCanvas); Insta Now expires after 30 ticks
+- 31-min session: 60 FPS, 0 errors, heap 8->11 MB (plateaus after ~10 min), DOM flat
 - Docs: README Quick Inject section, docs/TEST_CHECKLIST.md (146 lines)
 
 ## Next up
@@ -64,6 +65,7 @@ bare `main` would have discarded all finished 1.8.2 work). Never commit to `main
 - High-shame emergency: defer to safe heal when HP > 40 (one musket through soldier = 37.5) > always instant (spirals into Shame)
 
 ## Tried, didn't work
+- Ping-lead "ready on arrival" for tank spam / auto-break / object breaker: no change (trap break 2116 vs 2114 ms @300, 1335 vs 1335 @95) -> reverted
 - Musket strafe test pressing R every 1.7 s: R is a toggle, so it disarmed half the time; only 1-3 instas/run (inconclusive)
 - Chrome offline mode to drop WS in tests (doesn't close existing sockets) → close via send hook
 - page.screenshot clip on vanilla page (black) → full screenshots + CSS crop
