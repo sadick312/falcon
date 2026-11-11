@@ -27,6 +27,14 @@ import withinDist from "@utils/geometry/withinDist";
 
 export default class AttackManager {
     static autoInstaToggle = false;
+    /** Tick when Insta Now was armed; it expires so it can't fire long after the key press. */
+    static autoInstaArmedTick = 0;
+    static readonly AUTO_INSTA_EXPIRE_TICKS = 30; // ~3.3 s of server time
+
+    static toggleAutoInsta() {
+        this.autoInstaToggle = !this.autoInstaToggle;
+        this.autoInstaArmedTick = ModManager.tick;
+    }
     private static _currentAttackActions: AttackAction[] = AttackQueuePool.createAttackSequence();
     private static _currentAttackAction: AttackAction | undefined;
     private static currentAttackActionHead = 3;
@@ -167,6 +175,11 @@ export default class AttackManager {
         const modules = this.modules;
         const modulesLength = modules.length;
         attackQueue.length = 0;
+
+        if (this.autoInstaToggle && ModManager.tick - this.autoInstaArmedTick > this.AUTO_INSTA_EXPIRE_TICKS) {
+            this.autoInstaToggle = false;
+            ModManager.activityList.push("instaExpired");
+        }
 
         this.probePlacements();
         for (let i = 0; i < modulesLength; i++) {

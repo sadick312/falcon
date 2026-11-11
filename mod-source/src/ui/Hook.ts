@@ -200,7 +200,7 @@ function runPressActions(event: KeyboardEvent) {
     }
 
     if (Keybinds.matches(event, "autoInsta")) {
-        AttackManager.autoInstaToggle = !AttackManager.autoInstaToggle;
+        AttackManager.toggleAutoInsta();
     }
 
     if (Keybinds.matches(event, "resetZoom")) {

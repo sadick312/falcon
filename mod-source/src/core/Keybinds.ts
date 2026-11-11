@@ -24,7 +24,7 @@ export interface KeybindAction {
 export const KEYBIND_ACTIONS: KeybindAction[] = [
     { id: "tankSpam", label: "Toggle Attacking (Tank Gear)", category: "Combat", mode: "press", defaultKey: "Mouse0", description: "Starts/stops attacking with Tank Gear and the best weapon." },
     { id: "bullSpam", label: "Bull Spam", category: "Combat", mode: "hold", defaultKey: "Space", description: "Hold to attack with Bull Helmet and your primary." },
-    { id: "autoInsta", label: "Insta Now (ATOS)", category: "Combat", mode: "press", defaultKey: "KeyR", description: "Arms an insta-kill on the nearest enemy as soon as it can land." },
+    { id: "autoInsta", label: "Insta Now (ATOS)", category: "Combat", mode: "press", defaultKey: "KeyR", description: "Arms an insta-kill on the nearest enemy as soon as it can land (expires after ~3 s; press again to cancel)." },
     { id: "oneTickMode", label: "One Tick: Active/Passive", category: "Combat", mode: "press", defaultKey: "KeyT", description: "Switches Dynamic One Tick between active and passive (needs Dynamic One Tick on)." },
     { id: "override", label: "Override Automation", category: "Combat", mode: "hold", defaultKey: "ShiftLeft", description: "Hold to pause auto-push, auto-movement and auto-break aiming; with Tank attacking, uses your primary." },
     { id: "eat", label: "Eat", category: "Placement", mode: "hold", defaultKey: "KeyQ", description: "Hold to eat your food item." },
