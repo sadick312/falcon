@@ -42,6 +42,9 @@ bare `main` would have discarded all finished 1.8.2 work). Never commit to `main
 - Katana+Bow R-insta correctly does NOT fire on a full-HP Soldier target (60+25+25=110 x0.75 = 82.5 < 100); Polearm+Musket = 107 through Soldier
 - R-insta verified at ~95/~205/~305 ms: kills 2/1/2 (presses 5/2/9), 0 Falcon deaths
 - 31-min session: 60 FPS, 0 errors, heap 8->11 MB (plateaus after ~10 min), DOM flat
+- Debug panel shows Auto Place decisions + items sent (DebugStats.autoPlace / itemSelects)
+- Full regression @6a301d7: all-on + all-off join/reconnect/change server 0 errors; hammer 39 hits 0 deaths; insta 10 attempts 0 deaths, never Shamed
+- Boot fix: an import of AutoPlacer in DebugOverlay caused an import cycle ("AutoPlacer is not a constructor" at load) -> overlay reads DebugStats instead
 - Docs: README Quick Inject section, docs/TEST_CHECKLIST.md (146 lines)
 
 ## Next up
@@ -51,7 +54,7 @@ bare `main` would have discarded all finished 1.8.2 work). Never commit to `main
 4. Target selection: prefer trapped/low-HP enemies for instas when several are near (needs 2 enemies: IP limit 2 - blocked)
 5. Melee/Projectile Sync: needs a Falcon teammate (blocked: IP limit)
 6. postMessage polling in PacketBatcher/TaskScheduler (~1 ms/s): replace busy re-post loop with a single microtask/timeout
-7. Debug overlay: show placement counters (autoPlace best/allowed, itemSelects)
+7. (done) Debug overlay placement counters
 8. Code quality: AttackManager/CombatController size; extract shared "ready on arrival" style helpers if reused
 9. Re-run full regression (stage2 all-on/all-off, insta, hammer) after every ~10 commits
 10. Keep Desktop deliverables refreshed at milestones
@@ -96,4 +99,5 @@ bare `main` would have discarded all finished 1.8.2 work). Never commit to `main
 - Ping: core/mod/utils/Latency.ts + PingTracker.ts; hats: RendererUtils.renderSkin/renderTail; hat arbiter: HatSystem.fetchBestHat
 - IP limit: ~2 connections per IP on moomodding; never run two live tests at once
 - Extension tests: scratchpad/e2e-ext (puppeteer-core 24, pipe:true, enableExtensions:true, browser.installExtension)
+- ALWAYS boot-check every build on the live site (scratchpad/e2e/bootcheck.mjs <bundle>) before committing: new imports can create cycles that only fail at load
 - Python edits: use String.fromCharCode(10) for "\n" in JS strings written via heredocs
