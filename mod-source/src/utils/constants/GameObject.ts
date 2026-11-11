@@ -27,6 +27,9 @@ export default class GameObject implements Entity {
     ignoreCollision: boolean;
     hideFromEnemy: boolean;
     isGhost: boolean = false;
+    /** Resource sprite (tree/rock/bush) for this object; resources never change, so look it up once. */
+    resSprite: HTMLCanvasElement | null = null;
+    resSpriteGeneration = -1;
     willBreak = false;
     totalDamagePotential = 0;
     isBreaking = false;

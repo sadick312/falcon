@@ -9,13 +9,26 @@ import RendererUtils, { itemRenderers, resRenderers } from "../RendererUtils";
 export default class SpriteCache {
     private static gameResSprites: Record<string, HTMLCanvasElement> = {};
 
+    /** Bumped on reset() so sprites cached on objects are rebuilt too. */
+    static generation = 0;
+
     static reset() {
+        this.generation++;
         this.gameResSprites = {};
         this.iconSprites = {};
         this.itemSprites = {};
     }
 
     static getResSprite(obj: GameObject) {
+        // Cached on the object: avoids building a string key for every resource on every frame.
+        if (obj.resSprite && obj.resSpriteGeneration === this.generation) return obj.resSprite;
+        const sprite = this.buildResSprite(obj);
+        obj.resSprite = sprite;
+        obj.resSpriteGeneration = this.generation;
+        return sprite;
+    }
+
+    private static buildResSprite(obj: GameObject) {
         const biomeID = (obj.y >= ScriptConfig.MAP_SIZE - ScriptConfig.SNOW_BIOME_TOP) ? 2 : ((obj.y <= ScriptConfig.SNOW_BIOME_TOP) ? 1 : 0);
         const objId = (obj.type + "_" + obj.scale + "_" + biomeID);
 
