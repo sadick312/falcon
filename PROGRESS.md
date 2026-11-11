@@ -4,7 +4,7 @@ Branch: `auto-improve` (created from `fix/1.8.2-overhaul` tip, which branched of
 bare `main` would have discarded all finished 1.8.2 work). Never commit to `main`.
 
 ## Current task in progress
-- Anti-bull live test (bullspam bot, antiBull on/off) running; next: high-ping trap/turret redo, launcher extension live test, 30-min session.
+- High-ping (~300ms sim) trap-break + turret EMP redo; then launcher extension live test, 30-min session.
 
 ## Done (one line each)
 - 1.8.2 protocol (plain msgpack, LegacyAdapter for "a"/"I"), moomodding server list, WebSocket wrapper fix
@@ -25,6 +25,10 @@ bare `main` would have discarded all finished 1.8.2 work). Never commit to `main
 - Safe Walk ping + glide aware (0 hits head-on at ~95 and ~205ms)
 - Auto Upgrade weapon builds (Katana / Polearm+Musket), Classic Hats toggle, Falcon Launcher bundles build
 - Bow-insta detection tick-based (no fixed 444 ms timer); all remaining timers are ping-computed or UI-only
+- Anti-bull verified live: bot dies after 5 swings, 0 Falcon deaths (CX wings/spike gear reflect)
+- Own shame counted at eat send (server counts failed eats too); high-shame (>=6, HP>40) defers emergency heals → bull spam: 0 deaths, never Shamed (was Shamed + died)
+- Auto Upgrade weapon builds verified live ([5,15],[4,10],[4,9],[5,10]); upgrade retry if same age re-offered
+- Classic Hats toggle (spin/static)
 - Docs: README Quick Inject section, docs/TEST_CHECKLIST.md (146 lines)
 
 ## Next up
@@ -32,7 +36,7 @@ bare `main` would have discarded all finished 1.8.2 work). Never commit to `main
 2. High-ping (~300ms) trap-break + turret EMP redo (bot placement kept failing)
 3. Launcher extension live test; 30-min session memory/FPS
 4. Reload start lag (`tick - lastHit > 1`): verify vs server and with ping
-5. Anti-bull (CX wings / spike gear) live test with bull-spam bot
+5. Predicted-damage over-estimate (assumed musket+turret+spike) → too many emergency heals; consider confidence per source
 6. Auto-place: verify trap/spike angles live (bot victim, count traps landing on target)
 7. Target selection: nearest by distance only — consider threat-weighted (health, trapped)
 8. Combo edge cases: target dies / leaves range mid-combo (live)
@@ -42,7 +46,7 @@ bare `main` would have discarded all finished 1.8.2 work). Never commit to `main
 ## Feature review tracker (round 1)
 - Ping: measurement ✓, display ✓, prediction ✓, lag spikes ✓, compensation ✓, shame timing ✓, turret lead ✓, safe walk ✓
 - Combat: reload ✓, ranges ✓, insta R ✓ (live), aim lead ✓ (accuracy measured), musket live hits ⏳, one-tick ✗, spike tick ✗, melee/proj sync ✗, auto push ✗
-- Defense: heal ✓, anti-insta ✓, turret ✓, trap break ✓, safe walk ✓, anti-bull ✗, auto place ⏳, replacer ✗, auto mill ✗
+- Defense: heal ✓, anti-insta ✓, turret ✓, trap break ✓, safe walk ✓, anti-bull ✓ (live), shame spiral ✓, auto place ⏳, replacer ✗, auto mill ✗
 - Other: hats ✓, keybinds ✓, settings ✓, perf ✓ (profiled), debug ✓
 
 ## Decisions
@@ -51,6 +55,10 @@ bare `main` would have discarded all finished 1.8.2 work). Never commit to `main
 - Shame: real-time 120ms window + RTT (measured) > tick-based guess
 - Turret: hold EMP while loaded turret in range > periodic flicker (EMP blocks targeting, not damage)
 - Hat style toggle: spin/static (real difference) > fake "old style" (vanilla already exact)
+
+## Decisions (cont.)
+- Own shame: count at eat send (+RTT) > count from health packets (misses failed eats at full HP)
+- High-shame emergency: defer to safe heal when HP > 40 (one musket through soldier = 37.5) > always instant (spirals into Shame)
 
 ## Tried, didn't work
 - Musket strafe test pressing R every 1.7 s: R is a toggle, so it disarmed half the time; only 1-3 instas/run (inconclusive)
