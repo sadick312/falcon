@@ -594,6 +594,7 @@ export const menuContent: IMenuContent = {
         }, {
             label: "Render Pathfinding Line",
             id: "renderAutoPushingPathfindingLine",
+            description: "Draws the path Auto Push plans to take toward the enemy.",
             type: "toggle",
             status: true
         }],
