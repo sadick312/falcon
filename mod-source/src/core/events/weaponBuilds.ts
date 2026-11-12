@@ -75,7 +75,33 @@ export function buildUpgradePick(build: string, age: number, offered: readonly n
 /** "Choose Ages 8 & 9 Yourself": Auto Upgrade leaves these ages to you (the bar stays open). */
 export const MANUAL_PICK_AGES: readonly number[] = [8, 9];
 
-/** Should Auto Upgrade decide this age? (false = show the upgrade bar and let the player click) */
-export function autoPicksAge(age: number, manualAges89: boolean) {
+/**
+ * Should Auto Upgrade decide this age? (false = show the upgrade bar and let the player click)
+ * `manualAllAges` = "Choose Every Age Yourself" (like the old game: you pick everything).
+ */
+export function autoPicksAge(age: number, manualAges89: boolean, manualAllAges = false) {
+    if (manualAllAges) return false;
     return !(manualAges89 && MANUAL_PICK_AGES.includes(age));
+}
+
+/**
+ * Which items the upgrade bar shows at `age`. In the data an item's "pre" is relative
+ * (Castle Wall pre 1 = Stone Wall, id 5 - 1). `legal` = what the normal game offers (the earlier
+ * item is owned); with `anyPre` ("Show Every Upgrade", moomodding) `shown` also has the rest,
+ * e.g. Castle Wall without Stone Wall. Returned ids are item list indexes.
+ */
+export function itemOffers(age: number, list: readonly { id: number; age?: number; pre?: number }[], ownedItems: readonly number[], anyPre: boolean) {
+    const shown: number[] = [];
+    const legal: number[] = [];
+
+    for (let i = 0; i < list.length; i++) {
+        const item = list[i];
+        if (item.age !== age) continue;
+
+        const isLegal = item.pre === undefined || ownedItems.includes(item.id - item.pre);
+        if (isLegal) legal.push(i);
+        if (isLegal || anyPre) shown.push(i);
+    }
+
+    return { shown, legal };
 }

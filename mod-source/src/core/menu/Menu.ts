@@ -700,16 +700,22 @@ export const menuContent: IMenuContent = {
                 ],
                 status: "katanaMusket"
             }, {
+                label: "Choose Every Age Yourself",
+                id: "manualAllAges",
+                type: "toggle",
+                description: "Like the old game: Auto Upgrade picks nothing, the upgrade bar opens at every age and you click the weapon or item yourself (e.g. Katana at 8, Musket at 9 with any weapon). Off = the Weapon Build picks for you.",
+                status: true
+            }, {
                 label: "Choose Ages 8 & 9 Yourself",
                 id: "manualAges89",
                 type: "toggle",
                 description: "Auto Upgrade stops at ages 8 and 9 and shows the upgrade bar so you click the weapon yourself (e.g. Katana at 8, Musket at 9). Other ages are still picked for you. Off = the Weapon Build picks 8 and 9 too.",
                 status: true
             }, {
-                label: "Show Every Weapon Upgrade",
+                label: "Show Every Upgrade",
                 id: "showEveryWeaponUpgrade",
                 type: "toggle",
-                description: "On sandbox.moomodding.io, the upgrade bar also shows weapons whose earlier weapon you don't have (like old MooMoo): after taking the Katana at age 8, the age 9 bar shows the Musket. Auto Upgrade's own picks don't change.",
+                description: "On sandbox.moomodding.io, the upgrade bar shows every weapon and item of your age, even if you skipped the earlier one (like old MooMoo): Katana at 8 and Musket at 9 with any weapon, Castle Wall without Stone Wall. Auto Upgrade's own picks don't change.",
                 status: true
             }, {
                 label: "7th Slot",

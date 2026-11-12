@@ -78,3 +78,37 @@ test("Choose Ages 8 & 9 Yourself: Auto Upgrade skips only ages 8 and 9", async (
     assert.equal(autoPicksAge(8, false), true, "toggle off: build picks 8 too (old behaviour)");
     assert.equal(autoPicksAge(9, false), true);
 });
+
+test("Choose Every Age Yourself: Auto Upgrade picks no age", async () => {
+    const { autoPicksAge } = await loadTs("src/core/events/weaponBuilds.ts");
+    for (const age of [2, 3, 4, 5, 6, 7, 8, 9, 10]) assert.equal(autoPicksAge(age, false, true), false, `age ${age}`);
+    assert.equal(autoPicksAge(2, true, false), true, "off: old rules (only 8 and 9 manual)");
+});
+
+test("Katana at 8 and Musket at 9 are offered with ANY earlier weapon ('Show Every Upgrade')", () => {
+    for (const primary of [1, 3, 5, 6, 7, 8]) { // hand axe, short sword, polearm, bat, daggers, stick
+        for (const secondary of [9, 10, 11, 14, undefined]) { // bow, hammer, shield, mc grabby, none
+            const owned = secondary === undefined ? [primary] : [primary, secondary];
+            assert.ok(weaponOffers(8, items.weapons, owned, true).shown.includes(4), `Katana at 8 with ${owned}`);
+            assert.ok(weaponOffers(9, items.weapons, [4, ...owned.slice(1)], true).shown.includes(15), `Musket at 9 after Katana with ${owned}`);
+        }
+    }
+});
+
+test("itemOffers: every item of the age with 'any pre'; Auto Upgrade keeps the normal list", async () => {
+    const { itemOffers } = await loadTs("src/core/events/weaponBuilds.ts");
+    const castle = items.list.findIndex(i => i.name === "castle wall");
+    const stone = items.list.findIndex(i => i.name === "stone wall");
+    const age = items.list[castle].age;
+
+    const withoutStone = items.list.map(i => i.id).filter(id => id !== items.list[stone].id && items.list[id]?.age === undefined);
+    const strict = itemOffers(age, items.list, withoutStone, false);
+    assert.ok(!strict.shown.includes(castle), "normal game: no Castle Wall without Stone Wall");
+
+    const any = itemOffers(age, items.list, withoutStone, true);
+    assert.ok(any.shown.includes(castle), "old style: Castle Wall offered");
+    assert.ok(!any.legal.includes(castle), "Auto Upgrade still uses the normal list");
+
+    const withStone = itemOffers(age, items.list, [...withoutStone, items.list[stone].id], false);
+    assert.ok(withStone.legal.includes(castle), "with Stone Wall it's legal");
+});

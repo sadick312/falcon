@@ -1,5 +1,5 @@
 import items from "@constants/items";
-import { autoPicksAge, buildUpgradePick, weaponOffers } from "@core/events/weaponBuilds";
+import { autoPicksAge, buildUpgradePick, itemOffers, weaponOffers } from "@core/events/weaponBuilds";
 import Client from "@core/Client";
 import Menu from "@menu/Menu";
 import PacketMap from "@root/utils/socket/PacketMap";
@@ -57,26 +57,22 @@ export default function updateUpgrades(points: number, age: number) {
             tmpList.push(i);
         }
 
-        for (let i = 0; i < items.list.length; i++) {
-            const item = items.list[i];
+        // Items: same as weapons. Auto Upgrade decides from the normal game's list (`legal`).
+        const itemOffer = itemOffers(age, items.list, Client.player.items, anyPre);
+        for (const i of itemOffer.shown) {
+            const tmpId = i + items.weapons.length;
+            const elem = document.createElement("div");
+            elem.id = `upgrade-item-${tmpId}`;
+            elem.className = "action-bar-item";
 
-            // Same rule as the game: an item needing a previous one is only offered if owned.
-            // Item "pre" is relative in the data (castle wall pre 1 = stone wall, id 5 - 1).
-            if (item.age == age && (item.pre === undefined || Client.player.items.indexOf(item.id - item.pre) >= 0)) {
-                const tmpId = i + items.weapons.length;
-                const elem = document.createElement("div");
-                elem.id = `upgrade-item-${tmpId}`;
-                elem.className = "action-bar-item";
-
-                copyHotbarIcon(getElem<"div">(`action-bar-item-${tmpId}`), elem);
-                upgradeHolder.appendChild(elem);
-                tmpList.push(tmpId);
-                autoList.push(tmpId);
-            }
+            copyHotbarIcon(getElem<"div">(`action-bar-item-${tmpId}`), elem);
+            upgradeHolder.appendChild(elem);
+            tmpList.push(tmpId);
+            if (itemOffer.legal.includes(i)) autoList.push(tmpId);
         }
 
-        // "Choose Ages 8 & 9 Yourself": no auto pick at those ages, the bar below stays open.
-        if (Menu.getValue("autoUpgrade") && autoPicksAge(age, Menu.getValue("manualAges89") !== false)) {
+        // "Choose Every Age Yourself" / "Choose Ages 8 & 9 Yourself": no auto pick, the bar below stays open.
+        if (Menu.getValue("autoUpgrade") && autoPicksAge(age, Menu.getValue("manualAges89") !== false, Menu.getValue("manualAllAges") !== false)) {
             const wantedWeapon = buildUpgradePick(Menu.getValue("weaponBuild"), age, autoList, (id) => items.weapons[id]?.age);
             if (wantedWeapon !== undefined) {
                 sendUpgrade(wantedWeapon, age);
