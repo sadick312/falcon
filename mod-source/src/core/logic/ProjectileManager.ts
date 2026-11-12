@@ -9,7 +9,6 @@ import ObjectManager from "@core/logic/ObjectManager";
 import PlayerManager from "@core/logic/players/PlayerManager";
 import DefenseSystem from "@core/mod/defense/DefenseSystem";
 import ModManager from "@core/ModManager";
-import ScriptConfig from "@utils/config/ScriptConfig";
 import getDistSq from "@utils/geometry/getDistSq";
 import withinDist from "@utils/geometry/withinDist";
 import inRange from "@utils/math/inRange";

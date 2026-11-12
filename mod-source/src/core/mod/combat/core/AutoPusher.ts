@@ -203,14 +203,26 @@ export default class AutoPusher {
 
     static currentPath: Point[] = [];
     private static findingPath = false;
+    /** A worker search is running. Only one at a time: the worker answers them in order, and
+     *  starting a new one every tick while waiting only wasted worker time. */
+    private static searchInFlight = false;
 
     private static async pathfind(start: Point, goal: Point): Promise<void> {
         const activityList = ModManager.activityList;
 
         if (!this.currentPath.length) {
+            // Set every tick while waiting, so the per-tick reset keeps the path when it arrives.
             this.findingPath = true;
             activityList.push("calculatingPath");
-            const path = await Pathfinder.find(start, goal);
+            if (this.searchInFlight) return;
+
+            this.searchInFlight = true;
+            let path: Point[];
+            try {
+                path = await Pathfinder.find(start, goal);
+            } finally {
+                this.searchInFlight = false;
+            }
 
             if (path) {
                 this.currentPath = path;

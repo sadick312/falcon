@@ -86,8 +86,6 @@ export default class PlayerCombatManager {
         const lastHit = player.weaponIndex < 9 ? weaponData.lastPrimaryTickHit : weaponData.lastSecondaryTickHit;
 
         if (player.buildIndex === -1 && tick - lastHit > 1) {
-            const wpn = items.weapons[weaponIndex];
-
             weaponData.lastPrimaryReload = player.reloads[weaponData.primary];
             weaponData.lastSecondaryReload = player.reloads[weaponData.secondary];
             const wasReloaded = player.reloads[weaponIndex] === 1;
