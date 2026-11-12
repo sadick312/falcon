@@ -12,9 +12,14 @@ const OFFICIAL_IMG = "https://moomoo.io/img";
  * `crossOrigin`: they draw fine, but a canvas they are drawn on can't be read back. Only the game canvas
  * uses them and nothing reads its pixels (the hotbar icons, which are read back, keep the site's pictures).
  */
-export function loadGameSprite(folder: string, file: string, hostname = location.hostname) {
+export function loadGameSprite(
+    folder: string,
+    file: string,
+    hostname = location.hostname,
+    useOriginal: boolean = Menu.getValue("originalArtwork") !== false
+) {
     const image = new Image();
-    if (hostname.endsWith("moomodding.io") && Menu.getValue("originalArtwork") !== false) {
+    if (hostname.endsWith("moomodding.io") && useOriginal) {
         image.src = `${OFFICIAL_IMG}/${folder}/${file}`;
     } else {
         image.crossOrigin = "anonymous";

@@ -4,6 +4,7 @@ import Client from "@core/Client";
 import Menu from "@menu/Menu";
 import PacketMap from "@root/utils/socket/PacketMap";
 import getElem from "@utils/dom/getElem";
+import { copyHotbarIcon } from "@ui/HotbarIcons";
 
 const upgradeHolder = getElem<"div">("upgrade-holder");
 const upgradeCounter = getElem<"div">("upgrade-counter");
@@ -51,7 +52,7 @@ export default function updateUpgrades(points: number, age: number) {
             elem.id = `upgrade-item-${i}`;
             elem.className = "action-bar-item";
 
-            elem.style.backgroundImage = getElem<"div">(`action-bar-item-${i}`).style.backgroundImage;
+            copyHotbarIcon(getElem<"div">(`action-bar-item-${i}`), elem);
             upgradeHolder.appendChild(elem);
             tmpList.push(i);
         }
@@ -67,7 +68,7 @@ export default function updateUpgrades(points: number, age: number) {
                 elem.id = `upgrade-item-${tmpId}`;
                 elem.className = "action-bar-item";
 
-                elem.style.backgroundImage = getElem<"div">(`action-bar-item-${tmpId}`).style.backgroundImage;
+                copyHotbarIcon(getElem<"div">(`action-bar-item-${tmpId}`), elem);
                 upgradeHolder.appendChild(elem);
                 tmpList.push(tmpId);
                 autoList.push(tmpId);

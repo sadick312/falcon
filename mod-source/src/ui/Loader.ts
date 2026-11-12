@@ -16,6 +16,9 @@ import { disconnectedPageElem } from "@core/socket/Socket";
 import getElem from "@utils/dom/getElem";
 import Menu from "../core/menu/Menu";
 import RendererSystem from "../rendering/RendererSystem";
+import { loadGameSprite } from "@rendering/core/SpriteSource";
+import readStoredJSON from "@utils/storage/readStoredJSON";
+import { showHotbarIcon } from "@ui/HotbarIcons";
 
 declare global {
     interface HTMLImageElement {
@@ -227,8 +230,10 @@ export default class Loader {
             if (items.weapons[i]) {
                 tmpContext.rotate((Math.PI / 4) + Math.PI);
 
-                const tmpSprite = new Image();
-                tmpSprite.crossOrigin = "anonymous";
+                // "Original MooMoo Artwork": the hotbar is built before the menu loads its settings,
+                // so read the saved value directly (missing = on, the default).
+                const useOriginal = readStoredJSON<Record<string, unknown>>("falcon-settings", {}).originalArtwork !== false;
+                const tmpSprite = loadGameSprite("weapons", `${tmp.src}.png`, location.hostname, useOriginal);
                 this.toolSprites[tmp.src] = tmpSprite;
 
                 tmpSprite.onload = () => {
@@ -249,10 +254,8 @@ export default class Loader {
                     tmpContext.globalCompositeOperation = "source-atop";
                     tmpContext.fillRect(-tmpCanvas.width / 2, -tmpCanvas.height / 2, tmpCanvas.width, tmpCanvas.height);
 
-                    actionElem.style.backgroundImage = `url('${tmpCanvas.toDataURL()}')`;
+                    showHotbarIcon(actionElem, tmpCanvas);
                 };
-
-                tmpSprite.src = `../../img/weapons/${tmp.src}.png`;
             } else {
                 const tmpSprite = SpriteCache.getItemSprite(items.list[i - items.weapons.length], true);
                 const tmpScale = Math.min(tmpCanvas.width - RenderingConfig.iconPadding, tmpSprite.width);
