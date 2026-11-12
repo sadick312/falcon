@@ -1,5 +1,5 @@
 import items from "@constants/items";
-import { buildUpgradePick } from "@core/events/weaponBuilds";
+import { buildUpgradePick, weaponOffers } from "@core/events/weaponBuilds";
 import Client from "@core/Client";
 import Menu from "@menu/Menu";
 import PacketMap from "@root/utils/socket/PacketMap";
@@ -8,6 +8,7 @@ import getElem from "@utils/dom/getElem";
 const upgradeHolder = getElem<"div">("upgrade-holder");
 const upgradeCounter = getElem<"div">("upgrade-counter");
 const tmpUpgradeList: number[] = [];
+const autoUpgradeList: number[] = [];
 let lastUpgradeAge = -1;
 let lastUpgradeId = -1;
 
@@ -33,23 +34,26 @@ export default function updateUpgrades(points: number, age: number) {
     if (age === lastUpgradeAge && lastUpgradeId !== -1) Client.upgradesObtained.delete(lastUpgradeId);
 
     if (points > 0) {
+        // tmpList: what the bar shows. autoList: what the normal game offers; Auto Upgrade decides from
+        // this one, so "Show Every Weapon Upgrade" only adds buttons and never changes its picks.
         const tmpList = tmpUpgradeList;
+        const autoList = autoUpgradeList;
         tmpUpgradeList.length = 0;
+        autoUpgradeList.length = 0;
         upgradeHolder.innerHTML = "";
 
-        for (let i = 0; i < items.weapons.length; i++) {
-            const wpn = items.weapons[i];
-            const isWithinAge = wpn.pre === undefined || Client.player.weapons.indexOf(wpn.pre) >= 0;
+        const anyPre = Menu.getValue("showEveryWeaponUpgrade") !== false && location.hostname.endsWith("moomodding.io");
+        const offers = weaponOffers(age, items.weapons, Client.player.weapons, anyPre, Client.socket.isPrivateServer);
+        autoList.push(...offers.legal);
 
-            if (wpn.age === age && (Client.socket.isPrivateServer || isWithinAge)) {
-                const elem = document.createElement("div");
-                elem.id = `upgrade-item-${i}`;
-                elem.className = "action-bar-item";
+        for (const i of offers.shown) {
+            const elem = document.createElement("div");
+            elem.id = `upgrade-item-${i}`;
+            elem.className = "action-bar-item";
 
-                elem.style.backgroundImage = getElem<"div">(`action-bar-item-${i}`).style.backgroundImage;
-                upgradeHolder.appendChild(elem);
-                tmpList.push(i);
-            }
+            elem.style.backgroundImage = getElem<"div">(`action-bar-item-${i}`).style.backgroundImage;
+            upgradeHolder.appendChild(elem);
+            tmpList.push(i);
         }
 
         for (let i = 0; i < items.list.length; i++) {
@@ -66,23 +70,24 @@ export default function updateUpgrades(points: number, age: number) {
                 elem.style.backgroundImage = getElem<"div">(`action-bar-item-${tmpId}`).style.backgroundImage;
                 upgradeHolder.appendChild(elem);
                 tmpList.push(tmpId);
+                autoList.push(tmpId);
             }
         }
 
         if (Menu.getValue("autoUpgrade")) {
-            const wantedWeapon = buildUpgradePick(Menu.getValue("weaponBuild"), age, tmpList, (id) => items.weapons[id]?.age);
+            const wantedWeapon = buildUpgradePick(Menu.getValue("weaponBuild"), age, autoList, (id) => items.weapons[id]?.age);
             if (wantedWeapon !== undefined) {
                 sendUpgrade(wantedWeapon, age);
                 return;
             }
 
-            if (tmpList.length === 1) {
-                sendUpgrade(tmpList[0], age);
+            if (autoList.length === 1) {
+                sendUpgrade(autoList[0], age);
                 return;
             } else {
                 const _7thSlot = parseInt(Menu.getValue("7thSlot"));
 
-                for (const id of tmpList) {
+                for (const id of autoList) {
                     if ([17, 31, 23, _7thSlot].includes(id)) {
                         sendUpgrade(id, age);
                         return;

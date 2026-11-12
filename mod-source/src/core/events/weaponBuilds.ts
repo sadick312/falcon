@@ -39,6 +39,28 @@ export function wantedWeapon(build: string, age: number): number | undefined {
 }
 
 /**
+ * Which weapons the upgrade bar shows at `age`. `legal` = what the normal game offers (a weapon's
+ * "pre" must be owned; every weapon on private servers). With `anyPre` (Show Every Weapon Upgrade,
+ * on moomodding) `shown` also has the rest of that age's weapons, e.g. the Musket after a Katana,
+ * like old MooMoo. Auto Upgrade keeps deciding from `legal`, so its picks don't change.
+ */
+export function weaponOffers(age: number, weapons: readonly { age?: number; pre?: number }[], owned: readonly number[], anyPre: boolean, allLegal = false) {
+    const shown: number[] = [];
+    const legal: number[] = [];
+
+    for (let i = 0; i < weapons.length; i++) {
+        const wpn = weapons[i];
+        if (wpn.age !== age) continue;
+
+        const isLegal = allLegal || wpn.pre === undefined || owned.includes(wpn.pre);
+        if (isLegal) legal.push(i);
+        if (isLegal || anyPre) shown.push(i);
+    }
+
+    return { shown, legal };
+}
+
+/**
  * The weapon Auto Upgrade should send for this build at this age, or undefined to fall back to
  * the normal item choices. `offered` = upgrade ids the game shows; `weaponAge` = a weapon's age.
  */

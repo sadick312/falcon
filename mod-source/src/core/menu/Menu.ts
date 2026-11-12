@@ -15,6 +15,9 @@ import drawMenuSlider from "./utils/drawMenuSlider";
 import drawMenuToggle from "./utils/drawMenuToggle";
 import drawSavedConfigs from "./utils/drawSavedConfigs";
 
+/** Set once the saved "manual" Weapon Build has been switched to the new default (see loadSettings). */
+const DEFAULT_BUILD_MIGRATION_KEY = "falcon-default-build-katana-musket";
+
 interface IMenuTab {
     label: string;
     icon: string;
@@ -689,7 +692,13 @@ export const menuContent: IMenuContent = {
                     { label: "Manual (pick weapons yourself)", value: "manual" },
                     ...Object.entries(WEAPON_BUILDS).map(([value, build]) => ({ label: build.label, value })),
                 ],
-                status: "manual"
+                status: "katanaMusket"
+            }, {
+                label: "Show Every Weapon Upgrade",
+                id: "showEveryWeaponUpgrade",
+                type: "toggle",
+                description: "On sandbox.moomodding.io, the upgrade bar also shows weapons whose earlier weapon you don't have (like old MooMoo): after taking the Katana at age 8, the age 9 bar shows the Musket. Auto Upgrade's own picks don't change.",
+                status: true
             }, {
                 label: "7th Slot",
                 id: "7thSlot",
@@ -1236,6 +1245,14 @@ export default class Menu {
             // Skip settings that no longer exist in this version.
             if (this.itemMap[id] === undefined) continue;
             this.itemMap[id].status = data[id];
+        }
+
+        // Once: Weapon Build's default became "Katana + Musket". Saved settings store every value, so
+        // a saved "manual" from before would hide the new default; switch it a single time.
+        // Choosing "Manual" again afterwards sticks.
+        if (!customSettings && localStorage.getItem(DEFAULT_BUILD_MIGRATION_KEY) !== "1") {
+            if (data.weaponBuild === "manual" && this.itemMap.weaponBuild) this.itemMap.weaponBuild.status = "katanaMusket";
+            try { localStorage.setItem(DEFAULT_BUILD_MIGRATION_KEY, "1"); } catch { /* storage blocked: try again next load */ }
         }
 
         // Loading a saved config should also become the current saved settings.

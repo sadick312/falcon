@@ -5,7 +5,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { loadTs } from "./loadTs.mjs";
 
-const { WEAPON_BUILDS, wantedWeapon, buildUpgradePick } = await loadTs("src/core/events/weaponBuilds.ts");
+const { WEAPON_BUILDS, wantedWeapon, buildUpgradePick, weaponOffers } = await loadTs("src/core/events/weaponBuilds.ts");
 const items = (await loadTs("src/utils/constants/items.ts")).default;
 const weaponAge = (id) => items.weapons[id]?.age;
 
@@ -42,6 +42,24 @@ test("buildUpgradePick sends the Musket even when the game doesn't offer it", ()
     // Ages without a pick, unknown builds: no preference.
     assert.equal(buildUpgradePick("katanaMusket", 3, [17, 18], weaponAge), undefined);
     assert.equal(buildUpgradePick("manual", 9, [15], weaponAge), undefined);
+});
+
+test("weaponOffers: age 9 after a Katana shows the Musket only with 'any pre'", () => {
+    const owned = [4, 9]; // Katana + Hunting Bow, no Crossbow
+    const strict = weaponOffers(9, items.weapons, owned, false);
+    assert.deepEqual(strict.shown, [], "normal game: no weapon at age 9 without a Crossbow");
+    assert.deepEqual(strict.legal, []);
+
+    const any = weaponOffers(9, items.weapons, owned, true);
+    assert.deepEqual(any.shown, [13, 15], "Repeater and Musket shown");
+    assert.deepEqual(any.legal, [], "Auto Upgrade still decides from the normal list");
+});
+
+test("weaponOffers: age 8 follows the owned weapons; private servers offer everything", () => {
+    assert.deepEqual(weaponOffers(8, items.weapons, [3, 9], false).shown, [4, 12], "Short Sword + Bow: Katana, Crossbow");
+    assert.deepEqual(weaponOffers(8, items.weapons, [3, 9], true).shown, [2, 4, 12], "any pre: Great Axe too");
+    assert.deepEqual(weaponOffers(9, items.weapons, [5, 12], false).legal, [13, 15], "with a Crossbow the Musket is legal");
+    assert.deepEqual(weaponOffers(9, items.weapons, [4, 9], false, true).legal, [13, 15], "private server: all legal");
 });
 
 test("wantedWeapon looks up the build's pick", () => {
