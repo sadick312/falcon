@@ -39,28 +39,29 @@ export function wantedWeapon(build: string, age: number): number | undefined {
 }
 
 /**
- * With "Show Every Upgrade", these ages also show the weapons of earlier ages, in case you skipped
- * them (age 9 also offers Great Axe, Katana and Crossbow from age 8). Weapons you own are left out.
+ * With "Show Every Upgrade", these ages also show a few earlier weapons, in case you skipped them:
+ * age 9 also offers the Katana (age 8). Great Axe and Crossbow are left out on purpose (the player
+ * didn't want them at age 9). Weapons you own are left out.
  */
-export const CARRY_OVER_AGES: Readonly<Record<number, readonly number[]>> = { 9: [8] };
+export const CARRY_OVER_WEAPONS: Readonly<Record<number, readonly number[]>> = { 9: [W.KATANA] };
 
 /**
  * Which weapons the upgrade bar shows at `age`. `legal` = what the normal game offers (a weapon's
  * "pre" must be owned; every weapon on private servers). With `anyPre` (Show Every Upgrade,
  * on moomodding) `shown` also has the rest of that age's weapons, e.g. the Musket after a Katana,
- * plus the earlier-age weapons in CARRY_OVER_AGES, like old MooMoo. Auto Upgrade keeps deciding
+ * plus the earlier weapons in CARRY_OVER_WEAPONS, like old MooMoo. Auto Upgrade keeps deciding
  * from `legal`, so its picks don't change.
  */
 export function weaponOffers(age: number, weapons: readonly { age?: number; pre?: number }[], owned: readonly number[], anyPre: boolean, allLegal = false) {
     const shown: number[] = [];
     const legal: number[] = [];
-    const carryOver = anyPre ? CARRY_OVER_AGES[age] ?? [] : [];
+    const carryOver = anyPre ? CARRY_OVER_WEAPONS[age] ?? [] : [];
 
     for (let i = 0; i < weapons.length; i++) {
         const wpn = weapons[i];
 
         if (wpn.age !== age) {
-            if (wpn.age !== undefined && carryOver.includes(wpn.age) && !owned.includes(i)) shown.push(i);
+            if (carryOver.includes(i) && !owned.includes(i)) shown.push(i);
             continue;
         }
 
