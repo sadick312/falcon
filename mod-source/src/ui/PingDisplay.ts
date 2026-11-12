@@ -3,6 +3,8 @@ import Latency from "@core/mod/utils/Latency";
 import PingTracker from "@core/mod/utils/PingTracker";
 import PacketBatcher from "@core/utils/PacketBatcher";
 import Menu from "@menu/Menu";
+import WindowResizer from "@rendering/core/WindowResizer";
+import { ZOOM_DEFAULT } from "@rendering/RenderingConfig";
 import getElem from "@utils/dom/getElem";
 
 const pingDisplay = getElem<"div">("ping-display");
@@ -19,8 +21,9 @@ export default function updatePingDisplay(fps: number) {
     const jitter = Math.round(PingTracker.getJitter());
     const adjust = Latency.getAdjustment();
     const lag = Client.socket && Latency.isLagging() ? " | LAG SPIKE" : "";
+    const zoom = WindowResizer.zoom !== ZOOM_DEFAULT ? ` | View ${WindowResizer.zoom}%` : "";
 
     pingDisplay.innerText =
         `Ping: ${rtt} ms (±${jitter})${adjust ? ` adj ${adjust > 0 ? "+" : ""}${adjust}` : ""} | FPS: ${fps}` +
-        ` | BWin: ${PacketBatcher.effectiveBatchWindow.toFixed(1)} ms${lag}`;
+        ` | BWin: ${PacketBatcher.effectiveBatchWindow.toFixed(1)} ms${zoom}${lag}`;
 }

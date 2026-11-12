@@ -73,6 +73,12 @@ const GEAR_ICON_2 = `
 </svg>
 `;
 
+const EYE_ICON = `
+<svg width="24" height="24" viewBox="0 0 24 24">
+    <path fill="REPLACE_WITH_COLOR" d="M12 5C6.5 5 2.3 8.6 1 12c1.3 3.4 5.5 7 11 7s9.7-3.6 11-7c-1.3-3.4-5.5-7-11-7zm0 11.5a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9zm0-2.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>
+</svg>
+`;
+
 const GRID_ICON = `
 <svg width="22" height="22" viewBox="0 0 24 24">
     <path fill="REPLACE_WITH_COLOR" d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"/>
@@ -966,6 +972,22 @@ export const menuContent: IMenuContent = {
         id: "",
         description: `This module offers multiple toggles to customize the appearance of the script. Click the settings button to adjust sub-settings for each module.`,
         type: "paragraph"
+    }, {
+        label: "Camera",
+        id: "",
+        icon: EYE_ICON,
+        description: "How much of the map you can see. Mouse wheel and the Zoom In / Zoom Out keys change the same setting.",
+        type: "group",
+        settings: [{
+            label: "View Distance (%)",
+            id: "viewDistance",
+            description: "125 = Falcon's normal view, 100 = the normal game's view, 250 = see the most. Very wide views draw more and can lower FPS.",
+            type: "slider",
+            min: 75,
+            max: 250,
+            step: 5,
+            status: 125
+        }]
     }, {
         label: "Building Visuals",
         id: "",

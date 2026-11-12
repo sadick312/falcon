@@ -34,7 +34,9 @@ export const KEYBIND_ACTIONS: KeybindAction[] = [
     { id: "placeSpawnPads", label: "Place 4 Spawn Pads", category: "Placement", mode: "hold", defaultKey: "KeyK", description: "Hold to place spawn pads around you." },
     { id: "autoMill", label: "Toggle Auto Mill", category: "Placement", mode: "press", defaultKey: "KeyZ", description: "Starts/stops automatically placing windmills behind you." },
     { id: "autoGather", label: "Toggle Auto Gather", category: "Utility", mode: "press", defaultKey: "KeyE", description: "The game's auto-gather/auto-hit toggle." },
-    { id: "resetZoom", label: "Reset Zoom", category: "Utility", mode: "press", defaultKey: "Equal", description: "Back to the normal game's zoom level." },
+    { id: "resetZoom", label: "Reset Zoom", category: "Utility", mode: "press", defaultKey: "Equal", description: "Back to the default View Distance (125%)." },
+    { id: "zoomOut", label: "Zoom Out (See More)", category: "Utility", mode: "press", defaultKey: "Minus", description: "Raises View Distance by 5% (up to 250%). Saved." },
+    { id: "zoomIn", label: "Zoom In (See Less)", category: "Utility", mode: "press", defaultKey: "Shift+Equal", description: "Lowers View Distance by 5% (down to 75%). Saved." },
     { id: "reloadSprites", label: "Reload Item Sprites", category: "Utility", mode: "press", defaultKey: "Shift+KeyZ", description: "Redraws item icons if they look wrong." },
     { id: "chat", label: "Chat", category: "Utility", mode: "press", defaultKey: "Enter", description: "Open/send chat." },
     { id: "replayPause", label: "Pause Packet Replay", category: "Utility", mode: "press", defaultKey: "KeyP", description: "Pauses/resumes the packet replayer." },
@@ -96,7 +98,18 @@ export default class Keybinds {
         if (!binding || binding.startsWith("Mouse")) return false;
 
         if (binding.startsWith("Shift+")) return event.shiftKey && event.code === binding.slice(6);
-        return event.code === binding;
+        if (event.code !== binding) return false;
+
+        // Shift + key belongs to the "Shift+" action when one exists (Shift+= zooms in, it must not
+        // also reset the zoom on "="). Without such an action, plain keys still work with Shift held.
+        return !(event.shiftKey && this.hasPressBinding(`Shift+${event.code}`));
+    }
+
+    private static hasPressBinding(binding: string) {
+        for (const action of KEYBIND_ACTIONS) {
+            if (action.mode === "press" && this.bindings[action.id] === binding) return true;
+        }
+        return false;
     }
 
     /** Does this mouse event's button trigger action `id`? */

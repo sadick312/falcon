@@ -11,7 +11,7 @@ import AutoGrinder from "@placing/modules/AutoGrinder";
 import AutoMiller from "@placing/modules/AutoMiller";
 import SpriteCache from "@rendering/core/SpriteCache";
 import WindowResizer from "@rendering/core/WindowResizer";
-import RenderingConfig from "@rendering/RenderingConfig";
+import { ZOOM_STEP } from "@rendering/RenderingConfig";
 import PacketMap from "@root/utils/socket/PacketMap";
 import Loader, { loadingCirclePage } from "@ui/Loader";
 import getElem from "@utils/dom/getElem";
@@ -116,22 +116,14 @@ gameCanvas.addEventListener("mousedown", (event) => {
 gameCanvas.addEventListener("wheel", (event) => {
     if (!Client.player) return;
     const delta = event.deltaY || event.deltaX;
+    if (!delta) return;
 
-    if (delta > 0) {
-        RenderingConfig.maxScreenWidth *= 0.95;
-        RenderingConfig.maxScreenHeight *= 0.95;
-    } else {
-        RenderingConfig.maxScreenWidth /= 0.95;
-        RenderingConfig.maxScreenHeight /= 0.95;
-    }
-
-    WindowResizer.resize();
-});
+    // Scroll down = see less (zoom in), scroll up = see more. Limited and saved (Visual > Camera).
+    WindowResizer.changeZoom(delta > 0 ? -ZOOM_STEP : ZOOM_STEP);
+}, { passive: true });
 
 export function resetScreenSize() {
-    RenderingConfig.maxScreenWidth = RenderingConfig.baseScreenWidth;
-    RenderingConfig.maxScreenHeight = RenderingConfig.baseScreenHeight;
-    WindowResizer.resize();
+    WindowResizer.resetZoom();
 }
 
 let inWindow = false;
@@ -205,6 +197,14 @@ function runPressActions(event: KeyboardEvent) {
 
     if (Keybinds.matches(event, "resetZoom")) {
         resetScreenSize();
+    }
+
+    if (Keybinds.matches(event, "zoomIn")) {
+        WindowResizer.changeZoom(-ZOOM_STEP);
+    }
+
+    if (Keybinds.matches(event, "zoomOut")) {
+        WindowResizer.changeZoom(ZOOM_STEP);
     }
 
     if (Keybinds.matches(event, "autoGather")) {

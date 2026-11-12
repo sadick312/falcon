@@ -106,6 +106,7 @@ export default class RendererSystem {
 
             this.updateFPS();
             RendererUtils.spinHats = Menu.getValue("classicHats") !== false;
+            WindowResizer.syncZoom();
 
             const player = Client.player;
             if (player) this.updateDirection(now);

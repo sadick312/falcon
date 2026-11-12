@@ -26,6 +26,18 @@ test("press matching, shift combos and unbinding", () => {
     assert.equal(Keybinds.matches(key("KeyG"), "autoInsta"), true);
 });
 
+test("Shift + key goes to the Shift action only (Shift+= zooms in, doesn't also reset zoom)", () => {
+    Keybinds.resetAll();
+    assert.equal(Keybinds.matches(key("Equal", true), "zoomIn"), true);
+    assert.equal(Keybinds.matches(key("Equal", true), "resetZoom"), false);
+    assert.equal(Keybinds.matches(key("Equal", false), "resetZoom"), true);
+    assert.equal(Keybinds.matches(key("Minus"), "zoomOut"), true);
+    // No Shift+R action exists, so R still works while Shift is held (e.g. while overriding).
+    assert.equal(Keybinds.matches(key("KeyR", true), "autoInsta"), true);
+    assert.deepEqual(Keybinds.conflictsWith("zoomIn"), []);
+    assert.deepEqual(Keybinds.conflictsWith("zoomOut"), []);
+});
+
 test("held keys, mouse, capture mode and conflicts", () => {
     Keybinds.resetAll();
     assert.equal(Keybinds.isHeld("eat", { KeyQ: true }), true);
