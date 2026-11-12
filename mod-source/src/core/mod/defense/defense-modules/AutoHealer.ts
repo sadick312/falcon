@@ -8,6 +8,7 @@ import Latency from "@core/mod/utils/Latency";
 import PacketTracker from "@core/utils/PacketTracker";
 import ScriptConfig from "@utils/config/ScriptConfig";
 import ModManager from "@core/ModManager";
+import DebugStats from "@core/DebugStats";
 import Menu from "@menu/Menu";
 
 export interface AutoHealerInternal {
@@ -59,16 +60,18 @@ export default class AutoHealer {
         return times;
     }
 
+    /** Returns how many food items were sent (0 = none). */
     static heal() {
         if (DefenseSystem.alreadyHealed || !Menu.getValue("autoHeal"))
-            return;
+            return 0;
 
         DefenseSystem.alreadyHealed = true;
         const times = this.sendHeal();
-        if (times === 0) return;
+        if (times === 0) return 0;
 
         ModManager.brainState.healingUsed = times;
         ModManager.activityList.push(`autoHealing x${times}`);
+        return times;
     }
 
     /**
@@ -101,27 +104,30 @@ export default class AutoHealer {
         }, wait + 1);
     }
 
-    /** At or above this shame count, avoid emergency heals that would add shame (8 = 30 s no eating). */
-    static readonly HIGH_SHAME = 6;
-    /** Below this health we always eat immediately (one more realistic hit could kill). */
-    static readonly HIGH_SHAME_HP_FLOOR = 40;
+    /** "Shame Guard From" setting (Defense > Auto Healing); 6 = the old fixed value. */
+    private static getGuardFrom() {
+        const value = parseInt(Menu.getValue("shameGuardFrom"));
+        return Number.isFinite(value) ? value : ShameRules.DEFAULT_GUARD_FROM;
+    }
 
     /**
      * Emergency heal. Normally immediate, but at high shame an instant eat right after a hit would
      * push us toward Shame (live: repeated bull hits -> emergency heals -> Shame -> death). If we can
-     * survive until the shame-free moment (at most ~55 ms away), schedule that instead.
+     * survive until the shame-free moment, schedule that instead.
      */
     private static emergencyHeal(health: number, response: string) {
         const player = Client.player;
         const wait = ShameRules.msUntilSafeEat(player, Latency.getLowRtt());
 
-        if (wait > 0 && player.shameCount >= this.HIGH_SHAME && health > this.HIGH_SHAME_HP_FLOOR) {
+        if (ShameRules.shouldDeferEmergencyHeal(player.shameCount, health, wait, this.getGuardFrom())) {
             this.healIfNoShame();
             ModManager.brainState.healingResponse = `high-shame: ${ModManager.brainState.healingResponse}`;
             return;
         }
 
-        this.heal();
+        const sent = this.heal();
+        // Debug counter: an emergency eat that goes out inside the shame window.
+        if (sent > 0 && wait > 0) DebugStats.eats.panic++;
         ModManager.brainState.healingResponse = response;
     }
 

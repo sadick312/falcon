@@ -37,18 +37,38 @@ export default class ShameRules {
      * Falcon thought 5 when the server applied Shame). The server sees our eat ~RTT after we saw
      * the hit, so the gap it measures is (now - hit receive time) + RTT.
      */
-    static onOwnEat(player: Pick<Player, "hitTimeMs" | "hitTime" | "shameCount">, rtt: number, now: number = performance.now()) {
-        if (!player.hitTimeMs) return;
+    static onOwnEat(player: Pick<Player, "hitTimeMs" | "hitTime" | "shameCount">, rtt: number, now: number = performance.now()): "none" | "safe" | "shame" | "shamed" {
+        if (!player.hitTimeMs) return "none";
 
+        let result: "safe" | "shame" | "shamed" = "safe";
         if (now - player.hitTimeMs + rtt <= this.WINDOW_MS) {
             player.shameCount++;
-            if (player.shameCount > 7) player.shameCount = 0; // 8th strike: server applies Shame and resets
+            result = "shame";
+            if (player.shameCount > 7) {
+                player.shameCount = 0; // 8th strike: server applies Shame and resets
+                result = "shamed";
+            }
         } else {
             player.shameCount = Math.max(0, player.shameCount - 2);
         }
 
         player.hitTime = 0;
         player.hitTimeMs = 0;
+        return result;
+    }
+
+    /** Default for the "Shame Guard From" setting (the old fixed value). */
+    static readonly DEFAULT_GUARD_FROM = 6;
+    /** Below this health an emergency heal always goes out at once (one more hit could kill). */
+    static readonly GUARD_HP_FLOOR = 40;
+
+    /**
+     * Shame guard: should an emergency heal wait for the shame-free moment (at most ~135 ms)
+     * instead of eating now? Only when eating now would add shame, shame is already at or above
+     * `guardFrom`, and health is above the floor.
+     */
+    static shouldDeferEmergencyHeal(shameCount: number, health: number, waitMs: number, guardFrom: number) {
+        return waitMs > 0 && shameCount >= guardFrom && health > this.GUARD_HP_FLOOR;
     }
 
     /**

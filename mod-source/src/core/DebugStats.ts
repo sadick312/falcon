@@ -16,6 +16,12 @@ export default class DebugStats {
     /** Item selections sent ("z" with isWeapon=false), per item id: shows what Falcon tries to place/eat. */
     static itemSelects: Record<number, number> = {};
 
+    /**
+     * Our own eats this session. safe = no shame added (-2), shame = +1 shame, shamed = 8th strike
+     * (Shame hat), panic = emergency eats sent inside the shame window (a subset of shame/shamed).
+     */
+    static eats = { safe: 0, shame: 0, shamed: 0, panic: 0 };
+
     /** Latest Auto Place decision, written by AutoPlacer (kept here so the overlay needs no AutoPlacer import). */
     static autoPlace = { best: 0, allowed: 0 };
 

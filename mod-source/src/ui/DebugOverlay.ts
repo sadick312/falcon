@@ -80,6 +80,7 @@ export default class DebugOverlay {
                 `Hat: ${this.name(player.skinIndex, "hat")} | Acc: ${this.name(player.tailIndex, "acc")}`,
                 `In control: attack=${AttackManager.currentAttackAction?.reason ?? "-"} | combat=${CombatController.currentMode} | forced hat=${DefenseSystem.skinIndex >= 0 ? this.name(DefenseSystem.skinIndex, "hat") : "-"}`,
                 `Heal: ${ModManager.brainState.healingResponse} | predicted dmg ${Math.round(ModManager.brainState.totalDamage)}`,
+                `Eats: safe ${DebugStats.eats.safe} | +shame ${DebugStats.eats.shame} | Shamed ${DebugStats.eats.shamed} | panic ${DebugStats.eats.panic}`,
                 `Activity: ${ModManager.brainState.activityList.slice(0, 6).join(", ") || "-"}`,
                 `Auto Place: ${DebugStats.autoPlace.best} spots, ${DebugStats.autoPlace.allowed} allowed | items sent: ${Object.entries(DebugStats.itemSelects).map(([id, n]) => `${items.list[+id]?.name ?? id} x${n}`).join(", ") || "-"}`,
             );

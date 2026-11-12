@@ -43,3 +43,25 @@ test("onOwnEat: counts at send time with RTT, including eats at full health", ()
     ShameRules.onOwnEat(q, 50, 1);             // 8th strike -> server applies Shame and resets the count
     assert.equal(q.shameCount, 0);
 });
+
+test("onOwnEat reports what the eat did (for the Debug panel counters)", () => {
+    const p = { hitTimeMs: 0, hitTime: 0, shameCount: 0 };
+    assert.equal(ShameRules.onOwnEat(p, 80, 1000), "none", "no hit since last eat");
+    p.hitTimeMs = 1000;
+    assert.equal(ShameRules.onOwnEat(p, 80, 1020), "shame");
+    p.hitTimeMs = 2000;
+    assert.equal(ShameRules.onOwnEat(p, 80, 2100), "safe");
+    p.shameCount = 7; p.hitTimeMs = 3000;
+    assert.equal(ShameRules.onOwnEat(p, 80, 3000), "shamed", "8th strike");
+    assert.equal(p.shameCount, 0);
+});
+
+test("shame guard: defers an emergency heal only when it would add shame, shame is high enough and HP > 40", () => {
+    const from = ShameRules.DEFAULT_GUARD_FROM;
+    assert.equal(from, 6, "default = the old fixed value");
+    assert.equal(ShameRules.shouldDeferEmergencyHeal(6, 60, 30, from), true);
+    assert.equal(ShameRules.shouldDeferEmergencyHeal(5, 60, 30, from), false, "old behaviour below 6");
+    assert.equal(ShameRules.shouldDeferEmergencyHeal(4, 60, 30, 4), true, "guard from 4 (bull spam setting)");
+    assert.equal(ShameRules.shouldDeferEmergencyHeal(7, 40, 30, from), false, "HP 40 or less: always eat now");
+    assert.equal(ShameRules.shouldDeferEmergencyHeal(7, 60, 0, from), false, "already shame-free: eat now");
+});

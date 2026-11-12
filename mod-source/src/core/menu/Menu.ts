@@ -883,8 +883,25 @@ export const menuContent: IMenuContent = {
             id: "autoHeal",
             description: "Responds to dangers by auto healing.",
             icon: HEALING_ICON,
+            settings: [{
+                label: "Shame Guard From",
+                id: "shameGuardFrom",
+                description: "From this many shame points, an emergency heal right after a hit waits for the shame-free moment (a few ms) instead of adding shame, if your HP is above 40. Lower = guards earlier (4 is good against bull spam). 6 = old behaviour.",
+                type: "slider",
+                min: 1,
+                max: 7,
+                step: 1,
+                status: 6
+            }],
             type: "toggle",
             status: true
+        }, {
+            label: "Accurate Movement Prediction",
+            id: "accuratePrediction",
+            description: "Fixes the next-tick movement guess: it starts from your real speed every tick, so knockback doesn't pile up and fake spike hits don't cause panic eating (shame). Can change when Falcon eats and which hat it wears near spikes. Off = old behaviour.",
+            icon: WALKING_ICON,
+            type: "toggle",
+            status: false
         }, {
             label: "Hat Switching",
             id: "defensiveHatSwitching",

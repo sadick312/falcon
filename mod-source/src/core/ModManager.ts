@@ -34,6 +34,7 @@ import { Point } from "@mod-types/index";
 import AutoGrinder from "@placing/modules/AutoGrinder";
 import PacketMap from "@root/utils/socket/PacketMap";
 import MovementPhysicsSimulator from "@simulation/MovementPhysicsSimulator";
+import { resyncPredictedVelocity } from "@simulation/PredictionSync";
 import { Input } from "@ui/Hook";
 import getAngleDist from "@utils/angle/getAngleDist";
 import getDir from "@utils/angle/getDir";
@@ -306,6 +307,19 @@ export default class ModManager {
     private static updatePredictedState() {
         const player = Client.player;
         if (!player) return;
+
+        // Accurate Movement Prediction (Defense, default off = old behaviour): start from our real
+        // speed each tick instead of last tick's guess, so knockback doesn't pile up.
+        if (Menu.getValue("accuratePrediction")) {
+            resyncPredictedVelocity(
+                player.next_state,
+                player.real_position,
+                player.last_position,
+                !!player.trap,
+                ScriptConfig.SERVER_UPDATE_SPEED,
+                MovementPhysicsSimulator.PLAYER_DECELERATION
+            );
+        }
 
         const myPositionalSpot = PlayerStateManager.placementMap.get(player.sid)!;
         const justAttacked = this.justAttacked;
