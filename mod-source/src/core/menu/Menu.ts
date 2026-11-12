@@ -1112,6 +1112,13 @@ export const menuContent: IMenuContent = {
         type: "toggle",
         icon: NAME_TAG_ICON,
         status: true
+    }, {
+        label: "Original MooMoo Artwork",
+        id: "originalArtwork",
+        description: "On sandbox.moomodding.io, draws hats, accessories, weapons and arrows with the official MooMoo.io pictures (the old look), not moomodding's redrawn ones. The hotbar keeps the site's pictures. Takes effect after a page reload.",
+        type: "toggle",
+        icon: SHAME_HAT_ICON,
+        status: true
     }],
     console: [{
         label: "",

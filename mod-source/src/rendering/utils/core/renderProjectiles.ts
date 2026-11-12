@@ -5,6 +5,7 @@ import ModManager from "@core/ModManager";
 import CameraManager from "@rendering/core/CameraManager";
 import { mainContext } from "@rendering/RendererSystem";
 import RendererUtils, { isOnScreen } from "@rendering/RendererUtils";
+import { loadGameSprite } from "@rendering/core/SpriteSource";
 
 const projectileSprites: Record<string, HTMLImageElement> = {};
 
@@ -14,14 +15,13 @@ export function renderProjectile(x: number, y: number, obj: Projectile | IProjec
         let tmpSprite = projectileSprites[tmpSrc];
 
         if (!tmpSprite) {
-            tmpSprite = new Image();
-            tmpSprite.crossOrigin = "anonymous";
+            const sprite = loadGameSprite("weapons", `${tmpSrc}.png`);
+            tmpSprite = sprite;
 
-            tmpSprite.onload = () => {
-                tmpSprite.isLoaded = true;
+            sprite.onload = () => {
+                sprite.isLoaded = true;
             }
 
-            tmpSprite.src = `../../img/weapons/${tmpSrc}.png`;
             projectileSprites[tmpSrc] = tmpSprite;
         }
 

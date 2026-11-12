@@ -10,6 +10,7 @@ import renderWall from "@rendering/utils/items/renderWall";
 import renderWindmill from "@rendering/utils/items/renderWindmill";
 import { WeaponVariant } from "@utils/config/scriptConfigTypes";
 import randInt from "@utils/random/randInt";
+import { loadGameSprite } from "@rendering/core/SpriteSource";
 
 export function isOnScreen(x: number, y: number, s: number) {
     return (x + s >= 0 && x - s <= RenderingConfig.maxScreenWidth && y + s >= 0 && y - s <= RenderingConfig.maxScreenHeight)
@@ -357,14 +358,12 @@ export default class RendererUtils {
         let tmpAccessory = this.accessSprites[id];
 
         if (!tmpAccessory) {
-            const tmpImage = new Image();
-            tmpImage.crossOrigin = "anonymous";
+            const tmpImage = loadGameSprite("accessories", `access_${id}.png`);
 
             tmpImage.onload = () => {
                 tmpImage.isLoaded = true;
             };
 
-            tmpImage.src = `../../img/accessories/access_${id}.png`;
             this.accessSprites[id] = tmpImage;
             tmpAccessory = tmpImage;
         }
@@ -395,14 +394,12 @@ export default class RendererUtils {
         let tmpSkin = this.skinSprites[hatId];
 
         if (!tmpSkin) {
-            const tmpImage = new Image();
-            tmpImage.crossOrigin = "anonymous";
+            const tmpImage = loadGameSprite("hats", `hat_${hatId}.png`);
 
             tmpImage.onload = () => {
                 tmpImage.isLoaded = true;
             };
 
-            tmpImage.src = `../../img/hats/hat_${hatId}.png`;
             this.skinSprites[hatId] = tmpImage;
             tmpSkin = tmpImage;
         }
@@ -583,14 +580,13 @@ export default class RendererUtils {
         let tmpSprite = this.toolSprites[tmpSrc];
 
         if (!tmpSprite) {
-            tmpSprite = new Image();
-            tmpSprite.crossOrigin = "anonymous";
+            const sprite = loadGameSprite("weapons", `${tmpSrc}.png`);
+            tmpSprite = sprite;
 
-            tmpSprite.onload = () => {
-                tmpSprite.isLoaded = true;
+            sprite.onload = () => {
+                sprite.isLoaded = true;
             };
 
-            tmpSprite.src = `../../img/weapons/${tmpSrc}.png`;
             this.toolSprites[tmpSrc] = tmpSprite;
         }
 
