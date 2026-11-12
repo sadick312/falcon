@@ -13,6 +13,6 @@
         "@types/chrome": "^0.2.2",
         "chrome-types": "^0.1.434",
         "typescript": "~6.0.2",
-        "vite": "^8.1.4"
+        "vite": "^8.1.6"
     }
 }
