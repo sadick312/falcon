@@ -23,17 +23,17 @@ export default class PlayerCombatManager {
         weaponData.primaryConfirmed = true;
 
         // 1.8.2 gives one upgrade per age. Katana and Great Axe use the age-8 slot, which the
-        // Crossbow also needs (and Repeater/Musket require the Crossbow), so these players can at
-        // most have a Hunting Bow. Assuming a Musket for them overestimated threats.
+        // Crossbow also needs (and Repeater/Musket require the Crossbow), so in the normal game
+        // these players can at most have a Hunting Bow; an unseen secondary is guessed as that.
+        // The sandbox server doesn't check this (Katana + Musket is possible there), so a
+        // secondary we have actually SEEN is never replaced by the guess.
         const usesAge8Slot = id === WEAPON_ID_MAP.KATANA || id === WEAPON_ID_MAP.GREAT_AXE;
         const worstSecondary = usesAge8Slot ? WEAPON_ID_MAP.HUNTING_BOW : WEAPON_ID_MAP.MUSKET;
 
         // A bow/crossbow can still be upgraded to a better ranged weapon, unless age 8 is taken.
         const isNotPermanentRange = !usesAge8Slot && (weaponData.secondary === WEAPON_ID_MAP.HUNTING_BOW || weaponData.secondary === WEAPON_ID_MAP.CROSSBOW);
-        const impossibleSecondary = usesAge8Slot && weaponData.secondary !== WEAPON_ID_MAP.HUNTING_BOW &&
-            items.weapons[weaponData.secondary]?.projectile !== undefined;
 
-        if (!weaponData.secondaryConfirmed || isNotPermanentRange || impossibleSecondary || id === WEAPON_ID_MAP.TOOL_HAMMER) {
+        if (!weaponData.secondaryConfirmed || isNotPermanentRange || id === WEAPON_ID_MAP.TOOL_HAMMER) {
             player.reloads[worstSecondary] = 1;
             weaponData.lastTickSinceSecondaryReloaded = tick;
 
