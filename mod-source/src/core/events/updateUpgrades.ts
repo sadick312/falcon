@@ -1,5 +1,5 @@
 import items from "@constants/items";
-import { wantedWeapon as buildPick } from "@core/events/weaponBuilds";
+import { buildUpgradePick } from "@core/events/weaponBuilds";
 import Client from "@core/Client";
 import Menu from "@menu/Menu";
 import PacketMap from "@root/utils/socket/PacketMap";
@@ -18,9 +18,9 @@ function sendUpgrade(id: number, age: number) {
 }
 
 /**
- * Auto Upgrade weapon builds: age -> weapon id. Every path is legal in 1.8.2 (one upgrade per
- * age; Katana and Crossbow share age 8, and the Musket needs the Crossbow), checked against the
- * game data. Ages not listed fall back to the item choices below.
+ * Auto Upgrade weapon builds: age -> weapon id (see weaponBuilds.ts). Builds follow the 1.8.2
+ * upgrade rules, except "skipPre" builds (Katana + Musket) that rely on the sandbox server not
+ * checking a weapon's "pre". Ages not listed fall back to the item choices below.
  */
 
 export default function updateUpgrades(points: number, age: number) {
@@ -70,8 +70,8 @@ export default function updateUpgrades(points: number, age: number) {
         }
 
         if (Menu.getValue("autoUpgrade")) {
-            const wantedWeapon = buildPick(Menu.getValue("weaponBuild"), age);
-            if (wantedWeapon !== undefined && tmpList.includes(wantedWeapon)) {
+            const wantedWeapon = buildUpgradePick(Menu.getValue("weaponBuild"), age, tmpList, (id) => items.weapons[id]?.age);
+            if (wantedWeapon !== undefined) {
                 sendUpgrade(wantedWeapon, age);
                 return;
             }

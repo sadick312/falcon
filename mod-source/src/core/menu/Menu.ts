@@ -684,7 +684,7 @@ export const menuContent: IMenuContent = {
                 label: "Weapon Build",
                 id: "weaponBuild",
                 type: "select",
-                description: "Which weapons Auto Upgrade picks. Katana/Great Axe and Musket/Repeater can't be combined in 1.8.2: age 8 is Katana/Great Axe OR Crossbow, and the Musket needs the Crossbow.",
+                description: "Which weapons Auto Upgrade picks. Katana + Musket works on sandbox.moomodding.io (its server doesn't check that the Musket needs a Crossbow); the normal game would refuse the Musket.",
                 options: [
                     { label: "Manual (pick weapons yourself)", value: "manual" },
                     ...Object.entries(WEAPON_BUILDS).map(([value, build]) => ({ label: build.label, value })),
