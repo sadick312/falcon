@@ -71,3 +71,11 @@ export function buildUpgradePick(build: string, age: number, offered: readonly n
     if (WEAPON_BUILDS[build]?.skipPre && weaponAge(wanted) === age) return wanted;
     return undefined;
 }
+
+/** "Choose Ages 8 & 9 Yourself": Auto Upgrade leaves these ages to you (the bar stays open). */
+export const MANUAL_PICK_AGES: readonly number[] = [8, 9];
+
+/** Should Auto Upgrade decide this age? (false = show the upgrade bar and let the player click) */
+export function autoPicksAge(age: number, manualAges89: boolean) {
+    return !(manualAges89 && MANUAL_PICK_AGES.includes(age));
+}

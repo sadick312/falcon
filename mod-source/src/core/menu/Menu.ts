@@ -700,6 +700,12 @@ export const menuContent: IMenuContent = {
                 ],
                 status: "katanaMusket"
             }, {
+                label: "Choose Ages 8 & 9 Yourself",
+                id: "manualAges89",
+                type: "toggle",
+                description: "Auto Upgrade stops at ages 8 and 9 and shows the upgrade bar so you click the weapon yourself (e.g. Katana at 8, Musket at 9). Other ages are still picked for you. Off = the Weapon Build picks 8 and 9 too.",
+                status: true
+            }, {
                 label: "Show Every Weapon Upgrade",
                 id: "showEveryWeaponUpgrade",
                 type: "toggle",

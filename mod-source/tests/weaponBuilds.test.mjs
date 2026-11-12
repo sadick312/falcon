@@ -67,3 +67,14 @@ test("wantedWeapon looks up the build's pick", () => {
     assert.equal(wantedWeapon("greatAxeHammer", 8), 2);
     assert.equal(wantedWeapon("manual", 8), undefined);
 });
+
+test("Choose Ages 8 & 9 Yourself: Auto Upgrade skips only ages 8 and 9", async () => {
+    const { autoPicksAge } = await loadTs("src/core/events/weaponBuilds.ts");
+    assert.equal(autoPicksAge(8, true), false, "age 8: you click");
+    assert.equal(autoPicksAge(9, true), false, "age 9: you click");
+    assert.equal(autoPicksAge(2, true), true, "age 2 still automatic");
+    assert.equal(autoPicksAge(6, true), true, "age 6 still automatic");
+    assert.equal(autoPicksAge(10, true), true);
+    assert.equal(autoPicksAge(8, false), true, "toggle off: build picks 8 too (old behaviour)");
+    assert.equal(autoPicksAge(9, false), true);
+});

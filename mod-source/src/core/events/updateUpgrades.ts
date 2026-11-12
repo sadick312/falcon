@@ -1,5 +1,5 @@
 import items from "@constants/items";
-import { buildUpgradePick, weaponOffers } from "@core/events/weaponBuilds";
+import { autoPicksAge, buildUpgradePick, weaponOffers } from "@core/events/weaponBuilds";
 import Client from "@core/Client";
 import Menu from "@menu/Menu";
 import PacketMap from "@root/utils/socket/PacketMap";
@@ -75,7 +75,8 @@ export default function updateUpgrades(points: number, age: number) {
             }
         }
 
-        if (Menu.getValue("autoUpgrade")) {
+        // "Choose Ages 8 & 9 Yourself": no auto pick at those ages, the bar below stays open.
+        if (Menu.getValue("autoUpgrade") && autoPicksAge(age, Menu.getValue("manualAges89") !== false)) {
             const wantedWeapon = buildUpgradePick(Menu.getValue("weaponBuild"), age, autoList, (id) => items.weapons[id]?.age);
             if (wantedWeapon !== undefined) {
                 sendUpgrade(wantedWeapon, age);
