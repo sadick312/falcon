@@ -51,7 +51,7 @@ test("weaponOffers: age 9 after a Katana shows the Musket only with 'any pre'", 
     assert.deepEqual(strict.legal, []);
 
     const any = weaponOffers(9, items.weapons, owned, true);
-    assert.deepEqual(any.shown, [13, 15], "Repeater and Musket shown");
+    assert.deepEqual(any.shown, [2, 12, 13, 15], "Repeater and Musket, plus Great Axe and Crossbow from age 8 (Katana is owned)");
     assert.deepEqual(any.legal, [], "Auto Upgrade still decides from the normal list");
 });
 
@@ -111,4 +111,15 @@ test("itemOffers: every item of the age with 'any pre'; Auto Upgrade keeps the n
 
     const withStone = itemOffers(age, items.list, [...withoutStone, items.list[stone].id], false);
     assert.ok(withStone.legal.includes(castle), "with Stone Wall it's legal");
+});
+
+test("age 9 also offers the age 8 weapons you don't own (Show Every Upgrade only)", () => {
+    // Skipped age 8 (e.g. took an item): all three age 8 weapons come back at 9.
+    assert.deepEqual(weaponOffers(9, items.weapons, [5, 9], true).shown, [2, 4, 12, 13, 15]);
+    // Normal game / setting off: only age 9 weapons, as before.
+    assert.deepEqual(weaponOffers(9, items.weapons, [5, 12], false).shown, [13, 15]);
+    // Carry-over weapons are never auto-picked.
+    assert.deepEqual(weaponOffers(9, items.weapons, [5, 9], true).legal, []);
+    // Age 8 itself is unchanged.
+    assert.deepEqual(weaponOffers(8, items.weapons, [3, 9], true).shown, [2, 4, 12]);
 });
