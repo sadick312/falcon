@@ -19,3 +19,6 @@ mod-source/bench/.build/
 
 # vitest --coverage output.
 coverage/
+
+# Playwright MCP page snapshots (browser testing scratch files).
+.playwright-mcp/
