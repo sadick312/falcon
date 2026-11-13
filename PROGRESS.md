@@ -3,11 +3,26 @@
 Branch `full-review` (from `review/stability` at `814870f`). Push to `fork` only.
 
 ## Current task
-Phase 2: adding tests for core logic with the least test coverage.
+Phase 2 done. Waiting for your OK before Phase 3 (fixes).
 
 ## Done
 - Phase 1: read history, docs and code; wrote UNDERSTANDING.md (no code changes).
 - Phase 2 baseline measured (below).
+- Phase 2 tests (13 new, no game code changed). Each one was checked by breaking the rule it tests and seeing it
+  fail, then putting the code back:
+  - `auto-break-paths.test.ts` (4): Shift = only the trap; one swing aimed between two spikes; no swing while
+    reloading; soldier helmet instead of tank gear when a reloaded polearm enemy could knock us into a spike.
+  - `turret-manager-others.test.ts` (4): an enemy's turret threat from our turret: in reach, out of reach, EMP
+    Helmet, an animal closer to the turret.
+  - `auto-push-paths.test.ts` (3): follows the route's next node; asks again for a route that no longer ends at the
+    push spot; stands still one tick with the enemy on the spike, then pushes again.
+  - `auto-grind-paths.test.ts` (2): teleporter 7th slot placed at ±45°; back to the primary when the secondary
+    reaches its limit first.
+- After the tests: lint pass, typecheck pass, vitest 137 files, 1094 passed, 1 skipped; golden replays unchanged.
+  Coverage lines 86.8% (was 86.5), branches 77.7% (was 77.3). TurretManager left the least-tested list; AutoPusher
+  branches 69% → 82%, AutoGrinder 62% → 68%, AutoBreaker 64% → 65% (its katana-spike path is still untested: it
+  needs an enemy spike-bounce setup).
+- Player.ts's untested branches are drawing code (render/animate), so no tests were added there.
 
 ## Baseline (Phase 2, 13 Nov 2026, commit 814870f code, Windows 11, Node 24.22.1)
 
@@ -48,7 +63,12 @@ Least-tested core files (uncovered branches): AutoBreaker 56 (64% of branches), 
 (69%), ObjectManager 24, AutoGrinder 24 (62%), TurretManager 15 (63%).
 
 ## Next up
-- Phase 2: tests for the least-tested core logic above.
+- Phase 3 candidates (found in Phase 2): **Auto Grind without a secondary weapon crashes every tick.**
+  `AutoGrinder.main` reads `player.weapons[1] ?? NaN`, `typeof NaN === "number"` says we have one, and
+  `getWeapon(NaN)` throws `RangeError: Unknown weapon id NaN`. The throw stops the tick inside CombatController,
+  so the Defense System's respond/resolve (healing, hats) and placements don't run that tick. Happens when you turn
+  Auto Grind on before age 6. Checked with a scratch test (not committed). `check:dead` fails on 3 exports in
+  `updateUpgrades.ts` (fix exists on `test-fix-optimize`, `7326a21`).
 - Phase 3 candidates (open review bugs, UNDERSTANDING.md section 6): Aim Assist J switch reverts, Lead Falcon's
   Ranged Shots uses the held weapon, ranged lead misses one tick, WingsUtils raw mouse aim in tank spam, Walk To
   Targets never gives up, Reload HUD countdown for an unheld weapon.
