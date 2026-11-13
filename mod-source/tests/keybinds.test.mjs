@@ -58,3 +58,15 @@ test("readable names", () => {
     assert.equal(Keybinds.fromKeyEvent({ code: "KeyZ", shiftKey: true }), "Shift+KeyZ");
     assert.equal(Keybinds.fromKeyEvent({ code: "ShiftLeft", shiftKey: true }), "ShiftLeft");
 });
+
+test("hotkey list has the game keys and every action with its current key", () => {
+    Keybinds.resetAll();
+    const rows = Keybinds.listBindings();
+    assert.equal(rows[0].category, "Game");
+    assert.equal(rows.find(r => r.label === "Show All Hotkeys").key, "O");
+    assert.equal(rows.find(r => r.label === "Quick Chat 1").key, "Shift + 1");
+    Keybinds.set("autoInsta", "");
+    assert.equal(rows.length, Keybinds.listBindings().length);
+    assert.equal(Keybinds.listBindings().find(r => r.label.startsWith("Insta Now")).key, "None");
+    Keybinds.resetAll();
+});

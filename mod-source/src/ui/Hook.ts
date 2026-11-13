@@ -18,6 +18,7 @@ import PacketMap from "@root/utils/socket/PacketMap";
 import Loader, { loadingCirclePage } from "@ui/Loader";
 import getElem from "@utils/dom/getElem";
 import showNotice from "@ui/Notice";
+import toggleKeybindOverlay from "@ui/KeybindOverlay";
 
 const moveKeys: Record<number, [number, number]> = {
     87: [0, -1],
@@ -260,6 +261,10 @@ function runPressActions(event: KeyboardEvent) {
 
     for (let slot = 1; slot <= 4; slot++) {
         if (Keybinds.matches(event, `quickChat${slot}`)) sendQuickChat(slot);
+    }
+
+    if (Keybinds.matches(event, "showKeybinds")) {
+        toggleKeybindOverlay();
     }
 
     if (Keybinds.matches(event, "nextWeaponBuild")) {

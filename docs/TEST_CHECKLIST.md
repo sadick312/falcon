@@ -242,6 +242,12 @@ Use **Utility > Packet Management > Artificial Ping** to add delay on a fast con
 | ☐ | History | Send two messages, press Enter, then Up, Up | The box shows the older message; Down goes back |
 | ☐ | Typing safe | Type in the chat box or a menu text box | No hotkeys fire while typing |
 
+## 11. Hotkey list
+| ✔ | Test | What to do | What should happen |
+|---|---|---|---|
+| ☐ | Open / close | Press O, then O again (or click the panel) | A list of every hotkey appears, then closes |
+| ☐ | Up to date | Change a key in Menu > Keybinds, press O | The list shows the new key; unbound actions show "None" |
+
 ## What was already tested automatically (live, with a test bot)
 See the final report in the pull request / chat: heal timing, shame, instas, turret, traps, Safe Walk,
 prediction accuracy, hat rendering (all 47 hats + 21 accessories), reconnect, server change, memory.

@@ -43,6 +43,7 @@ export const KEYBIND_ACTIONS: KeybindAction[] = [
     { id: "quickChat2", label: "Quick Chat 2", category: "Utility", mode: "press", defaultKey: "Shift+Digit2", description: "Sends Quick Chat message 2 (set the text in Utility > Quick Chat)." },
     { id: "quickChat3", label: "Quick Chat 3", category: "Utility", mode: "press", defaultKey: "Shift+Digit3", description: "Sends Quick Chat message 3 (set the text in Utility > Quick Chat)." },
     { id: "quickChat4", label: "Quick Chat 4", category: "Utility", mode: "press", defaultKey: "Shift+Digit4", description: "Sends Quick Chat message 4 (set the text in Utility > Quick Chat)." },
+    { id: "showKeybinds", label: "Show All Hotkeys", category: "Utility", mode: "press", defaultKey: "KeyO", description: "Shows/hides a list of every hotkey on screen." },
     { id: "chat", label: "Chat", category: "Utility", mode: "press", defaultKey: "Enter", description: "Open/send chat." },
     { id: "replayPause", label: "Pause Packet Replay", category: "Utility", mode: "press", defaultKey: "KeyP", description: "Pauses/resumes the packet replayer." },
 ];
@@ -130,6 +131,22 @@ export default class Keybinds {
         if (!binding || binding.startsWith("Mouse")) return false;
         if (binding.startsWith("Shift+")) return !!(keys["ShiftLeft"] || keys["ShiftRight"]) && !!keys[binding.slice(6)];
         return !!keys[binding];
+    }
+
+    /**
+     * Every hotkey for the on-screen list: the fixed game keys first, then each rebindable action
+     * with its current key ("None" when unbound).
+     */
+    static listBindings(): { category: string, label: string, key: string }[] {
+        const rows = [
+            { category: "Game", label: "Move", key: "W A S D / Arrows" },
+            { category: "Game", label: "Weapons and items", key: "1 - 9" },
+            { category: "Game", label: "Menu", key: "Esc" },
+        ];
+        for (const action of KEYBIND_ACTIONS) {
+            rows.push({ category: action.category, label: action.label, key: this.describe(this.get(action.id)) });
+        }
+        return rows;
     }
 
     /** Human-readable name for a binding, e.g. "Shift + Z", "Left Click", "Space". */
