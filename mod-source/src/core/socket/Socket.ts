@@ -104,11 +104,28 @@ export default class Socket extends NativeWebSocket {
         }
 
         TaskScheduler.setTimeout(() => {
-            this.dispatch(type, data);
+            // Delayed packets run outside PacketBatcher's try/catch, so guard them here too.
+            try {
+                this.dispatch(type, data);
+            } catch (e) {
+                console.error(e);
+                DebugStats.onError(`packet ${type}: ${(e as Error)?.message ?? e}`);
+            }
         }, artificialPingAmt / 2);
     }
 
     private onMessage(ev: MessageEvent) {
+        // A packet that can't be read (bad bytes, unexpected shape) is skipped and counted in the
+        // Debug panel instead of throwing out of the socket's message handler.
+        try {
+            this.readMessage(ev);
+        } catch (e) {
+            console.error("[Falcon] could not read packet:", e);
+            DebugStats.onError(`bad packet: ${(e as Error)?.message ?? e}`);
+        }
+    }
+
+    private readMessage(ev: MessageEvent) {
         const bytes = new Uint8Array(ev.data);
         this.manager.maskIncoming(bytes);
 

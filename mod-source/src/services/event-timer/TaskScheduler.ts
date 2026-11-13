@@ -63,7 +63,13 @@ export default class TaskScheduler {
             timer.dt -= dt;
             if (timer.dt <= threshold) {
                 timer.active = false;
-                timer.callback();
+                // One failing job must not stop the scheduler: without this catch the loop below
+                // never re-posts, isRunning stays true, and no later job would ever run again.
+                try {
+                    timer.callback();
+                } catch (e) {
+                    console.error("[Falcon] scheduled task failed:", e);
+                }
             } else {
                 activeTimers++;
             }
