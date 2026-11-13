@@ -39,6 +39,12 @@ export const defenseSettings: IMenuItem[] = [{
             type: "toggle",
             status: false
         }, {
+            label: "Resync Predicted Speed",
+            id: "resyncPredictedSpeed",
+            description: "Starts each tick's prediction of where you'll be with your real speed. Off (classic): the speed is kept from the last prediction, so after one predicted spike bounce Falcon thinks you hit the spike every tick, and Auto Heal eats right after hits (+1 shame each time) for damage that never comes.",
+            type: "toggle",
+            status: false
+        }, {
             label: "Exact Break Hit Count",
             id: "exactBreakHits",
             description: "Counts how many hits break a trap or spike exactly: one whose health is an exact multiple of a hit's damage breaks on that hit. Off: counts one hit too many in that case (the classic count). Used by the Hat System (can a trapped dagger enemy get out) and Auto Breaker.",

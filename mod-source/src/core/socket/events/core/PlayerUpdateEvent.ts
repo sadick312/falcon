@@ -20,8 +20,37 @@ import getDir from "@utils/angle/getDir";
 import ScriptConfig from "@utils/config/ScriptConfig";
 import getDistSq from "@utils/geometry/getDistSq";
 import inRange from "@utils/math/inRange";
-import { BOOST_TICK_MAX_DIST_SQ, BOOST_TICK_MIN_DIST_SQ, BOW_INSTA_MAX_DIST_SQ, BOW_INSTA_MIN_DIST_SQ, NEARBY_ENEMY_DIST_SQ } from "@constants/world";
+import { BOOST_TICK_MAX_DIST_SQ, BOOST_TICK_MIN_DIST_SQ, BOW_INSTA_MAX_DIST_SQ, BOW_INSTA_MIN_DIST_SQ, NEARBY_ENEMY_DIST_SQ, PLAYER_DECELERATION } from "@constants/world";
+import type Player from "@entities/Player";
 type UpdatePlayerPacket = typeof PacketMap.SERVER_TO_CLIENT.UPDATE_PLAYERS;
+
+/** A move longer than this in one tick is a respawn or teleport, not walking: count it as standing still. */
+const MAX_WALK_PER_TICK = 100;
+
+/**
+ * "Resync Predicted Speed": our predicted state starts every tick on our real position with our real speed: this
+ * tick's movement, slowed by one tick of friction, the same way Player.getSimulationState works it out. Without it
+ * the position was only reset on ticks that carried our attributes, and the speed never: one simulated spike bounce
+ * kept "hitting" the spike every tick after (and Auto Heal ate for damage that never came).
+ */
+export function resyncPredictedSpeed(player: Player) {
+    const dx = player.real_position.x - player.last_position.x;
+    const dy = player.real_position.y - player.last_position.y;
+    const state = player.next_state;
+
+    if (player.trap || Math.abs(dx) > MAX_WALK_PER_TICK || Math.abs(dy) > MAX_WALK_PER_TICK) {
+        state.velX = 0;
+        state.velY = 0;
+        return;
+    }
+
+    let velX = dx / ScriptConfig.SERVER_UPDATE_SPEED * PLAYER_DECELERATION;
+    let velY = dy / ScriptConfig.SERVER_UPDATE_SPEED * PLAYER_DECELERATION;
+    if (Math.abs(velX) <= 0.01) velX = 0;
+    if (Math.abs(velY) <= 0.01) velY = 0;
+    state.velX = velX;
+    state.velY = velY;
+}
 
 export default class PlayerUpdateEvent extends MessageHandler<UpdatePlayerPacket> {
     private tmpSidSet = new Set();
@@ -75,6 +104,14 @@ export default class PlayerUpdateEvent extends MessageHandler<UpdatePlayerPacket
             const realY = player.real_position.y;
             player.next_position.x = realX * 2 - lastX;
             player.next_position.y = realY * 2 - lastY;
+
+            // The classic reset of next_state's position happens below, but only for players whose attributes came
+            // in this tick, which isn't every tick: in between, the prediction stayed frozen where it last was.
+            if (player.sid === Client.mySID && Menu.getValue("resyncPredictedSpeed")) {
+                player.next_state.x = realX;
+                player.next_state.y = realY;
+                resyncPredictedSpeed(player);
+            }
 
             player.d1 = player.d2;
             player.d2 = at(positions, i + 3) / 100;

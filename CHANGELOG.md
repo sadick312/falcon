@@ -2,6 +2,23 @@
 
 What changed in Falcon, newest first. Each entry names the commit(s) for the details.
 
+## Unreleased (branch review/stability, panic-eat fix)
+
+### Added (off by default)
+- **Resync Predicted Speed** (Defense): Falcon's guess of where you'll be next tick now starts from where you really
+  are, with your real speed, every tick. Before, it was only put back on your real position on ticks that also
+  carried your hat/weapon details, and its speed never: after one predicted spike bounce it stayed stuck "hitting"
+  that spike, so Auto Heal ate right after hits (+1 shame each time) for damage that never came.
+- Measured on the sample replays (`heal-report.bench-run.ts`), off → on:
+
+  | Replay | Ticks predicting a spike hit | Ticks Auto Heal ate | Food used |
+  |---|---|---|---|
+  | sample-base | 540 → 204 | 42 → 29 | 126 → 87 |
+  | sample-busy | 1075 → 4 | 70 → 59 | 210 → 177 |
+  | sample-synthetic | 129 → 0 | 11 → 5 | 33 → 15 |
+
+  With it off, every replay fingerprint is unchanged.
+
 ## Unreleased (branch review/stability, Phase 3B part 2: breaker)
 
 ### Added to Auto Object Breaker (all off / 0 by default, so it breaks exactly as before)
