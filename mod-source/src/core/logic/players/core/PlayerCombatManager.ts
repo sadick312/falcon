@@ -6,6 +6,7 @@ import Client from "@core/Client";
 import { nextTick, tickState } from "@core/TickState";
 import Menu from "@menu/Menu";
 import ScriptConfig from "@utils/config/ScriptConfig";
+import { combatDebug, combatDebugOn } from "@utils/debug/combatDebug";
 
 export interface WeaponFetchData {
     dmg: number;
@@ -140,6 +141,34 @@ export default class PlayerCombatManager {
         nextTick(() => {
             const atkSpd = hatMap.get(player.skinIndex)?.atkSpd ?? 1;
             player.reloadTimes[weaponId] = getWeapon(weaponId).speed * atkSpd;
+
+            if (combatDebugOn()) {
+                this.debugSwingTick.set(`${player.sid}:${weaponId}`, tickState.tick);
+                combatDebug("reload", {
+                    event: "swing",
+                    who: player.sid === Client.mySID ? "me" : `sid ${player.sid}`,
+                    weapon: getWeapon(weaponId).name,
+                    reloadMs: player.reloadTimes[weaponId] ?? NaN,
+                    tick: tickState.tick
+                });
+            }
+        });
+    }
+
+    /** "Combat Debug Log" only: the tick of each player's last swing per weapon, to log how long the reload took. */
+    private static debugSwingTick = new Map<string, number>();
+
+    private static logReady(player: Player, weaponId: number, tick: number) {
+        if (!combatDebugOn()) return;
+        const key = `${player.sid}:${weaponId}`;
+        const swingTick = this.debugSwingTick.get(key);
+        this.debugSwingTick.delete(key);
+        combatDebug("reload", {
+            event: "ready",
+            who: player.sid === Client.mySID ? "me" : `sid ${player.sid}`,
+            weapon: getWeapon(weaponId).name,
+            ticksAfterSwing: swingTick === undefined ? "?" : tick - swingTick,
+            tick
         });
     }
 
@@ -166,6 +195,7 @@ export default class PlayerCombatManager {
             if (player.reloads[weaponIndex] === 1 && !wasReloaded) {
                 if (weaponIndex < 9) weaponData.lastTickSincePrimaryReloaded = tick;
                 else weaponData.lastTickSinceSecondaryReloaded = tick;
+                this.logReady(player, weaponIndex, tick);
             }
         }
 

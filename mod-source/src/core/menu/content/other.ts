@@ -23,6 +23,13 @@ export const configsSettings: IMenuItem[] = [{
     }],
     status: true
 }, {
+    label: "Combat Debug Log",
+    description: "Writes combat details to the browser console (F12): each swing seen (who, weapon, its reload time) and how many server ticks the reload took. For testing only; leave it off while playing.",
+    id: "combatDebugLog",
+    type: "toggle",
+    status: false,
+    icon: gearIcon(22)
+}, {
     label: "Auto Save Configs",
     description: "Automatically saves setting configurations to local storage.",
     id: "autoSaveSettings",

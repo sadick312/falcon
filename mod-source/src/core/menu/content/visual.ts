@@ -149,6 +149,12 @@ export const visualSettings: IMenuItem[] = [{
         label: "Render Turret Gear Reload",
         type: "toggle",
         status: false
+    }, {
+        id: "reloadBars:hud",
+        description: "Shows a panel on the left of the screen with your primary and secondary reload and the nearest enemy's, with the server ticks left until each is ready. A \"?\" after an enemy weapon means it is a guess (not seen yet).",
+        label: "Reload HUD",
+        type: "toggle",
+        status: false
     }],
     type: "toggle",
     status: true

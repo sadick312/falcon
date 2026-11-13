@@ -68,6 +68,22 @@ describe("reload per weapon", () => {
         expect([decideAfter(1500), decideAfter(1500 * 0.78)]).toEqual([14, 11]);
     });
 
+    // 1.8.2's weapon variants (gold, diamond, ruby) only have a damage multiplier (`val`), no speed: the reload stays.
+    for (const [variant, name] of [[1, "gold"], [2, "diamond"], [3, "ruby"]] as const) {
+        it(`a ${name} polearm and musket reload exactly like plain ones`, async () => {
+            for (const [id, reload] of [[5, 700], [15, 1500]] as const) {
+                game?.done();
+                game = await startGame();
+                game.spawn({ sid: ME, x: 1000, y: 1000, weaponIndex: 5 });
+                game.setLoadout([5], [0, 3, 6, 10, 15]);
+                game.spawn({ sid: ENEMY, x: 1300, y: 1000, weaponIndex: id, weaponVariant: variant });
+                game.update();
+                const { default: PlayerManager } = await import("@core/logic/players/PlayerManager");
+                expect(ticksUntilReady(PlayerManager.get(ENEMY)!, id)).toBe(decideAfter(reload));
+            }
+        });
+    }
+
     it("uses the hat worn at the swing: Samurai taken off right after still gives the Samurai reload", async () => {
         const enemy = await enemyWith(5, SAMURAI_ARMOR);
         game!.handlers.K(ENEMY, false, 5);

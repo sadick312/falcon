@@ -2,6 +2,19 @@
 
 What changed in Falcon, newest first. Each entry names the commit(s) for the details.
 
+## Unreleased (branch review/stability, Phase 3B part 1: reload)
+
+### Added (off by default)
+- **Reload HUD** (under Visual → Reload Bars): a panel on the left of the screen with your primary and secondary
+  reload and the nearest enemy's, plus the server ticks left until each is ready. A "?" after an enemy weapon means
+  Falcon is only guessing it.
+- **Combat Debug Log** (Configs tab): writes each swing (who, weapon, reload time) and how many ticks its reload
+  took to the browser console (F12). For testing only.
+
+### Checked, not changed
+- Gold, diamond and ruby weapons reload exactly like plain ones (in 1.8.2 they only add damage); a new test proves it.
+  Reload already starts from the server's swing packets and counts Samurai Armor, so nothing there needed fixing.
+
 ## Unreleased (branch review/stability, Anti Bull, shame and the original look)
 
 ### Changed

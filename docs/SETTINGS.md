@@ -126,6 +126,7 @@ The **Favorites** tab lists the settings you starred; **Credits** has no setting
 - **Night Mode** (`nightMode`, toggle, default: off) — Renders a darker tint on the screen.
 - **Reload Bars** (`reloadBars`, toggle, default: on) — Draws reload bars.
   - **Render Turret Gear Reload** (`renderTurretReload`, toggle, default: off) — Shows a reload bar next to players while their Turret Gear is reloading.
+  - **Reload HUD** (`reloadBars:hud`, toggle, default: off) — Shows a panel on the left of the screen with your primary and secondary reload and the nearest enemy's, with the server ticks left until each is ready. A "?" after an enemy weapon means it is a guess (not seen yet).
 - **Shame Counter** (`renderShameCounter`, toggle, default: on) — Draws a entities' shame count.
 - **Stacked Text** (`stackedText`, toggle, default: off) — Damage and healing text are merged.
 - **Render Names** (`renderNames`, toggle, default: on) — Draws player and ai names.
@@ -137,6 +138,7 @@ The **Favorites** tab lists the settings you starred; **Credits** has no setting
 
 - **Development Analytics** (`improvementLogging`, toggle, default: on) — Nothing is sent anywhere. While this is on, a packet log (.fpl) is only saved when you die if Download Local Copy is on; while it is off, one is saved on every death.
   - **Download Local Copy** (`improvementLoggingLCopy`, toggle, default: off) — Saves the last 15 seconds of packets as an .fpl file each time you die.
+- **Combat Debug Log** (`combatDebugLog`, toggle, default: off) — Writes combat details to the browser console (F12): each swing seen (who, weapon, its reload time) and how many server ticks the reload took. For testing only; leave it off while playing.
 - **Auto Save Configs** (`autoSaveSettings`, toggle, default: off) — Automatically saves setting configurations to local storage.
 
 ## Experimentals

@@ -24,6 +24,7 @@ import renderBuildingHealth from "@rendering/utils/mod/renderBuildingHealth";
 import renderGrid from "@rendering/utils/mod/renderGrid";
 import renderMinimap from "@rendering/utils/mod/renderMinimap";
 import renderOneTickLine from "@rendering/utils/mod/renderOneTickLine";
+import renderReloadHud from "@rendering/utils/mod/renderReloadHud";
 import renderPathfindPath from "@rendering/utils/mod/renderPathfindPath";
 import renderPlacements from "@rendering/utils/mod/renderPlacements";
 import { profileEnd, profileLap, profileStart } from "@services/profiler/Profiler";
@@ -158,6 +159,7 @@ export default class RendererSystem {
             renderPlayerChats(delta);
             renderText(delta);
             renderOneTickLine(xOffset, yOffset);
+            renderReloadHud();
             if (__DEV__) lap = profileLap("draw.overlays+names+text", lap);
 
             if (Client.mode === "replay" && Client.player) {
