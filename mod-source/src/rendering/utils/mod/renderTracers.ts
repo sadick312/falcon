@@ -4,7 +4,8 @@ import Menu from "@menu/Menu";
 import CameraManager from "@rendering/core/CameraManager";
 import { mainContext } from "@rendering/RendererSystem";
 import RenderingConfig from "@rendering/RenderingConfig";
-import { edgeArrowPoint, isOnScreen } from "@rendering/utils/mod/tracerMath";
+import { edgeArrowPoint } from "@rendering/utils/mod/tracerMath";
+import { isOnScreen } from "@rendering/RendererUtils";
 
 /** Enemies closer than this get a red tracer (about melee range plus a step). */
 const CLOSE_RANGE = 300;
@@ -49,7 +50,7 @@ export default function renderTracers() {
         const dist = Math.hypot(other.render_position.x - me.render_position.x, other.render_position.y - me.render_position.y);
         const color = friendly ? "#5fdc7a" : dist < CLOSE_RANGE ? "#ff4a4a" : "#ffffff";
 
-        if (isOnScreen(x, y, w, h)) {
+        if (isOnScreen(x, y, 0)) {
             if (!drawLines) continue;
             mainContext.globalAlpha = .55;
             mainContext.strokeStyle = color;

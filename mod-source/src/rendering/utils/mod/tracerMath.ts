@@ -16,7 +16,3 @@ export function edgeArrowPoint(cx: number, cy: number, tx: number, ty: number, w
 
     return [cx + dx * s, cy + dy * s, angle];
 }
-
-export function isOnScreen(x: number, y: number, w: number, h: number, pad = 0) {
-    return x >= -pad && y >= -pad && x <= w + pad && y <= h + pad;
-}
