@@ -3,7 +3,21 @@
 Branch `full-review` (from `review/stability` at `814870f`). Push to `fork` only.
 
 ## Current task
-Phase 2 done. Waiting for your OK before Phase 3 (fixes).
+Phase 3: fixes, one per commit.
+
+## Phase 3 fixes
+
+Each fix: what was wrong, why (root cause), and how to check it in game.
+
+1. **Auto Grind crashed before you have a secondary weapon.**
+   - Wrong: with Auto Grind on before age 6, every tick threw `RangeError: Unknown weapon id NaN`, so that tick's
+     healing, hats and placements didn't run.
+   - Why: commit `f5e4e8a` (8 Nov, safe list reads) turned a missing secondary from `undefined` into `NaN`, and
+     the "do we have a secondary" check was `typeof secondaryId === "number"`, which is true for `NaN`.
+   - Fix: check `player.weapons[1] !== undefined`, which is what the old check meant. Behaviour with a secondary
+     is unchanged, so no menu toggle (this puts back the behaviour from before 8 Nov).
+   - In game: spawn, get a primary only (before age 6), turn on Utility > Auto Grinding. It should place turrets
+     (or your 7th-slot item) and hit them. Before: nothing happened and F12 showed the RangeError each tick.
 
 ## Done
 - Phase 1: read history, docs and code; wrote UNDERSTANDING.md (no code changes).

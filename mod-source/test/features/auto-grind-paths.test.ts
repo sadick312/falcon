@@ -39,6 +39,24 @@ async function setUp(seventh: number, primaryVariant = 0, secondaryVariant = 0) 
 }
 
 describe("Auto Grind: other paths", () => {
+    it("works before we have a secondary weapon (it threw 'Unknown weapon id NaN' every tick)", async () => {
+        game = await startGame();
+        game.spawn({ sid: ME, x: 1000, y: 1000, weaponIndex: POLEARM });
+        game.spawn({ sid: 2, x: 4000, y: 4000 });
+        game.setLoadout([POLEARM], [0, 3, 6, 10, 15, TURRET]);
+        game.Client.weaponIndex = POLEARM;
+        game.update();
+        game.Menu.itemMap.autoGrind.status = true;
+        const { Input } = await import("@ui/Input");
+        vi.spyOn(Input, "getAttackDir").mockReturnValue(0);
+
+        const before = game.sent.length;
+        expect(() => game!.update()).not.toThrow();
+        // No secondary counts as "reached", as before 8 Nov: it grinds the primary.
+        expect(lastTick(game, before).placed).toEqual([TURRET, TURRET, TURRET]);
+        expect(game.Menu.getValue("autoGrind")).toBe(true);
+    });
+
     it("with a teleporter in the 7th slot, places two, 45 degrees either side of the aim", async () => {
         const g = await setUp(TELEPORTER);
         const before = g.sent.length;

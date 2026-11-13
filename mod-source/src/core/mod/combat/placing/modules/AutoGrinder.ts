@@ -53,7 +53,9 @@ export default class AutoGrinder {
         const primaryId = player.weapons[0] ?? NaN;
         const secondaryId = player.weapons[1] ?? NaN;
 
-        const haveSecondary = typeof secondaryId === "number";
+        // Before age 6 there is no secondary. This was `typeof secondaryId === "number"` when a missing one was
+        // undefined; since the `?? NaN` above it was always true, and getWeapon(NaN) threw on every tick.
+        const haveSecondary = player.weapons[1] !== undefined;
         const isProjectile = haveSecondary && getWeapon(secondaryId).projectile !== undefined;
         const hasSecondaryReached = !haveSecondary || isProjectile || player.weaponData.secondaryVariant >= secondaryLimit;
 
