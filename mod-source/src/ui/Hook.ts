@@ -1,5 +1,6 @@
 import MovementManager from "@core/mod/defense/defense-modules/MovementManager";
 import Keybinds from "@core/Keybinds";
+import ChatHistory, { canQuickChat } from "@core/ChatHistory";
 import { nextWeaponBuild, WEAPON_BUILDS } from "@core/events/weaponBuilds";
 import Client from "@core/Client";
 import updateClanMenu, { allianceHolder } from "@core/events/updateClanMenu";
@@ -89,19 +90,51 @@ function resetMovementDir() {
     Client.lastMoveDir = null;
 }
 
+const chatHistory = new ChatHistory();
+let lastQuickChat = -Infinity;
+
 function toggleChat() {
     if (chatInput.style.display === "block") {
         chatInput.style.display = "none";
 
+        const message = chatInput.value.slice(0, 30);
+        chatHistory.add(message);
         if (Client.socket && Client.player) Client.socket.sendMsg(
             PacketMap.CLIENT_TO_SERVER.SEND_CHAT,
-            chatInput.value.slice(0, 30)
+            message
         );
     } else {
         chatInput.style.display = "block";
         chatInput.focus();
         chatInput.value = "";
+        chatHistory.resetBrowsing();
     }
+}
+
+// Up/Down in the chat box: bring back messages you sent before.
+chatInput.addEventListener("keydown", (event) => {
+    if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
+    event.preventDefault();
+
+    const text = event.key === "ArrowUp" ? chatHistory.older(chatInput.value) : chatHistory.newer();
+    if (text === null) return;
+    chatInput.value = text;
+    chatInput.setSelectionRange(text.length, text.length);
+});
+
+/** Quick Chat hotkeys (Shift + 1..4 by default). */
+function sendQuickChat(slot: number) {
+    if (!Menu.getValue("quickChat") || !Client.socket || !Client.player) return;
+
+    const message = String(Menu.getValue(`quickChat${slot}`) ?? "").trim().slice(0, 30);
+    if (!message) return;
+
+    const now = performance.now();
+    if (!canQuickChat(now, lastQuickChat)) return;
+    lastQuickChat = now;
+
+    chatHistory.add(message);
+    Client.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.SEND_CHAT, message);
 }
 
 gameCanvas.addEventListener("mouseup", (event) => {
@@ -223,6 +256,10 @@ function runPressActions(event: KeyboardEvent) {
 
     if (Keybinds.matches(event, "zoomOut")) {
         WindowResizer.changeZoom(ZOOM_STEP);
+    }
+
+    for (let slot = 1; slot <= 4; slot++) {
+        if (Keybinds.matches(event, `quickChat${slot}`)) sendQuickChat(slot);
     }
 
     if (Keybinds.matches(event, "nextWeaponBuild")) {

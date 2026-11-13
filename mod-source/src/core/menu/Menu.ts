@@ -3,6 +3,7 @@ import { WEAPON_BUILDS } from "@core/events/weaponBuilds";
 import Keybinds from "@core/Keybinds";
 import readStoredJSON from "@utils/storage/readStoredJSON";
 import drawNumberInput from "@menu/utils/drawNumberInput";
+import drawTextInput from "@menu/utils/drawTextInput";
 import getElem from "@utils/dom/getElem";
 import "./menu.css";
 import Stack from "./misc/Stack";
@@ -32,7 +33,7 @@ export interface IMenuItem {
     label: string;
     description?: string;
     id: string;
-    type: "toggle" | "select" | "number" | "slider" | "paragraph" | "group" | "chat-log" | "saved-configs" | "config-ui" | "keybinds";
+    type: "toggle" | "select" | "number" | "slider" | "paragraph" | "group" | "chat-log" | "saved-configs" | "config-ui" | "keybinds" | "text";
     settings?: IMenuItem[];
     icon?: string;
     options?: IMenuOptions[];
@@ -850,6 +851,38 @@ export const menuContent: IMenuContent = {
         icon: CONSOLE_ICON,
         status: false
     }, {
+        label: "Quick Chat",
+        id: "quickChat",
+        description: "Send a ready-made message with one key (Shift + 1..4 by default, change them in Keybinds). At most one message per second. In the chat box, Up/Down arrows bring back messages you sent before.",
+        type: "toggle",
+        icon: CONSOLE_ICON,
+        settings: [{
+            label: "Message 1",
+            id: "quickChat1",
+            type: "text",
+            max: 30,
+            status: "gg"
+        },{
+            label: "Message 2",
+            id: "quickChat2",
+            type: "text",
+            max: 30,
+            status: "Help!"
+        },{
+            label: "Message 3",
+            id: "quickChat3",
+            type: "text",
+            max: 30,
+            status: "Follow me"
+        },{
+            label: "Message 4",
+            id: "quickChat4",
+            type: "text",
+            max: 30,
+            status: "Thanks"
+        }],
+        status: true
+    }, {
         label: "Auto Play",
         id: "autoPlay",
         description: "Auto play? Might as well, the whole client basically does everything for you. Now let's automate movement too! Requires you to enable all the other modules for this to be good.",
@@ -1585,6 +1618,7 @@ export default class Menu {
                 else if (item.type === "paragraph") drawMenuParagraph(item), contentElement;
                 else if (item.type === "group") drawMenuGroup(item, contentElement);
                 else if (item.type === "number") drawNumberInput(item, contentElement);
+                else if (item.type === "text") drawTextInput(item, contentElement);
                 else if (item.type === "chat-log") drawChatLog();
                 else if (item.type === "config-ui") drawConfigUI();
                 else if (item.type === "saved-configs") drawSavedConfigs();

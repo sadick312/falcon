@@ -233,6 +233,15 @@ Use **Utility > Packet Management > Artificial Ping** to add delay on a fast con
 | ☐ | Mode | Show: Lines Only / Arrows Only | Only that kind is drawn |
 | ☐ | Disconnect | Get disconnected (e.g. IP limit) | Tracers and Danger Warning disappear |
 
+## 10. Chat history and Quick Chat (Menu > Utility > Quick Chat)
+| ✔ | Test | What to do | What should happen |
+|---|---|---|---|
+| ☐ | Quick chat | Press Shift + 1 | You say "gg" (Message 1) |
+| ☐ | No spam | Press Shift + 1 five times fast | Only one message is sent (max 1 per second) |
+| ☐ | Own text | Change Message 2 in the menu, press Shift + 2 | Your new text is sent |
+| ☐ | History | Send two messages, press Enter, then Up, Up | The box shows the older message; Down goes back |
+| ☐ | Typing safe | Type in the chat box or a menu text box | No hotkeys fire while typing |
+
 ## What was already tested automatically (live, with a test bot)
 See the final report in the pull request / chat: heal timing, shame, instas, turret, traps, Safe Walk,
 prediction accuracy, hat rendering (all 47 hats + 21 accessories), reconnect, server change, memory.

@@ -39,6 +39,10 @@ export const KEYBIND_ACTIONS: KeybindAction[] = [
     { id: "zoomOut", label: "Zoom Out (See More)", category: "Utility", mode: "press", defaultKey: "Minus", description: "Raises View Distance by 5% (up to 250%). Saved." },
     { id: "zoomIn", label: "Zoom In (See Less)", category: "Utility", mode: "press", defaultKey: "Shift+Equal", description: "Lowers View Distance by 5% (down to 75%). Saved." },
     { id: "reloadSprites", label: "Reload Item Sprites", category: "Utility", mode: "press", defaultKey: "Shift+KeyZ", description: "Redraws item icons if they look wrong." },
+    { id: "quickChat1", label: "Quick Chat 1", category: "Utility", mode: "press", defaultKey: "Shift+Digit1", description: "Sends Quick Chat message 1 (set the text in Utility > Quick Chat)." },
+    { id: "quickChat2", label: "Quick Chat 2", category: "Utility", mode: "press", defaultKey: "Shift+Digit2", description: "Sends Quick Chat message 2 (set the text in Utility > Quick Chat)." },
+    { id: "quickChat3", label: "Quick Chat 3", category: "Utility", mode: "press", defaultKey: "Shift+Digit3", description: "Sends Quick Chat message 3 (set the text in Utility > Quick Chat)." },
+    { id: "quickChat4", label: "Quick Chat 4", category: "Utility", mode: "press", defaultKey: "Shift+Digit4", description: "Sends Quick Chat message 4 (set the text in Utility > Quick Chat)." },
     { id: "chat", label: "Chat", category: "Utility", mode: "press", defaultKey: "Enter", description: "Open/send chat." },
     { id: "replayPause", label: "Pause Packet Replay", category: "Utility", mode: "press", defaultKey: "KeyP", description: "Pauses/resumes the packet replayer." },
 ];
