@@ -8,7 +8,7 @@ import RendererUtils from "@rendering/RendererUtils";
 /** "Aim Assist" → "Show Markers": a ring on the target and a dot where a ranged shot is aimed. */
 export default function renderAimAssist() {
     if (!AimAssist.enabled() || !Menu.getValue("aimAssist:markers")) return;
-    const target = AimAssist.target;
+    const target = AimAssist.activeTarget();
     if (!target || !Client.player) return;
 
     const buf = CameraManager.getOffset();

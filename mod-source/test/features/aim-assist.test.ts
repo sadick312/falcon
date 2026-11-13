@@ -118,6 +118,34 @@ describe("in the game", () => {
         expect(second.AimAssist.leadOwnShot(0.123, PM2.get(2)!)).toBe(0.123); // holding a polearm (melee)
     });
 
+    it("lock-on ends when the locked enemy leaves the cone (it doesn't jump to another one still showing 'locked')", async () => {
+        const { ModManager, CombatController, AimAssist } = await setup(["aimAssist"], 0, [[2, 1300, 1000], [3, 1400, 1050]]);
+        try {
+            ModManager.getAttackDir(true);
+            expect(AimAssist.target?.sid).toBe(2);
+            AimAssist.toggleLock();
+            expect(AimAssist.locked).toBe(true);
+            // The locked enemy runs behind us; another one is still in the cone.
+            game!.update([{ sid: 2, x: 700, y: 1000 }]);
+            ModManager.getAttackDir(true);
+            expect(AimAssist.target?.sid).toBe(3);
+            expect(AimAssist.locked).toBe(false);
+        } finally {
+            CombatController.tankSpam = false;
+            AimAssist.locked = false;
+        }
+    });
+
+    it("the marker goes away once we stop hitting by hand (no stale target)", async () => {
+        const { ModManager, CombatController, AimAssist } = await setup(["aimAssist"], 0, [[2, 1300, 1000]]);
+        ModManager.getAttackDir(true);
+        expect(AimAssist.activeTarget()?.sid).toBe(2);
+        CombatController.tankSpam = false;
+        game!.update();
+        game!.update();
+        expect(AimAssist.activeTarget()).toBeNull();
+    });
+
     it("off (default): tank spam aims at the mouse, as before", async () => {
         const { ModManager, CombatController } = await setup([], 0.2, [[2, 1300, 1000]]);
         try {

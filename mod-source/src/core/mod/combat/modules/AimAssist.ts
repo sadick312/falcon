@@ -110,6 +110,15 @@ export default class AimAssist {
     private static switchRequested = false;
     private static aimBuffer: Point = { x: 0, y: 0 };
 
+    /**
+     * The target while the assist is in use (it aimed this tick or the last), else null. `target` itself keeps the
+     * last pick after we stop hitting by hand, so the marker must use this.
+     */
+    static activeTarget() {
+        if (!this.enabled() || this.lastTick < tickState.tick - 1) return null;
+        return this.target;
+    }
+
     static enabled() {
         return Menu.getValue("aimAssist") === true;
     }
@@ -163,6 +172,8 @@ export default class AimAssist {
         } else if (this.locked && stillValid) {
             this.target = previous;
         } else {
+            // The locked enemy left the cone (or died): the lock ends instead of moving to someone else.
+            this.locked = false;
             this.target = pickTarget(from, mouseDir, pick, candidates) as Player | null;
         }
         this.switchRequested = false;
