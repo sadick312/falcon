@@ -102,6 +102,23 @@ loads the mod again) or from the PC being busy, so cutting allocations would not
 9%, `Grader.prepare` 8%, `isInLineOfSight` 7%, `computeInterval` 6%, and a long tail. None of these has an
 obvious large saving left; each has already been tuned (candidate lists, cached aims, cheap tests first).
 
+## Step 6 check after Phase 3B (13 Nov 2026)
+
+Replay benchmark on commit 40ebc63 (5 runs, bundle mode, profiler on, run alone with `--no-file-parallelism`:
+running the other benchmark files at the same time made every number 3–4× higher):
+
+| Replay | Average tick (ms) | p95 (ms) |
+|---|---:|---:|
+| sample-base | 0.89 | 2.21 |
+| sample-busy | 0.49 | 1.06 |
+| sample-synthetic | 0.59 | 1.61 |
+
+A tick has 111 ms, so Falcon's logic uses under 1% of it. The top functions are the same as in Phase 3
+(`computeAngles`, `updateObjects`, `scanEnvironment`, `computeInterval`), each 15–45 µs per tick: a 10% saving on
+any one of them is under 5 µs, below what alternating runs on this PC can show. The Phase 3B additions (Reload HUD,
+breaker range and walking, Aim Assist, Resync Predicted Speed) return on their first line while their setting is
+off, so by default they cost nothing. No code was changed.
+
 ## Soak test (memory over 10 minutes)
 
 ```bash
