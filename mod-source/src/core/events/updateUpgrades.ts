@@ -12,14 +12,14 @@ const tmpUpgradeList: number[] = [];
  * The Menu value for "leave this age to me", in the age 2 / 6 / 8 / 9 choices ("upgradeAge2" ...): mostly weapons,
  * which Auto Upgrade used to leave to you.
  */
-export const MANUAL_PICK = -1;
+const MANUAL_PICK = -1;
 
 /** Upgrade ids Auto Upgrade always takes when offered (cookie, pit trap, greater spikes), plus the 7th Slot choice. */
 const PREFERRED = [17, 31, 23];
 
 let fallbackTimer: number | undefined;
 
-export interface AutoUpgradeChoice {
+interface AutoUpgradeChoice {
     /** Send this upgrade now. */
     now?: number;
     /** Send this one after the manual-pick wait, if the same upgrade is still waiting. */
@@ -33,7 +33,7 @@ export interface AutoUpgradeChoice {
  * missing) is replaced by the first offered one, buildings before weapons; and an age left to you is picked the same
  * way once only buildings are offered, or after the manual-pick wait when weapons are.
  */
-export function chooseAutoUpgrade(offered: readonly number[], age: number): AutoUpgradeChoice {
+function chooseAutoUpgrade(offered: readonly number[], age: number): AutoUpgradeChoice {
     if (offered.length === 0) return {};
     if (offered.length === 1) return { now: offered[0] };
 
