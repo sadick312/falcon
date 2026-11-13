@@ -182,6 +182,13 @@ export const utilitySettings: IMenuItem[] = [{
         type: "toggle",
         status: false
     }, {
+        label: "Tick-Based Shot Window",
+        id: "tickShotWindow",
+        description: "Counts \"two enemy shots close together = bow insta\" in server ticks (within 4) instead of a 444 ms timer. With lag or jitter the ticks arrive late, so the timer ran out between two shots of a real bow insta and the defense didn't react. Off: the classic timer.",
+        icon: WIFI_ICON,
+        type: "toggle",
+        status: false
+    }, {
         label: "Artificial Ping",
         id: "artificialPing",
         description: "Artificially increases ping. This toggle does actually make your ping worse. Unlike with other toggles, this toggle will not be automatically saved.",

@@ -3,7 +3,21 @@
 Branch `full-review` (from `review/stability` at `814870f`). Push to `fork` only.
 
 ## Current task
-Phase 3 done. Waiting for your OK (and your in-game checks below) before Phase 4.
+Phase 4: improve features, in the order Ping → Combat → Defense/Breaker → Insta → Weapons → Hats/visuals → Menu →
+the rest. Every change is a new menu setting that is off by default, so play stays the same until you turn it on.
+
+## Phase 4 improvements
+
+| Area | Setting | What it improves | Status |
+|---|---|---|---|
+| Ping | Tick-Based Shot Window (`tickShotWindow`, Utility > Packet Management) | Bow-insta detection ("two enemy shots within 4 ticks") counts server ticks, not a 444 ms timer, so lag or jitter between the two shots no longer hides a real bow insta | done, tested (not live) |
+
+In game, Tick-Based Shot Window: hard to set up on purpose (needs an enemy bow/crossbow insta while your ping is
+jumpy). With Artificial Ping on and an enemy doing crossbow instas, Falcon should react (soldier helmet / heal)
+every time, not only on steady ticks.
+
+## Phase 3 (done)
+Waiting for your OK (and your in-game checks below) before Phase 4.
 
 After all Phase 3 fixes: typecheck, lint, inject:build (699 KB), ext:build, test:smoke, docs:settings and
 check:dead all pass; vitest 138 files, 1104 passed, 1 skipped; golden replay fingerprints unchanged. Each fix's

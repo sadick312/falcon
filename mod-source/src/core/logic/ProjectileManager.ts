@@ -10,6 +10,7 @@ import PlayerManager from "@core/logic/players/PlayerManager";
 import DefenseSystem from "@core/mod/defense/DefenseSystem";
 import GameEventTracker from "@core/mod/utils/GameEventTracker";
 import { tickState } from "@core/TickState";
+import Menu from "@menu/Menu";
 import PacketMap from "@root/utils/socket/PacketMap";
 import ScriptConfig from "@utils/config/ScriptConfig";
 import getDistSq from "@utils/geometry/getDistSq";
@@ -106,7 +107,12 @@ export default class ProjectileManager {
             GameEventTracker.updateTracker(source.sid, PacketMap.SERVER_TO_CLIENT.ADD_PROJECTILE);
             this.setSimulationProjectile(sid, indx, x, y, dir, speed, range, layer, source.sid);
 
-            if (!Client.isFriendly(source.sid) && !isTurret) {
+            if (!Client.isFriendly(source.sid) && !isTurret && Menu.getValue("tickShotWindow")) {
+                // "Tick-Based Shot Window": two shots within 4 server ticks (the classic 444 ms below, counted in ticks so
+                // late or bunched-up ticks during lag don't stretch or shrink it).
+                if (tick - source.lastShotTick < 4) DefenseSystem.isBeingBowInstaed = true;
+                source.lastShotTick = tick;
+            } else if (!Client.isFriendly(source.sid) && !isTurret) {
                 source.projFired++;
 
                 if (source.projFired > 1) {

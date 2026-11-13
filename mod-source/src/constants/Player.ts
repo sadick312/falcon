@@ -108,6 +108,8 @@ export default class Player implements Entity {
     hadProjDamages = false;
     projDamages: number[] = [];
     projFired = 0;
+    /** "Tick-Based Shot Window": the server tick of this player's last shot (not a turret). */
+    lastShotTick = -Infinity;
     damages: number[] = [];
     bullTick = 0;
 
