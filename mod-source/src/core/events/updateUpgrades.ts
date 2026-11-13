@@ -1,5 +1,5 @@
 import items from "@constants/items";
-import { autoPicksAge, buildUpgradePick, itemOffers, ownsUpgrade, weaponOffers } from "@core/events/weaponBuilds";
+import { autoPicksAge, buildUpgradePick, itemOffers, oldStyleCombos, ownsUpgrade, weaponOffers } from "@core/events/weaponBuilds";
 import PingTracker from "@core/mod/utils/PingTracker";
 import showNotice from "@ui/Notice";
 import Client from "@core/Client";
@@ -44,6 +44,47 @@ function checkUpgradeLater(id: number) {
     }, waitMs);
 }
 
+/** Age-9 weapon chosen with a combo button at age 8; sent as soon as age 9 is offered. */
+let pendingAge9: number | null = null;
+let comboRow: HTMLDivElement | null = null;
+
+function removeComboRow() {
+    comboRow?.remove();
+    comboRow = null;
+}
+
+/**
+ * "Combo Buttons at Age 8": buttons like "Katana + Musket" under the upgrade bar. A click takes the
+ * age-8 weapon now and remembers the age-9 one, which is sent automatically when age 9 comes.
+ */
+function showComboRow() {
+    removeComboRow();
+    const player = Client.player;
+    const combos = oldStyleCombos(player.weapons[0] ?? 0, (id) => items.weapons[id]?.name);
+
+    const row = comboRow = document.createElement("div");
+    row.id = "falcon-combo-row";
+    row.style.cssText = "display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:8px;pointer-events:auto";
+
+    for (const combo of combos) {
+        const button = document.createElement("div");
+        button.textContent = combo.label;
+        button.style.cssText = "cursor:pointer;padding:6px 12px;border-radius:6px;background:rgba(0,0,0,.45);" +
+            "color:#fff;font:16px 'Hammersmith One',sans-serif";
+        button.onmouseenter = () => button.style.background = "rgba(0,0,0,.7)";
+        button.onmouseleave = () => button.style.background = "rgba(0,0,0,.45)";
+        button.onclick = () => {
+            pendingAge9 = combo.age9;
+            sendUpgrade(combo.age8, 8);
+            removeComboRow();
+            showNotice(`${combo.label}: ${items.weapons[combo.age8]?.name} now, ${items.weapons[combo.age9]?.name} at age 9`);
+        };
+        row.appendChild(button);
+    }
+
+    upgradeCounter.after(row);
+}
+
 function sendUpgrade(id: number, age: number) {
     lastUpgradeAge = age;
     lastUpgradeId = id;
@@ -60,7 +101,10 @@ function sendUpgrade(id: number, age: number) {
 export default function updateUpgrades(points: number, age: number) {
     Client.player.upgradePoints = points;
     Client.player.upgrAge = age;
-    if (age === 2) Client.upgradesObtained.clear();
+    if (age === 2) {
+        Client.upgradesObtained.clear();
+        pendingAge9 = null; // new life / new server: forget an old combo
+    }
 
     // The server offered the same age again: our last upgrade didn't take (e.g. lost while
     // reconnecting). Forget it so it can be sent again instead of the chain stalling.
@@ -74,6 +118,7 @@ export default function updateUpgrades(points: number, age: number) {
         tmpUpgradeList.length = 0;
         autoUpgradeList.length = 0;
         upgradeHolder.innerHTML = "";
+        removeComboRow();
 
         const anyPre = Menu.getValue("showEveryWeaponUpgrade") !== false && location.hostname.endsWith("moomodding.io");
         const offers = weaponOffers(age, items.weapons, Client.player.weapons, anyPre, Client.socket.isPrivateServer);
@@ -126,6 +171,14 @@ export default function updateUpgrades(points: number, age: number) {
             }
         }
 
+        // Second half of a combo picked at age 8. The bar below stays open, so if the server
+        // refuses it ("Upgrade failed" notice) you can still click another weapon.
+        if (age === 9 && pendingAge9 !== null) {
+            const id = pendingAge9;
+            pendingAge9 = null;
+            sendUpgrade(id, age);
+        }
+
         for (let i = 0; i < tmpList.length; i++) {
             const tmpId = tmpList[i];
             const elem = getElem(`upgrade-item-${tmpId}`);
@@ -140,11 +193,13 @@ export default function updateUpgrades(points: number, age: number) {
             upgradeHolder.style.display = "flex";
             upgradeCounter.style.display = "block";
             upgradeCounter.innerHTML = `SELECT ITEMS (${Math.min(9, points)})`;
+            if (age === 8 && anyPre && Menu.getValue("comboButtons") !== false) showComboRow();
         } else {
             upgradeHolder.style.display = "none";
             upgradeCounter.style.display = "none";
         }
     } else {
+        removeComboRow();
         upgradeHolder.style.display = "none";
         upgradeCounter.style.display = "none";
     }

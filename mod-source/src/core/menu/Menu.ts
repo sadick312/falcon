@@ -704,6 +704,12 @@ export const menuContent: IMenuContent = {
                 description: "On sandbox.moomodding.io, the upgrade bar shows every weapon and item of your age, even if you skipped the earlier one (like old MooMoo): Katana at 8 and Musket at 9 with any weapon, Castle Wall without Stone Wall. Auto Upgrade's own picks don't change.",
                 status: true
             }, {
+                label: "Combo Buttons at Age 8",
+                id: "comboButtons",
+                type: "toggle",
+                description: "Old MooMoo style (sandbox.moomodding.io): at age 8 the upgrade bar also shows buttons like \"Katana + Musket\". One click takes the age 8 weapon now and the age 9 weapon as soon as you reach age 9. Works without the weapons the normal game asks for first (the sandbox server only checks the age).",
+                status: true
+            }, {
                 label: "7th Slot",
                 id: "7thSlot",
                 type: "select",
