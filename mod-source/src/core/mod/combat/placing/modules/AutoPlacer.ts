@@ -1,5 +1,6 @@
 import { at } from "@utils/array/at";
 import Player from "@entities/Player";
+import Client from "@core/Client";
 import PlacementSystem from "@core/mod/combat/core/PlacementSystem";
 import { FinderOptions } from "@core/mod/combat/placing/AngleFinder";
 import PingTracker from "@core/mod/utils/PingTracker";
@@ -80,6 +81,9 @@ export default class AutoPlacer extends Placer {
     }
 
     private executePreplaceBatch(arr: Preplacement[], count: number, originalWaitMs: number) {
+        // A batch sent after a wait: if we died meanwhile, the server would ignore it, so don't spend packets on it.
+        if (originalWaitMs > 0 && !Client.isAlive) return;
+
         for (let i = 0; i < count; i++) {
             const preplacement = arr[i];
             if (!preplacement) continue;
