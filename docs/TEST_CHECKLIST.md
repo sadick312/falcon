@@ -269,6 +269,18 @@ Use **Utility > Packet Management > Artificial Ping** to add delay on a fast con
 | ☐ | Switch servers | Change Server 3 times in a row | Each join works; old players/buildings don't stay on screen |
 | ☐ | Bad settings | Import text with a wrong value (e.g. `{"weaponBuild":"x"}`) | Red message or "skipped"; menu still works |
 
+## 14. Old-style combos at age 8 / 9 (Utility > Auto Upgrade > Combo Buttons at Age 8)
+The sandbox server checks only a weapon's age, not the weapon you needed before it
+(tested live 2026-11-13). So any age 8 weapon can be followed by any age 9 weapon.
+| ✔ | Test | What to do | What should happen |
+|---|---|---|---|
+| ☐ | Buttons | Join (you get 9 upgrade points), pick upgrades until age 8 | Under the bar: Katana + Musket, Katana + Repeater Crossbow, Great Axe + Musket, Great Axe + Repeater Crossbow, and "<your weapon> + Musket / Repeater" |
+| ☐ | Katana + Musket | Click "Katana + Musket" | Message "Katana now, Musket at age 9"; Katana in your hotbar; at age 9 the Musket comes by itself |
+| ☐ | Keep primary | Start with Polearm, click "Polearm + Musket" | Crossbow at 8, then Musket at 9; Polearm stays |
+| ☐ | Normal bar | Click a weapon in the normal bar instead | Works as before; no automatic age 9 pick |
+| ☐ | Off | Turn "Combo Buttons at Age 8" off | No buttons; normal bar only |
+| ☐ | Died at 8 | Click a combo, die before age 9, respawn | The old age 9 pick is forgotten |
+
 ## What was already tested automatically (live, with a test bot)
 See the final report in the pull request / chat: heal timing, shame, instas, turret, traps, Safe Walk,
 prediction accuracy, hat rendering (all 47 hats + 21 accessories), reconnect, server change, memory.
