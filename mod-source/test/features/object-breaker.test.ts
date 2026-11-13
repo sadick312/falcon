@@ -238,6 +238,33 @@ describe("Object Breaker: Closest First, Detection Range, Walk To Targets", () =
         expect(enemyNear.ObjectBreaker.walkDir).toBeNull();
     });
 
+    it("Walk To Targets gives up on a building it can't get closer to, and walks to the next one", async () => {
+        // A spike to the right and a pad to the left, both out of reach; we never move (as if a wall were in the way).
+        const { ObjectBreaker } = await run({
+            enable: ["walkBreaker:walkToTarget"], detectRange: 200,
+            objects: [{ sid: 701, x: 1250, y: 1000, item: "SPIKES" }, { sid: 702, x: 800, y: 1000, item: "BOOST_PAD" }]
+        });
+        expect(ObjectBreaker.farTarget?.sid).toBe(701);
+        const targets: (number | undefined)[] = [];
+        for (let i = 0; i < 15; i++) {
+            game!.update();
+            targets.push(ObjectBreaker.farTarget?.sid);
+        }
+        // About a second (9 ticks) without getting closer: the spike is skipped and the pad is next.
+        expect(targets.slice(0, 7).every(sid => sid === 701)).toBe(true);
+        expect(targets.at(-1)).toBe(702);
+        expect(Math.cos(ObjectBreaker.walkDir!)).toBeLessThan(-0.99);
+    });
+
+    it("Walk To Targets keeps going while it gets closer", async () => {
+        const { ObjectBreaker } = await run({ enable: ["walkBreaker:walkToTarget"], detectRange: 200, objects: farSpike });
+        for (let x = 1005; x <= 1060; x += 5) {
+            game!.update([{ sid: ME, x }]);
+            expect(ObjectBreaker.farTarget?.sid).toBe(701);
+            expect(ObjectBreaker.walkDir).toBeCloseTo(0, 5);
+        }
+    });
+
     it("all new options are off / 0 by default", async () => {
         const { vi } = await import("vitest");
         vi.resetModules();

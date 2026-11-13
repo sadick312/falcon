@@ -19,6 +19,11 @@ import { combatDebug, combatDebugOn } from "@utils/debug/combatDebug";
 
 /** "Walk To Targets" stands down while an enemy player is this close (a fight is more important). */
 const WALK_ENEMY_CLEARANCE = 300;
+/** "Walk To Targets" gives up on a building after this many ticks (~1 s) without getting this many px closer... */
+const WALK_GIVE_UP_TICKS = 9;
+const WALK_MIN_PROGRESS = 5;
+/** ...and tries other buildings for this many ticks (~10 s) before that one again. */
+const WALK_SKIP_TICKS = 90;
 
 export default class ObjectBreaker {
     static gameObjectQueue: GameObject[] = [];
@@ -112,6 +117,47 @@ export default class ObjectBreaker {
     /** "Walk To Targets": the direction to walk towards `farTarget`, or null. Read by MovementManager.getMoveDir. */
     static walkDir: number | null = null;
 
+    /** "Walk To Targets": the building being walked to, the closest we got to it, and ticks since we last got closer. */
+    private static walkProgress = { sid: -1, bestDist: Infinity, stuckTicks: 0, lastTick: -1 };
+    /** "Walk To Targets": buildings it gave up on (sid -> the tick it may try again). */
+    private static walkGivenUp = new Map<number, number>();
+
+    private static isWalkGivenUp(sid: number) {
+        const until = this.walkGivenUp.get(sid);
+        if (until === undefined) return false;
+        if (tickState.tick < until) return true;
+        this.walkGivenUp.delete(sid);
+        return false;
+    }
+
+    /** Counts ticks without getting closer to `far`; after WALK_GIVE_UP_TICKS, skips it for WALK_SKIP_TICKS. */
+    private static trackWalkProgress(far: GameObject, dist: number) {
+        const progress = this.walkProgress;
+        // A new building, or we stopped walking for a while (moved by hand, a fight, broke something in reach): start over.
+        const walkedLastTick = progress.lastTick === tickState.tick - 1;
+        progress.lastTick = tickState.tick;
+        if (progress.sid !== far.sid || !walkedLastTick) {
+            progress.sid = far.sid;
+            progress.bestDist = dist;
+            progress.stuckTicks = 0;
+            return true;
+        }
+
+        if (dist < progress.bestDist - WALK_MIN_PROGRESS) {
+            progress.bestDist = dist;
+            progress.stuckTicks = 0;
+            return true;
+        }
+
+        if (++progress.stuckTicks < WALK_GIVE_UP_TICKS) return true;
+
+        // Blocked (a wall, a tree, the map edge): give up on this one so the next building can be tried.
+        this.walkGivenUp.set(far.sid, tickState.tick + WALK_SKIP_TICKS);
+        progress.sid = -1;
+        if (combatDebugOn()) combatDebug("breaker", { gaveUp: getItem(far.id).name, sid: far.sid, dist });
+        return false;
+    }
+
     /**
      * "Closest First" order: spikes before other buildings, then the closest, then the lowest health.
      * (The classic order: spikes first, newest spike first; others in the order the objects were stored.)
@@ -148,6 +194,7 @@ export default class ObjectBreaker {
         const enemy = tickState.enemyData.nearest;
         if (enemy && withinDist(enemy.real_position, playerPos, WALK_ENEMY_CLEARANCE)) return;
 
+        if (!this.trackWalkProgress(far, Math.sqrt(getDistSq(far, playerPos)))) return;
         this.walkDir = getDir(far, playerPos);
     }
 
@@ -174,6 +221,7 @@ export default class ObjectBreaker {
 
         // 0 (the default) = classic: only buildings already in reach are looked at.
         const detectExtra = Number(Menu.getValue("walkBreaker:detectRange")) || 0;
+        const walking = Menu.getValue("walkBreaker:walkToTarget") === true;
 
         for (let i = 0, len = closeObjects.length; i < len; i++) {
             const gameObject = closeObjects[i];
@@ -198,7 +246,9 @@ export default class ObjectBreaker {
                 }
             } else if (isTarget && isNotFriendly && detectExtra > 0 && gameObject.hasHealth &&
                 BreakerUtils.getObjectAttackDistance(player, gameObject, wpn.range - 1 + detectExtra)) {
-                // Spikes first, then the closest, then the lowest health (the Closest First order).
+                // Spikes first, then the closest, then the lowest health (the Closest First order). Walk To Targets
+                // skips a building it gave up on (couldn't get closer), so it tries the next one.
+                if (walking && this.isWalkGivenUp(gameObject.sid)) continue;
                 if (this.farTarget === null || this.compareClosestFirst(gameObject, this.farTarget, playerPos) < 0) {
                     this.farTarget = gameObject;
                 }

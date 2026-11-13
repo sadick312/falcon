@@ -52,6 +52,15 @@ Each fix: what was wrong, why (root cause), and how to check it in game.
      WingsUtils use it. With Aim Assist off it is the mouse, exactly as before (replays unchanged).
    - In game: hard to see. Blood Wings Optimizations + Aim Assist on, hurt, tank spam with one enemy close beside
      the mouse and another farther inside the cone: Falcon shouldn't skip eating expecting a Blood Wings heal.
+7. **Walk To Targets never gave up on a building it couldn't reach.**
+   - Why: it always walked straight at the best building in Detection Range. With a wall, tree or river edge in the
+     way, it pushed against it forever and never tried another building.
+   - Fix: if it gets no 5 px closer to that building for 9 ticks (about 1 s), it skips that building for 90 ticks
+     (about 10 s) and walks to the next one. These are Falcon's own timings, not game values. Only with Walk To
+     Targets on (off by default); Detection Range alone still shows the same building as before.
+   - In game: Auto Object Breaker on, Detection Range 200, Walk To Targets on. Stand so an enemy spike is behind a
+     wall from you, with another enemy building elsewhere in range. Falcon walks into the wall for about a second,
+     then turns to the other building. With F12 and Combat Debug Log on you see `breaker {gaveUp: ...}`.
 
 ## Done
 - Phase 1: read history, docs and code; wrote UNDERSTANDING.md (no code changes).
