@@ -20,6 +20,13 @@ export function loadGameSprite(
 ) {
     const image = new Image();
     if (hostname.endsWith("moomodding.io") && useOriginal) {
+        // If moomoo.io can't be reached (down, blocked, missing file), fall back to the site's own
+        // picture once instead of drawing nothing. Callers only set onload, so this stays ours.
+        image.onerror = () => {
+            image.onerror = null;
+            image.crossOrigin = "anonymous";
+            image.src = `../../img/${folder}/${file}`;
+        };
         image.src = `${OFFICIAL_IMG}/${folder}/${file}`;
     } else {
         image.crossOrigin = "anonymous";

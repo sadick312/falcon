@@ -45,3 +45,13 @@ test("on moomoo.io itself: the site's picture (already official)", () => {
     globalThis.__settings = {};
     assert.equal(loadGameSprite("accessories", "access_21.png", "sandbox.moomoo.io").src, "../../img/accessories/access_21.png");
 });
+
+test("moomoo.io picture fails to load: falls back to the site's picture once (never invisible)", () => {
+    globalThis.__settings = {};
+    const img = loadGameSprite("hats", "hat_7.png", "sandbox.moomodding.io");
+    assert.equal(typeof img.onerror, "function");
+    img.onerror();
+    assert.equal(img.src, "../../img/hats/hat_7.png");
+    assert.equal(img.crossOrigin, "anonymous");
+    assert.equal(img.onerror, null, "no endless retry if the site's picture fails too");
+});
