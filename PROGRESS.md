@@ -44,6 +44,14 @@ Each fix: what was wrong, why (root cause), and how to check it in game.
      Falcon's Ranged Shots (both off by default).
    - In game: Aim Assist on, musket or crossbow, tank spam at an enemy running sideways. The yellow dot sits a bit
      farther ahead than before, and shots should meet the enemy instead of landing just behind it.
+6. **"Will this swing heal with Blood Wings" looked at the mouse, not the real swing.**
+   - Why: `WingsUtils.willHitPlayer` used `getAttackDir()` (the raw mouse in tank spam), but the swing that is sent
+     uses `getAttackDir(true)`, which Aim Assist turns to its target. So with an enemy close to the mouse and the
+     assist aiming at a farther one, Falcon expected a Blood Wings heal that never came.
+   - Fix: one helper, `ModManager.sentAimDir()`, gives the direction this tick sends; both the sending code and
+     WingsUtils use it. With Aim Assist off it is the mouse, exactly as before (replays unchanged).
+   - In game: hard to see. Blood Wings Optimizations + Aim Assist on, hurt, tank spam with one enemy close beside
+     the mouse and another farther inside the cone: Falcon shouldn't skip eating expecting a Blood Wings heal.
 
 ## Done
 - Phase 1: read history, docs and code; wrote UNDERSTANDING.md (no code changes).

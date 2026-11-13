@@ -26,7 +26,9 @@ export default class WingsUtils {
         if (!weapon || weapon.projectile !== undefined) return false;
         if (player.reloads[weaponId] !== 1) return false;
 
-        const aim = ModManager.getAttackDir();
+        // Where the swing really goes: the direction this tick sends (Aim Assist may turn a tank-spam swing away from the
+        // mouse), else the mouse as before.
+        const aim = ModManager.sentAimDir() ?? ModManager.getAttackDir();
         const nearby = tickState.enemyData.nearby;
 
         for (let i = 0, len = nearby.length; i < len; i++) {
