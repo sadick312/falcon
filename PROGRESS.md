@@ -3,7 +3,12 @@
 Branch `full-review` (from `review/stability` at `814870f`). Push to `fork` only.
 
 ## Current task
-Phase 3: fixes, one per commit.
+Phase 3 done. Waiting for your OK (and your in-game checks below) before Phase 4.
+
+After all Phase 3 fixes: typecheck, lint, inject:build (699 KB), ext:build, test:smoke, docs:settings and
+check:dead all pass; vitest 138 files, 1104 passed, 1 skipped; golden replay fingerprints unchanged. Each fix's
+new test failed on the old code first. None of the fixes changes default play (every fixed feature is off by default,
+or the fix puts back pre-8-Nov behaviour), so there are no new menu toggles.
 
 ## Phase 3 fixes
 
