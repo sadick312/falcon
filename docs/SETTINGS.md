@@ -31,6 +31,7 @@ The **Favorites** tab lists the settings you starred; **Credits** has no setting
   - **Projectile Sync** (`projectileSync`, toggle, default: on) — Automatically attacks enemies the moment it can onetick with any projectile.
   - **Turret Gear Knockback** (`turretGearKB`, toggle, default: on) — Automatically uses turret gear's knockback to kill enemies if possible.
   - **Barbarian Knockback** (`barbKnockback`, toggle, default: on) — Automatically uses barbarian armor if the knockback kills the enemy.
+  - **Sync Hits Use Enemy Health** (`syncHitsUseHealth`, toggle, default: off) — Velocity Hits and Projectile Sync decide "does it kill" with the enemy's current health and their hat (Soldier Helmet takes 0.75 of the damage). So they also hit a hurt enemy, and skip a bull hit a Soldier Helmet would survive. An enemy who heals in the same tick first can still survive. Off: the classic check (100 damage or more).
 - **Spike Oneshots** (group) — Modules that customize oneshots using spikes
   - **Shame Grind** (`shameGrind`, toggle, default: off) — While the enemy is trapped, fakes Apple Insta with bull hits so they eat too fast and gain shame. Lets Apple Insta finish once they're shamed (can't heal) or stop eating right after hits, or after 12 fakes. Needs a great hammer, Apple Insta, Auto Place and Preplacements.
   - **Apple Insta** (`appleInsta`, toggle, default: on) — Automatically breaks enemy traps and spike one shots them. Requires preplacements module to be turned on.

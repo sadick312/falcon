@@ -44,7 +44,7 @@ export default class ProjectileSyncer extends CombatModule {
         let totalDamage = nearestEnemy.turretThreats * 25;
         for (const damage of nearestEnemy.projDamages) totalDamage += damage;
 
-        if (primary.dmg * BULL_DAMAGE_MULT + totalDamage < 100) return;
+        if (!CombatUtils.syncHitKills(nearestEnemy, primary.dmg * BULL_DAMAGE_MULT + totalDamage)) return;
 
         const attackAction = this.attackAction;
         AttackManager.prepareBullHitSequence(attackAction.sequence, "projSync");

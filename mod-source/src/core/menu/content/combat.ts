@@ -180,6 +180,12 @@ export const combatSettings: IMenuItem[] = [{
         description: "Automatically uses barbarian armor if the knockback kills the enemy.",
         type: "toggle",
         status: true
+    }, {
+        label: "Sync Hits Use Enemy Health",
+        id: "syncHitsUseHealth",
+        description: "Velocity Hits and Projectile Sync decide \"does it kill\" with the enemy's current health and their hat (Soldier Helmet takes 0.75 of the damage). So they also hit a hurt enemy, and skip a bull hit a Soldier Helmet would survive. An enemy who heals in the same tick first can still survive. Off: the classic check (100 damage or more).",
+        type: "toggle",
+        status: false
     }]
 }, {
     label: "Spike Oneshots",

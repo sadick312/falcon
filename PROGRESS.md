@@ -11,10 +11,21 @@ the rest. Every change is a new menu setting that is off by default, so play sta
 | Area | Setting | What it improves | Status |
 |---|---|---|---|
 | Ping | Tick-Based Shot Window (`tickShotWindow`, Utility > Packet Management) | Bow-insta detection ("two enemy shots within 4 ticks") counts server ticks, not a 444 ms timer, so lag or jitter between the two shots no longer hides a real bow insta | done, tested (not live) |
+| Combat | Sync Hits Use Enemy Health (`syncHitsUseHealth`, Combat > Combat Modules) | Velocity Hits and Projectile Sync check "does it kill" against the enemy's current health and hat (Soldier Helmet 0.75, from the store data) instead of a fixed 100: they also finish hurt enemies and skip bull hits a Soldier Helmet survives | done, tested (not live) |
 
 In game, Tick-Based Shot Window: hard to set up on purpose (needs an enemy bow/crossbow insta while your ping is
 jumpy). With Artificial Ping on and an enemy doing crossbow instas, Falcon should react (soldier helmet / heal)
 every time, not only on steady ticks.
+
+In game, Sync Hits Use Enemy Health: Velocity Hits on, polearm, your normal spike next to a hurt enemy (about 80
+health) who isn't in Soldier Helmet. Falcon should bull-hit them into the spike (67.5 + 20 kills at 80); before, it
+waited for 100 damage. Against a full-health enemy in Soldier Helmet next to a greater spike it no longer bull-hits.
+
+Considered, not done (Phase 4):
+- Pattern Recognition's 5 s reset uses the wall clock. It only matters after a multi-second freeze; not worth a toggle.
+- Skipping bow/musket shots we can't pay for (auto-improve `8d33f71`): sandbox never takes the wood or stone, so no gain.
+- Measuring melee hit rate: the sample replays have no melee attacks at the nearest enemy and no real fight
+  recordings (`.fpl`) exist on this PC, so combat changes can only be checked with unit tests for now.
 
 ## Phase 3 (done)
 Waiting for your OK (and your in-game checks below) before Phase 4.

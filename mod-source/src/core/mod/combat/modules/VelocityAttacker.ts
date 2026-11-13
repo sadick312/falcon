@@ -64,7 +64,7 @@ export default class VelocityAttacker extends CombatModule {
             break;
         }
 
-        if (damage < 100) return;
+        if (!CombatUtils.syncHitKills(enemy, damage)) return;
         const attackAction = this.attackAction;
         AttackManager.prepareBullHitSequence(attackAction.sequence, "velBullHit");
         AttackManager.addAttackQueue(attackAction);

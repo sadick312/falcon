@@ -1,7 +1,8 @@
 import { getWeapon, WEAPON_ID_MAP } from "@constants/items";
 import Player from "@entities/Player";
-import { STORE_ACCESSORY_MAP } from "@constants/store";
+import { hatMap, STORE_ACCESSORY_MAP } from "@constants/store";
 import Client from "@core/Client";
+import Menu from "@menu/Menu";
 import ObjectManager from "@core/logic/ObjectManager";
 import { PlayerSimulationState } from "@simulation/SimulationStates";
 import lineInRect from "@utils/geometry/lineInRect";
@@ -19,6 +20,17 @@ export default class CombatUtils {
     static getMonkeyDamage(dmg: number, isProjectile: boolean = false) {
         if (isProjectile) return dmg;
         return dmg * (Client.player.tailIndex === STORE_ACCESSORY_MAP.MONKEY_TAIL ? MONKEY_TAIL_DAMAGE_MULT : 1);
+    }
+
+    /**
+     * Whether `damage` (before the victim's hat) kills `victim` this tick. Classic: 100 or more, whatever their health
+     * and hat. With "Sync Hits Use Enemy Health" on: the damage after their hat's damage-taken share (1.8.2 store data:
+     * Soldier Helmet 0.75) against their current health. A victim who heals first in the same tick survives.
+     */
+    static syncHitKills(victim: Player, damage: number) {
+        if (Menu.getValue("syncHitsUseHealth") !== true) return damage >= 100;
+        const taken = hatMap.get(victim.skinIndex)?.dmgMult ?? 1;
+        return damage * taken >= victim.health;
     }
 
     static canTurretHit(victim: Player) {
