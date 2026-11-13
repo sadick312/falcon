@@ -28,6 +28,14 @@ Each fix: what was wrong, why (root cause), and how to check it in game.
      unchanged; no extra toggle (decision below).
    - In game: Combat > Aim Assist on, two enemies in the cone, hold the mouse on them while tank spamming. Press J:
      the yellow ring moves to the other enemy and stays there. Before: it jumped back on the next tick.
+4. **Lead Falcon's Ranged Shots looked at the held weapon, not the attack's weapon.**
+   - Why: `leadOwnShot` read `Client.weaponIndex`. Combos such as Musket Insta switch to the musket in the same
+     tick as the shot, so the held weapon was still the polearm and the musket shot went out without a lead.
+   - Fix: `ModManager.getAttackDir` passes the attack's own weapon (`action.wpnId`). Only with Aim Assist and
+     Lead Falcon's Ranged Shots on (both off by default).
+   - In game: Aim Assist + Lead Falcon's Ranged Shots + Musket Insta on, polearm + musket, against an enemy
+     running sideways past you. The markers only show for hits by hand, so watch the musket bullet instead: it
+     should fly ahead of the enemy and meet it. Before: it aimed at where the enemy was and passed behind it.
 
 ## Done
 - Phase 1: read history, docs and code; wrote UNDERSTANDING.md (no code changes).

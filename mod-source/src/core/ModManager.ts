@@ -95,7 +95,7 @@ export default class ModManager {
             const trapAim = nearestEnemy && nearestEnemy.trap ? getDir(nearestEnemy.trap, player.real_position) : 0;
             if (typeof action.customAim !== "undefined") return action.customAim;
             // "Lead Falcon's Ranged Shots" (Aim Assist, off by default) only changes a ranged shot at the nearest enemy.
-            return type === "nearest" ? AimAssist.leadOwnShot(this.enemyData.angle, nearestEnemy) : trapAim;
+            return type === "nearest" ? AimAssist.leadOwnShot(this.enemyData.angle, nearestEnemy, action.wpnId) : trapAim;
         } else if (CombatController.currentMode === "autobreak" || CombatController.currentMode === "autobreakspike") {
             return AutoBreaker.aimAngle;
         } else if (CombatController.currentMode === "object breaking" || CombatController.currentMode === "pit object breaking") {

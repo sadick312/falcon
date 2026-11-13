@@ -118,6 +118,20 @@ describe("in the game", () => {
         expect(second.AimAssist.leadOwnShot(0.123, PM2.get(2)!)).toBe(0.123); // holding a polearm (melee)
     });
 
+    it("Lead Falcon's Ranged Shots: leads for the attack's weapon (musket) even while the polearm is still held", async () => {
+        const { CombatController, AimAssist } = await setup(["aimAssist", "aimAssist:leadOwnShots"], 0, [[2, 1300, 1000]]);
+        CombatController.tankSpam = false;
+        // The enemy runs down (+y) 40 px a tick.
+        game!.update([{ sid: 2, x: 1300, y: 1040 }]);
+        const { default: PlayerManager } = await import("@core/logic/players/PlayerManager");
+        const target = PlayerManager.get(2)!;
+        const plain = Math.atan2(40, 300);
+        // Holding the polearm, as when the combo switches to the musket in the same tick as the shot.
+        expect(AimAssist.leadOwnShot(plain, target)).toBe(plain);
+        expect(AimAssist.leadOwnShot(plain, target, MUSKET)).toBeGreaterThan(plain + 0.01);
+        expect(AimAssist.leadOwnShot(plain, target, POLEARM)).toBe(plain);
+    });
+
     it("lock-on ends when the locked enemy leaves the cone (it doesn't jump to another one still showing 'locked')", async () => {
         const { ModManager, CombatController, AimAssist } = await setup(["aimAssist"], 0, [[2, 1300, 1000], [3, 1400, 1050]]);
         try {

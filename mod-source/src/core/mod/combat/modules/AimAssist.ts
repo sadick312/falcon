@@ -200,10 +200,10 @@ export default class AimAssist {
         }
     }
 
-    /** The projectile speed of the weapon we hold, or 0 for melee. */
-    private static heldProjectileSpeed() {
+    /** The projectile speed of `weaponId` (default: the weapon we hold), or 0 for melee. */
+    private static heldProjectileSpeed(weaponId: number = Client.weaponIndex) {
         try {
-            const projectile = getWeapon(Client.weaponIndex).projectile;
+            const projectile = getWeapon(weaponId).projectile;
             return projectile === undefined ? 0 : getProjectile(projectile).speed ?? 0;
         } catch {
             return 0;
@@ -211,9 +211,9 @@ export default class AimAssist {
     }
 
     /** The direction to aim at `target` with the held weapon: its centre for melee, its predicted spot for ranged. */
-    static aimAt(target: AimCandidate) {
+    static aimAt(target: AimCandidate, weaponId: number = Client.weaponIndex) {
         const from = Client.player.real_position;
-        const speed = this.heldProjectileSpeed();
+        const speed = this.heldProjectileSpeed(weaponId);
         const point = speed > 0 ? predictHit(from, target, speed, this.aimBuffer) : target.real_position;
         this.aimPoint = point;
         return Math.atan2(point.y - from.y, point.x - from.x);
@@ -231,11 +231,13 @@ export default class AimAssist {
 
     /**
      * "Lead Falcon's Ranged Shots": the direction for one of Falcon's own attacks aimed at the nearest enemy, led when
-     * the held weapon fires a projectile. Returns `plainDir` unchanged otherwise (and while the option is off).
+     * the attack's weapon fires a projectile. Returns `plainDir` unchanged otherwise (and while the option is off).
+     * `weaponId` is the weapon the attack uses (default: the held one). A combo can switch to the musket in the same
+     * tick as the shot, so the held weapon is still the polearm then and the shot went out without a lead.
      */
-    static leadOwnShot(plainDir: number, nearest: Player | null) {
+    static leadOwnShot(plainDir: number, nearest: Player | null, weaponId: number = Client.weaponIndex) {
         if (!nearest || !this.enabled() || !Menu.getValue("aimAssist:leadOwnShots")) return plainDir;
-        if (this.heldProjectileSpeed() === 0) return plainDir;
-        return this.aimAt(nearest);
+        if (this.heldProjectileSpeed(weaponId) === 0) return plainDir;
+        return this.aimAt(nearest, weaponId);
     }
 }
