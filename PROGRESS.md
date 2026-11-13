@@ -3,8 +3,11 @@
 Branch `full-review` (from `review/stability` at `814870f`). Push to `fork` only.
 
 ## Current task
-Phase 4: improve features, in the order Ping → Combat → Defense/Breaker → Insta → Weapons → Hats/visuals → Menu →
-the rest. Every change is a new menu setting that is off by default, so play stays the same until you turn it on.
+Phase 4 done. Waiting for your OK before Phase 5 (speed work, only with benchmark proof).
+
+Phase 4 went through the areas in the order Ping → Combat → Defense/Breaker → Insta → Weapons → Hats/visuals →
+Menu → the rest. Every change is a new menu setting that is off (or classic) by default, so play stays the same until
+you turn it on.
 
 ## Phase 4 improvements
 
@@ -26,6 +29,19 @@ In game, View Distance: Visual > Camera > View Distance 150, then press = (or jo
 the map. Move the slider while playing: the view changes at once. Limit Wheel Zoom on: scrolling stops at 75% and
 250%. With both left at default, everything is as before. Very far out, the edges are empty (the server only sends
 what is near you).
+
+Reviewed in Phase 4 with no safe change found (no new setting):
+- Defense: Auto Healer (eats to full, the soldier/EMP choice), Defensive Knockback. The Defense System's
+  "100 or more is lethal" checks pick our own hats, so they belong to the classic hat system and stay as they are.
+- Breaker: covered by Phase 3 fixes 7 (Walk To Targets) and the Phase 2 tests.
+- Insta: Musket Insta already counts Soldier Helmet and EMP; Knockback Instakills has Insta Uses Enemy Health; their
+  ranged lead was fixed in Phase 3 (fixes 4 and 5).
+- Melee Sync and Predictive push strikes also use "100 damage", but Melee Sync checks before it knows the target and
+  Predictive is built around the enemy's Tank Gear timing, so the enemy-health rule doesn't fit them.
+- Weapons: weapon choice (Always Pick Best Weapon) and reload timing are covered by tests; nothing to change.
+- Menu: your settings are only kept after a reload with Configs > **Auto Save Configs** on (off by default, as in the
+  original Falcon). Changing that default would change old behaviour, so it stays; turn it on yourself if you want
+  your settings remembered.
 
 Considered, not done (Phase 4):
 - Pattern Recognition's 5 s reset uses the wall clock. It only matters after a multi-second freeze; not worth a toggle.
@@ -188,3 +204,7 @@ Least-tested core files (uncovered branches): AutoBreaker 56 (64% of branches), 
 - See UNDERSTANDING.md sections 4, 6 and 7.
 - Couldn't verify: with ping above one tick (~111 ms) the shot may act two ticks later, not one. The lead uses one
   tick, Falcon's usual rule; the 1.8.2 server code isn't available to check.
+- Flaky test (already on `review/stability`, not caused by this branch): `socket-paths.test.ts` "TaskScheduler runs a
+  task after its delay, never before" sometimes sees the task run 3-11 ms early on a busy PC (real-clock timing).
+  After Phase 4: everything else passes (vitest 1119 passed, 1 skipped; typecheck, lint, builds 701 KB, smoke,
+  docs:settings, check:dead). Next: look at TaskScheduler's early run in Phase 5 or 6.
