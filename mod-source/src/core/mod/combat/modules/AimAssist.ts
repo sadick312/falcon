@@ -75,8 +75,10 @@ export function pickTarget(from: Point, mouseDir: number, pick: AimPick, candida
  * Where to aim a projectile of `speed` (px per ms) fired from `from` so it meets `target`, which keeps moving as it
  * did over the last server tick. A trapped target doesn't move. A few rounds of "how long will the shot take to get
  * there, and where is the target by then" are plenty at these speeds.
+ * `delayMs`: how long after the seen position the shot leaves. Falcon answers a server tick and its packets act on
+ * the next one (the same "lands next tick" rule its threat and reload checks use), so the game passes one tick.
  */
-export function predictHit(from: Point, target: AimCandidate, speed: number, out: Point = { x: 0, y: 0 }) {
+export function predictHit(from: Point, target: AimCandidate, speed: number, out: Point = { x: 0, y: 0 }, delayMs = 0) {
     const tick = ScriptConfig.SERVER_UPDATE_SPEED;
     const moving = !target.trap;
     const vx = moving ? (target.real_position.x - target.last_position.x) / tick : 0;
@@ -86,10 +88,15 @@ export function predictHit(from: Point, target: AimCandidate, speed: number, out
     out.y = target.real_position.y;
     if (!(speed > 0) || (vx === 0 && vy === 0)) return out;
 
+    // Where the enemy is when the shot leaves; the rounds below add its flight time.
+    const startX = target.real_position.x + vx * delayMs;
+    const startY = target.real_position.y + vy * delayMs;
+    out.x = startX;
+    out.y = startY;
     for (let i = 0; i < 4; i++) {
         const flight = Math.max(0, Math.hypot(out.x - from.x, out.y - from.y) - PROJECTILE_START) / speed;
-        out.x = target.real_position.x + vx * flight;
-        out.y = target.real_position.y + vy * flight;
+        out.x = startX + vx * flight;
+        out.y = startY + vy * flight;
     }
     return out;
 }
@@ -214,7 +221,7 @@ export default class AimAssist {
     static aimAt(target: AimCandidate, weaponId: number = Client.weaponIndex) {
         const from = Client.player.real_position;
         const speed = this.heldProjectileSpeed(weaponId);
-        const point = speed > 0 ? predictHit(from, target, speed, this.aimBuffer) : target.real_position;
+        const point = speed > 0 ? predictHit(from, target, speed, this.aimBuffer, ScriptConfig.SERVER_UPDATE_SPEED) : target.real_position;
         this.aimPoint = point;
         return Math.atan2(point.y - from.y, point.x - from.x);
     }

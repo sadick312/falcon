@@ -36,6 +36,14 @@ Each fix: what was wrong, why (root cause), and how to check it in game.
    - In game: Aim Assist + Lead Falcon's Ranged Shots + Musket Insta on, polearm + musket, against an enemy
      running sideways past you. The markers only show for hits by hand, so watch the musket bullet instead: it
      should fly ahead of the enemy and meet it. Before: it aimed at where the enemy was and passed behind it.
+5. **The ranged lead left out the tick before the shot leaves.**
+   - Why: the lead counted only the bullet's flight from the position Falcon last saw. Falcon answers server tick N
+     and its swing acts on tick N+1 (the same "lands next tick" rule its threat and reload checks use), so the enemy
+     runs one more tick (111 ms) first: at 40 px a tick, about 40 px too little lead.
+   - Fix: the lead starts from where the enemy will be one tick later. Used by Aim Assist's ranged aim and Lead
+     Falcon's Ranged Shots (both off by default).
+   - In game: Aim Assist on, musket or crossbow, tank spam at an enemy running sideways. The yellow dot sits a bit
+     farther ahead than before, and shots should meet the enemy instead of landing just behind it.
 
 ## Done
 - Phase 1: read history, docs and code; wrote UNDERSTANDING.md (no code changes).
@@ -118,3 +126,5 @@ Least-tested core files (uncovered branches): AutoBreaker 56 (64% of branches), 
 
 ## Known issues
 - See UNDERSTANDING.md sections 4, 6 and 7.
+- Couldn't verify: with ping above one tick (~111 ms) the shot may act two ticks later, not one. The lead uses one
+  tick, Falcon's usual rule; the 1.8.2 server code isn't available to check.

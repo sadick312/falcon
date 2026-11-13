@@ -83,6 +83,26 @@ describe("ranged prediction", () => {
             // Aiming straight at it would miss by far more.
             expect(aim.y).toBeGreaterThan(30);
         });
+
+        it(`${name}: with the one tick before the shot leaves, it still meets the enemy (within 5 px)`, () => {
+            const from = { x: 0, y: 0 };
+            const target = enemy(1, 500, 0, 100, { x: 500, y: -40 });
+            const aim = predictHit(from, target, speed, undefined, TICK);
+            const dir = Math.atan2(aim.y, aim.x);
+            const vy = 40 / TICK;
+
+            // The server fires the shot one tick after the position we saw; the enemy keeps running meanwhile.
+            let closest = Infinity;
+            for (let t = 0; t < 400; t += 0.5) {
+                const sx = Math.cos(dir) * (70 + speed * t);
+                const sy = Math.sin(dir) * (70 + speed * t);
+                closest = Math.min(closest, Math.hypot(sx - 500, sy - vy * (TICK + t)));
+            }
+            expect(closest).toBeLessThan(5);
+            // The lead without the tick misses this by about a tick of running (40 px).
+            const noDelay = predictHit(from, target, speed);
+            expect(aim.y - noDelay.y).toBeGreaterThan(35);
+        });
     }
 });
 
