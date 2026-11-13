@@ -137,7 +137,7 @@ The **Favorites** tab lists the settings you starred; **Credits** has no setting
 - **Night Mode** (`nightMode`, toggle, default: off) — Renders a darker tint on the screen.
 - **Reload Bars** (`reloadBars`, toggle, default: on) — Draws reload bars.
   - **Render Turret Gear Reload** (`renderTurretReload`, toggle, default: off) — Shows a reload bar next to players while their Turret Gear is reloading.
-  - **Reload HUD** (`reloadBars:hud`, toggle, default: off) — Shows a panel on the left of the screen with your primary and secondary reload and the nearest enemy's, with the server ticks left until each is ready. A "?" after an enemy weapon means it is a guess (not seen yet).
+  - **Reload HUD** (`reloadBars:hud`, toggle, default: off) — Shows a panel on the left of the screen with your primary and secondary reload and the nearest enemy's, with the server ticks left until each is ready. A "?" after an enemy weapon means it is a guess (not seen yet). Grey means that weapon isn't held, so it isn't reloading: the ticks count down once it is held again.
 - **Shame Counter** (`renderShameCounter`, toggle, default: on) — Draws a entities' shame count.
 - **Stacked Text** (`stackedText`, toggle, default: off) — Damage and healing text are merged.
 - **Render Names** (`renderNames`, toggle, default: on) — Draws player and ai names.

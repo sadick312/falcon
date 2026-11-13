@@ -151,7 +151,7 @@ export const visualSettings: IMenuItem[] = [{
         status: false
     }, {
         id: "reloadBars:hud",
-        description: "Shows a panel on the left of the screen with your primary and secondary reload and the nearest enemy's, with the server ticks left until each is ready. A \"?\" after an enemy weapon means it is a guess (not seen yet).",
+        description: "Shows a panel on the left of the screen with your primary and secondary reload and the nearest enemy's, with the server ticks left until each is ready. A \"?\" after an enemy weapon means it is a guess (not seen yet). Grey means that weapon isn't held, so it isn't reloading: the ticks count down once it is held again.",
         label: "Reload HUD",
         type: "toggle",
         status: false

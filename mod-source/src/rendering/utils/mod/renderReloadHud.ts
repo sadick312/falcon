@@ -15,8 +15,13 @@ interface ReloadHudRow {
     weapon: string;
     /** 0 (just swung) to 1 (ready). */
     reload: number;
-    /** Server ticks until ready: 0 = ready now. */
+    /** Server ticks until ready once the weapon is held: 0 = ready now. */
     ticksLeft: number;
+    /**
+     * Not ready and not held (or a building is held): it doesn't reload until it is held again (Falcon reloads only
+     * the held weapon, like 1.8.2), so `ticksLeft` isn't counting down. Drawn grey.
+     */
+    paused: boolean;
 }
 
 /** Server ticks left until a weapon at `reload` (0..1) with a full reload of `reloadMs` is ready. */
@@ -39,11 +44,14 @@ function rowFor(player: Player, group: 0 | 1, who: string): ReloadHudRow | null 
     }
     const reload = player.getReload(group);
     const reloadMs = player.reloadTimes[id] ?? getWeapon(id).speed;
+    const shown = isNaN(reload) ? 1 : reload;
+    const held = player.weaponIndex === id && player.buildIndex === -1;
     return {
         who,
         weapon: confirmed ? name : `${name}?`,
-        reload: isNaN(reload) ? 1 : reload,
-        ticksLeft: ticksUntilReady(isNaN(reload) ? 1 : reload, reloadMs)
+        reload: shown,
+        ticksLeft: ticksUntilReady(shown, reloadMs),
+        paused: shown < 1 && !held
     };
 }
 
@@ -102,11 +110,11 @@ export default function renderReloadHud() {
         const barX = x + PANEL_W - BAR_W - 52;
         ctx.fillStyle = "#3d3f42";
         ctx.fillRect(barX, rowY - 6, BAR_W, 12);
-        ctx.fillStyle = row.reload >= 1 ? "#8ecc51" : "#a5974c";
+        ctx.fillStyle = row.reload >= 1 ? "#8ecc51" : row.paused ? "#808080" : "#a5974c";
         ctx.fillRect(barX, rowY - 6, BAR_W * Math.max(0, Math.min(1, row.reload)), 12);
 
         ctx.textAlign = "right";
-        ctx.fillStyle = "#ffffff";
+        ctx.fillStyle = row.paused ? "#9a9a9a" : "#ffffff";
         ctx.fillText(row.ticksLeft === 0 ? "ready" : `${row.ticksLeft}t`, x + PANEL_W - 8, rowY);
     }
 

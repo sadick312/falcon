@@ -60,6 +60,30 @@ describe("Reload HUD rows", () => {
         expect(hud.reloadHudRows(me, enemy).find(r => r.who === "Enemy" && r.weapon === "polearm")!.ticksLeft).toBe(0);
     });
 
+    it("a weapon that isn't held doesn't reload, so its count is shown as paused, not counting down", async () => {
+        const { me, enemy, hud } = await setup();
+        const polearm = () => hud.reloadHudRows(me, enemy).find(r => r.who === "Enemy" && r.weapon === "polearm")!;
+        game!.handlers.K(ENEMY, false, 5);
+        game!.update();
+        expect(polearm().paused).toBe(false);
+
+        // The enemy switches to the musket: the polearm's reload stops where it was.
+        game!.update([{ sid: ENEMY, weaponIndex: 15 }]);
+        const left = polearm().ticksLeft;
+        expect(left).toBeGreaterThan(0);
+        expect(polearm().paused).toBe(true);
+        game!.update();
+        game!.update();
+        expect(polearm().ticksLeft).toBe(left);
+        expect(polearm().paused).toBe(true);
+
+        // Back to the polearm: it counts down again.
+        game!.update([{ sid: ENEMY, weaponIndex: 5 }]);
+        expect(polearm().paused).toBe(false);
+        // A ready weapon is never "paused".
+        expect(hud.reloadHudRows(me, enemy).find(r => r.who === "You" && r.weapon === "great hammer")!.paused).toBe(false);
+    });
+
     it("shows only our rows without an enemy", async () => {
         const { me, hud } = await setup();
         expect(hud.reloadHudRows(me, null).map(r => r.who)).toEqual(["You", "You"]);
