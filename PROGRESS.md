@@ -53,13 +53,15 @@ bare `main` would have discarded all finished 1.8.2 work). Never commit to `main
 - New harness home: C:/Users/sarip/falcon-e2e (bootcheck.mjs, joincheck.mjs; Falcon alone, no bots)
 - Docs: README Quick Inject section, docs/TEST_CHECKLIST.md (146 lines)
 
+- Perf 2026-11-13 (a52c1f3, 3x20 s idle in game): 61 FPS, script 32-36 ms/s, CPU 82-92 ms/s, heap 8-9 MB; profile: no Falcon function above 2 ms/s (top: drawImage 6, renderNames 1.4)
+
 ## Next up
 1. (decided: no change) shame margin - msUntilSafeEat already uses MIN measured RTT (worst case for jitter); 15 ms covers tick rounding
 2. (couldn't verify) Replacer live: 5 harness variants failed (bot gets trapped/pinned by Falcon's Auto Place, or its wall placement is refused next to Falcon); falconDebug.setToggle added for mid-run toggling
 3. Spike Tick / Auto Push: need spikes near a trapped enemy - build a harness (bot traps itself? use Falcon traps)
 4. Target selection: prefer trapped/low-HP enemies for instas when several are near (needs 2 enemies: IP limit 2 - blocked)
 5. Melee/Projectile Sync: needs a Falcon teammate (blocked: IP limit)
-6. postMessage polling in PacketBatcher/TaskScheduler (~1 ms/s): replace busy re-post loop with a single microtask/timeout
+6. (decided: no change, 2026-11-13) postMessage polling in PacketBatcher/TaskScheduler: profiled 15 s in game, postMessage ~0.6 ms/s; not worth touching tuned batching
 7. (done) Debug overlay placement counters
 8. Code quality: tsc clean; insta/one-tick damage math is coupled to Client/Menu state - unit tests would need a refactor (not worth the risk now)
 9. Re-run full regression (stage2 all-on/all-off, insta, hammer) after every ~10 commits
