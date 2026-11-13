@@ -18,6 +18,16 @@ Each fix: what was wrong, why (root cause), and how to check it in game.
      is unchanged, so no menu toggle (this puts back the behaviour from before 8 Nov).
    - In game: spawn, get a primary only (before age 6), turn on Utility > Auto Grinding. It should place turrets
      (or your 7th-slot item) and hit them. Before: nothing happened and F12 showed the RangeError each tick.
+2. **`check:dead` failed** on 3 exports in `updateUpgrades.ts`: brought over `7326a21` from `test-fix-optimize`
+   (cherry-pick). No behaviour change. `npm run check:dead` passes again.
+3. **Aim Assist: J went straight back to the old target unless L was on.**
+   - Why: J picked the next enemy for one tick only; on the next tick, without a lock, the normal pick (Nearest /
+     Lowest Health / Closest To Mouse) ran again and chose the old one.
+   - Fix: J's pick is kept while it stays in the cone (like a lock, but the marker stays yellow). Leaving the cone,
+     dying or pressing L to unlock ends it. Only inside Aim Assist, which is off by default, so default play is
+     unchanged; no extra toggle (decision below).
+   - In game: Combat > Aim Assist on, two enemies in the cone, hold the mouse on them while tank spamming. Press J:
+     the yellow ring moves to the other enemy and stays there. Before: it jumped back on the next tick.
 
 ## Done
 - Phase 1: read history, docs and code; wrote UNDERSTANDING.md (no code changes).
@@ -88,6 +98,10 @@ Least-tested core files (uncovered branches): AutoBreaker 56 (64% of branches), 
   Targets never gives up, Reload HUD countdown for an unheld weapon.
 
 ## Decisions
+- Phase 3: bug fixes inside a feature that is off by default (Aim Assist, its Lead option, Walk To Targets, Reload
+  HUD) get no extra toggle: with the feature off, play is exactly as before, and a toggle that keeps a bug would
+  only confuse. A fix that changes default play gets a toggle defaulting to the old behaviour.
+- Phase 3: a fix that puts back behaviour an earlier commit broke by accident (Auto Grind) gets no toggle.
 - `full-review` lives in its own worktree (`../falcon-full-review`) so the shared `falcon-main` folder stays on
   `review/stability` for other sessions.
 

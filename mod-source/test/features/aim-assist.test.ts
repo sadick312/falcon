@@ -173,6 +173,31 @@ describe("in the game", () => {
         }
     });
 
+    it("J's pick stays on the next ticks without L (it went straight back to the nearest)", async () => {
+        const { ModManager, CombatController, AimAssist } = await setup(["aimAssist"], 0, [[2, 1400, 1000], [3, 1300, 1030]]);
+        try {
+            ModManager.getAttackDir(true);
+            expect(AimAssist.target?.sid).toBe(3);
+            AimAssist.requestSwitch();
+            game!.update();
+            ModManager.getAttackDir(true);
+            expect(AimAssist.target?.sid).toBe(2);
+            game!.update();
+            ModManager.getAttackDir(true);
+            expect(AimAssist.target?.sid).toBe(2);
+            expect(AimAssist.locked).toBe(false);
+            // Once it leaves the cone, the normal pick takes over again.
+            game!.update([{ sid: 2, x: 700, y: 1000 }]);
+            ModManager.getAttackDir(true);
+            expect(AimAssist.target?.sid).toBe(3);
+            game!.update([{ sid: 2, x: 1400, y: 1000 }]);
+            ModManager.getAttackDir(true);
+            expect(AimAssist.target?.sid).toBe(3);
+        } finally {
+            CombatController.tankSpam = false;
+        }
+    });
+
     it("on: lock-on keeps the target over a nearer one; J switches", async () => {
         const { ModManager, CombatController, AimAssist } = await setup(["aimAssist"], 0, [[2, 1400, 1000], [3, 1300, 1030]]);
         try {

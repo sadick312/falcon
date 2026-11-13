@@ -108,6 +108,8 @@ export default class AimAssist {
 
     private static lastTick = -1;
     private static switchRequested = false;
+    /** J's pick is kept (like a lock, without the red marker) until it leaves the cone or L unlocks. */
+    private static switchedHold = false;
     private static aimBuffer: Point = { x: 0, y: 0 };
 
     /**
@@ -126,6 +128,7 @@ export default class AimAssist {
     static toggleLock() {
         if (!this.enabled()) return;
         this.locked = !this.locked && this.target !== null;
+        if (!this.locked) this.switchedHold = false;
     }
 
     static requestSwitch() {
@@ -169,15 +172,21 @@ export default class AimAssist {
                 Math.atan2(b.real_position.y - from.y, b.real_position.x - from.x));
             const at = previous ? sorted.indexOf(previous) : -1;
             this.target = sorted[(at + 1) % sorted.length] ?? null;
-        } else if (this.locked && stillValid) {
+            // Without this the next tick's normal pick went straight back (J only worked while locked).
+            this.switchedHold = true;
+        } else if ((this.locked || this.switchedHold) && stillValid) {
             this.target = previous;
         } else {
             // The locked enemy left the cone (or died): the lock ends instead of moving to someone else.
             this.locked = false;
+            this.switchedHold = false;
             this.target = pickTarget(from, mouseDir, pick, candidates) as Player | null;
         }
         this.switchRequested = false;
-        if (this.target === null) this.locked = false;
+        if (this.target === null) {
+            this.locked = false;
+            this.switchedHold = false;
+        }
 
         if (this.target !== previous && combatDebugOn()) {
             const t = this.target;
