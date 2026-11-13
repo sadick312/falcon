@@ -1146,6 +1146,22 @@ export const menuContent: IMenuContent = {
         type: "toggle",
         status: true
     }, {
+        label: "Danger Warning",
+        id: "dangerWarning",
+        description: "Red screen edges and a DANGER message when nearby enemies can deal a lot of damage to you this moment (the same estimate Auto Healing uses). \"CAN KILL YOU\" = the hit is bigger than your health.",
+        type: "toggle",
+        settings: [{
+            label: "Warn From (damage)",
+            id: "dangerWarningAt",
+            description: "Show the warning when the expected damage is at least this much (out of 100 health).",
+            type: "slider",
+            min: 20,
+            max: 100,
+            step: 5,
+            status: 50
+        }],
+        status: true
+    }, {
         label: "Shame Counter",
         id: "renderShameCounter",
         description: "Draws a entities' shame count.",

@@ -215,6 +215,15 @@ Use **Utility > Packet Management > Artificial Ping** to add delay on a fast con
 | ☐ | Upgrade failed | (Hard to cause by hand) If an upgrade doesn't arrive | Red "Upgrade failed: ... - click it again" after ~1.5 s; clicking it again works |
 | ☐ | Bad packet | Turn on Artificial Ping, play 1 minute | Game keeps moving; no frozen players |
 
+## 8. Danger Warning (Menu > Visual > Danger Warning)
+| ✔ | Test | What to do | What should happen |
+|---|---|---|---|
+| ☐ | Warning | Let an enemy with a strong weapon (e.g. Polearm + Bull Helmet) get close | Orange edges + "DANGER (~xx dmg)" while they can hit you |
+| ☐ | Can kill | Same, with low health | Red, faster pulsing edges + "CAN KILL YOU (~xx dmg)" |
+| ☐ | No flicker | Stand at the edge of their range | Warning stays steady, no rapid blinking |
+| ☐ | Threshold | Set "Warn From (damage)" to 100 | Only "CAN KILL YOU" shows, never plain "DANGER" |
+| ☐ | Off / dead | Turn the toggle off, or die | Nothing is drawn |
+
 ## What was already tested automatically (live, with a test bot)
 See the final report in the pull request / chat: heal timing, shame, instas, turret, traps, Safe Walk,
 prediction accuracy, hat rendering (all 47 hats + 21 accessories), reconnect, server change, memory.

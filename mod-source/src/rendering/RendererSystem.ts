@@ -22,6 +22,7 @@ import renderAutoPushVisuals from "@rendering/utils/mod/renderAutoPushVisuals";
 import renderBuildingHealth from "@rendering/utils/mod/renderBuildingHealth";
 import renderGrid from "@rendering/utils/mod/renderGrid";
 import renderMinimap from "@rendering/utils/mod/renderMinimap";
+import renderDangerWarning from "@rendering/utils/mod/renderDangerWarning";
 import renderOneTickLine from "@rendering/utils/mod/renderOneTickLine";
 import renderPathfindPath from "@rendering/utils/mod/renderPathfindPath";
 import renderPlacements from "@rendering/utils/mod/renderPlacements";
@@ -164,6 +165,7 @@ export default class RendererSystem {
             renderPlayerChats(delta);
             renderText(delta);
             renderOneTickLine(xOffset, yOffset);
+            renderDangerWarning(now);
 
             if (Client.mode === "replay" && Client.player) {
                 mainContext.save();
