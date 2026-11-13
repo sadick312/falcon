@@ -138,6 +138,34 @@ export const defenseSettings: IMenuItem[] = [{
             <path fill="REPLACE_WITH_COLOR" d="M0 0C-2.8 0-2.8 0-6.6 3.7c-.5.6-1.1 1.1-1.6 1.7-1.2 1.2-2.3 2.3-3.5 3.5-1.8 1.9-3.6 3.7-5.5 5.5-1.2 1.2-2.4 2.4-3.6 3.6-.6.6-1.1 1.2-1.7 1.7-2.8 2.8-5.3 5.1-6.6 8.9 0 2.3 0 2.3 1.6 4.7 1.2 1.3 1.2 1.3 2.4 2.5 1.2 1.3 1.2 1.3 2.3 2.6 3.8 4.1 7.6 8.2 11.2 12.4 3.3 3.8 6.7 7.6 10.1 11.4C-.3 63.7-.3 63.7.8 65c4.8 5.4 9.7 10.8 14.6 16.1 2.4 2.6 4.8 5.2 7.1 7.9 3.3 3.8 6.7 7.5 10.1 11.2 5.8 6.2 11.5 12.4 16.9 18.9 3 3.5 5.9 6.9 9 10.3 2 2.2 4 4.4 5.9 6.6 3.4 3.9 6.8 7.7 10.2 11.5 2.3 2.6 4.7 5.1 6.9 7.8 3.5 4.1 7.2 9.1 12.1 11.7 2.6-.3 3.9-.9 6-2.6.7-.7 1.4-1.4 2.1-2 1.2-1.2 1.2-1.2 2.4-2.3.9-.9 1.7-1.7 2.5-2.5 1.8-1.7 3.5-3.5 5.3-5.3 2.8-2.8 5.5-5.6 8.3-8.3 1.8-1.8 3.6-3.6 5.5-5.4.9-.9 1.7-1.7 2.6-2.6.9-.8 1.7-1.7 2.5-2.5 1.2-1.2 1.2-1.2 2.3-2.4 2.1-2.1 2.1-2.1 3.5-4.1.3-2.9.5-4.3-1.3-6.6-.6-.5-1.2-.9-1.7-1.4-.8-.7-.8-.7-1.7-1.5-3-2.6-6.1-5.3-9-8-4.1-3.7-8.2-7.5-12.4-11.1-2.1-1.9-4.3-3.7-6.4-5.6-3.8-3.5-7.7-6.9-11.6-10.3-3-2.6-6-5.3-9-8-2.3-2.1-4.7-4.2-7-6.3-6.5-5.9-13.1-11.9-19.7-18-6.9-6.3-13.8-12.7-20.9-18.9-3.1-2.7-6.2-5.4-9.2-8.2-5.5-5.2-11-10.3-16.7-15.3-.6-.5-1.2-1-1.8-1.6C5.6 3.9 3.1 1.7 0 0Z" transform="translate(178.192626953125, 149.02001953125)" />
         </svg>
         `,
+    settings: [{
+        label: "Closest First",
+        id: "walkBreaker:closestFirst",
+        description: "When several enemy buildings are in reach: spikes first, then the closest, then the one with the least health. Off = the classic order (spikes first, the rest as stored).",
+        type: "toggle",
+        status: false
+    }, {
+        label: "Detection Range",
+        id: "walkBreaker:detectRange",
+        description: "How much farther than your weapon's reach the breaker looks for enemy buildings. It still only swings at buildings in real reach. 0 = classic (only buildings in reach).",
+        type: "slider",
+        min: 0,
+        max: 300,
+        step: 10,
+        status: 0
+    }, {
+        label: "Walk To Targets",
+        id: "walkBreaker:walkToTarget",
+        description: "Walks towards the nearest enemy building in Detection Range until it is in reach. Only while you aren't moving yourself, Shift isn't held and no enemy player is within 300. Needs Detection Range above 0.",
+        type: "toggle",
+        status: false
+    }, {
+        label: "Show Range",
+        id: "walkBreaker:showRange",
+        description: "Draws your break reach (white) and Detection Range (yellow) around you, and marks the building being hit (red) or walked to (yellow).",
+        type: "toggle",
+        status: false
+    }],
     type: "toggle",
     status: true
 }, {

@@ -103,6 +103,10 @@ The **Favorites** tab lists the settings you starred; **Credits** has no setting
   - **Ignore Allied Boost Pads** (`safeWalkIgnoreAllyBoostPads`, toggle, default: on) — Safe walk doesn't stop you from walking into boost pads placed by allies.
 - **Always Pick Best Weapon** (`selectBestWeapon`, toggle, default: on) — Automatically selects the best weapon for every scenario.
 - **Auto Object Breaker** (`walkBreaker`, toggle, default: on) — Automatically breaks spikes, traps, and teleports.
+  - **Closest First** (`walkBreaker:closestFirst`, toggle, default: off) — When several enemy buildings are in reach: spikes first, then the closest, then the one with the least health. Off = the classic order (spikes first, the rest as stored).
+  - **Detection Range** (`walkBreaker:detectRange`, slider 0–300, default: 0) — How much farther than your weapon's reach the breaker looks for enemy buildings. It still only swings at buildings in real reach. 0 = classic (only buildings in reach).
+  - **Walk To Targets** (`walkBreaker:walkToTarget`, toggle, default: off) — Walks towards the nearest enemy building in Detection Range until it is in reach. Only while you aren't moving yourself, Shift isn't held and no enemy player is within 300. Needs Detection Range above 0.
+  - **Show Range** (`walkBreaker:showRange`, toggle, default: off) — Draws your break reach (white) and Detection Range (yellow) around you, and marks the building being hit (red) or walked to (yellow).
 - **Defensive Knockbacks** (`defensiveKB`, toggle, default: on) — Uses highly 'advanced' complex spatial trigonometry to determine perfect knockback vectors to knock enemies away for defensive purposes.
   - **Require Turret Bullet** (`defKBRequireTurret`, toggle, default: on) — Only executes defensive knockbacks only when primary AND turret is fully reloaded.
 

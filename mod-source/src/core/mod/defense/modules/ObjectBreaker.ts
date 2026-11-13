@@ -1,5 +1,5 @@
 import GameObject from "@constants/GameObject";
-import { getWeapon, Weapon } from "@constants/items";
+import { getItem, getWeapon, Weapon } from "@constants/items";
 import { STORE_HAT_MAP } from "@constants/store";
 import Client from "@core/Client";
 import ObjectManager from "@core/logic/ObjectManager";
@@ -13,6 +13,12 @@ import getDir from "@utils/angle/getDir";
 import ScriptConfig from "@utils/config/ScriptConfig";
 import withinDist from "@utils/geometry/withinDist";
 import { isCactusObject } from "@constants/world";
+import { Input } from "@ui/Input";
+import getDistSq from "@utils/geometry/getDistSq";
+import { combatDebug, combatDebugOn } from "@utils/debug/combatDebug";
+
+/** "Walk To Targets" stands down while an enemy player is this close (a fight is more important). */
+const WALK_ENEMY_CLEARANCE = 300;
 
 export default class ObjectBreaker {
     static gameObjectQueue: GameObject[] = [];
@@ -99,7 +105,63 @@ export default class ObjectBreaker {
         }
     }
 
+    /** The building being hit this tick (for the target marker), or null. */
+    static currentTarget: GameObject | null = null;
+    /** "Detection Range": the nearest enemy building seen but out of reach, when nothing is in reach. */
+    static farTarget: GameObject | null = null;
+    /** "Walk To Targets": the direction to walk towards `farTarget`, or null. Read by MovementManager.getMoveDir. */
+    static walkDir: number | null = null;
+
+    /**
+     * "Closest First" order: spikes before other buildings, then the closest, then the lowest health.
+     * (The classic order: spikes first, newest spike first; others in the order the objects were stored.)
+     */
+    static compareClosestFirst(a: GameObject, b: GameObject, from: { x: number; y: number }) {
+        const spikeA = a.dmg ? 0 : 1;
+        const spikeB = b.dmg ? 0 : 1;
+        if (spikeA !== spikeB) return spikeA - spikeB;
+        const dist = getDistSq(a, from) - getDistSq(b, from);
+        if (dist !== 0) return dist;
+        return a.health - b.health;
+    }
+
+    /**
+     * Nothing in reach, but an enemy building in "Detection Range": with "Walk To Targets", walk to it. Only while we
+     * aren't steering ourselves (no movement keys, no Shift) and no enemy player is near.
+     */
+    private static handleFarTarget(playerPos: { x: number; y: number }, range: number) {
+        const far = this.farTarget;
+        if (!far) return;
+
+        if (combatDebugOn()) {
+            combatDebug("breaker", {
+                seen: getItem(far.id).name,
+                sid: far.sid,
+                dist: Math.sqrt(getDistSq(far, playerPos)),
+                reach: range - 1 + far.scale
+            });
+        }
+
+        if (!Menu.getValue("walkBreaker:walkToTarget")) return;
+        if (Client.lastMoveDir !== null && Client.lastMoveDir !== undefined) return;
+        if (Input.keys["ShiftLeft"]) return;
+        const enemy = tickState.enemyData.nearest;
+        if (enemy && withinDist(enemy.real_position, playerPos, WALK_ENEMY_CLEARANCE)) return;
+
+        this.walkDir = getDir(far, playerPos);
+    }
+
+    /** Clears this tick's targets when the breaker doesn't run (CombatController returned before it). */
+    static resetTick() {
+        this.currentTarget = null;
+        this.farTarget = null;
+        this.walkDir = null;
+    }
+
     static main(): boolean {
+        this.currentTarget = null;
+        this.farTarget = null;
+        this.walkDir = null;
         if (!Menu.getValue("walkBreaker")) return false;
 
         const player = Client.player;
@@ -109,6 +171,10 @@ export default class ObjectBreaker {
 
         const wpn = getWeapon(bestWpnId);
         this.inQueueObjects.clear();
+
+        // 0 (the default) = classic: only buildings already in reach are looked at.
+        const detectExtra = Number(Menu.getValue("walkBreaker:detectRange")) || 0;
+        let farDistSq = Infinity;
 
         for (let i = 0, len = closeObjects.length; i < len; i++) {
             const gameObject = closeObjects[i];
@@ -131,15 +197,42 @@ export default class ObjectBreaker {
                 } else {
                     this.gameObjectQueue.push(gameObject);
                 }
+            } else if (isTarget && isNotFriendly && detectExtra > 0 && gameObject.hasHealth &&
+                BreakerUtils.getObjectAttackDistance(player, gameObject, wpn.range - 1 + detectExtra)) {
+                const distSq = getDistSq(gameObject, playerPos);
+                if (distSq < farDistSq) {
+                    farDistSq = distSq;
+                    this.farTarget = gameObject;
+                }
             }
+        }
+
+        if (this.gameObjectQueue.length > 1 && Menu.getValue("walkBreaker:closestFirst")) {
+            this.gameObjectQueue.sort((a, b) => this.compareClosestFirst(a, b, playerPos));
         }
 
         this.isObjectBreaking = true;
         if (!this.gameObjectQueue.length && player.getReload(0) === 1) this.processPitSpikeModule(wpn);
-        if (!this.gameObjectQueue.length) return false;
+        if (!this.gameObjectQueue.length) {
+            this.handleFarTarget(playerPos, wpn.range);
+            return false;
+        }
+        this.farTarget = null;
 
         const currentTarget = this.gameObjectQueue[0];
         if (!currentTarget) return false;
+        this.currentTarget = currentTarget;
+
+        if (combatDebugOn()) {
+            combatDebug("breaker", {
+                target: getItem(currentTarget.id).name,
+                sid: currentTarget.sid,
+                dist: Math.sqrt(getDistSq(currentTarget, playerPos)),
+                reach: wpn.range - 1 + currentTarget.scale,
+                health: currentTarget.health,
+                reload: player.getReload(bestWpnId < 9 ? 0 : 1)
+            });
+        }
         const toTarget = getDir(currentTarget, playerPos);
 
         this.targetObject.x = currentTarget.x;

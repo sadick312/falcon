@@ -6,6 +6,7 @@ import ObjectManager from "@core/logic/ObjectManager";
 import AttackManager from "@core/mod/combat/core/AttackManager";
 import AutoPusher from "@core/mod/combat/core/AutoPusher";
 import MovementUtils from "@core/mod/defense/utils/MovementUtils";
+import ObjectBreaker from "@core/mod/defense/modules/ObjectBreaker";
 import { tickState } from "@core/TickState";
 import PacketTracker from "@core/utils/PacketTracker";
 import Menu from "@menu/Menu";
@@ -107,6 +108,11 @@ export default class MovementManager {
 
         if (AutoPusher.autoPushing) {
             return AutoPusher.moveDir;
+        }
+
+        // "Walk To Targets" (off by default): only set while we aren't moving by hand.
+        if (ObjectBreaker.walkDir !== null && (Client.lastMoveDir === null || Client.lastMoveDir === undefined)) {
+            return ObjectBreaker.walkDir;
         }
 
         return Client.lastMoveDir;

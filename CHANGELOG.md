@@ -2,6 +2,20 @@
 
 What changed in Falcon, newest first. Each entry names the commit(s) for the details.
 
+## Unreleased (branch review/stability, Phase 3B part 2: breaker)
+
+### Added to Auto Object Breaker (all off / 0 by default, so it breaks exactly as before)
+- **Closest First**: with several enemy buildings in reach, spikes first, then the closest, then the lowest health.
+- **Detection Range** (0–300): looks that much farther than your weapon's reach. It still only swings at buildings
+  in real reach (weapon range + building size).
+- **Walk To Targets**: walks to the nearest building in Detection Range. Only while you aren't moving yourself,
+  Shift isn't held and no enemy player is within 300. Safe Walk still applies.
+- **Show Range**: draws your reach (white) and Detection Range (yellow), and rings the building being hit (red) or
+  walked to (yellow).
+- With Combat Debug Log on, the breaker logs its target, distance, reach, health and reload.
+- Unchanged: the trap you're stuck in still comes first (Auto Break), the Great Hammer + Tank Gear choice, and your
+  own and your tribe's buildings are still ignored.
+
 ## Unreleased (branch review/stability, Phase 3B part 1: reload)
 
 ### Added (off by default)

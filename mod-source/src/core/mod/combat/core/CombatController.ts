@@ -137,6 +137,7 @@ export default class CombatController {
             const activityList = tickState.activityList;
 
             this.currentMode = "none";
+            ObjectBreaker.resetTick();
             this.skinIndex = STORE_HAT_MAP.IGNORE;
             this.tailIndex = STORE_ACCESSORY_MAP.IGNORE;
 
