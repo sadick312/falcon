@@ -12,7 +12,7 @@ import AutoGrinder from "@placing/modules/AutoGrinder";
 import AutoMiller from "@placing/modules/AutoMiller";
 import SpriteCache from "@rendering/core/SpriteCache";
 import WindowResizer from "@rendering/core/WindowResizer";
-import RenderingConfig from "@rendering/RenderingConfig";
+import { setViewPercent, viewPercent, wheelZoom } from "@rendering/core/ViewDistance";
 import PacketMap from "@root/utils/socket/PacketMap";
 import Loader, { loadingCirclePage } from "@ui/Loader";
 import getElem from "@utils/dom/getElem";
@@ -169,20 +169,14 @@ gameCanvas.addEventListener("wheel", (event) => {
     if (!Client.player) return;
     const delta = event.deltaY || event.deltaX;
 
-    if (delta > 0) {
-        RenderingConfig.maxScreenWidth *= 0.95;
-        RenderingConfig.maxScreenHeight *= 0.95;
-    } else {
-        RenderingConfig.maxScreenWidth /= 0.95;
-        RenderingConfig.maxScreenHeight /= 0.95;
-    }
-
+    // Wheel down shrinks the view (zooms in), up widens it, 5% a step; "Limit Wheel Zoom" keeps it within 75-250%.
+    wheelZoom(!(delta > 0));
     WindowResizer.resize();
 });
 
+/** On connecting and with the reset key (=): the "View Distance" setting (100%, the classic view, by default). */
 export function resetScreenSize() {
-    RenderingConfig.maxScreenWidth = RenderingConfig.baseScreenWidth;
-    RenderingConfig.maxScreenHeight = RenderingConfig.baseScreenHeight;
+    setViewPercent(viewPercent());
     WindowResizer.resize();
 }
 

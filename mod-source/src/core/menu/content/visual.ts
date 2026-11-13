@@ -126,6 +126,28 @@ export const visualSettings: IMenuItem[] = [{
     type: "toggle",
     status: true
 }, {
+    label: "Camera",
+    id: "",
+    icon: GRID_ICON,
+    description: "How much of the map you see.",
+    type: "group",
+    settings: [{
+        label: "View Distance",
+        id: "viewDistance",
+        description: "How much of the map you see, in % of the normal view. Used when you join a server and when you press = to reset the zoom. The mouse wheel still zooms from there. 100 = the classic view. Very far out, the edge of the view can be empty: the server only sends what is near you.",
+        type: "slider",
+        min: 75,
+        max: 250,
+        status: 100,
+        step: 5
+    }, {
+        label: "Limit Wheel Zoom",
+        id: "limitWheelZoom",
+        description: "Keeps mouse-wheel zoom between 75% and 250% of the normal view. Off: the wheel zooms without limit (classic), so you can zoom far in or out by accident.",
+        type: "toggle",
+        status: false
+    }]
+}, {
     label: "Night Mode",
     id: "nightMode",
     description: "Renders a darker tint on the screen.",

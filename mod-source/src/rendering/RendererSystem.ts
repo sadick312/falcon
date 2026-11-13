@@ -6,6 +6,7 @@ import Menu from "@menu/Menu";
 import CameraManager from "@rendering/core/CameraManager";
 import SpriteCache from "@rendering/core/SpriteCache";
 import WindowResizer from "@rendering/core/WindowResizer";
+import { applyViewDistanceChange } from "@rendering/core/ViewDistance";
 import RendererUtils from "@rendering/RendererUtils";
 import RenderingConfig from "@rendering/RenderingConfig";
 import renderAis from "@rendering/utils/core/renderAis";
@@ -83,6 +84,8 @@ export default class RendererSystem {
     }
 
     static renderGame() {
+        // "View Distance" moved in the menu: show the new view straight away.
+        if (applyViewDistanceChange()) WindowResizer.resize();
         const now = performance.now();
         let delta = Client.mode === "replay" && PacketReplayer.isPaused ? 0 : now - this.lastUpdate;
 

@@ -11,6 +11,7 @@ the rest. Every change is a new menu setting that is off by default, so play sta
 | Area | Setting | What it improves | Status |
 |---|---|---|---|
 | Ping | Tick-Based Shot Window (`tickShotWindow`, Utility > Packet Management) | Bow-insta detection ("two enemy shots within 4 ticks") counts server ticks, not a 444 ms timer, so lag or jitter between the two shots no longer hides a real bow insta | done, tested (not live) |
+| Visuals | Camera > View Distance (`viewDistance`, 75–250%, default 100) and Limit Wheel Zoom (`limitWheelZoom`, off) | The "wide view" you asked about: choose how much of the map you see when you join and when you press = (it was always 100%), and optionally keep wheel zoom between 75% and 250% (it had no limit). Smaller version of `auto-improve`'s `3e3f2ca`, which needs that branch's Keybinds system | done, tested (not live) |
 | Combat | Sync Hits Use Enemy Health (`syncHitsUseHealth`, Combat > Combat Modules) | Velocity Hits and Projectile Sync check "does it kill" against the enemy's current health and hat (Soldier Helmet 0.75, from the store data) instead of a fixed 100: they also finish hurt enemies and skip bull hits a Soldier Helmet survives | done, tested (not live) |
 
 In game, Tick-Based Shot Window: hard to set up on purpose (needs an enemy bow/crossbow insta while your ping is
@@ -20,6 +21,11 @@ every time, not only on steady ticks.
 In game, Sync Hits Use Enemy Health: Velocity Hits on, polearm, your normal spike next to a hurt enemy (about 80
 health) who isn't in Soldier Helmet. Falcon should bull-hit them into the spike (67.5 + 20 kills at 80); before, it
 waited for 100 damage. Against a full-health enemy in Soldier Helmet next to a greater spike it no longer bull-hits.
+
+In game, View Distance: Visual > Camera > View Distance 150, then press = (or join a server): you see 1.5× more of
+the map. Move the slider while playing: the view changes at once. Limit Wheel Zoom on: scrolling stops at 75% and
+250%. With both left at default, everything is as before. Very far out, the edges are empty (the server only sends
+what is near you).
 
 Considered, not done (Phase 4):
 - Pattern Recognition's 5 s reset uses the wall clock. It only matters after a multi-second freeze; not worth a toggle.

@@ -136,6 +136,9 @@ The **Favorites** tab lists the settings you starred; **Credits** has no setting
   - **Render Real Direction** (`renderRealDir`, toggle, default: on) — Renders the real direction of our player.
 - **Render Grid** (`renderGrid`, toggle, default: on) — Draws the background grid.
   - **Static Grid** (`staticGrid`, toggle, default: off) — Makes the grid not resize with zoom.
+- **Camera** (group) — How much of the map you see.
+  - **View Distance** (`viewDistance`, slider 75–250, default: 100) — How much of the map you see, in % of the normal view. Used when you join a server and when you press = to reset the zoom. The mouse wheel still zooms from there. 100 = the classic view. Very far out, the edge of the view can be empty: the server only sends what is near you.
+  - **Limit Wheel Zoom** (`limitWheelZoom`, toggle, default: off) — Keeps mouse-wheel zoom between 75% and 250% of the normal view. Off: the wheel zooms without limit (classic), so you can zoom far in or out by accident.
 - **Night Mode** (`nightMode`, toggle, default: off) — Renders a darker tint on the screen.
 - **Reload Bars** (`reloadBars`, toggle, default: on) — Draws reload bars.
   - **Render Turret Gear Reload** (`renderTurretReload`, toggle, default: off) — Shows a reload bar next to players while their Turret Gear is reloading.
