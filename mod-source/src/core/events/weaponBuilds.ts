@@ -118,3 +118,21 @@ export function itemOffers(age: number, list: readonly { id: number; age?: numbe
 
     return { shown, legal };
 }
+
+/**
+ * The build after `current` for the "Next Weapon Build" hotkey. Goes through every build in menu
+ * order and wraps around; from "manual" (or an unknown value) it starts at the first build.
+ */
+export function nextWeaponBuild(current: string): string {
+    const ids = Object.keys(WEAPON_BUILDS);
+    const index = ids.indexOf(current);
+    return ids[(index + 1) % ids.length];
+}
+
+/**
+ * Does the player own upgrade `id`? Upgrade ids below `weaponCount` are weapons (compared with the
+ * owned weapon ids); higher ids are items (`id - weaponCount` = item id).
+ */
+export function ownsUpgrade(id: number, weaponCount: number, weapons: readonly number[], items: readonly number[]) {
+    return id < weaponCount ? weapons.includes(id) : items.includes(id - weaponCount);
+}

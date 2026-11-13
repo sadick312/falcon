@@ -33,6 +33,7 @@ export const KEYBIND_ACTIONS: KeybindAction[] = [
     { id: "place7th", label: "Place 7th Slot Item", category: "Placement", mode: "hold", defaultKey: "KeyH", description: "Hold to place your 7th slot item (set in Utility > Auto Upgrade)." },
     { id: "placeSpawnPads", label: "Place 4 Spawn Pads", category: "Placement", mode: "hold", defaultKey: "KeyK", description: "Hold to place spawn pads around you." },
     { id: "autoMill", label: "Toggle Auto Mill", category: "Placement", mode: "press", defaultKey: "KeyZ", description: "Starts/stops automatically placing windmills behind you." },
+    { id: "nextWeaponBuild", label: "Next Weapon Build", category: "Utility", mode: "press", defaultKey: "KeyB", description: "Switches Auto Upgrade to the next Weapon Build and shows its name on screen." },
     { id: "autoGather", label: "Toggle Auto Gather", category: "Utility", mode: "press", defaultKey: "KeyE", description: "The game's auto-gather/auto-hit toggle." },
     { id: "resetZoom", label: "Reset Zoom", category: "Utility", mode: "press", defaultKey: "Equal", description: "Back to the default View Distance (125%)." },
     { id: "zoomOut", label: "Zoom Out (See More)", category: "Utility", mode: "press", defaultKey: "Minus", description: "Raises View Distance by 5% (up to 250%). Saved." },

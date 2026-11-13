@@ -1,5 +1,6 @@
 import MovementManager from "@core/mod/defense/defense-modules/MovementManager";
 import Keybinds from "@core/Keybinds";
+import { nextWeaponBuild, WEAPON_BUILDS } from "@core/events/weaponBuilds";
 import Client from "@core/Client";
 import updateClanMenu, { allianceHolder } from "@core/events/updateClanMenu";
 import TextManager from "@core/logic/TextManager";
@@ -15,6 +16,7 @@ import { ZOOM_STEP } from "@rendering/RenderingConfig";
 import PacketMap from "@root/utils/socket/PacketMap";
 import Loader, { loadingCirclePage } from "@ui/Loader";
 import getElem from "@utils/dom/getElem";
+import showNotice from "@ui/Notice";
 
 const moveKeys: Record<number, [number, number]> = {
     87: [0, -1],
@@ -182,6 +184,22 @@ function selectHotbarSlot(id: number) {
     }
 }
 
+/** "Next Weapon Build" hotkey: picks the next Auto Upgrade build, saves it and says which one. */
+function cycleWeaponBuild() {
+    const setting = Menu.itemMap.weaponBuild;
+    if (!setting) return;
+
+    const id = nextWeaponBuild(String(setting.status));
+    setting.status = id;
+    Menu.saveSettings();
+
+    // Tell the player when the build won't be used, so the hotkey doesn't look broken.
+    let note = "";
+    if (!Menu.getValue("autoUpgrade")) note = " (Auto Upgrade is off)";
+    else if (Menu.getValue("manualAllAges") !== false) note = " (Choose Every Age Yourself is on)";
+    showNotice(`Weapon Build: ${WEAPON_BUILDS[id].label}${note}`);
+}
+
 /** One-shot actions from the keybind registry (rebindable in Menu > Keybinds). */
 function runPressActions(event: KeyboardEvent) {
     // Shift+ bindings first so "Shift+Z" (reload sprites) wins over plain "Z" (auto mill).
@@ -205,6 +223,10 @@ function runPressActions(event: KeyboardEvent) {
 
     if (Keybinds.matches(event, "zoomOut")) {
         WindowResizer.changeZoom(ZOOM_STEP);
+    }
+
+    if (Keybinds.matches(event, "nextWeaponBuild")) {
+        cycleWeaponBuild();
     }
 
     if (Keybinds.matches(event, "autoGather")) {

@@ -206,6 +206,15 @@ Use **Utility > Packet Management > Artificial Ping** to add delay on a fast con
 | ☐ | Rapid switching | Mash 1/2/3, click, Space for 20 s | No errors; final weapon matches what you selected |
 | ☐ | Lag spikes | Pause your connection 1–2 s a few times in a fight | No double heals/combos; "LAG SPIKE" shows briefly; play continues |
 
+## 7. Upgrades and on-screen messages
+| ✔ | Test | What to do | What should happen |
+|---|---|---|---|
+| ☐ | Next build hotkey | Press B a few times | A message at the top shows each build name; Menu > Utility > Auto Upgrade > Weapon Build shows the last one after reopening the menu |
+| ☐ | Build note | Press B with "Choose Every Age Yourself" on | The message ends with "(Choose Every Age Yourself is on)" |
+| ☐ | Upgrade works | Click an upgrade in the bar | You get it; no red message |
+| ☐ | Upgrade failed | (Hard to cause by hand) If an upgrade doesn't arrive | Red "Upgrade failed: ... - click it again" after ~1.5 s; clicking it again works |
+| ☐ | Bad packet | Turn on Artificial Ping, play 1 minute | Game keeps moving; no frozen players |
+
 ## What was already tested automatically (live, with a test bot)
 See the final report in the pull request / chat: heal timing, shame, instas, turret, traps, Safe Walk,
 prediction accuracy, hat rendering (all 47 hats + 21 accessories), reconnect, server change, memory.

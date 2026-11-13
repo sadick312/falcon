@@ -1,5 +1,7 @@
 import items from "@constants/items";
-import { autoPicksAge, buildUpgradePick, itemOffers, weaponOffers } from "@core/events/weaponBuilds";
+import { autoPicksAge, buildUpgradePick, itemOffers, ownsUpgrade, weaponOffers } from "@core/events/weaponBuilds";
+import PingTracker from "@core/mod/utils/PingTracker";
+import showNotice from "@ui/Notice";
 import Client from "@core/Client";
 import Menu from "@menu/Menu";
 import PacketMap from "@root/utils/socket/PacketMap";
@@ -13,10 +15,40 @@ const autoUpgradeList: number[] = [];
 let lastUpgradeAge = -1;
 let lastUpgradeId = -1;
 
+let failCheckTimer: number | null = null;
+
+function upgradeName(id: number) {
+    return id < items.weapons.length ? items.weapons[id]?.name : items.list[id - items.weapons.length]?.name;
+}
+
+/**
+ * The server doesn't say "no" to an upgrade it refuses; it just doesn't give it. So a moment after
+ * sending one, check that we own it, and show "Upgrade failed" on screen if we don't.
+ */
+function checkUpgradeLater(id: number) {
+    if (failCheckTimer !== null) window.clearTimeout(failCheckTimer);
+
+    const player = Client.player;
+    const waitMs = Math.max(1500, PingTracker.getMedianPing() * 3);
+
+    failCheckTimer = window.setTimeout(() => {
+        failCheckTimer = null;
+        // Died, respawned or changed server meanwhile: the old pick doesn't matter any more.
+        if (!Client.isAlive || Client.player !== player) return;
+        if (ownsUpgrade(id, items.weapons.length, player.weapons, player.items)) return;
+
+        // PacketManager blocks sending an upgrade twice; this one never arrived, so allow a retry.
+        Client.upgradesObtained.delete(id);
+        showNotice(`Upgrade failed: ${upgradeName(id) ?? `#${id}`} - click it again`, "warn");
+        console.warn(`[Falcon] upgrade ${id} was sent but not received`);
+    }, waitMs);
+}
+
 function sendUpgrade(id: number, age: number) {
     lastUpgradeAge = age;
     lastUpgradeId = id;
     Client.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.SEND_UPGRADE, id);
+    checkUpgradeLater(id);
 }
 
 /**
@@ -99,10 +131,8 @@ export default function updateUpgrades(points: number, age: number) {
             const elem = getElem(`upgrade-item-${tmpId}`);
 
             elem.onclick = () => {
-                Client.socket.sendMsg(
-                    PacketMap.CLIENT_TO_SERVER.SEND_UPGRADE,
-                    tmpId
-                );
+                Client.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.SEND_UPGRADE, tmpId);
+                checkUpgradeLater(tmpId);
             };
         }
 

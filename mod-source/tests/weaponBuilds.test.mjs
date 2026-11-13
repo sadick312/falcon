@@ -125,3 +125,25 @@ test("age 9 also offers the Katana if you don't own it, but not Great Axe or Cro
     // Age 8 itself is unchanged.
     assert.deepEqual(weaponOffers(8, items.weapons, [3, 9], true).shown, [2, 4, 12]);
 });
+
+test("Next Weapon Build hotkey goes through every build and wraps around", async () => {
+    const { nextWeaponBuild, WEAPON_BUILDS } = await loadTs("src/core/events/weaponBuilds.ts");
+    const ids = Object.keys(WEAPON_BUILDS);
+    assert.equal(nextWeaponBuild("manual"), ids[0]);
+    assert.equal(nextWeaponBuild(ids[0]), ids[1]);
+    assert.equal(nextWeaponBuild(ids[ids.length - 1]), ids[0]);
+
+    const seen = new Set();
+    let id = ids[0];
+    for (let i = 0; i < ids.length; i++) { seen.add(id); id = nextWeaponBuild(id); }
+    assert.equal(seen.size, ids.length);
+});
+
+test("ownsUpgrade: weapons by id, items by id after the weapons", async () => {
+    const { ownsUpgrade } = await loadTs("src/core/events/weaponBuilds.ts");
+    // 16 weapons: id 15 = Musket (weapon), id 16 + 7 = item 7
+    assert.equal(ownsUpgrade(15, 16, [4, 15], [0, 3, 6, 10]), true);
+    assert.equal(ownsUpgrade(15, 16, [4, 9], [0, 3, 6, 10]), false);
+    assert.equal(ownsUpgrade(16 + 10, 16, [0], [0, 3, 6, 10]), true);
+    assert.equal(ownsUpgrade(16 + 7, 16, [0], [0, 3, 6, 10]), false);
+});
