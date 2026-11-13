@@ -147,3 +147,25 @@ test("ownsUpgrade: weapons by id, items by id after the weapons", async () => {
     assert.equal(ownsUpgrade(16 + 10, 16, [0], [0, 3, 6, 10]), true);
     assert.equal(ownsUpgrade(16 + 7, 16, [0], [0, 3, 6, 10]), false);
 });
+
+test("old-style combos: Katana/Great Axe x Musket/Repeater, plus keep-your-primary", async () => {
+    const { oldStyleCombos } = await loadTs("src/core/events/weaponBuilds.ts");
+    const name = (id) => items.weapons[id]?.name;
+
+    const fromPolearm = oldStyleCombos(5, name);
+    assert.deepEqual(fromPolearm.map(c => c.label), [
+        "Katana + Musket", "Katana + Repeater Crossbow", "Great Axe + Musket", "Great Axe + Repeater Crossbow",
+        "Polearm + Musket", "Polearm + Repeater Crossbow",
+    ]);
+    assert.deepEqual(fromPolearm[0], { label: "Katana + Musket", age8: 4, age9: 15 });
+    assert.deepEqual(fromPolearm[4], { label: "Polearm + Musket", age8: 12, age9: 15 }); // Crossbow at 8
+
+    // Every combo: age-8 weapon is an age-8 weapon, age-9 weapon an age-9 weapon (the server checks age).
+    for (const c of fromPolearm) {
+        assert.equal(items.weapons[c.age8].age, 8, c.label);
+        assert.equal(items.weapons[c.age9].age, 9, c.label);
+    }
+
+    // Already a Katana: no "Katana + Musket" duplicate via Crossbow.
+    assert.equal(oldStyleCombos(4, name).length, 4);
+});

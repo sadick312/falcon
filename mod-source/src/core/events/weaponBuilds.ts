@@ -136,3 +136,40 @@ export function nextWeaponBuild(current: string): string {
 export function ownsUpgrade(id: number, weaponCount: number, weapons: readonly number[], items: readonly number[]) {
     return id < weaponCount ? weapons.includes(id) : items.includes(id - weaponCount);
 }
+
+/** One "old MooMoo" combo button: the weapon to take at age 8 and the one to take at age 9. */
+export interface UpgradeCombo {
+    label: string;
+    age8: number;
+    age9: number;
+}
+
+const titleCase = (name: string) => name.replace(/\b\w/g, c => c.toUpperCase());
+
+/**
+ * Combo buttons for age 8 ("Combo Buttons at Age 8"). The sandbox server checks a weapon's age
+ * but not its "pre" (verified live 2026-11-13: Katana after Polearm, Great Axe after Short Sword,
+ * Repeater and Musket without a Crossbow were all given; Musket sent at age 8 was ignored).
+ * So any age-8 primary can be followed by any age-9 secondary, like old MooMoo.
+ * "<your primary> + Musket" takes the Crossbow at 8 (keeps your primary) and the Musket at 9.
+ */
+export function oldStyleCombos(currentPrimary: number, weaponName: (id: number) => string | undefined): UpgradeCombo[] {
+    const name = (id: number) => titleCase(weaponName(id) ?? `#${id}`);
+    const secondaries = [W.MUSKET, W.REPEATER_CROSSBOW];
+    const combos: UpgradeCombo[] = [];
+
+    for (const primary of [W.KATANA, W.GREAT_AXE]) {
+        for (const secondary of secondaries) {
+            combos.push({ label: `${name(primary)} + ${name(secondary)}`, age8: primary, age9: secondary });
+        }
+    }
+
+    // Keep the current primary (e.g. Polearm): Crossbow now, then the age-9 secondary.
+    if (currentPrimary !== W.KATANA && currentPrimary !== W.GREAT_AXE) {
+        for (const secondary of secondaries) {
+            combos.push({ label: `${name(currentPrimary)} + ${name(secondary)}`, age8: W.CROSSBOW, age9: secondary });
+        }
+    }
+
+    return combos;
+}
