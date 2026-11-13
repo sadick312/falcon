@@ -257,6 +257,18 @@ Use **Utility > Packet Management > Artificial Ping** to add delay on a fast con
 | ☐ | Bad text | Type "hello" in the box, click Import | Red message; nothing changes |
 | ☐ | Reset | Click Reset to Default, confirm | All settings back to normal; keybinds and saved configs stay |
 
+## 13. Edge cases (Debug Mode on: "Errors" must stay 0)
+| ✔ | Test | What to do | What should happen |
+|---|---|---|---|
+| ☐ | Death mid-combat | Die while Insta / Tank attack / Auto Push is running | No attack continues after respawn; hat and weapon normal |
+| ☐ | Out of resources | Spend all wood/stone, hold F (trap) and V (spike) | Nothing placed, no packet flood (Debug: packets out stays low) |
+| ☐ | Item limit | Place traps until the game refuses | Auto Place stops trying that item |
+| ☐ | Trapped | Walk into an enemy trap | Auto Break hits the trap; you get out |
+| ☐ | Kicked | Get "IP limit reached" (open a 3rd tab on the same server) | Disconnected screen; Danger Warning / tracers / automation stop; Reconnect works |
+| ☐ | Lag spike | Turn on Artificial Ping (Utility > Packet Management), play 1 min, turn it off | No freeze; "LAG SPIKE" can show; everything normal after turning it off |
+| ☐ | Switch servers | Change Server 3 times in a row | Each join works; old players/buildings don't stay on screen |
+| ☐ | Bad settings | Import text with a wrong value (e.g. `{"weaponBuild":"x"}`) | Red message or "skipped"; menu still works |
+
 ## What was already tested automatically (live, with a test bot)
 See the final report in the pull request / chat: heal timing, shame, instas, turret, traps, Safe Walk,
 prediction accuracy, hat rendering (all 47 hats + 21 accessories), reconnect, server change, memory.

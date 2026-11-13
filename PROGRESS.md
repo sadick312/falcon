@@ -51,7 +51,7 @@ bare `main` would have discarded all finished 1.8.2 work). Never commit to `main
 - npm test runs tsc first (caught a TDZ name clash that would have crashed Auto Upgrade at age 8)
 - Hook mode: 0 vanilla console errors (hidden actionBarItem stand-ins; vanilla pings dropped after close) - verified 6 loads + 20 s in game
 - New harness home: C:/Users/sarip/falcon-e2e (bootcheck.mjs, joincheck.mjs; Falcon alone, no bots)
-- Docs: README Quick Inject section, docs/TEST_CHECKLIST.md (146 lines)
+- Docs: README Quick Inject section, docs/TEST_CHECKLIST.md (sections 0-13), docs/ROLLBACK.md (beginner git rollback)
 
 - Perf 2026-11-13 (a52c1f3, 3x20 s idle in game): 61 FPS, script 32-36 ms/s, CPU 82-92 ms/s, heap 8-9 MB; profile: no Falcon function above 2 ms/s (top: drawImage 6, renderNames 1.4)
 
