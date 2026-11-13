@@ -79,6 +79,19 @@ export default class Keybinds {
         this.save();
     }
 
+    /** A copy of every binding (for settings export). */
+    static getAll(): Record<string, string> {
+        return { ...this.bindings };
+    }
+
+    /** Apply several bindings at once (settings import); unknown ids are ignored. */
+    static setMany(bindings: Record<string, string>) {
+        for (const action of KEYBIND_ACTIONS) {
+            if (typeof bindings[action.id] === "string") this.bindings[action.id] = bindings[action.id];
+        }
+        this.save();
+    }
+
     static resetAll() {
         for (const action of KEYBIND_ACTIONS) this.bindings[action.id] = action.defaultKey;
         this.save();

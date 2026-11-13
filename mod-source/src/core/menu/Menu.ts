@@ -1,6 +1,7 @@
 import drawKeybinds from "./utils/drawKeybinds";
 import { WEAPON_BUILDS } from "@core/events/weaponBuilds";
-import Keybinds from "@core/Keybinds";
+import Keybinds, { KEYBIND_ACTIONS } from "@core/Keybinds";
+import { exportSettingsText, parseSettingsText, SettingSchema } from "@menu/SettingsTransfer";
 import readStoredJSON from "@utils/storage/readStoredJSON";
 import drawNumberInput from "@menu/utils/drawNumberInput";
 import drawTextInput from "@menu/utils/drawTextInput";
@@ -1427,6 +1428,51 @@ export default class Menu {
 
     static itemMap: Record<string, IMenuItem> = {};
 
+    /** Every setting's value before saved settings were loaded (for "Reset to Default"). */
+    static defaults: Record<string, any> = {};
+
+    /** Settings that are saved/exported (same rule as saveSettings). */
+    private static savableIds() {
+        return Object.keys(this.itemMap).filter(id => {
+            const item = this.itemMap[id];
+            return id && !item.neverSave && item.type !== "paragraph" && item.status !== undefined;
+        });
+    }
+
+    static exportSettings() {
+        const settings: Record<string, any> = {};
+        for (const id of this.savableIds()) settings[id] = this.itemMap[id].status;
+        return exportSettingsText(settings, Keybinds.getAll());
+    }
+
+    /** Applies exported text. Returns how many values were applied/skipped; throws on unusable text. */
+    static importSettings(text: string) {
+        const schema: Record<string, SettingSchema> = {};
+        for (const id of this.savableIds()) {
+            const item = this.itemMap[id];
+            schema[id] = { def: this.defaults[id] ?? item.status, options: item.options?.map(o => String(o.value)) };
+        }
+
+        const result = parseSettingsText(text, schema, KEYBIND_ACTIONS.map(a => a.id));
+        for (const id in result.settings) {
+            this.itemMap[id].status = result.settings[id];
+            this.itemMap[id].update?.();
+        }
+        if (result.keybinds) Keybinds.setMany(result.keybinds);
+        this.saveSettings();
+        return result;
+    }
+
+    /** Puts every setting back to its default (keybinds are reset separately in the Keybinds tab). */
+    static resetSettings() {
+        for (const id in this.defaults) {
+            if (!this.itemMap[id]) continue;
+            this.itemMap[id].status = this.defaults[id];
+            this.itemMap[id].update?.();
+        }
+        this.saveSettings();
+    }
+
     static buildItemMap(items?: IMenuItem[]) {
         if (!items) items = Object.values(menuContent).flat() as IMenuItem[];
 
@@ -1539,6 +1585,9 @@ export default class Menu {
         this.updateUtilsBar(menuTabs[1].label);
         this.makeDraggable(menuElement, headerElement);
         this.buildItemMap();
+        for (const id in this.itemMap) {
+            if (id) this.defaults[id] = this.itemMap[id].status;
+        }
 
         await this.loadSettings();
         this.loadFavorites();

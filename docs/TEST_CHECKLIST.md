@@ -248,6 +248,15 @@ Use **Utility > Packet Management > Artificial Ping** to add delay on a fast con
 | ☐ | Open / close | Press O, then O again (or click the panel) | A list of every hotkey appears, then closes |
 | ☐ | Up to date | Change a key in Menu > Keybinds, press O | The list shows the new key; unbound actions show "None" |
 
+## 12. Settings Export / Import / Reset (Menu > Configs)
+| ✔ | Test | What to do | What should happen |
+|---|---|---|---|
+| ☐ | Export | Click Export | Text appears in the box and "Settings copied to clipboard" shows |
+| ☐ | Import | Change a setting, paste the earlier text, click Import | "Imported N settings"; the setting is back to the exported value |
+| ☐ | Keybinds too | Change a key, Export, reset keys in Keybinds, Import | Your changed key comes back |
+| ☐ | Bad text | Type "hello" in the box, click Import | Red message; nothing changes |
+| ☐ | Reset | Click Reset to Default, confirm | All settings back to normal; keybinds and saved configs stay |
+
 ## What was already tested automatically (live, with a test bot)
 See the final report in the pull request / chat: heal timing, shame, instas, turret, traps, Safe Walk,
 prediction accuracy, hat rendering (all 47 hats + 21 accessories), reconnect, server change, memory.

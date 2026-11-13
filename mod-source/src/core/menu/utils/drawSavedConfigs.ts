@@ -30,7 +30,7 @@ export default async function drawSavedConfigs() {
         name.style.marginLeft = "7px";
         name.classList.add("menuItemLabel");
         labelHolder.appendChild(name);
-        name.innerHTML = `Load '${key}' Config`;
+        name.textContent = `Load '${key}' Config`; // textContent: a config name is plain text
 
         body.appendChild(labelHolder);
 
