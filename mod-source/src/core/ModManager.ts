@@ -11,6 +11,7 @@ import PlayerManager from "@core/logic/players/PlayerManager";
 import PotentialObjectManager, { PotentialObject } from "@core/logic/PotentialObjectManager";
 import ProjectileManager from "@core/logic/ProjectileManager";
 import AttackManager from "@core/mod/combat/core/AttackManager";
+import AimAssist from "@core/mod/combat/modules/AimAssist";
 import "@core/mod/combat/core/attackModules";
 import AutoPusher from "@core/mod/combat/core/AutoPusher";
 import CombatController from "@core/mod/combat/core/CombatController";
@@ -92,15 +93,20 @@ export default class ModManager {
             const type = action.aimType;
             const nearestEnemy = this.enemyData.nearest;
             const trapAim = nearestEnemy && nearestEnemy.trap ? getDir(nearestEnemy.trap, player.real_position) : 0;
-            return typeof action.customAim !== "undefined" ? action.customAim : type === "nearest" ? this.enemyData.angle : trapAim;
+            if (typeof action.customAim !== "undefined") return action.customAim;
+            // "Lead Falcon's Ranged Shots" (Aim Assist, off by default) only changes a ranged shot at the nearest enemy.
+            return type === "nearest" ? AimAssist.leadOwnShot(this.enemyData.angle, nearestEnemy) : trapAim;
         } else if (CombatController.currentMode === "autobreak" || CombatController.currentMode === "autobreakspike") {
             return AutoBreaker.aimAngle;
         } else if (CombatController.currentMode === "object breaking" || CombatController.currentMode === "pit object breaking") {
             return ObjectBreaker.aimAngle;
         } else if (Menu.getValue("autoGrind")) {
             return AutoGrinder.aimDir;
-        } else if (!autoaimmer || CombatController.tankSpam) {
+        } else if (!autoaimmer) {
             return Input.getAttackDir();
+        } else if (CombatController.tankSpam) {
+            // Our own hit by hand: "Aim Assist" (off by default) may turn it to an enemy inside the mouse cone.
+            return AimAssist.adjust(Input.getAttackDir());
         }
 
         return undefined;
@@ -112,7 +118,7 @@ export default class ModManager {
         // "Aim With Mouse While Gathering": with auto-gather on by hand (E) and nothing of Falcon's aiming, the server
         // swung in whatever direction was last sent, not at the mouse; send the mouse direction.
         if (aimAngle === undefined && CombatController.manualGather && Menu.getValue("mouseAimWhileGathering")) {
-            aimAngle = Input.getAttackDir();
+            aimAngle = AimAssist.adjust(Input.getAttackDir());
         }
 
         if (typeof aimAngle === "number") {

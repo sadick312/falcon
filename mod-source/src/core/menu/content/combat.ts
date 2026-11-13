@@ -285,6 +285,60 @@ export const combatSettings: IMenuItem[] = [{
     }],
     status: false
 }, {
+    label: "Aim Assist",
+    id: "aimAssist",
+    description: "When you hit by hand (mouse click tank spam, or E auto-gather with \"Aim With Mouse While Gathering\"), turns your swing to an enemy inside a cone around your mouse. Never outside the cone (at most 60° wide), never teammates or dead players. Melee aims at the enemy's centre; musket, crossbow and bow aim where the enemy will be when the shot arrives. L locks on to the current target (kept while it stays in the cone); J switches to the next enemy in the cone.",
+    icon: SWORD_ICON,
+    type: "toggle",
+    settings: [{
+        label: "Cone Width (FOV)",
+        id: "aimAssist:fov",
+        description: "How wide the cone around your mouse is, in degrees (all of it, not each side). 60 at most.",
+        type: "slider",
+        min: 10,
+        max: 60,
+        step: 5,
+        status: 40
+    }, {
+        label: "Max Distance",
+        id: "aimAssist:maxDist",
+        description: "Enemies farther away than this are never picked.",
+        type: "slider",
+        min: 100,
+        max: 1400,
+        step: 50,
+        status: 700
+    }, {
+        label: "Pick",
+        id: "aimAssist:pick",
+        description: "Which enemy in the cone to aim at.",
+        type: "select",
+        options: [{
+            label: "Nearest",
+            value: 0
+        }, {
+            label: "Lowest Health",
+            value: 1
+        }, {
+            label: "Closest To Mouse",
+            value: 2
+        }],
+        status: 0
+    }, {
+        label: "Lead Falcon's Ranged Shots",
+        id: "aimAssist:leadOwnShots",
+        description: "Falcon's own attacks aimed at the nearest enemy (instas and the like) aim a musket, crossbow or bow shot where the enemy will be, not where it is. Off = aim straight at the enemy, as before.",
+        type: "toggle",
+        status: false
+    }, {
+        label: "Show Markers",
+        id: "aimAssist:markers",
+        description: "Draws a ring on the current target (yellow, red while locked) and a dot where a ranged shot is aimed.",
+        type: "toggle",
+        status: true
+    }],
+    status: false
+}, {
     label: "Dynamic One Tick",
     id: "dynamicOneTick",
     description: "Automatically does one ticks whenever possible. This toggle must be turned on for 'Active' oneTick mode to work.",

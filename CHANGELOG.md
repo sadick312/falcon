@@ -2,6 +2,16 @@
 
 What changed in Falcon, newest first. Each entry names the commit(s) for the details.
 
+## Unreleased (branch review/stability, Phase 3B part 3: aim)
+
+### Added (off by default)
+- **Aim Assist** (Combat): when you hit by hand (mouse tank spam, or E auto-gather with "Aim With Mouse While
+  Gathering"), the swing turns to an enemy inside a cone around your mouse: never wider than 60°, never behind you,
+  never teammates or dead players. Pick Nearest, Lowest Health or Closest To Mouse; Max Distance slider. L locks on,
+  J switches target. Melee aims at the centre; musket, crossbow and bow lead a moving enemy (where it will be when
+  the shot arrives). Markers show the target and the aimed point.
+- **Lead Falcon's Ranged Shots** (under Aim Assist): Falcon's own shots at the nearest enemy lead too. Off = as before.
+
 ## Unreleased (branch review/stability, panic-eat fix)
 
 ### Added (off by default)

@@ -3,6 +3,7 @@ import updateClanMenu, { allianceHolder } from "@core/events/updateClanMenu";
 import TextManager from "@core/logic/TextManager";
 import AttackManager from "@core/mod/combat/core/AttackManager";
 import CombatController from "@core/mod/combat/core/CombatController";
+import AimAssist from "@core/mod/combat/modules/AimAssist";
 import MovementManager from "@core/mod/defense/defense-modules/MovementManager";
 import ChatCommands from "@core/utils/ChatCommands";
 import PacketReplayer from "@core/PacketReplayer";
@@ -233,6 +234,16 @@ document.addEventListener("keydown", (event) => {
                 );
             } else if (event.code === "KeyZ") {
                 AutoMiller.data.status = !AutoMiller.data.status;
+            } else if (event.code === "KeyL" && AimAssist.enabled()) {
+                AimAssist.toggleLock();
+                TextManager.add(
+                    Client.player.render_position.x,
+                    Client.player.render_position.y,
+                    AimAssist.locked ? "Locked" : "Unlocked",
+                    0
+                );
+            } else if (event.code === "KeyJ" && AimAssist.enabled()) {
+                AimAssist.requestSwitch();
             } else if (/Digit[0-9]/.test(event.code)) {
                 const player = Client.player;
                 const id = parseInt(event.code.split("Digit")[1] ?? "") - 1;
