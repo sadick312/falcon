@@ -22,6 +22,7 @@ import renderAutoPushVisuals from "@rendering/utils/mod/renderAutoPushVisuals";
 import renderBuildingHealth from "@rendering/utils/mod/renderBuildingHealth";
 import renderGrid from "@rendering/utils/mod/renderGrid";
 import renderMinimap from "@rendering/utils/mod/renderMinimap";
+import renderTracers from "@rendering/utils/mod/renderTracers";
 import renderDangerWarning from "@rendering/utils/mod/renderDangerWarning";
 import renderOneTickLine from "@rendering/utils/mod/renderOneTickLine";
 import renderPathfindPath from "@rendering/utils/mod/renderPathfindPath";
@@ -161,6 +162,7 @@ export default class RendererSystem {
             renderAutoPushVisuals();
             renderPathfindPath();
 
+            renderTracers();
             renderNames();
             renderPlayerChats(delta);
             renderText(delta);

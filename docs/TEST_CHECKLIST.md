@@ -224,6 +224,15 @@ Use **Utility > Packet Management > Artificial Ping** to add delay on a fast con
 | ☐ | Threshold | Set "Warn From (damage)" to 100 | Only "CAN KILL YOU" shows, never plain "DANGER" |
 | ☐ | Off / dead | Turn the toggle off, or die | Nothing is drawn |
 
+## 9. Player Tracers (Menu > Visual > Player Tracers, off by default)
+| ✔ | Test | What to do | What should happen |
+|---|---|---|---|
+| ☐ | Lines | Turn it on near other players | A line from you to each enemy: red when close (< 300), white further away |
+| ☐ | Arrows | Zoom in (Shift + =) so a nearby player is off screen | An arrow on the screen edge points at them, with the distance |
+| ☐ | Teammates | Join a tribe, turn "Show Teammates" on/off | Green lines only when it's on |
+| ☐ | Mode | Show: Lines Only / Arrows Only | Only that kind is drawn |
+| ☐ | Disconnect | Get disconnected (e.g. IP limit) | Tracers and Danger Warning disappear |
+
 ## What was already tested automatically (live, with a test bot)
 See the final report in the pull request / chat: heal timing, shame, instas, turret, traps, Safe Walk,
 prediction accuracy, hat rendering (all 47 hats + 21 accessories), reconnect, server change, memory.

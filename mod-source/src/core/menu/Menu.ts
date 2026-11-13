@@ -1162,6 +1162,28 @@ export const menuContent: IMenuContent = {
         }],
         status: true
     }, {
+        label: "Player Tracers",
+        id: "playerTracers",
+        description: "Lines from you to the players around you, and arrows on the screen edge for players just off screen (when zoomed in). Red = enemy close, white = enemy, green = teammate. The server only sends players near you, so far-away players can't be shown.",
+        type: "toggle",
+        settings: [{
+            label: "Show",
+            id: "playerTracersMode",
+            type: "select",
+            options: [
+                { label: "Lines and Arrows", value: "both" },
+                { label: "Lines Only", value: "lines" },
+                { label: "Arrows Only", value: "arrows" }
+            ],
+            status: "both"
+        }, {
+            label: "Show Teammates",
+            id: "playerTracersTeam",
+            type: "toggle",
+            status: false
+        }],
+        status: false
+    }, {
         label: "Shame Counter",
         id: "renderShameCounter",
         description: "Draws a entities' shame count.",

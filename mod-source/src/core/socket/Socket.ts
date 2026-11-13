@@ -1,5 +1,5 @@
 import DebugStats from "@core/DebugStats";
-import { deathText } from "@core/Client";
+import Client, { deathText } from "@core/Client";
 import GameEventTracker from "@core/mod/utils/GameEventTracker";
 import CustomEncoder from "@core/socket/CustomEncoder";
 import LegacyAdapter from "@core/socket/LegacyAdapter";
@@ -69,6 +69,10 @@ export default class Socket extends NativeWebSocket {
     }
 
     private onClose(ev: CloseEvent) {
+        // Disconnected (kicked, IP limit, server restart): we're no longer playing, so automation
+        // and in-game overlays (Danger Warning, tracers) must stop until the next spawn.
+        if (Client.socket === this) Client.isAlive = false;
+
         // Can't join on a closed socket; re-enabled when the next socket opens.
         enterGameBtn.classList.add("disabled");
         respawnPage.style.display = "flex";
