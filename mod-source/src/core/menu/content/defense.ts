@@ -162,7 +162,7 @@ export const defenseSettings: IMenuItem[] = [{
     }, {
         label: "Walk To Targets",
         id: "walkBreaker:walkToTarget",
-        description: "Walks towards the nearest enemy building in Detection Range until it is in reach. Only while you aren't moving yourself, Shift isn't held and no enemy player is within 300. Needs Detection Range above 0.",
+        description: "Walks towards an enemy building in Detection Range until it is in reach: spikes first, then the closest, then the one with the least health. Only while you aren't moving yourself, Shift isn't held and no enemy player is within 300. Needs Detection Range above 0.",
         type: "toggle",
         status: false
     }, {

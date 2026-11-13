@@ -107,7 +107,7 @@ export default class ObjectBreaker {
 
     /** The building being hit this tick (for the target marker), or null. */
     static currentTarget: GameObject | null = null;
-    /** "Detection Range": the nearest enemy building seen but out of reach, when nothing is in reach. */
+    /** "Detection Range": the enemy building seen but out of reach (spikes first, then the closest), when nothing is in reach. */
     static farTarget: GameObject | null = null;
     /** "Walk To Targets": the direction to walk towards `farTarget`, or null. Read by MovementManager.getMoveDir. */
     static walkDir: number | null = null;
@@ -174,7 +174,6 @@ export default class ObjectBreaker {
 
         // 0 (the default) = classic: only buildings already in reach are looked at.
         const detectExtra = Number(Menu.getValue("walkBreaker:detectRange")) || 0;
-        let farDistSq = Infinity;
 
         for (let i = 0, len = closeObjects.length; i < len; i++) {
             const gameObject = closeObjects[i];
@@ -199,9 +198,8 @@ export default class ObjectBreaker {
                 }
             } else if (isTarget && isNotFriendly && detectExtra > 0 && gameObject.hasHealth &&
                 BreakerUtils.getObjectAttackDistance(player, gameObject, wpn.range - 1 + detectExtra)) {
-                const distSq = getDistSq(gameObject, playerPos);
-                if (distSq < farDistSq) {
-                    farDistSq = distSq;
+                // Spikes first, then the closest, then the lowest health (the Closest First order).
+                if (this.farTarget === null || this.compareClosestFirst(gameObject, this.farTarget, playerPos) < 0) {
                     this.farTarget = gameObject;
                 }
             }

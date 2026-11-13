@@ -213,6 +213,15 @@ describe("Object Breaker: Closest First, Detection Range, Walk To Targets", () =
         expect(allMoves).toEqual([]);
     });
 
+    it("Detection Range: a far spike comes before a nearer boost pad (spikes first, like Closest First)", async () => {
+        // Pad 200 to the left, spike 250 to the right: both out of reach, both seen with +200.
+        const { ObjectBreaker } = await run({
+            detectRange: 200,
+            objects: [{ sid: 701, x: 1250, y: 1000, item: "SPIKES" }, { sid: 702, x: 800, y: 1000, item: "BOOST_PAD" }]
+        });
+        expect(ObjectBreaker.farTarget?.sid).toBe(701);
+    });
+
     it("Walk To Targets: walks towards the far spike", async () => {
         const { ObjectBreaker, allMoves } = await run({ enable: ["walkBreaker:walkToTarget"], detectRange: 200, objects: farSpike });
         expect(ObjectBreaker.walkDir).toBeCloseTo(0, 5);
