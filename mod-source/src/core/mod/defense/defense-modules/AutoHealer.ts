@@ -54,6 +54,12 @@ export default class AutoHealer {
         tickState.activityList.push(`autoHealing x${times}`);
     }
 
+    /** Nothing can hit us this tick and the missing health is less than one of our food heals. */
+    static isSmallLoss(player: { maxHealth: number; health: number; items: number[] }) {
+        const missing = player.maxHealth - player.health;
+        return tickState.brainState.healingInternal.expectedDamage <= 0 && missing < HealerUtils.getFoodValue(player.items[0] ?? NaN);
+    }
+
     private static healIfNoShame() {
         const player = Client.player;
         if (tickState.tick - player.hitTime <= 1)
@@ -66,6 +72,12 @@ export default class AutoHealer {
             player.tailIndex === STORE_ACCESSORY_MAP.BLOOD_WINGS && WingsUtils.willHitPlayer()
         ) {
             tickState.brainState.healingResponse = "blood wings heal";
+            return;
+        }
+
+        // "Don't Top Up Small Losses": no threat this tick and less missing than one food heals: wait, don't waste it.
+        if (Menu.getValue("noSmallTopUp") && this.isSmallLoss(player)) {
+            tickState.brainState.healingResponse = "small loss, no top-up";
             return;
         }
 

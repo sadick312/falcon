@@ -4,7 +4,21 @@ Branch `combat-defense-ping` (worktree `../falcon-cdp`): `full-review` 07e35be +
 `classic-upgrades` be78e1d merged (your choice, 14 Nov). Push to `fork` only. Findings: COMBAT_DEFENSE.md.
 
 ## Current task
-Step 2 (ping) done. **Stopped for your review** before Step 3 (defense).
+Step 3 (defense) done. Next: Step 4 (combat).
+
+## Step 3 (defense), done
+- **Ping-Aware Defense** (Defense > Auto Healing, off): with a round trip of 2+ ticks, the threat rule (90% or
+  Exact) is applied to the reload a weapon will have one tick later, so hats/food answer a tick earlier. Tested: at
+  200 ms the polearm counts exactly one tick earlier, every other tick the same; at 50 ms nothing changes.
+- **Don't Top Up Small Losses** (Defense > Auto Healing, off): with no threat this tick, doesn't eat for less missing
+  health than one food heals. Tested: 95 HP no eat (on) / eat (off), 75 HP still eats. Danger healing unchanged.
+- Tried, didn't work: a first Ping-Aware version ("ready by next tick" OR the 90% rule) changed nothing in the
+  default mode, because the 90% rule already counts a polearm about a tick early. Replaced by shifting the rule one
+  tick ahead. Don't repeat the OR version.
+- Breaker and trap/spike placement: reviewed in Step 1, no change needed (trap first, best breaking weapon, stops
+  when the trap is gone; Auto Place is off by default and Safe Walk keeps us out of spikes).
+- Checks: typecheck, lint, check:dead, docs:settings, builds pass; vitest 148 files, 1170 passed, 1 skipped;
+  replays unchanged.
 
 ## Step 2 (ping), done
 - `cd6bdff` **Timing** (`core/mod/utils/Timing.ts`): one helper for every ping timing (preplacement wait, packet
@@ -39,8 +53,7 @@ Step 2 (ping) done. **Stopped for your review** before Step 3 (defense).
   unexported as full-review's dead-code fix had it).
 
 ## Next up
-- Step 3 (defense), after your OK: "Ping-Aware Defense" (off) and "Don't Top Up Small Losses" (off), with tests.
-  See COMBAT_DEFENSE.md section 3.
+- Step 4 (combat): optional lead for Falcon's own attacks using Timing (off), tests. See COMBAT_DEFENSE.md section 3.
 
 ---
 

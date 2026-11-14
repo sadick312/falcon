@@ -27,6 +27,7 @@ import getAngleDist from "@utils/angle/getAngleDist";
 import getDir from "@utils/angle/getDir";
 import getDirComp from "@utils/angle/getDirComp";
 import ScriptConfig from "@utils/config/ScriptConfig";
+import Timing from "@core/mod/utils/Timing";
 import getDistSq from "@utils/geometry/getDistSq";
 import lineInCircle from "@utils/geometry/lineInCircle";
 import withinDist from "@utils/geometry/withinDist";
@@ -262,7 +263,10 @@ export default class DefenseSystem {
         const turret = PlayerCombatManager.fetch(enemy, 2);
 
         const exactReload = Menu.getValue("exactThreatReload") === true;
-        if (!HealerUtils.isThreatReady(turret.reload, exactReload)) {
+        const pingAware = Menu.getValue("pingAwareDefense") === true && Timing.roundTripTicks() >= 2;
+        const ready = (wpn: WeaponFetchData, reloadMs: number) => HealerUtils.isThreatReadyForPing(wpn.reload, exactReload, reloadMs, pingAware);
+        const turretReady = ready(turret, ScriptConfig.TURRET_GEAR_RELOAD);
+        if (!turretReady) {
             state.canEMP = false;
         }
 
@@ -273,9 +277,9 @@ export default class DefenseSystem {
         const hasMonkeyTailOn = enemy.skinIndex !== STORE_HAT_MAP.BULL_HELMET && enemy.tailIndex === STORE_ACCESSORY_MAP.MONKEY_TAIL;
         const canThisEnemyPlaceOnMe = enemy.placePotential.onMeBufferIndex > 0;
 
-        let primaryDamage = HealerUtils.isThreatReady(primary.reload, exactReload) && this.isInRange(player, enemy, primary) ? (hasMonkeyTailOn ? primary.dmg : primary.dmg * BULL_DAMAGE_MULT) : 0;
-        let secondaryDamage = HealerUtils.isThreatReady(secondary.reload, exactReload) && this.isInRange(player, enemy, secondary) && DefenseUtils.isInLineOfSight(enemy, secondary) ? secondary.dmg : 0;
-        const turretDamage = HealerUtils.isThreatReady(turret.reload, exactReload) && DefenseUtils.isInLineOfSight(enemy, turret) ? TURRET_BULLET_DAMAGE : 0;
+        let primaryDamage = ready(primary, getWeapon(primary.id).speed) && this.isInRange(player, enemy, primary) ? (hasMonkeyTailOn ? primary.dmg : primary.dmg * BULL_DAMAGE_MULT) : 0;
+        let secondaryDamage = ready(secondary, getWeapon(secondary.id).speed) && this.isInRange(player, enemy, secondary) && DefenseUtils.isInLineOfSight(enemy, secondary) ? secondary.dmg : 0;
+        const turretDamage = turretReady && DefenseUtils.isInLineOfSight(enemy, turret) ? TURRET_BULLET_DAMAGE : 0;
 
         if (primaryDamage > 0 && turretDamage > 0) {
             // Worst case, whatever either of us wears: a Monkey Tail enemy can take the tail off and hit at full damage,

@@ -39,6 +39,18 @@ export const defenseSettings: IMenuItem[] = [{
             type: "toggle",
             status: false
         }, {
+            label: "Ping-Aware Defense",
+            id: "pingAwareDefense",
+            description: "With a round trip over one server tick (~111 ms), your hat or food reaches the server a tick late, so an enemy weapon that finishes reloading by then also counts as a threat. No effect at lower ping.",
+            type: "toggle",
+            status: false
+        }, {
+            label: "Don't Top Up Small Losses",
+            id: "noSmallTopUp",
+            description: "When nothing can hit you this tick, doesn't eat to get back less health than one food heals (e.g. 3 HP with a cookie). Danger healing is unchanged.",
+            type: "toggle",
+            status: false
+        }, {
             label: "Resync Predicted Speed",
             id: "resyncPredictedSpeed",
             description: "Starts each tick's prediction of where you'll be with your real speed. Off (classic): the speed is kept from the last prediction, so after one predicted spike bounce Falcon thinks you hit the spike every tick, and Auto Heal eats right after hits (+1 shame each time) for damage that never comes.",

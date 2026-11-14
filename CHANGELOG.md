@@ -2,6 +2,13 @@
 
 What changed in Falcon, newest first. Each entry names the commit(s) for the details.
 
+## Unreleased (branch combat-defense-ping, Step 3: defense)
+
+### Added (off by default, under Defense > Auto Healing)
+- **Ping-Aware Defense**: at a round trip over one tick, enemy weapons count as a threat one tick earlier, so the
+  hat or food reaches the server in time.
+- **Don't Top Up Small Losses**: when nothing can hit you, doesn't eat for less than one food's worth of health.
+
 ## Unreleased (branch combat-defense-ping, Step 2: ping)
 
 ### Added (off by default)
