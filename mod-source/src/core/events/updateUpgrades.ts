@@ -3,6 +3,7 @@ import Client from "@core/Client";
 import Menu from "@menu/Menu";
 import PacketMap from "@root/utils/socket/PacketMap";
 import getElem from "@utils/dom/getElem";
+import { CLASSIC_AGES, ClassicCombo, combosAt, comboFromValue, planClassicPick } from "./classicUpgrades";
 
 const upgradeHolder = getElem<"div">("upgrade-holder");
 const upgradeCounter = getElem<"div">("upgrade-counter");
@@ -18,6 +19,44 @@ const MANUAL_PICK = -1;
 const PREFERRED = [17, 31, 23];
 
 let fallbackTimer: number | undefined;
+
+/** The Classic combo button clicked this life: its age 9 pick is sent when age 9 comes. Forgotten below age 8. */
+let clickedCombo: ClassicCombo | undefined;
+
+const isClassicAge = (age: number) => (CLASSIC_AGES as readonly number[]).includes(age);
+
+/** Classic Upgrades' pick at `age` (a clicked combo, else the Favourite with Auto Pick Favourite), if it's offered. */
+function classicPick(age: number, offered: readonly number[]): number | undefined {
+    const combo = clickedCombo ?? (Menu.getValue("classicAutoPick") ? comboFromValue(parseInt(Menu.getValue("classicPreset"))) : undefined);
+    const id = combo && planClassicPick(combo.picks, age, Client.player.weapons);
+    return id !== undefined && offered.includes(id) ? id : undefined;
+}
+
+/** One button per Classic combo under the upgrade bar ("Katana + Musket", ...). */
+function addComboButtons(age: number) {
+    const combos = combosAt(age, Client.player.weapons);
+    if (combos.length === 0) return;
+
+    const row = document.createElement("div");
+    row.style.cssText = "flex-basis: 100%; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px;";
+    for (const combo of combos) {
+        const button = document.createElement("div");
+        button.className = "classic-combo";
+        button.textContent = combo.label;
+        // pointer-events: #game-ui has none, like .action-bar-item the button takes clicks back from the canvas.
+        button.style.cssText = "padding: 4px 8px; border-radius: 4px; background: rgba(0, 0, 0, 0.35); color: #fff; font-size: 14px; cursor: pointer; pointer-events: all;";
+        button.onclick = () => {
+            clickedCombo = combo;
+            const id = planClassicPick(combo.picks, age, Client.player.weapons);
+            if (id !== undefined) Client.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.SEND_UPGRADE, id);
+        };
+        row.appendChild(button);
+    }
+    // The full-width row makes the holder full width: keep the icons centred above it.
+    upgradeHolder.style.flexWrap = "wrap";
+    upgradeHolder.style.justifyContent = "center";
+    upgradeHolder.appendChild(row);
+}
 
 interface AutoUpgradeChoice {
     /** Send this upgrade now. */
@@ -61,16 +100,19 @@ export default function updateUpgrades(points: number, age: number) {
     Client.player.upgradePoints = points;
     Client.player.upgrAge = age;
     if (age === 2) Client.upgradesObtained.clear();
+    if (age < CLASSIC_AGES[0]) clickedCombo = undefined;
 
     if (points > 0) {
         const tmpList = tmpUpgradeList;
         tmpUpgradeList.length = 0;
         upgradeHolder.innerHTML = "";
+        // The server checks a weapon's age, not its pre (UPGRADES.md): Classic shows every weapon of the age.
+        const classic = Menu.getValue("classicUpgrades") && isClassicAge(age);
 
         for (const [i, wpn] of items.weapons.entries()) {
             const isWithinAge = wpn.pre === undefined || Client.player.weapons.indexOf(wpn.pre) >= 0;
 
-            if (wpn.age === age && (Client.socket.isPrivateServer || isWithinAge)) {
+            if (wpn.age === age && (Client.socket.isPrivateServer || isWithinAge || classic)) {
                 const elem = document.createElement("div");
                 elem.id = `upgrade-item-${i}`;
                 elem.className = "action-bar-item";
@@ -103,6 +145,14 @@ export default function updateUpgrades(points: number, age: number) {
             fallbackTimer = undefined;
         }
 
+        if (classic) {
+            const id = classicPick(age, tmpList);
+            if (id !== undefined) {
+                Client.socket.sendMsg(PacketMap.CLIENT_TO_SERVER.SEND_UPGRADE, id);
+                return;
+            }
+        }
+
         if (Menu.getValue("autoUpgrade")) {
             const choice = chooseAutoUpgrade(tmpList, age);
             if (choice.now !== undefined) {
@@ -133,6 +183,10 @@ export default function updateUpgrades(points: number, age: number) {
                 );
             };
         }
+
+        upgradeHolder.style.flexWrap = "";
+        upgradeHolder.style.justifyContent = "";
+        if (classic) addComboButtons(age);
 
         if (tmpList.length) {
             upgradeHolder.style.display = "flex";
