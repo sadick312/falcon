@@ -129,6 +129,18 @@ describe("Classic Upgrades on", () => {
         }
     });
 
+    it("turned on late (already at age 9, age 8 spent on something else): still sends the Favourite's age 9 weapon", () => {
+        set({ classicAutoPick: true, classicPreset: 415 });
+        offer(9, [POLEARM, GREAT_HAMMER]);
+        expect(sent).toEqual([MUSKET]);
+    });
+
+    it("sends nothing when the Favourite's weapon for this age is already owned", () => {
+        set({ classicAutoPick: true, classicPreset: 415 });
+        offer(8, [KATANA, GREAT_HAMMER]);
+        expect(sent).toEqual([]);
+    });
+
     it("sends nothing for an unknown Favourite (old or edited config)", () => {
         set({ classicAutoPick: true, classicPreset: 999 });
         offer(8, [POLEARM, GREAT_HAMMER]);
