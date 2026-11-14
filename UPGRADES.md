@@ -202,3 +202,44 @@ Shortcut: one Favourite Combo per config, not a list of favourites. Use Menu > C
 ## 11. How to add a new weapon
 
 Add one row to `weapons` in `mod-source/src/utils/constants/items.ts` with its `id`, `type` (0 primary, 1 secondary) and `age`. If its age is 8 or 9, the combo list, the menu choices, the buttons and the planner pick it up automatically. Nothing else needs changing. (The menu value of a combo is `age 8 id * 100 + age 9 id`, so ids must stay below 100.)
+
+## 12. Step 4: live test of the built Falcon (2026-11-14, sandbox `s1`, Quick Inject build)
+
+Falcon was injected into a sandbox page and joined Frankfurt `s1` through Multiplayer. Ages 2 to 7 were picked by clicking Falcon's own upgrade bar. The packets below were read from Falcon's socket.
+
+| Test | Setup | What happened (server packets) | Result |
+|---|---|---|---|
+| Combo button | Classic on, Polearm + Great Hammer, real mouse click on "Katana + Musket" at age 8 | `H [4]` → `V [[4,10],1]`, then at age 9 Falcon sent `H [15]` by itself → `V [[4,15],1]`; hotbar shows Katana + Musket | works |
+| Auto Pick Favourite | Classic on, Favourite "Great Axe + Repeater Crossbow", Auto Pick on, Short Sword + Great Hammer | age 8: `H [2]` → `V [[2,10],1]`; age 9: `H [13]` → `V [[2,13],1]` | works (this was the one combo not tested in Step 2) |
+| Toggle off | Classic off (Favourite still set), Polearm + Great Hammer | age 8 bar empty, no buttons, nothing sent | same as normal 1.8.2 |
+
+Bugs found by this test and fixed: the combo buttons could not be clicked with the mouse (the game screen has `pointer-events: none`), and the weapon icons moved to the top-left corner when the buttons were shown. Both are fixed in `updateUpgrades.ts`.
+
+Not tested live: death and respawn (covered by a unit test), and other servers.
+
+## 13. In-game checklist (for you)
+
+Setup: build with `npm run inject:build`, then paste `mod-source\dist\falcon-quick-inject.js` into Quick Inject (see README). Close other game tabs first: the server allows only a few connections per IP.
+
+**Optional: see what the server really gave you.** Open the console (F12 > Console) and paste this once (type `allow pasting` first if Chrome asks). After each weapon upgrade it prints your two weapon ids, read from the server's own `V` packet:
+```js
+(() => { const send = WebSocket.prototype.send, seen = new WeakSet();
+  WebSocket.prototype.send = function (d) {
+    if (!seen.has(this)) { seen.add(this); this.addEventListener("message", m => {
+      const b = new Uint8Array(m.data); // ["V", [[primary, secondary], 1]] = your weapons
+      if (b[1] === 0xa1 && b[2] === 0x56 && b[b.length - 1] === 1) console.log("Server gave weapons:", [...b.slice(5, 5 + (b[4] & 15))]);
+    }); }
+    return send.call(this, d); }; })();
+```
+Weapon ids: 2 great axe, 4 katana, 12 crossbow, 13 repeater crossbow, 15 musket (full table in section 4).
+
+| # | Do | You should see |
+|---|---|---|
+| 1 | Menu > Utility: turn on **Classic Upgrades (1.6.9 style)** | Toggle on. Its settings: Favourite Combo (None), Auto Pick Favourite (off) |
+| 2 | Join a sandbox server. Pick any weapon at age 2 (not Short Sword or Hand Axe, to see the difference) and any building at ages 3-7. At age 6 pick anything except the Hunting Bow | Normal bar at ages 2-7, no combo buttons |
+| 3 | Reach age 8 | The bar shows Great Axe, Katana and Crossbow (the normal game shows none of them here), and 6 buttons under it, centred |
+| 4 | Click **Katana + Musket** | Console: `Server gave weapons: [4, x]`, then right away `Server gave weapons: [4, 15]`. Hotbar: Katana and Musket. No buttons left |
+| 5 | Switch weapons (1 / 2), hit something, shoot the musket | Both weapons work; the reload HUD shows the musket |
+| 6 | Die and respawn, reach age 8 again without clicking a button | Nothing is sent by itself (the old combo was forgotten) |
+| 7 | Set **Favourite Combo** = Great Axe + Musket and turn on **Auto Pick Favourite**, new life | At ages 8 and 9 the weapons are taken by themselves: console `[2, x]`, then `[2, 15]` |
+| 8 | Turn **Classic Upgrades** off, new life, reach age 8 | Normal 1.8.2 bar: only the weapons whose pre-requisite you own, no buttons |
