@@ -76,7 +76,7 @@ describe("Resync Predicted Speed", () => {
         expect(player.next_state.x).toBeGreaterThan(player.real_position.x);
     });
 
-    it("on: a teleport (over 100 in one tick) counts as standing still, not as a huge speed", async () => {
+    it("on: a teleport (over 300 in one tick) counts as standing still, not as a huge speed", async () => {
         game = await startGame({ enable: ["resyncPredictedSpeed"] });
         game.spawn({ sid: ME, x: 1000, y: 1000, weaponIndex: 5 });
         game.spawn({ sid: ENEMY, x: 4000, y: 4000 });

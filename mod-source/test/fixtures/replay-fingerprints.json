@@ -1,9 +1,9 @@
 {
     "sample-base": {
-        "packets": "6aca8484bdbe212d",
+        "packets": "23a154a24573ed6c",
         "angles": "bac14ec6e0a44bd5",
-        "state": "da63e2c1087a4290",
-        "sentPackets": 1618,
+        "state": "8f6146f3a85268c3",
+        "sentPackets": 1617,
         "angleComputes": 3115,
         "finalState": {
             "players": 5,
@@ -25,7 +25,7 @@
     "sample-busy": {
         "packets": "c0427ed3be9988ca",
         "angles": "8dc83b9341943bed",
-        "state": "756dbe55d88d8140",
+        "state": "7bdae99be19c4089",
         "sentPackets": 2884,
         "angleComputes": 8222,
         "finalState": {
@@ -48,7 +48,7 @@
     "sample-synthetic": {
         "packets": "f815fbedf6756a5e",
         "angles": "6578010ef4afff9d",
-        "state": "c97dc6ace208ba45",
+        "state": "7e2559b170169da1",
         "sentPackets": 372,
         "angleComputes": 503,
         "finalState": {

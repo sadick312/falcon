@@ -80,8 +80,11 @@ export default class PlayerUpdateEvent extends MessageHandler<UpdatePlayerPacket
             PlayerStateManager.trackPlacement(sid, placement);
             placement++;
 
-            const lastX = player.last_position.x = player.real_position.x;
-            const lastY = player.last_position.y = player.real_position.y;
+            // Back in view (missing from the last update): its old position is out of date, so this tick counts as no
+            // movement instead of one huge step.
+            const backInView = !player.visible;
+            const lastX = player.last_position.x = backInView ? x : player.real_position.x;
+            const lastY = player.last_position.y = backInView ? y : player.real_position.y;
 
             player.last_render_position.x = player.render_position.x;
             player.last_render_position.y = player.render_position.y;
