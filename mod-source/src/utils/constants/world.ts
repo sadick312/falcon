@@ -11,6 +11,11 @@ export const WATER_CURRENT = 0.0011;
 export const SNOW_SPEED = 0.75;
 /** 1.8.2: velocity is multiplied by 0.993 per ms, so by this much over one server tick. */
 export const PLAYER_DECELERATION = Math.pow(0.993, ScriptConfig.SERVER_UPDATE_SPEED);
+/**
+ * A move longer than this in one tick is a respawn, a teleport or a player back in view (last_position is only updated
+ * while in view), not walking: count it as standing still.
+ */
+export const MAX_WALK_PER_TICK = 100;
 
 /**
  * Whether 1.8.2's water rules (slowdown and current) apply: inside the river band and not on a platform. Player.update
