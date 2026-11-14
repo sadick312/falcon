@@ -43,7 +43,8 @@ function addComboButtons(age: number) {
         const button = document.createElement("div");
         button.className = "classic-combo";
         button.textContent = combo.label;
-        button.style.cssText = "padding: 4px 8px; border-radius: 4px; background: rgba(0, 0, 0, 0.35); color: #fff; font-size: 14px; cursor: pointer;";
+        // pointer-events: #game-ui has none, like .action-bar-item the button takes clicks back from the canvas.
+        button.style.cssText = "padding: 4px 8px; border-radius: 4px; background: rgba(0, 0, 0, 0.35); color: #fff; font-size: 14px; cursor: pointer; pointer-events: all;";
         button.onclick = () => {
             clickedCombo = combo;
             const id = planClassicPick(combo.picks, age, Client.player.weapons);
@@ -51,7 +52,9 @@ function addComboButtons(age: number) {
         };
         row.appendChild(button);
     }
+    // The full-width row makes the holder full width: keep the icons centred above it.
     upgradeHolder.style.flexWrap = "wrap";
+    upgradeHolder.style.justifyContent = "center";
     upgradeHolder.appendChild(row);
 }
 
@@ -182,6 +185,7 @@ export default function updateUpgrades(points: number, age: number) {
         }
 
         upgradeHolder.style.flexWrap = "";
+        upgradeHolder.style.justifyContent = "";
         if (classic) addComboButtons(age);
 
         if (tmpList.length) {
