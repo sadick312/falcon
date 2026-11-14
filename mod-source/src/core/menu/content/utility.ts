@@ -212,6 +212,19 @@ export const utilitySettings: IMenuItem[] = [{
         `,
     type: "toggle",
     settings: [{
+        label: "Mode",
+        id: "autoBreak:mode",
+        description: "Auto (classic): breaks whenever you're stuck in a trap. Manual: breaks only while you hold G.",
+        type: "select",
+        options: [{
+            label: "Auto",
+            value: 0
+        }, {
+            label: "Manual (hold G)",
+            value: 1
+        }],
+        status: 0
+    }, {
         label: "Restore Weapon After Break",
         id: "autoBreak:restoreWeapon",
         description: "Once the trap is gone and your weapons are reloaded, switches back to the weapon you held before breaking. Off (classic): you keep holding the breaking weapon (usually the great hammer). Does nothing while \"Always Pick Best Weapon\" is on, which picks your weapon itself.",

@@ -378,6 +378,8 @@ export default class AutoBreaker {
 
         if (!Menu.getValue("autoBreak")) return false;
         if (!player.trap) return false;
+        // "Mode: Manual": only while G is held.
+        if (Number(Menu.getValue("autoBreak:mode")) === 1 && !Input.keys["KeyG"]) return false;
 
         const originalBestId = CombatController.bestWeaponForBreak();
         const group = this.currentBestGroup;

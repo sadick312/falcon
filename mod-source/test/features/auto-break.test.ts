@@ -112,6 +112,38 @@ describe("Auto Break", () => {
         expect(await katanaSpikeCase(["autoBreak:realHitDamage"])).toBeGreaterThan(0.9);
     });
 
+    // Breaker brief B1: "Mode: Manual" breaks only while G is held; "Auto" (default) always.
+    async function trappedHolding(enable: string[], mode: number, holdG: boolean) {
+        const { LIST_ID_MAP } = await import("@constants/items");
+        game = await startGame({ enable: ["autoBreak", ...enable], settings: { "autoBreak:mode": mode } });
+        game.spawn({ sid: ME, x: 1000, y: 1000, weaponIndex: 5 });
+        game.spawn({ sid: 2, x: 1400, y: 1000 });
+        game.setLoadout([5, GREAT_HAMMER], [0, 3, 6, 10, 15]);
+        game.addObjects([{ sid: 600, x: 1000, y: 1000, itemId: LIST_ID_MAP.PIT_TRAP as number, owner: 2 }]);
+        const { Input } = await import("@ui/Input");
+        if (holdG) Input.keys["KeyG"] = true;
+        try {
+            game.update();
+            game.update();
+        } finally {
+            delete Input.keys["KeyG"];
+        }
+        const { default: CombatController } = await import("@core/mod/combat/core/CombatController");
+        return CombatController.currentMode;
+    }
+
+    it("Mode Auto (default): breaks without any key", async () => {
+        expect(await trappedHolding([], 0, false)).toBe("autobreak");
+    });
+
+    it("Mode Manual: does nothing until G is held", async () => {
+        expect(await trappedHolding([], 1, false)).not.toBe("autobreak");
+    });
+
+    it("Mode Manual: breaks while G is held", async () => {
+        expect(await trappedHolding([], 1, true)).toBe("autobreak");
+    });
+
     it("does nothing when off", async () => {
         const { held, tank } = await trapped({ enable: false });
         expect(held).not.toContain(GREAT_HAMMER);
