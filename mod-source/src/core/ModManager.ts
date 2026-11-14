@@ -78,6 +78,7 @@ export default class ModManager {
         enemies.rangedInstaThreats = 0;
 
         this.brainState = createDefaultBrainState();
+        ObjectBreaker.resetSession();
     }
 
     static getAttackDir(autoaimmer: true): number | undefined;

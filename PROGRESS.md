@@ -136,6 +136,7 @@ Each fix: what was wrong, why (root cause), and how to check it in game.
    - In game: Auto Object Breaker on, Detection Range 200, Walk To Targets on. Stand so an enemy spike is behind a
      wall from you, with another enemy building elsewhere in range. Falcon walks into the wall for about a second,
      then turns to the other building. With F12 and Combat Debug Log on you see `breaker {gaveUp: ...}`.
+   - The list is cleared when a new session starts (reconnect), so a building id from the last server isn't skipped.
 8. **Reload HUD counted down a weapon that wasn't held.**
    - Why: Falcon (like 1.8.2) reloads only the held weapon (`PlayerCombatManager.updateReloads`). The HUD showed
      "Nt" for the other weapon as if it were counting down; it stayed stuck at N until that weapon was held.

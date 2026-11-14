@@ -256,6 +256,16 @@ describe("Object Breaker: Closest First, Detection Range, Walk To Targets", () =
         expect(Math.cos(ObjectBreaker.walkDir!)).toBeLessThan(-0.99);
     });
 
+    it("Walk To Targets forgets the buildings it gave up on when a new session starts (reconnect)", async () => {
+        const { ObjectBreaker } = await run({ enable: ["walkBreaker:walkToTarget"], detectRange: 200, objects: farSpike });
+        for (let i = 0; i < 15; i++) game!.update();
+        expect(ObjectBreaker.farTarget).toBeNull(); // gave up on 701, the only building
+        const { default: ModManager } = await import("@core/ModManager");
+        ModManager.resetSession();
+        game!.update();
+        expect(ObjectBreaker.farTarget?.sid).toBe(701);
+    });
+
     it("Walk To Targets keeps going while it gets closer", async () => {
         const { ObjectBreaker } = await run({ enable: ["walkBreaker:walkToTarget"], detectRange: 200, objects: farSpike });
         for (let x = 1005; x <= 1060; x += 5) {

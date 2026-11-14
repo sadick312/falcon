@@ -122,6 +122,12 @@ export default class ObjectBreaker {
     /** "Walk To Targets": buildings it gave up on (sid -> the tick it may try again). */
     private static walkGivenUp = new Map<number, number>();
 
+    /** A new session (reconnect): building ids from the last server could match different buildings on this one. */
+    static resetSession() {
+        this.walkGivenUp.clear();
+        this.walkProgress.sid = -1;
+    }
+
     private static isWalkGivenUp(sid: number) {
         const until = this.walkGivenUp.get(sid);
         if (until === undefined) return false;
