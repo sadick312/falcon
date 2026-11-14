@@ -81,7 +81,10 @@ export default class AutoPlacer extends Placer {
     }
 
     private executePreplaceBatch(arr: Preplacement[], count: number, originalWaitMs: number) {
-        // A batch sent after a wait: if we died meanwhile, the server would ignore it, so don't spend packets on it.
+        // A batch sent after a wait reserved budget for all of it (PacketTracker.use); nothing else resets that, so give it
+        // back here for every path, sent or skipped. Placements actually sent are counted by the socket as usual.
+        if (originalWaitMs > 0) PacketTracker.freeAfterUse("PLACE", count);
+        // If we died during the wait, the server would ignore the batch, so don't spend packets on it.
         if (originalWaitMs > 0 && !Client.isAlive) return;
 
         for (let i = 0; i < count; i++) {
@@ -89,7 +92,6 @@ export default class AutoPlacer extends Placer {
             if (!preplacement) continue;
             if (originalWaitMs > 0 && this.shouldSkip(preplacement)) continue;
             this.place(preplacement, preplacement.predict ? PlacementTypes.PREDICTIVE : PlacementTypes.PREPLACE);
-            if (originalWaitMs > 0) PacketTracker.freeAfterUse("PLACE", 1);
         }
 
         ModManager.updateDirection();

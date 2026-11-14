@@ -54,3 +54,21 @@ describe("preplacement after death", () => {
         expect(await preplace(true)).toBe(false);
     });
 });
+
+// The batch reserves packet budget before its wait (PacketTracker.use). Nothing resets that reservation, so every
+// path must give it back, or the budget shrinks for good.
+describe("preplacement budget reservation (F-01, F-03)", () => {
+    async function reservedAfter(dieDuringWait: boolean) {
+        await preplace(dieDuringWait);
+        const { default: PacketTracker } = await import("@core/utils/PacketTracker");
+        return (PacketTracker as unknown as { reservedPackets: number }).reservedPackets;
+    }
+
+    it("alive: given back after the batch is sent", async () => {
+        expect(await reservedAfter(false)).toBe(0);
+    });
+
+    it("dead during the wait: given back although nothing was sent", async () => {
+        expect(await reservedAfter(true)).toBe(0);
+    });
+});
