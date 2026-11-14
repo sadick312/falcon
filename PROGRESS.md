@@ -4,7 +4,23 @@ Branch `combat-defense-ping` (worktree `../falcon-cdp`): `full-review` 07e35be +
 `classic-upgrades` be78e1d merged (your choice, 14 Nov). Push to `fork` only. Findings: COMBAT_DEFENSE.md.
 
 ## Current task
-Step 1 done (read only + baseline). **Stopped for your OK** before Step 2 (ping).
+Step 2 (ping) done. **Stopped for your review** before Step 3 (defense).
+
+## Step 2 (ping), done
+- `cd6bdff` **Timing** (`core/mod/utils/Timing.ts`): one helper for every ping timing (preplacement wait, packet
+  budget's server clock, Remember Sent Equips, own-shame check). Same formulas: replay fingerprints unchanged.
+- **Smoothed Tick Clock** (Utility > Packet Management, off): preplacements timed from a smoothed estimate of the
+  server's tick (each real arrival moves it 1/8 of the way; a stall over 3 ticks restarts it) instead of the last
+  arrival. Fake ticks don't move it.
+- **Ping Details** (Visual > Debugging Visuals, off): the ping line adds `Stable`, `Jitter` and `Tick jitter`.
+- 18 new tests (`timing.test.ts`): old formulas match at 20–350 ms, 200 ms+ sends at once, one ping spike changes
+  nothing, Jitter-Safe Timing, clock: steady, one late tick (moves 5 ms of 40), bunched ticks, a lasting +30 ms
+  shift, stall restart, setting off/on, the ping line.
+- Checks: typecheck, lint, check:dead, docs:settings, inject:build, ext:build pass; vitest 147 files, 1164 passed,
+  1 skipped (baseline 1146); replays unchanged.
+- Not measured live: whether the smoothed clock makes preplacements land more often (needs your in-game test).
+- Note: the clock assumes 111 ms ticks (`SERVER_UPDATE_SPEED`); if the server's real tick is 1000/9 ms the estimate
+  sits ~1 ms behind, well inside the 0.5 ms padding + jitter room. Couldn't verify the exact server tick length.
 
 ## Baseline (14 Nov, Node 24.22.1, at the merge commit 8e5cf2e)
 - typecheck, lint, inject:build (704 KB), ext:build, docs:settings, check:dead: all pass.
@@ -23,8 +39,8 @@ Step 1 done (read only + baseline). **Stopped for your OK** before Step 2 (ping)
   unexported as full-review's dead-code fix had it).
 
 ## Next up
-- Step 2 (ping), after your OK: shared timing helper, smoothed tick clock (setting, off), ping/jitter debug line
-  (setting, off), ping math tests. See COMBAT_DEFENSE.md section 3.
+- Step 3 (defense), after your OK: "Ping-Aware Defense" (off) and "Don't Top Up Small Losses" (off), with tests.
+  See COMBAT_DEFENSE.md section 3.
 
 ---
 

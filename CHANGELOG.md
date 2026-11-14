@@ -2,6 +2,17 @@
 
 What changed in Falcon, newest first. Each entry names the commit(s) for the details.
 
+## Unreleased (branch combat-defense-ping, Step 2: ping)
+
+### Added (off by default)
+- **Smoothed Tick Clock** (Utility > Packet Management): times preplacements from a smoothed estimate of the server's
+  tick, so one late tick doesn't make the next preplacement late too.
+- **Ping Details** (Visual > Debugging Visuals): the ping line also shows the stable ping, jitter and tick jitter.
+
+### Changed (no effect on play)
+- One shared `Timing` helper now works out every ping-based timing (preplacement, packet budget, sent equips, own
+  shame) with the same formulas as before (`cd6bdff`). Replays unchanged.
+
 ## Unreleased (branch review/stability, Phase 3B part 3: aim)
 
 ### Added (off by default)

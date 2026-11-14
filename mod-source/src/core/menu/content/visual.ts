@@ -110,6 +110,13 @@ export const visualSettings: IMenuItem[] = [{
         description: "Renders the real direction of our player.",
         type: "toggle",
         status: true
+    }, {
+        label: "Ping Details",
+        id: "pingDetails",
+        description: "Adds to the ping line: the stable ping (median of the last 5), how much the ping jumps (jitter), and how unevenly the server's ticks arrive (tick jitter). For testing at high or jumpy ping.",
+        type: "toggle",
+        icon: CONSOLE_ICON,
+        status: false
     }]
 }, {
     label: "Render Grid",

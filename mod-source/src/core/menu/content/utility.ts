@@ -204,6 +204,13 @@ export const utilitySettings: IMenuItem[] = [{
         type: "toggle",
         status: false
     }, {
+        label: "Smoothed Tick Clock",
+        id: "smoothedTickClock",
+        description: "Preplacements are timed to reach the server as its next tick starts. Off (classic): worked out from when the last tick arrived, so one late tick (Wi-Fi) makes the next preplacement late too. On: from a smoothed estimate over many ticks, which one late tick barely moves.",
+        icon: WIFI_ICON,
+        type: "toggle",
+        status: false
+    }, {
         label: "Tick-Based Shot Window",
         id: "tickShotWindow",
         description: "Counts \"two enemy shots close together = bow insta\" in server ticks (within 4) instead of a 444 ms timer. With lag or jitter the ticks arrive late, so the timer ran out between two shots of a real bow insta and the defense didn't react. Off: the classic timer.",

@@ -85,6 +85,7 @@ The **Favorites** tab lists the settings you starred; **Credits** has no setting
   - **Packet Budget Limit** (`packetBudgetLimit`, slider 100–110, default: 110) — Determines the maximum capacity for packet usage.
   - **Send Movement Instantly** (`sendMovementInstantly`, toggle, default: off) — Sends a new walking direction the moment you press or release a movement key, instead of with the next server tick (about 55 ms sooner on average). Only while your keys steer (not during one ticks or auto push), Safe Walk still applies, and it waits for the next tick as before when the packet budget is full.
   - **Jitter-Safe Timing** (`jitterSafeTiming`, toggle, default: off) — When your ping jumps around, leaves room for it in the three timings that use ping: preplacements are sent later by the jitter (late still places, early fails), the check that a heal of ours was food waits longer, and the packet budget counts older packets a little longer. No effect on a steady connection.
+  - **Smoothed Tick Clock** (`smoothedTickClock`, toggle, default: off) — Preplacements are timed to reach the server as its next tick starts. Off (classic): worked out from when the last tick arrived, so one late tick (Wi-Fi) makes the next preplacement late too. On: from a smoothed estimate over many ticks, which one late tick barely moves.
   - **Tick-Based Shot Window** (`tickShotWindow`, toggle, default: off) — Counts "two enemy shots close together = bow insta" in server ticks (within 4) instead of a 444 ms timer. With lag or jitter the ticks arrive late, so the timer ran out between two shots of a real bow insta and the defense didn't react. Off: the classic timer.
   - **Artificial Ping** (`artificialPing`, toggle, default: off, not saved) — Artificially increases ping. This toggle does actually make your ping worse. Unlike with other toggles, this toggle will not be automatically saved.
     - **Artificial Amount** (`artificialPingAmt`, slider 10–80, default: 35) — Extra delay added to your connection, in ms (half on sending, half on receiving).
@@ -137,6 +138,7 @@ The **Favorites** tab lists the settings you starred; **Credits** has no setting
   - **Render Ownership** (`renderOwnership`, toggle, default: on) — Draws the unqiue sid values on both players and game objects.
   - **Render Placement Times** (`renderPlacementTime`, toggle, default: on) — Shows runtimes for the 6 most recent placements.
   - **Render Real Direction** (`renderRealDir`, toggle, default: on) — Renders the real direction of our player.
+  - **Ping Details** (`pingDetails`, toggle, default: off) — Adds to the ping line: the stable ping (median of the last 5), how much the ping jumps (jitter), and how unevenly the server's ticks arrive (tick jitter). For testing at high or jumpy ping.
 - **Render Grid** (`renderGrid`, toggle, default: on) — Draws the background grid.
   - **Static Grid** (`staticGrid`, toggle, default: off) — Makes the grid not resize with zoom.
 - **Camera** (group) — How much of the map you see.
