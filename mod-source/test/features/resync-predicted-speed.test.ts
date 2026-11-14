@@ -76,6 +76,18 @@ describe("Resync Predicted Speed", () => {
         expect(player.next_state.x).toBeGreaterThan(player.real_position.x);
     });
 
+    it("on: a boost pad's throw (about 116 in one tick) keeps its speed, not treated as standing still", async () => {
+        game = await startGame({ enable: ["resyncPredictedSpeed"] });
+        game.spawn({ sid: ME, x: 1000, y: 1000, weaponIndex: 5 });
+        game.spawn({ sid: ENEMY, x: 4000, y: 4000 });
+        game.setLoadout([5], [0, 3, 6, 10, 15]);
+        game.update();
+        game.update([{ sid: ME, x: 1116, y: 1000 }]);
+        const player = game.Client.player;
+        // Still flying: next tick we're predicted well past where we are now (friction leaves about half the step).
+        expect(player.next_state.x - player.real_position.x).toBeGreaterThan(20);
+    });
+
     it("on: a teleport (over 300 in one tick) counts as standing still, not as a huge speed", async () => {
         game = await startGame({ enable: ["resyncPredictedSpeed"] });
         game.spawn({ sid: ME, x: 1000, y: 1000, weaponIndex: 5 });
