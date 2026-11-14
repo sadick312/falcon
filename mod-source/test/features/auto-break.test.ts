@@ -55,6 +55,30 @@ describe("Auto Break", () => {
         expect(mode).toBe("autobreakspike");
     });
 
+    // Breaker brief A3. "Always Pick Best Weapon" off, so nothing else picks a weapon once the trap is gone.
+    async function breakThenFree(enable: string[]) {
+        const { LIST_ID_MAP } = await import("@constants/items");
+        game = await startGame({ enable: ["autoBreak", ...enable], settings: { selectBestWeapon: false } });
+        game.spawn({ sid: ME, x: 1000, y: 1000, weaponIndex: 5 });
+        game.spawn({ sid: 2, x: 1400, y: 1000 });
+        game.setLoadout([5, GREAT_HAMMER], [0, 3, 6, 10, 15]);
+        game.addObjects([{ sid: 600, x: 1000, y: 1000, itemId: LIST_ID_MAP.PIT_TRAP as number, owner: 2 }]);
+        game.update();
+        game.update();
+        expect(game.Client.weaponIndex).toBe(GREAT_HAMMER);
+        game.handlers.Q(600); // the trap breaks
+        for (let i = 0; i < 12; i++) game.update();
+        return game.Client.weaponIndex;
+    }
+
+    it("off (classic): keeps holding the great hammer after the trap is gone", async () => {
+        expect(await breakThenFree([])).toBe(GREAT_HAMMER);
+    });
+
+    it("Restore Weapon After Break: goes back to the weapon held before the trap", async () => {
+        expect(await breakThenFree(["autoBreak:restoreWeapon"])).toBe(5);
+    });
+
     it("does nothing when off", async () => {
         const { held, tank } = await trapped({ enable: false });
         expect(held).not.toContain(GREAT_HAMMER);

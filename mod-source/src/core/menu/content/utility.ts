@@ -212,6 +212,12 @@ export const utilitySettings: IMenuItem[] = [{
         `,
     type: "toggle",
     settings: [{
+        label: "Restore Weapon After Break",
+        id: "autoBreak:restoreWeapon",
+        description: "Once the trap is gone and your weapons are reloaded, switches back to the weapon you held before breaking. Off (classic): you keep holding the breaking weapon (usually the great hammer). Does nothing while \"Always Pick Best Weapon\" is on, which picks your weapon itself.",
+        type: "toggle",
+        status: false
+    }, {
         label: "Break Traps From Any Angle",
         id: "trapBreakAnyAngle",
         description: "While trapped, turns the swing to hit as many enemy spikes and traps at once as possible (a swing hits everything in reach within about 69 degrees of the aim), while still hitting every enemy spike and trap the usual aim hits. Avoids hitting your own buildings when it can. Only while trapped.",

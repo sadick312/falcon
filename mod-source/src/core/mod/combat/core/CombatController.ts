@@ -130,6 +130,23 @@ export default class CombatController {
         return false;
     };
 
+    /** The weapon we held when Auto Break started, for "Restore Weapon After Break"; null when not breaking. */
+    static weaponBeforeBreak: number | null = null;
+
+    /**
+     * "Restore Weapon After Break" (off by default): once the trap is gone and both weapons are reloaded, hold the weapon
+     * we had before breaking. Skipped with "Always Pick Best Weapon", which picks the weapon itself.
+     */
+    private static restoreWeaponAfterBreak() {
+        const id = this.weaponBeforeBreak;
+        if (id === null || Client.player.trap) return false;
+        this.weaponBeforeBreak = null;
+        if (!Menu.getValue("autoBreak:restoreWeapon") || Menu.getValue("selectBestWeapon")) return false;
+        if (!Client.player.weapons.includes(id)) return false;
+        this.selectWeapon(id, true);
+        return true;
+    }
+
     static main() {
         try {
             const player = Client.player;
@@ -143,8 +160,11 @@ export default class CombatController {
 
             if (this.manageHitAction(AttackManager.currentAttackAction)) return;
 
+            // The server's view: Client.weaponIndex stays 0 until we first switch ourselves.
+            const heldBeforeBreak = player.weaponIndex;
             if (player.trap && AutoBreaker.main()) {
                 activityList.push("autoBreak");
+                if (this.weaponBeforeBreak === null) this.weaponBeforeBreak = heldBeforeBreak;
                 return;
             }
 
@@ -191,6 +211,7 @@ export default class CombatController {
 
             if (this.checkReload(1)) return;
             if (this.checkReload(0)) return;
+            if (this.restoreWeaponAfterBreak()) return;
             if (!Menu.getValue("selectBestWeapon")) return;
 
             if (weapons[1] === WEAPON_ID_MAP.GREAT_HAMMER && (weapons[0] === WEAPON_ID_MAP.POLEARM || weapons[0] === WEAPON_ID_MAP.KATANA)) {
