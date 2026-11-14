@@ -218,6 +218,12 @@ export const utilitySettings: IMenuItem[] = [{
         type: "toggle",
         status: false
     }, {
+        label: "Use Real Hit Damage",
+        id: "autoBreak:realHitDamage",
+        description: "When choosing between the trap and a spike next to you, \"has this already taken a full hit?\" uses one hit of your real breaking weapon (with Tank Gear if you own it). Off (classic): always a great hammer hit (247.5), even without a hammer, so with only a katana a half-broken spike can be left for the trap.",
+        type: "toggle",
+        status: false
+    }, {
         label: "Break Traps From Any Angle",
         id: "trapBreakAnyAngle",
         description: "While trapped, turns the swing to hit as many enemy spikes and traps at once as possible (a swing hits everything in reach within about 69 degrees of the aim), while still hitting every enemy spike and trap the usual aim hits. Avoids hitting your own buildings when it can. Only while trapped.",

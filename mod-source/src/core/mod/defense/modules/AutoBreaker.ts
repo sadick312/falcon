@@ -209,7 +209,10 @@ export default class AutoBreaker {
         const trapBreakFaster = trapHitsUntilBreak < spikesHitsUntilBreak;
         const shouldStayWithTrap = trapBreakFaster && !canEnemyReplaceTrap;
         const canEnemyReplaceSpike = this.isReplaceable(playerPos, targetSpike);
-        const fullGreatHammerHit = 247.5;
+        // A plain great hammer hit in tank gear; "Use Real Hit Damage" uses one hit of our actual best weapon instead.
+        const fullGreatHammerHit = Menu.getValue("autoBreak:realHitDamage")
+            ? BreakerUtils.getObjectDamage(player, originalBestId < 9 ? 0 : 1)
+            : 247.5;
 
         tickState.brainState.breakerInternal.replaceTrap = canEnemyReplaceTrap;
         tickState.brainState.breakerInternal.replaceSpike = canEnemyReplaceSpike;

@@ -79,6 +79,39 @@ describe("Auto Break", () => {
         expect(await breakThenFree(["autoBreak:restoreWeapon"])).toBe(5);
     });
 
+    // Breaker brief A4. "Has this spike already taken a full hit?" used a fixed 247.5 (a plain great hammer hit in tank
+    // gear) even without a hammer. Katana only: a full hit is 40 × 3.3 = 132. The spike took 150 (more than one katana
+    // hit); the trap is weaker, so the classic rule stays on the trap.
+    async function katanaSpikeCase(enable: string[]) {
+        const { LIST_ID_MAP } = await import("@constants/items");
+        const KATANA = 4;
+        game = await startGame({ enable: ["autoBreak", ...enable] });
+        game.spawn({ sid: ME, x: 1000, y: 1000, weaponIndex: KATANA });
+        game.spawn({ sid: 2, x: 2400, y: 1000 });
+        game.setLoadout([KATANA], [0, 3, 6, 15]);
+        game.addObjects([
+            { sid: 600, x: 1000, y: 1000, itemId: LIST_ID_MAP.PIT_TRAP as number, owner: 2 },
+            { sid: 700, x: 1000, y: 1085, itemId: LIST_ID_MAP.SPIKES, owner: 2 }
+        ]);
+        game.update();
+        const { default: ObjectManager } = await import("@core/logic/ObjectManager");
+        const trap = ObjectManager.allObjects.find(o => o.sid === 600)!;
+        const spike = ObjectManager.allObjects.find(o => o.sid === 700)!;
+        trap.health = 100;
+        spike.playerDamageDealt = 150;
+        game.update();
+        const { default: AutoBreaker } = await import("@core/mod/defense/modules/AutoBreaker");
+        return Math.sin(AutoBreaker.aimAngle);
+    }
+
+    it("off (classic): katana only, a spike hit for 150 still counts as 'not a full hit' (247.5): stays on the trap", async () => {
+        expect(await katanaSpikeCase([])).toBeLessThan(0.5);
+    });
+
+    it("Use Real Hit Damage: 150 is more than a full katana hit (132), so it finishes the spike", async () => {
+        expect(await katanaSpikeCase(["autoBreak:realHitDamage"])).toBeGreaterThan(0.9);
+    });
+
     it("does nothing when off", async () => {
         const { held, tank } = await trapped({ enable: false });
         expect(held).not.toContain(GREAT_HAMMER);
