@@ -243,3 +243,11 @@ Weapon ids: 2 great axe, 4 katana, 12 crossbow, 13 repeater crossbow, 15 musket 
 | 6 | Die and respawn, reach age 8 again without clicking a button | Nothing is sent by itself (the old combo was forgotten) |
 | 7 | Set **Favourite Combo** = Great Axe + Musket and turn on **Auto Pick Favourite**, new life | At ages 8 and 9 the weapons are taken by themselves: console `[2, x]`, then `[2, 15]` |
 | 8 | Turn **Classic Upgrades** off, new life, reach age 8 | Normal 1.8.2 bar: only the weapons whose pre-requisite you own, no buttons |
+
+## 14. Step 5: bug check (2026-11-14)
+
+- **Bugs fixed:** the two found in the live test (section 12): buttons not clickable, icons pushed to the left. No other bug found.
+- **Live re-run (sandbox `s1`):** one connection, every pick matched the click; "Katana + Musket" gave `V [[4,15],1]` again. An earlier run showed a second connection and an unexpected Short Sword pick: that came from a leftover browser tab, and it did not happen again.
+- **No per-frame work:** the combo list is built once when Falcon loads. The planner and the buttons run only inside `updateUpgrades`, which runs only when the server sends `U` (`SocketListener.ts:198`), never in the render loop.
+- **Console errors during the test:** all of them are `TypeError: Cannot read properties of null (reading 'send')` from the sandbox's own `bundle.js` (`pingSocket`), which keeps pinging after Falcon closes the game's socket. None come from Falcon.
+- **Not checked live:** switching to the Musket and shooting it. In the test browser the tab ran at about 1 FPS and "Always Pick Best Weapon" (on by default) chooses the weapon itself, so the result would not mean anything. The code was checked instead: every weapon feature reads the weapon in each slot now, never the upgrade path. Please check it with step 5 of the checklist (section 13).
