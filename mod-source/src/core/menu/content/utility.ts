@@ -1,6 +1,7 @@
 // Settings in the utility tab. Plain data: Menu.ts builds the UI from it.
 import { IMenuItem } from "../types";
 import { CONSOLE_ICON, PACKAGE_ICON, TOMBSTONE_ICON, WIFI_ICON } from "../icons";
+import { CLASSIC_COMBOS } from "@core/events/classicUpgrades";
 
 export const utilitySettings: IMenuItem[] = [{
     label: "",
@@ -138,6 +139,27 @@ export const utilitySettings: IMenuItem[] = [{
             min: 3,
             max: 30,
             status: 10
+        }],
+        type: "toggle"
+    }, {
+        label: "Classic Upgrades (1.6.9 style)",
+        id: "classicUpgrades",
+        description: "Ages 8 and 9 like old MooMoo: any age 8 weapon, then any age 9 weapon (e.g. Katana + Musket). The upgrade bar shows every weapon of the age, plus a button per combo. Off: the normal 1.8.2 bar.",
+        icon: PACKAGE_ICON,
+        status: false,
+        settings: [{
+            label: "Favourite Combo",
+            id: "classicPreset",
+            type: "select",
+            description: "The combo Auto Pick Favourite takes. A combo button you click wins for the rest of that life.",
+            options: [{ label: "None", value: -1 }, ...CLASSIC_COMBOS.map(combo => ({ label: combo.label, value: combo.value }))],
+            status: -1
+        }, {
+            label: "Auto Pick Favourite",
+            id: "classicAutoPick",
+            type: "toggle",
+            description: "At ages 8 and 9, take the Favourite Combo by itself (before Auto Upgrade's Age 8 / 9 Pick).",
+            status: false
         }],
         type: "toggle"
     }]
