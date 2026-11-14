@@ -20,6 +20,8 @@ Next: your in-game test of the checklist there.
   isn't trapped (nothing reads its result then). About 20% less time per tick on the busy and synthetic replays,
   measured in 3 alternating rounds; sent packets and game state unchanged (only the Angle Finder call trace was
   re-recorded). Numbers in BENCHMARKS.md. No menu toggle: nothing a player sees or does changes.
+  After the final review: the skip also resets the "recently used angles" count while we move (as the full search
+  did), so Auto Break and enemy prediction see no stale used angles for ~2 s after Auto Place is turned off. Tested.
 - Not tried again: the enemy-side Angle Finder (`updatePlacementAngles`, ~0.35 ms) and the graders were already
   measured in earlier phases; skipping or caching them either changed results or saved less than the 10% noise.
 

@@ -12,6 +12,7 @@ import Menu from "@menu/Menu";
 import Angle from "@placing/Angle";
 import Placer, { PlacementTypes } from "@placing/utils/Placer";
 import ScriptConfig from "@utils/config/ScriptConfig";
+import getDistSq from "@utils/geometry/getDistSq";
 
 export interface PreplacementQueue {
     count: number;
@@ -126,6 +127,8 @@ export default class AutoPlacer extends Placer {
         if (!Menu.getValue("autoPlacing") && !nearest?.trap) {
             this.cachedBestAnglesCount = 0;
             this.potentialPreplacements.count = 0;
+            // The skipped search (Placer.process) also forgets recently used angles once we move 5 px a tick.
+            if (getDistSq(player.real_position, player.next_position) >= 25) PlacementSystem.usedAnglesCount = 0;
             return;
         }
         const now = performance.now();
