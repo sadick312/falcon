@@ -20,12 +20,9 @@ import getDir from "@utils/angle/getDir";
 import ScriptConfig from "@utils/config/ScriptConfig";
 import getDistSq from "@utils/geometry/getDistSq";
 import inRange from "@utils/math/inRange";
-import { BOOST_TICK_MAX_DIST_SQ, BOOST_TICK_MIN_DIST_SQ, BOW_INSTA_MAX_DIST_SQ, BOW_INSTA_MIN_DIST_SQ, NEARBY_ENEMY_DIST_SQ, PLAYER_DECELERATION } from "@constants/world";
+import { BOOST_TICK_MAX_DIST_SQ, BOOST_TICK_MIN_DIST_SQ, BOW_INSTA_MAX_DIST_SQ, BOW_INSTA_MIN_DIST_SQ, NEARBY_ENEMY_DIST_SQ, PLAYER_DECELERATION, MAX_WALK_PER_TICK } from "@constants/world";
 import type Player from "@entities/Player";
 type UpdatePlayerPacket = typeof PacketMap.SERVER_TO_CLIENT.UPDATE_PLAYERS;
-
-/** A move longer than this in one tick is a respawn or teleport, not walking: count it as standing still. */
-const MAX_WALK_PER_TICK = 100;
 
 /**
  * "Resync Predicted Speed": our predicted state starts every tick on our real position with our real speed: this

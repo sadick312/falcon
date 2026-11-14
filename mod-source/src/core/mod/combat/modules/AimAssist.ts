@@ -6,6 +6,7 @@ import Menu from "@menu/Menu";
 import { Input } from "@ui/Input";
 import getAngleDist from "@utils/angle/getAngleDist";
 import ScriptConfig from "@utils/config/ScriptConfig";
+import { MAX_WALK_PER_TICK } from "@constants/world";
 import { combatDebug, combatDebugOn } from "@utils/debug/combatDebug";
 
 /** The widest the aim cone may ever be (the user's "no 360° hitting" rule): 60 degrees in all. */
@@ -80,9 +81,11 @@ export function pickTarget(from: Point, mouseDir: number, pick: AimPick, candida
  */
 export function predictHit(from: Point, target: AimCandidate, speed: number, out: Point = { x: 0, y: 0 }, delayMs = 0) {
     const tick = ScriptConfig.SERVER_UPDATE_SPEED;
-    const moving = !target.trap;
-    const vx = moving ? (target.real_position.x - target.last_position.x) / tick : 0;
-    const vy = moving ? (target.real_position.y - target.last_position.y) / tick : 0;
+    const dx = target.real_position.x - target.last_position.x;
+    const dy = target.real_position.y - target.last_position.y;
+    const moving = !target.trap && Math.abs(dx) <= MAX_WALK_PER_TICK && Math.abs(dy) <= MAX_WALK_PER_TICK;
+    const vx = moving ? dx / tick : 0;
+    const vy = moving ? dy / tick : 0;
 
     out.x = target.real_position.x;
     out.y = target.real_position.y;

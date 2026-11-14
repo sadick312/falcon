@@ -59,6 +59,11 @@ describe("ranged prediction", () => {
         expect(predictHit({ x: 0, y: 0 }, enemy(1, 500, 0), 3.6)).toEqual({ x: 500, y: 0 });
     });
 
+    it("an enemy that just came back into view (a jump of over 100 in one tick): no lead, not a huge one", () => {
+        // last_position is only updated while the enemy is in view, so it can be far out of date.
+        expect(predictHit({ x: 0, y: 0 }, enemy(1, 500, 0, 100, { x: 500, y: -400 }), 3.6)).toEqual({ x: 500, y: 0 });
+    });
+
     it("a trapped enemy doesn't move, so no lead", () => {
         expect(predictHit({ x: 0, y: 0 }, enemy(1, 500, 0, 100, { x: 500, y: -40 }, true), 3.6)).toEqual({ x: 500, y: 0 });
     });

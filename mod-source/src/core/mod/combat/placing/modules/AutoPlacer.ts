@@ -1,5 +1,6 @@
 import { at } from "@utils/array/at";
 import Player from "@entities/Player";
+import Client from "@core/Client";
 import PlacementSystem from "@core/mod/combat/core/PlacementSystem";
 import { FinderOptions } from "@core/mod/combat/placing/AngleFinder";
 import PingTracker from "@core/mod/utils/PingTracker";
@@ -80,12 +81,17 @@ export default class AutoPlacer extends Placer {
     }
 
     private executePreplaceBatch(arr: Preplacement[], count: number, originalWaitMs: number) {
+        // A batch sent after a wait reserved budget for all of it (PacketTracker.use); nothing else resets that, so give it
+        // back here for every path, sent or skipped. Placements actually sent are counted by the socket as usual.
+        if (originalWaitMs > 0) PacketTracker.freeAfterUse("PLACE", count);
+        // If we died during the wait, the server would ignore the batch, so don't spend packets on it.
+        if (originalWaitMs > 0 && !Client.isAlive) return;
+
         for (let i = 0; i < count; i++) {
             const preplacement = arr[i];
             if (!preplacement) continue;
             if (originalWaitMs > 0 && this.shouldSkip(preplacement)) continue;
             this.place(preplacement, preplacement.predict ? PlacementTypes.PREDICTIVE : PlacementTypes.PREPLACE);
-            if (originalWaitMs > 0) PacketTracker.freeAfterUse("PLACE", 1);
         }
 
         ModManager.updateDirection();
