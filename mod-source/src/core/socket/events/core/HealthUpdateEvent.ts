@@ -4,12 +4,11 @@ import { STORE_ACCESSORY_MAP, STORE_HAT_MAP } from "@constants/store";
 import Client from "@core/Client";
 import PlayerManager from "@core/logic/players/PlayerManager";
 import HatSystem from "@core/mod/defense/defense-modules/HatSystem";
-import PingTracker from "@core/mod/utils/PingTracker";
+import Timing from "@core/mod/utils/Timing";
 import { tickState } from "@core/TickState";
 import MessageHandler from "@core/socket/events/utils/MessageHandler";
 import { ChatLog } from "@menu/Menu";
 import PacketMap from "@root/utils/socket/PacketMap";
-import ScriptConfig from "@utils/config/ScriptConfig";
 import { ANGEL_WINGS_REGEN, BULL_HEALTH_DRAIN } from "@constants/hatNumbers";
 
 type HealthUpdatePacket = typeof PacketMap.SERVER_TO_CLIENT.UPDATE_HEALTH;
@@ -22,8 +21,7 @@ export default class HealthUpdateEvent extends MessageHandler<HealthUpdatePacket
      */
     private static ateRecently() {
         // With "Jitter-Safe Timing", room for a heal that comes back late because the ping jumped (twice the jitter).
-        const jitterRoom = 2 * PingTracker.jitterMargin(Menu.getValue("jitterSafeTiming") === true);
-        const ticksOfPing = Math.ceil((PingTracker.getStablePing() + jitterRoom) / ScriptConfig.SERVER_UPDATE_SPEED);
+        const ticksOfPing = Timing.roundTripTicks(2 * Timing.jitterMargin());
         return tickState.tick - Client.lastAteTick <= 2 + ticksOfPing;
     }
 

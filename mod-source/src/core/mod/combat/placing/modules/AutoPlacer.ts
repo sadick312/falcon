@@ -3,7 +3,7 @@ import Player from "@entities/Player";
 import Client from "@core/Client";
 import PlacementSystem from "@core/mod/combat/core/PlacementSystem";
 import { FinderOptions } from "@core/mod/combat/placing/AngleFinder";
-import PingTracker from "@core/mod/utils/PingTracker";
+import Timing from "@core/mod/utils/Timing";
 import ModManager from "@core/ModManager";
 import { tickState } from "@core/TickState";
 import PlayerUpdateEvent from "@core/socket/events/core/PlayerUpdateEvent";
@@ -11,7 +11,6 @@ import PacketTracker from "@core/utils/PacketTracker";
 import Menu from "@menu/Menu";
 import Angle from "@placing/Angle";
 import Placer, { PlacementTypes } from "@placing/utils/Placer";
-import ScriptConfig from "@utils/config/ScriptConfig";
 import getDistSq from "@utils/geometry/getDistSq";
 
 export interface PreplacementQueue {
@@ -100,17 +99,14 @@ export default class AutoPlacer extends Placer {
 
     private placePreplacement(index: number) {
         const padding = Menu.getValue("prenorounding") ? 0 : .5;
-        // Sent to reach the server right as its next tick starts. With "Jitter-Safe Timing", later by the ping jitter:
-        // a placement that arrives late still lands (a tick later), one that arrives early fails.
-        let waitMs = ScriptConfig.SERVER_UPDATE_SPEED - PingTracker.getStablePing() + padding +
-            PingTracker.jitterMargin(Menu.getValue("jitterSafeTiming") === true);
-
         const preplacement = at(this.preplacements, index);
         const arr = preplacement.placements;
         const count = preplacement.count;
         PlacementSystem.totalPlacements += count;
 
-        waitMs -= performance.now() - PlayerUpdateEvent.lastReceive;
+        // Sent to reach the server right as its next tick starts. With "Jitter-Safe Timing", later by the ping jitter:
+        // a placement that arrives late still lands (a tick later), one that arrives early fails.
+        const waitMs = Timing.waitForNextTick(performance.now(), PlayerUpdateEvent.lastReceive, padding);
 
         if (waitMs <= 0) {
             this.executePreplaceBatch(arr, count, 0);

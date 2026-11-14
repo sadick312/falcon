@@ -10,6 +10,7 @@ import CombatController from "@core/mod/combat/core/CombatController";
 import HatSystem from "@core/mod/defense/defense-modules/HatSystem";
 import ModManager from "@core/ModManager";
 import PingTracker from "@core/mod/utils/PingTracker";
+import Timing from "@core/mod/utils/Timing";
 import PlayerUpdateEvent from "@core/socket/events/core/PlayerUpdateEvent";
 import Socket from "@core/socket/Socket";
 import SocketListener from "@core/socket/SocketListener";
@@ -35,6 +36,7 @@ function resetGameState() {
     PacketBatcher.reset();
     // The new connection may be another server: its ping starts from the default, not the old median.
     PingTracker.reset();
+    Timing.resetTickClock();
     Client.pingTime = 0;
     PlayerUpdateEvent.lastReceive = 0;
     PacketRecorder.clearSession();

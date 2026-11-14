@@ -17,7 +17,7 @@ import PacketMap from "@root/utils/socket/PacketMap";
 import ScriptConfig from "@utils/config/ScriptConfig";
 import getDistSq from "@utils/geometry/getDistSq";
 import { isInWater } from "@constants/world";
-import PingTracker from "@core/mod/utils/PingTracker";
+import Timing from "@core/mod/utils/Timing";
 
 export default class HatSystem {
     /** Soldier helmet against most weapons only when the enemy is this close. */
@@ -50,7 +50,7 @@ export default class HatSystem {
      */
     private static onItsWay(pending: { id: number; tick: number }, id: number) {
         if (pending.id !== id || !Menu.getValue("rememberSentEquips")) return false;
-        const ticksOfPing = Math.max(1, Math.ceil(PingTracker.getStablePing() / ScriptConfig.SERVER_UPDATE_SPEED));
+        const ticksOfPing = Math.max(1, Timing.roundTripTicks());
         return tickState.tick - pending.tick <= ticksOfPing + 1;
     }
 

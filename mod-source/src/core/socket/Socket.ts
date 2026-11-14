@@ -5,6 +5,7 @@ import { deathText } from "@core/Client";
 import GameEventTracker from "@core/mod/utils/GameEventTracker";
 import CustomEncoder from "@core/socket/CustomEncoder";
 import LegacyPacketAdapter from "@core/socket/LegacyPacketAdapter";
+import Timing from "@core/mod/utils/Timing";
 import PlayerUpdateEvent from "@core/socket/events/core/PlayerUpdateEvent";
 import { MooMooProtocol } from "@core/utils/CaptchaManager";
 import PacketBatcher from "@core/utils/PacketBatcher";
@@ -240,6 +241,7 @@ export default class Socket extends NativeWebSocket {
 
         if (parsed[0] === PacketMap.SERVER_TO_CLIENT.UPDATE_PLAYERS) {
             PlayerUpdateEvent.lastReceive = performance.now();
+            Timing.onRealTick(PlayerUpdateEvent.lastReceive);
         }
 
         // ADD_PROJECTILE's last value is the projectile's own sid, not the shooter's (it was read as the shooter here);

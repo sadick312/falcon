@@ -1,5 +1,5 @@
 import HealerUtils from "@core/mod/defense/utils/HealerUtils";
-import PingTracker from "@core/mod/utils/PingTracker";
+import Timing from "@core/mod/utils/Timing";
 import Menu from "@menu/Menu";
 import ScriptConfig from "@utils/config/ScriptConfig";
 
@@ -107,9 +107,9 @@ export default class PacketTracker {
         if (!this.isInitialized) return 0;
         if (amount <= 0) return 0;
 
-        const halfAvgPing = PingTracker.getStablePing() / 2;
+        const halfAvgPing = Timing.oneWayMs();
         // With "Jitter-Safe Timing", older packets are counted as still in the server's 1 s window for one jitter longer.
-        const realNow = performance.now() - halfAvgPing - PingTracker.jitterMargin(Menu.getValue("jitterSafeTiming") === true);
+        const realNow = performance.now() - halfAvgPing - Timing.jitterMargin();
         const unitCost = PacketAllocationPool[type];
 
         const currentUsage = this.getCurrent() + this.currentBaseline + this.reservedPackets;
