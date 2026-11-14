@@ -225,6 +225,12 @@ export const utilitySettings: IMenuItem[] = [{
         }],
         status: 0
     }, {
+        label: "Show Breaker State",
+        id: "autoBreak:debugHud",
+        description: "Shows a line on the left of the screen with what Auto Break is doing (idle, breaking, waiting for reload, holding Soldier Helmet), its target and the weapon. Combat Debug Log (Configs) also logs each change.",
+        type: "toggle",
+        status: false
+    }, {
         label: "Restore Weapon After Break",
         id: "autoBreak:restoreWeapon",
         description: "Once the trap is gone and your weapons are reloaded, switches back to the weapon you held before breaking. Off (classic): you keep holding the breaking weapon (usually the great hammer). Does nothing while \"Always Pick Best Weapon\" is on, which picks your weapon itself.",

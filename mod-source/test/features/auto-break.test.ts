@@ -144,6 +144,26 @@ describe("Auto Break", () => {
         expect(await trappedHolding([], 1, true)).toBe("autobreak");
     });
 
+    // Breaker brief C: what the debug HUD shows.
+    it("status: breaking on the swing tick, waiting for reload after, idle once the trap is gone", async () => {
+        const { LIST_ID_MAP } = await import("@constants/items");
+        game = await startGame({ enable: ["autoBreak"] });
+        game.spawn({ sid: ME, x: 1000, y: 1000, weaponIndex: 5 });
+        game.spawn({ sid: 2, x: 1400, y: 1000 });
+        game.setLoadout([5, GREAT_HAMMER], [0, 3, 6, 10, 15]);
+        game.addObjects([{ sid: 600, x: 1000, y: 1000, itemId: LIST_ID_MAP.PIT_TRAP as number, owner: 2 }]);
+        const { default: AutoBreaker } = await import("@core/mod/defense/modules/AutoBreaker");
+        game.update();
+        expect(AutoBreaker.status()).toEqual({ state: "breaking", target: "pit trap", weapon: "great hammer" });
+        // The server confirms our hammer swing: it reloads.
+        game.handlers.K(ME, false, GREAT_HAMMER);
+        game.update();
+        expect(AutoBreaker.status().state).toBe("waiting for reload");
+        game.handlers.Q(600);
+        game.update();
+        expect(AutoBreaker.status()).toEqual({ state: "idle", target: "", weapon: "" });
+    });
+
     it("does nothing when off", async () => {
         const { held, tank } = await trapped({ enable: false });
         expect(held).not.toContain(GREAT_HAMMER);

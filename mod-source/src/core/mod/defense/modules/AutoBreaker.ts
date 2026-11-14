@@ -28,6 +28,7 @@ import withinDist from "@utils/geometry/withinDist";
 import { PLAYER_SCALE, BULL_DAMAGE_MULT, NATURAL_OBJECT_OWNER } from "@constants/world";
 import { bestBreakAim, BreakAimObject } from "@core/mod/defense/utils/BreakAim";
 import { SOLDIER_DAMAGE_TAKEN } from "@constants/hatNumbers";
+import { combatDebug, combatDebugOn } from "@utils/debug/combatDebug";
 
 export interface AutoBreakerInternal {
     replaceSpike: boolean;
@@ -373,6 +374,35 @@ export default class AutoBreaker {
         return bestBreakAim(player.real_position, this.aimAngle, getWeapon(weaponId).range, objects);
     }
 
+    private static statusState = "idle";
+    private static statusTick = -1;
+    private static statusBuffer = { state: "idle", target: "", weapon: "" };
+
+    /** For the debug HUD: what the breaker did this tick. "idle" when it didn't run this tick. */
+    static status() {
+        const s = this.statusBuffer;
+        if (this.statusTick !== tickState.tick) {
+            s.state = "idle";
+            s.target = "";
+            s.weapon = "";
+            return s;
+        }
+        s.state = this.statusState;
+        s.target = getItem(this.targetObject.id).name;
+        s.weapon = getWeapon(this.currentBestId).name;
+        return s;
+    }
+
+    private static setStatus(state: string) {
+        const changed = state !== this.statusState || this.statusTick !== tickState.tick - 1;
+        this.statusState = state;
+        this.statusTick = tickState.tick;
+        if (changed && combatDebugOn()) {
+            const s = this.status();
+            combatDebug("autobreak", { state: s.state, target: s.target, weapon: s.weapon, health: this.targetObject.health });
+        }
+    }
+
     static main() {
         const player = Client.player;
 
@@ -398,6 +428,7 @@ export default class AutoBreaker {
                 CombatController.skinIndex = STORE_HAT_MAP.SOLDIER_HELMET;
                 CombatController.mustBeSoldier = true;
                 tickState.activityList.push("tankHoldOff");
+                this.setStatus("defense has the hat");
                 return true;
             }
 
@@ -405,6 +436,7 @@ export default class AutoBreaker {
                 CombatController.skinIndex = STORE_HAT_MAP.SOLDIER_HELMET;
                 CombatController.mustBeSoldier = true;
                 tickState.activityList.push("antiPreHit");
+                this.setStatus("holding soldier (one-shot risk)");
                 return true;
             }
 
@@ -412,9 +444,11 @@ export default class AutoBreaker {
             CombatController.skinIndex = this.useKatana || id === originalBestId || twoHitRequireTank ? STORE_HAT_MAP.TANK_GEAR : STORE_HAT_MAP.SOLDIER_HELMET;
             CombatController.mustBeSoldier = false;
             CombatController.hitOnce();
+            this.setStatus("breaking");
         } else {
             CombatController.mustBeSoldier = false;
             CombatController.skinIndex = STORE_HAT_MAP.SOLDIER_HELMET;
+            this.setStatus("waiting for reload");
         }
 
         return true;

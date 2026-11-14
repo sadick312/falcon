@@ -25,6 +25,7 @@ import renderGrid from "@rendering/utils/mod/renderGrid";
 import renderMinimap from "@rendering/utils/mod/renderMinimap";
 import renderOneTickLine from "@rendering/utils/mod/renderOneTickLine";
 import renderReloadHud from "@rendering/utils/mod/renderReloadHud";
+import renderBreakerHud from "@rendering/utils/mod/renderBreakerHud";
 import renderAimAssist from "@rendering/utils/mod/renderAimAssist";
 import renderBreakerRange from "@rendering/utils/mod/renderBreakerRange";
 import renderPathfindPath from "@rendering/utils/mod/renderPathfindPath";
@@ -163,6 +164,7 @@ export default class RendererSystem {
             renderOneTickLine(xOffset, yOffset);
             renderBreakerRange();
             renderReloadHud();
+            renderBreakerHud();
             renderAimAssist();
             if (__DEV__) lap = profileLap("draw.overlays+names+text", lap);
 
