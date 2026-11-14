@@ -59,13 +59,17 @@ describe("ranged prediction", () => {
         expect(predictHit({ x: 0, y: 0 }, enemy(1, 500, 0), 3.6)).toEqual({ x: 500, y: 0 });
     });
 
-    it("an enemy that just came back into view (a jump of over 100 in one tick): no lead, not a huge one", () => {
-        // last_position is only updated while the enemy is in view, so it can be far out of date.
+    it("a teleport (a jump of over 300 in one tick): no lead, not a huge one", () => {
         expect(predictHit({ x: 0, y: 0 }, enemy(1, 500, 0, 100, { x: 500, y: -400 }), 3.6)).toEqual({ x: 500, y: 0 });
     });
 
     it("an enemy back in view with the one-tick delay (the game's call): still no lead", () => {
         expect(predictHit({ x: 0, y: 0 }, enemy(1, 500, 0, 100, { x: 500, y: -400 }), 3.6, undefined, TICK)).toEqual({ x: 500, y: 0 });
+    });
+
+    it("an enemy thrown by a boost pad (about 116 in one tick) still gets a lead", () => {
+        const aim = predictHit({ x: 0, y: 0 }, enemy(1, 500, 0, 100, { x: 500, y: -116 }), 3.6);
+        expect(aim.y).toBeGreaterThan(50);
     });
 
     it("a trapped enemy doesn't move, so no lead", () => {
