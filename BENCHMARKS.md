@@ -170,3 +170,23 @@ pane can't measure reliably. So the renderer was left unchanged.
 
 To check it yourself in the real game: open it in Chrome, F12 > Performance, record ~10 seconds of play, and look at
 the time per frame.
+
+## Full review Phase 5 (14 Nov 2026): skip Auto Place's spot search when nothing uses it
+
+`AutoPlacer.preStart` ran the Angle Finder and graders every tick, even with Auto Place off. Its spots are used only
+by Auto Place itself and by Apple Insta's re-trap check, which reads them only while the nearest enemy is trapped.
+Now it returns at once when Auto Place is off and the nearest enemy isn't trapped.
+
+Replay benchmark, run alone (`--no-file-parallelism`), 3 rounds alternating old and new code on the same PC
+(ms per tick, average of 5 timed runs each):
+
+| Replay | Old (3 rounds) | New (3 rounds) | `AutoPlacer.preStart` old → new |
+|---|---|---|---|
+| sample-base | 3.54 / 1.94 / 1.89 | 1.93 / 1.70 / 1.86 | 0.16–0.27 → 0.04 |
+| sample-busy | 1.92 / 1.73 / 1.72 | 1.37 / 1.34 / 1.36 | 0.32–0.36 → 0.005 |
+| sample-synthetic | 2.33 / 1.94 / 1.95 | 1.58 / 1.51 / 1.59 | 0.44–0.51 → 0.006 |
+
+About 20% less per tick on sample-busy and sample-synthetic (above the 10% noise rule); sample-base is noisy but
+lower in every round. Sent packets and game state are unchanged on all three replays; only the Angle Finder call
+trace in `replay-fingerprints.json` was re-recorded (423 / 1081 / 135 fewer calls). With Auto Place on, or against a
+trapped enemy, nothing changes.

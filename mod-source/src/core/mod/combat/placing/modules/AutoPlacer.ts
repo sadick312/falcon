@@ -115,6 +115,13 @@ export default class AutoPlacer extends Placer {
     }
 
     preStart(player: Player) {
+        // Its spots are used only by Auto Place and by Apple Insta's re-trap check (trapped enemy): skip otherwise.
+        const nearest = tickState.enemyData.nearest;
+        if (!Menu.getValue("autoPlacing") && !nearest?.trap) {
+            this.cachedBestAnglesCount = 0;
+            this.potentialPreplacements.count = 0;
+            return;
+        }
         const now = performance.now();
         const preplacer = !!Menu.getValue("preplacer");
         this.finderOptions.preplace = preplacer;

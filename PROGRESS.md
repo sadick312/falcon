@@ -3,7 +3,18 @@
 Branch `full-review` (from `review/stability` at `814870f`). Push to `fork` only.
 
 ## Current task
-Phase 4 done. Waiting for your OK before Phase 5 (speed work, only with benchmark proof).
+Phase 5 done. Waiting for your OK before Phase 6 (final check).
+
+## Phase 5 (speed, only with benchmark proof)
+- Kept: Auto Place's spot search (`AutoPlacer.preStart`) is skipped when Auto Place is off and the nearest enemy
+  isn't trapped (nothing reads its result then). About 20% less time per tick on the busy and synthetic replays,
+  measured in 3 alternating rounds; sent packets and game state unchanged (only the Angle Finder call trace was
+  re-recorded). Numbers in BENCHMARKS.md. No menu toggle: nothing a player sees or does changes.
+- Not tried again: the enemy-side Angle Finder (`updatePlacementAngles`, ~0.35 ms) and the graders were already
+  measured in earlier phases; skipping or caching them either changed results or saved less than the 10% noise.
+
+## Phase 4 summary
+Phase 4 done.
 
 Phase 4 went through the areas in the order Ping → Combat → Defense/Breaker → Insta → Weapons → Hats/visuals →
 Menu → the rest. Every change is a new menu setting that is off (or classic) by default, so play stays the same until
