@@ -3,7 +3,14 @@
 Branch `full-review` (from `review/stability` at `814870f`). Push to `fork` only.
 
 ## Current task
-Phase 5 done. Waiting for your OK before Phase 6 (final check).
+All 6 phases done. The final summary, not-done list, in-game checklist and Windows steps are in REVIEW-SUMMARY.md.
+Next: your in-game test of the checklist there.
+
+## Phase 6 (final check)
+- Every check compared with the Phase 2 baseline (REVIEW-SUMMARY.md section 1): all pass, check:dead now passes too,
+  sent packets in the replays unchanged.
+- New `quick-inject-boot.test.ts`: the built Quick Inject file starts offline in a fake page and shows the menu.
+  It fails when the built file is broken (checked by breaking it on purpose).
 
 ## Phase 5 (speed, only with benchmark proof)
 - Kept: Auto Place's spot search (`AutoPlacer.preStart`) is skipped when Auto Place is off and the nearest enemy
