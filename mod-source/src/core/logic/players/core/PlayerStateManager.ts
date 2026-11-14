@@ -4,6 +4,11 @@ import ObjectManager from "@core/logic/ObjectManager";
 import DefenseSystem from "@core/mod/defense/DefenseSystem";
 import { tickState } from "@core/TickState";
 import withinDist from "@utils/geometry/withinDist";
+import getDistSq from "@utils/geometry/getDistSq";
+import Menu from "@menu/Menu";
+import GameObject from "@constants/GameObject";
+
+const EXACT_TRAP_DIST_SQ = 45 * 45;
 
 export default class PlayerStateManager {
     static placementMap = new Map<number, number>();
@@ -27,6 +32,12 @@ export default class PlayerStateManager {
     static updateState() {
         const allTraps = ObjectManager.pool.allTraps;
         const enemies = tickState.enemyData.all;
+        // "Exact Trap Distance": 1.8.2 locks us at player scale 35 + trap collision size 10 (50 × colDiv 0.2), inclusive.
+        const exactTrap = Menu.getValue("exactTrapDistance") === true;
+        const isStuck = (player: Player, trap: GameObject) => {
+            if (exactTrap && player.sid === Client.mySID) return getDistSq(player.real_position, trap) <= EXACT_TRAP_DIST_SQ;
+            return withinDist(player.real_position, trap, player.sid === Client.mySID ? 50.5 : 50);
+        };
         const check = (player: Player) => {
             const lastTrapSID = player.trap?.sid;
 
@@ -40,7 +51,7 @@ export default class PlayerStateManager {
                 if (gameObject === undefined) continue;
 
                 if (!Client.isTeam(player, gameObject.ownerSID ?? -1)) {
-                    if (!player.trap && withinDist(player.real_position, gameObject, player.sid === Client.mySID ? 50.5 : 50)) {
+                    if (!player.trap && isStuck(player, gameObject)) {
                         player.trap = gameObject;
                         gameObject.hideFromEnemy = false;
 

@@ -39,6 +39,12 @@ export const defenseSettings: IMenuItem[] = [{
             type: "toggle",
             status: false
         }, {
+            label: "Exact Trap Distance",
+            id: "exactTrapDistance",
+            description: "Counts you as stuck in an enemy trap only within 45 px of it, the distance at which the game really locks you. Off (classic): within 50.5 px, so for the last few pixels before a trap Falcon thinks you're stuck when you aren't (Auto Break swings at it, hats and instas act as if you can't move). Affects everything that checks whether you're trapped.",
+            type: "toggle",
+            status: false
+        }, {
             label: "Resync Predicted Speed",
             id: "resyncPredictedSpeed",
             description: "Starts each tick's prediction of where you'll be with your real speed. Off (classic): the speed is kept from the last prediction, so after one predicted spike bounce Falcon thinks you hit the spike every tick, and Auto Heal eats right after hits (+1 shame each time) for damage that never comes.",
