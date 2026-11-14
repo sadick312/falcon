@@ -1,4 +1,34 @@
-# Falcon full review: progress
+# Combat, Defense and Ping: progress
+
+Branch `combat-defense-ping` (worktree `../falcon-cdp`): `full-review` 07e35be + `review/stability` 9ee9f3a +
+`classic-upgrades` be78e1d merged (your choice, 14 Nov). Push to `fork` only. Findings: COMBAT_DEFENSE.md.
+
+## Current task
+Step 1 done (read only + baseline). **Stopped for your OK** before Step 2 (ping).
+
+## Baseline (14 Nov, Node 24.22.1, at the merge commit 8e5cf2e)
+- typecheck, lint, inject:build (704 KB), ext:build, docs:settings, check:dead: all pass.
+- vitest: 146 files, 1146 passed, 1 skipped. Includes the golden replays (`replay.test.ts`: sent packets and state
+  fingerprints of sample-base / sample-busy / sample-synthetic).
+- bench, one run (noisy; compare best of several runs later), ms per tick avg / best: sample-base 0.87 / 0.78,
+  sample-busy 0.45 / 0.40, sample-synthetic 0.45 / 0.44. Packet fingerprints: sample-base `23a154a24573ed6c`,
+  sample-busy `c0427ed3be9988ca`, sample-synthetic `f815fbedf6756a5e`.
+- Hat report (sample-base): 140 hat equips, 0 duplicates, 15 conflicts (all "defense Soldier beats Object
+  Breaker's Tank Gear", intended).
+
+## Merges into this branch
+- `review/stability`: conflicts only in `aim-assist.test.ts` (kept both new tests) and `replay-fingerprints.json`
+  (re-recorded: packets/state equal `review/stability`'s, Angle Finder traces equal `full-review`'s).
+- `classic-upgrades`: conflict in `updateUpgrades.ts` (kept the Classic Upgrades code, kept `AutoUpgradeChoice`
+  unexported as full-review's dead-code fix had it).
+
+## Next up
+- Step 2 (ping), after your OK: shared timing helper, smoothed tick clock (setting, off), ping/jitter debug line
+  (setting, off), ping math tests. See COMBAT_DEFENSE.md section 3.
+
+---
+
+# Falcon full review: progress (earlier, kept for history)
 
 Branch `full-review` (from `review/stability` at `814870f`). Push to `fork` only.
 
