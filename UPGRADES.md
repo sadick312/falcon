@@ -174,3 +174,31 @@ OUT H [13]  -> V [[4,13],1]   U [2,10]    repeater at 9, no crossbow: ACCEPTED -
 **What this means for Step 3:** the planner only needs "at age A, send the weapon whose `age == A`". A combo = (age 8 weapon, age 9 weapon). Falcon's own `updateUpgrades.ts:71` hides off-menu weapons (it checks `pre`), so the Classic toggle must add them to the bar.
 
 Not tested: great axe + repeater (expected to work), and whether this also holds on servers other than sandbox (Falcon is only used on sandbox). The test used `s1` only.
+
+## 10. Step 3: what was built (toggle "Classic Upgrades (1.6.9 style)", default OFF)
+
+Where: Menu > Utility > **Classic Upgrades (1.6.9 style)**. Its settings:
+- **Favourite Combo**: None (default), or one of the 6 combos (Katana + Musket, Katana + Repeater Crossbow, Great Axe + Musket, Great Axe + Repeater Crossbow, Keep Primary + Musket (via Crossbow), Keep Primary + Repeater Crossbow (via Crossbow)).
+- **Auto Pick Favourite** (default off): at ages 8 and 9, take the Favourite Combo by itself.
+
+When ON, at ages 8 and 9:
+1. The upgrade bar shows **every** weapon of that age, even without its pre-requisite (the server allows it, section 9).
+2. Under the bar there is one button per combo. Click "Katana + Musket" at age 8: Katana is sent now, Musket is sent by itself when age 9 comes. At age 9 only the combos that match your age 8 weapon are shown.
+3. A clicked button wins over the Favourite for the rest of that life. Dying (back to age 2), respawning or reconnecting forgets it.
+4. Classic picks run before Auto Upgrade's "Age 8 / 9 Pick". If Classic has nothing to send, Auto Upgrade works as before.
+
+When OFF, the bar is exactly the normal 1.8.2 bar (tested).
+
+Files:
+- `mod-source/src/core/events/classicUpgrades.ts`: the combo list and the planner. It reads **only** `items.weapons` (id, type, age).
+- `mod-source/src/core/events/updateUpgrades.ts`: shows the weapons and buttons, sends the picks. It runs only when the server sends `U` (a new point or age), so there is no per-frame work.
+- `mod-source/src/core/menu/content/utility.ts`: the menu item.
+- `mod-source/test/menu/classic-upgrades.test.ts`: tests.
+
+Packets: no new packet and no format change. One `H [id]` per age, sent only when the server's `U` asks for that age. The same id is never sent twice (Falcon's existing `upgradesObtained` check).
+
+Shortcut: one Favourite Combo per config, not a list of favourites. Use Menu > Configs to save several setups.
+
+## 11. How to add a new weapon
+
+Add one row to `weapons` in `mod-source/src/utils/constants/items.ts` with its `id`, `type` (0 primary, 1 secondary) and `age`. If its age is 8 or 9, the combo list, the menu choices, the buttons and the planner pick it up automatically. Nothing else needs changing. (The menu value of a combo is `age 8 id * 100 + age 9 id`, so ids must stay below 100.)
