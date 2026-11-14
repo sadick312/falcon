@@ -64,6 +64,10 @@ describe("ranged prediction", () => {
         expect(predictHit({ x: 0, y: 0 }, enemy(1, 500, 0, 100, { x: 500, y: -400 }), 3.6)).toEqual({ x: 500, y: 0 });
     });
 
+    it("an enemy back in view with the one-tick delay (the game's call): still no lead", () => {
+        expect(predictHit({ x: 0, y: 0 }, enemy(1, 500, 0, 100, { x: 500, y: -400 }), 3.6, undefined, TICK)).toEqual({ x: 500, y: 0 });
+    });
+
     it("a trapped enemy doesn't move, so no lead", () => {
         expect(predictHit({ x: 0, y: 0 }, enemy(1, 500, 0, 100, { x: 500, y: -40 }, true), 3.6)).toEqual({ x: 500, y: 0 });
     });

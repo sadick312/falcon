@@ -3,6 +3,9 @@
 Branch `full-review` (from `review/stability` at `814870f`). Push to `fork` only.
 
 ## Current task
+Merged `review/stability` into `full-review` (`184fd56` Aim Assist reappear lead, `263cee9` no preplacement after
+death, `2bc10e5` Auto Place budget on every path), as the 14 Nov code review asked. No conflicts; replays unchanged.
+
 All 6 phases done. The final summary, not-done list, in-game checklist and Windows steps are in REVIEW-SUMMARY.md.
 Next: your in-game test of the checklist there.
 
@@ -114,6 +117,8 @@ Each fix: what was wrong, why (root cause), and how to check it in game.
      Falcon's Ranged Shots (both off by default).
    - In game: Aim Assist on, musket or crossbow, tank spam at an enemy running sideways. The yellow dot sits a bit
      farther ahead than before, and shots should meet the enemy instead of landing just behind it.
+   - Since the merge of `review/stability` (`184fd56`), a jump of over 100 px in one tick (an enemy back in view)
+     gives no lead, delay or not; tested together.
 6. **"Will this swing heal with Blood Wings" looked at the mouse, not the real swing.**
    - Why: `WingsUtils.willHitPlayer` used `getAttackDir()` (the raw mouse in tank spam), but the swing that is sent
      uses `getAttackDir(true)`, which Aim Assist turns to its target. So with an enemy close to the mouse and the
